@@ -151,6 +151,16 @@ class MoteurDebloat(
         return ResultatAction(paquet, paquet, sortie.reussi, sortie.sortie)
     }
 
+    /**
+     * Arrête les processus d'une application. Rien à journaliser : ce n'est pas un changement
+     * d'état mais une remise à zéro — l'application repart dès qu'on l'ouvre, ou dès qu'un
+     * service la rappelle.
+     */
+    suspend fun forcerArret(paquet: String): ResultatAction {
+        val sortie = executeur.executer("am force-stop $paquet")
+        return ResultatAction(paquet, paquet, sortie.reussi, sortie.sortie)
+    }
+
     /** Applique une valeur de réglage système et journalise son annulation. */
     suspend fun ecrireReglage(
         cle: String,

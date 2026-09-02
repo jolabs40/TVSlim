@@ -21,6 +21,38 @@ data class InfosAppareil(
     }
 }
 
+/** Un processus vivant et ce qu'il occupe réellement en mémoire (PSS). */
+data class ProcessusMemoire(
+    val nom: String,
+    val pid: Int,
+    val kilooctets: Long,
+) {
+    val megaoctets: Long get() = kilooctets / 1024
+
+    /** Le paquet derrière le processus : « com.android.vending:background » en cache un. */
+    val paquet: String get() = nom.substringBefore(':')
+
+    /**
+     * Un processus du système ne porte pas de nom de paquet : `surfaceflinger`, `system`,
+     * `vendor.nvidia…`. On ne propose pas de les arrêter — au mieux ils redémarrent aussitôt,
+     * au pire l'appareil bronche.
+     */
+    val estUneApplication: Boolean
+        get() = paquet.count { it == '.' } >= 2 && !paquet.startsWith("vendor.")
+}
+
+/** Répartition de la mémoire, telle que la voit `dumpsys meminfo`. */
+data class RepartitionMemoire(
+    val totalKo: Long = 0,
+    val libreKo: Long = 0,
+    val utiliseeKo: Long = 0,
+    val cacheKo: Long = 0,
+    val zramKo: Long = 0,
+    val processus: List<ProcessusMemoire> = emptyList(),
+) {
+    val renseignee: Boolean get() = totalKo > 0
+}
+
 data class LauncherInstalle(
     val paquet: String,
     val nom: String,

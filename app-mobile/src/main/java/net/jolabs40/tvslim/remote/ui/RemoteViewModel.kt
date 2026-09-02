@@ -22,6 +22,7 @@ import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LecteurDistant
+import net.jolabs40.tvslim.device.RepartitionMemoire
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.journal.TypeAction
@@ -65,6 +66,7 @@ data class EtatRemote(
     val journal: List<ActionJournal> = emptyList(),
     val recherche: String = "",
     val filtre: Filtre = Filtre.TOUS,
+    val memoire: RepartitionMemoire = RepartitionMemoire(),
     val confirmation: Confirmation? = null,
     val message: String? = null,
 ) {
@@ -389,6 +391,28 @@ class RemoteViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    /** Lit la répartition de la mémoire. Séparé du rafraîchissement : la commande est lourde. */
+    fun rafraichirMemoire() {
+        if (!_etat.value.connecte) return
+        viewModelScope.launch {
+            _etat.update { it.copy(chargement = true) }
+            val memoire = lecteur.memoire()
+            _etat.update { it.copy(chargement = false, memoire = memoire) }
+        }
+    }
+
+    /** Arrête les processus d'une application, sans rien changer à son état d'installation. */
+    fun forcerArret(paquet: String) {
+        val moteurActif = moteur ?: return
+        viewModelScope.launch {
+            val resultat = moteurActif.forcerArret(paquet)
+            afficher(
+                if (resultat.reussi) "$paquet arrêté." else "Échec : ${resultat.message}",
+            )
+            rafraichirMemoire()
         }
     }
 

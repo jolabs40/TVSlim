@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,6 +33,7 @@ import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.screens.ConfirmationDialogue
 import net.jolabs40.tvslim.remote.ui.screens.ConnexionScreen
 import net.jolabs40.tvslim.remote.ui.screens.JournalScreen
+import net.jolabs40.tvslim.remote.ui.screens.MemoireScreen
 import net.jolabs40.tvslim.remote.ui.screens.PaquetsScreen
 
 private data class Onglet(val route: String, val titre: Int, val icone: ImageVector)
@@ -39,6 +41,7 @@ private data class Onglet(val route: String, val titre: Int, val icone: ImageVec
 private val onglets = listOf(
     Onglet("connexion", R.string.tab_connection, Icons.Filled.Cast),
     Onglet("paquets", R.string.tab_packages, Icons.Filled.Inventory2),
+    Onglet("memoire", R.string.tab_memory, Icons.Filled.Memory),
     Onglet("journal", R.string.tab_log, Icons.Filled.History),
 )
 
@@ -119,6 +122,13 @@ fun RemoteApp() {
                     onReactiver = { modele.reactiver(listOf(it)) },
                     onRecherche = modele::majRecherche,
                     onFiltre = modele::majFiltre,
+                )
+            }
+            composable("memoire") {
+                MemoireScreen(
+                    etat = etat,
+                    onActualiser = modele::rafraichirMemoire,
+                    onForcerArret = modele::forcerArret,
                 )
             }
             composable("journal") {

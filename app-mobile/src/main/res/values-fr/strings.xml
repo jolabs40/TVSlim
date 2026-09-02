@@ -2,7 +2,19 @@
 <resources>
     <string name="tab_connection">Téléviseur</string>
     <string name="tab_packages">Paquets</string>
+    <string name="tab_memory">Mémoire</string>
     <string name="tab_log">Journal</string>
+
+    <string name="memory_title">Occupation de la mémoire</string>
+    <string name="memory_reading">Lecture en cours…</string>
+    <string name="memory_total">Totale</string>
+    <string name="memory_used">Utilisée</string>
+    <string name="memory_free">Libre</string>
+    <string name="memory_cached">Dont cache</string>
+    <string name="memory_zram">Compressée (ZRAM)</string>
+    <string name="memory_processes">Processus en cours (%1$d)</string>
+    <string name="memory_mb">%1$d Mo</string>
+    <string name="memory_stop">Arrêter</string>
 
     <string name="connection_title">Se connecter à un téléviseur</string>
     <string name="connection_subtitle">Le téléphone parle au téléviseur en ADB, sur le réseau local. Aucun ordinateur n\'intervient.</string>

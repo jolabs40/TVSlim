@@ -57,6 +57,62 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         )
     }
 
+    /**
+     * Répartition de la mémoire et poids de chaque processus.
+     *
+     * Séparée de la photographie : `dumpsys meminfo` est nettement plus lourd que le reste, et
+     * n'intéresse que l'écran qui l'affiche. Le chiffre retenu est le PSS, la seule mesure qui
+     * ne compte pas deux fois la mémoire partagée entre processus.
+     */
+    suspend fun memoire(): RepartitionMemoire {
+        val sortie = executeur.executer("dumpsys meminfo")
+        if (!sortie.reussi) return RepartitionMemoire()
+
+        val processus = mutableListOf<ProcessusMemoire>()
+        var dansLaListe = false
+        var total = 0L
+        var libre = 0L
+        var utilisee = 0L
+        var cache = 0L
+        var zram = 0L
+
+        sortie.sortie.lineSequence().forEach { ligne ->
+            val nette = ligne.trim()
+            when {
+                nette.startsWith("Total PSS by process") -> dansLaListe = true
+                nette.startsWith("Total PSS by") -> dansLaListe = false
+                nette.startsWith("Total RAM:") -> total = premierNombre(nette)
+                nette.startsWith("Free RAM:") -> {
+                    libre = premierNombre(nette)
+                    cache = CACHE.find(nette)?.let { nombre(it.groupValues[1]) } ?: 0L
+                }
+                nette.startsWith("Used RAM:") -> utilisee = premierNombre(nette)
+                nette.startsWith("ZRAM:") -> zram = premierNombre(nette)
+                dansLaListe -> PROCESSUS.find(nette)?.let { trouve ->
+                    processus += ProcessusMemoire(
+                        nom = trouve.groupValues[2],
+                        pid = trouve.groupValues[3].toIntOrNull() ?: 0,
+                        kilooctets = nombre(trouve.groupValues[1]),
+                    )
+                }
+            }
+        }
+
+        return RepartitionMemoire(
+            totalKo = total,
+            libreKo = libre,
+            utiliseeKo = utilisee,
+            cacheKo = cache,
+            zramKo = zram,
+            processus = processus.sortedByDescending { it.kilooctets },
+        )
+    }
+
+    private fun nombre(brut: String): Long = brut.replace(",", "").trim().toLongOrNull() ?: 0L
+
+    private fun premierNombre(ligne: String): Long =
+        NOMBRE.find(ligne)?.let { nombre(it.groupValues[1]) } ?: 0L
+
     /** Une seule question, très courte : ce paquet est-il installé ? Sert à guetter une pose. */
     suspend fun estInstalle(paquet: String): Boolean {
         val sortie = executeur.executer("pm list packages $paquet")
@@ -133,6 +189,11 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
 
     internal companion object {
         private val PRIORITE = Regex("""priority=(-?\d+)""")
+
+        /** « 161,015K: com.spocky.projengmenu (pid 4799 state 14 oom 150 / activities) » */
+        private val PROCESSUS = Regex("""^([\d,]+)K:\s+(\S+)\s+\(pid\s+(\d+)""")
+        private val NOMBRE = Regex("""([\d,]+)K""")
+        private val CACHE = Regex("""([\d,]+)K cached pss""")
 
         // Surtout pas de « # » : dans un shell, un mot qui commence par # ouvre un commentaire
         // et avale tout le reste de la ligne — la commande entière se réduisait à un echo vide.
