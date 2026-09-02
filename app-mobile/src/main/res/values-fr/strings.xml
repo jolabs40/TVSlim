@@ -43,7 +43,8 @@
     <string name="confirm_cancel">Annuler</string>
     <string name="journal_undo_one">Annuler celle-ci</string>
 
-    <string name="home_title">Écran d\'accueil</string>
+    <string name="home_title">Écran d\'accueil et launcher</string>
+    <string name="home_current">Actuellement : %1$s</string>
     <string name="home_none">Aucun launcher tiers sur cet appareil : l\'accueil d\'usine ne peut pas encore être remplacé.</string>
     <string name="home_available">Launcher tiers disponible : %1$s</string>
     <string name="home_install">Ouvrir sur le téléviseur</string>

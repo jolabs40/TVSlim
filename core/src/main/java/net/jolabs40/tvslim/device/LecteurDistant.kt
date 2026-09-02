@@ -95,20 +95,38 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     private fun launchers(
         lignes: List<String>?,
         paquetsDAccueil: Set<String>,
-    ): List<LauncherInstalle> = lignes.orEmpty()
-        .filter { it.contains('/') && !it.startsWith("Activity Resolver") }
-        .mapNotNull { ligne ->
+    ): List<LauncherInstalle> {
+        val trouves = mutableListOf<LauncherInstalle>()
+        var priorite = 0
+
+        lignes.orEmpty().forEach { ligne ->
+            PRIORITE.find(ligne)?.groupValues?.get(1)?.toIntOrNull()?.let {
+                priorite = it
+                return@forEach
+            }
+            if (!ligne.contains('/') || ligne.startsWith("Activity Resolver")) return@forEach
+
             val composant = ligne.substringAfter(' ', ligne).trim()
             val paquet = composant.substringBefore('/')
-            if (paquet.isBlank() || paquet in paquetsDAccueil) {
-                null
-            } else {
-                LauncherInstalle(paquet = paquet, nom = paquet, composant = composant)
-            }
+            if (paquet.isBlank() || paquet in paquetsDAccueil) return@forEach
+            if (estUnRepliSysteme(priorite, composant)) return@forEach
+
+            trouves += LauncherInstalle(paquet = paquet, nom = paquet, composant = composant)
         }
-        .distinctBy { it.paquet }
+        return trouves.distinctBy { it.paquet }
+    }
+
+    /**
+     * `FallbackHome` répond aussi à `category.HOME`, mais n'affiche qu'un écran vide le temps
+     * du démarrage : le prendre pour un écran d'accueil de remplacement laisserait désactiver
+     * l'accueil d'usine et démarrer sur du vide. Android le trahit par sa priorité négative.
+     */
+    private fun estUnRepliSysteme(priorite: Int, composant: String): Boolean =
+        priorite < 0 || composant.contains("FallbackHome", ignoreCase = true)
 
     internal companion object {
+        private val PRIORITE = Regex("""priority=(-?\d+)""")
+
         // Surtout pas de « # » : dans un shell, un mot qui commence par # ouvre un commentaire
         // et avale tout le reste de la ligne — la commande entière se réduisait à un echo vide.
         const val PREFIXE_MARQUEUR = "@@TVSLIM_"

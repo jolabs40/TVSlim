@@ -73,8 +73,12 @@ class LecteurDistantTest {
             priority=0 preferredOrder=0 match=0x0 specificIndex=-1 isDefault=false
             com.spocky.projengmenu/.ui.home.MainActivity
             @@TVSLIM_L
+            priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
             com.spocky.projengmenu/.ui.home.MainActivity
+            priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
             com.google.android.apps.tv.launcherx/.home.HomeActivity
+            priority=-1000 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+            com.android.tv.settings/.system.FallbackHome
         """.trimIndent()
 
         val photo = LecteurDistant(ExecuteurFixe(sortie)).photographie(
@@ -96,6 +100,33 @@ class LecteurDistantTest {
 
         // L'accueil d'usine ne compte pas comme un launcher de remplacement.
         assertEquals(listOf("com.spocky.projengmenu"), photo.infos.launchersTiers.map { it.paquet })
+    }
+
+    @Test
+    fun `un ecran de secours n'est jamais pris pour un launcher de remplacement`() = runTest {
+        // Cas réel, relevé sur une Shield : FallbackHome répond à category.HOME avec une
+        // priorité négative. Le compter comme un remplaçant laisserait le moteur désactiver
+        // l'accueil d'usine, et l'appareil démarrerait sur un écran vide.
+        val sortie = """
+            @@TVSLIM_L
+            2 activities found:
+              Activity #0:
+                priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.google.android.tvlauncher/.MainActivity
+              Activity #1:
+                priority=-1000 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.android.tv.settings/.system.FallbackHome
+        """.trimIndent()
+
+        val photo = LecteurDistant(ExecuteurFixe(sortie)).photographie(
+            paquetsSurveilles = emptyList(),
+            paquetsDAccueil = setOf("com.google.android.tvlauncher"),
+        )
+
+        assertTrue(
+            "Aucun launcher tiers ici : ${photo.infos.launchersTiers.map { it.paquet }}",
+            photo.infos.launchersTiers.isEmpty(),
+        )
     }
 
     @Test

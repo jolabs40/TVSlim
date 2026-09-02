@@ -67,6 +67,9 @@ class AppareilRepository @Inject constructor(
             .filter { it.activityInfo.packageName !in paquetsDAccueil }
             .filter { it.activityInfo.packageName != contexte.packageName }
             .filter { it.activityInfo.enabled }
+            // FallbackHome répond aussi à category.HOME mais n'affiche qu'un écran vide au
+            // démarrage : le compter comme un remplaçant laisserait couper l'accueil d'usine.
+            .filter { it.priority >= 0 && !it.activityInfo.name.contains("FallbackHome", true) }
             .map { resolution ->
                 LauncherInstalle(
                     paquet = resolution.activityInfo.packageName,

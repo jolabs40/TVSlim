@@ -100,8 +100,10 @@ fun ConnexionScreen(
         )
 
         if (etat.connecte) {
-            AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
+            // L'action d'abord, les mesures ensuite : un écran qu'il faut faire défiler pour
+            // trouver le seul bouton utile est un écran raté.
             EcranAccueil(etat = etat, onInstaller = onInstallerLauncher)
+            AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
             return@Column
         }
 
@@ -311,6 +313,11 @@ private fun EcranAccueil(etat: EtatRemote, onInstaller: (String) -> Unit) {
                 text = stringResource(R.string.home_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = stringResource(R.string.home_current, etat.infos.accueilActuel.ifBlank { "—" }),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = if (launchersTiers.isEmpty()) {
