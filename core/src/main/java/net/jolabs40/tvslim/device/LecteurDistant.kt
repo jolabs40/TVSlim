@@ -108,14 +108,16 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         }
         .distinctBy { it.paquet }
 
-    private companion object {
-        const val PREFIXE_MARQUEUR = "###TVSLIM_"
-        const val MARQUEUR_DESACTIVES = "###TVSLIM_D"
-        const val MARQUEUR_ACTIFS = "###TVSLIM_E"
-        const val MARQUEUR_PROPRIETES = "###TVSLIM_P"
-        const val MARQUEUR_MEMOIRE = "###TVSLIM_M"
-        const val MARQUEUR_ACCUEIL = "###TVSLIM_H"
-        const val MARQUEUR_LAUNCHERS = "###TVSLIM_L"
+    internal companion object {
+        // Surtout pas de « # » : dans un shell, un mot qui commence par # ouvre un commentaire
+        // et avale tout le reste de la ligne — la commande entière se réduisait à un echo vide.
+        const val PREFIXE_MARQUEUR = "@@TVSLIM_"
+        const val MARQUEUR_DESACTIVES = "@@TVSLIM_D"
+        const val MARQUEUR_ACTIFS = "@@TVSLIM_E"
+        const val MARQUEUR_PROPRIETES = "@@TVSLIM_P"
+        const val MARQUEUR_MEMOIRE = "@@TVSLIM_M"
+        const val MARQUEUR_ACCUEIL = "@@TVSLIM_H"
+        const val MARQUEUR_LAUNCHERS = "@@TVSLIM_L"
 
         val COMMANDE = listOf(
             "echo $MARQUEUR_DESACTIVES",
