@@ -50,6 +50,11 @@ class TraductionsTest {
             base.reglages.all { it.cle in francais.reglages },
         )
         assertTrue(
+            "Launchers non traduits : " +
+                base.launchers.map { it.paquet }.filterNot { it in francais.launchers },
+            base.launchers.all { it.paquet in francais.launchers },
+        )
+        assertTrue(
             "Paquets protégés non traduits : " +
                 base.proteges.map { it.paquet }.filterNot { it in francais.proteges },
             base.proteges.all { it.paquet in francais.proteges },

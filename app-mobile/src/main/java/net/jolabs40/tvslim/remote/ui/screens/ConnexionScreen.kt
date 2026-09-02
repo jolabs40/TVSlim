@@ -53,6 +53,7 @@ fun ConnexionScreen(
     onActualiser: () -> Unit,
     onScan: (String) -> Unit,
     onEchecScan: (String) -> Unit,
+    onInstallerLauncher: (String) -> Unit,
 ) {
     val contexte = LocalContext.current
     val options = remember {
@@ -100,6 +101,7 @@ fun ConnexionScreen(
 
         if (etat.connecte) {
             AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
+            EcranAccueil(etat = etat, onInstaller = onInstallerLauncher)
             return@Column
         }
 
@@ -284,6 +286,66 @@ private fun AppareilConnecte(
                 stringResource(R.string.device_home),
                 etat.infos.accueilActuel.ifBlank { "—" },
             )
+        }
+    }
+}
+
+/**
+ * Écran d'accueil du téléviseur.
+ *
+ * Sans launcher tiers installé, le moteur refuse — à raison — de désactiver l'accueil d'usine :
+ * l'appareil démarrerait sur du vide. Plutôt que de laisser ce refus sans issue, on propose ici
+ * d'installer un remplaçant. L'application n'installe rien elle-même : elle ouvre la fiche dans
+ * la boutique **du téléviseur**, et l'installation se valide à la télécommande.
+ */
+@Composable
+private fun EcranAccueil(etat: EtatRemote, onInstaller: (String) -> Unit) {
+    val launchersTiers = etat.infos.launchersTiers
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.home_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = if (launchersTiers.isEmpty()) {
+                    stringResource(R.string.home_none)
+                } else {
+                    stringResource(
+                        R.string.home_available,
+                        launchersTiers.joinToString { it.paquet },
+                    )
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (launchersTiers.isEmpty()) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+
+            if (launchersTiers.isEmpty()) {
+                etat.catalogue.launchers.forEach { launcher ->
+                    Text(
+                        text = launcher.nom,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Text(
+                        text = launcher.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedButton(onClick = { onInstaller(launcher.paquet) }) {
+                        Text(stringResource(R.string.home_install))
+                    }
+                }
+            }
         }
     }
 }

@@ -33,6 +33,7 @@ data class Traductions(
     val entrees: Map<String, TexteEntree> = emptyMap(),
     val proteges: Map<String, String> = emptyMap(),
     val reglages: Map<String, TexteNomme> = emptyMap(),
+    val launchers: Map<String, TexteNomme> = emptyMap(),
 )
 
 /** Applique une surcharge de langue, champ par champ. Ce qui manque garde sa valeur d'origine. */
@@ -60,6 +61,14 @@ fun Catalogue.traduit(traductions: Traductions): Catalogue = copy(
     },
     proteges = proteges.map { protege ->
         traductions.proteges[protege.paquet]?.let { protege.copy(raison = it) } ?: protege
+    },
+    launchers = launchers.map { launcher ->
+        traductions.launchers[launcher.paquet]?.let { texte ->
+            launcher.copy(
+                nom = texte.nom ?: launcher.nom,
+                description = texte.description ?: launcher.description,
+            )
+        } ?: launcher
     },
     reglages = reglages.map { reglage ->
         traductions.reglages[reglage.cle]?.let { texte ->

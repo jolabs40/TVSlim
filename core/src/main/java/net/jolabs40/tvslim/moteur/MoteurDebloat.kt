@@ -137,6 +137,20 @@ class MoteurDebloat(
         return ResultatAction(composant, "Écran d'accueil", sortie.reussi, sortie.sortie)
     }
 
+    /**
+     * Ouvre la fiche d'une application dans la boutique **du téléviseur**, à charge pour la
+     * personne devant l'écran de valider l'installation à la télécommande.
+     *
+     * C'est volontairement tout ce que fait l'application : elle ne télécharge aucun APK et
+     * n'installe rien d'elle-même. Le seul chemin passe par la boutique officielle.
+     */
+    suspend fun ouvrirFicheBoutique(paquet: String): ResultatAction {
+        val sortie = executeur.executer(
+            "am start -a android.intent.action.VIEW -d market://details?id=$paquet",
+        )
+        return ResultatAction(paquet, paquet, sortie.reussi, sortie.sortie)
+    }
+
     /** Applique une valeur de réglage système et journalise son annulation. */
     suspend fun ecrireReglage(
         cle: String,

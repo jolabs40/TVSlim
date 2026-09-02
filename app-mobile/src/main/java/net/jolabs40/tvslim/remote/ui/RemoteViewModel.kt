@@ -341,6 +341,29 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Ouvre la fiche d'un launcher dans la boutique du téléviseur. L'installation elle-même se
+     * valide à la télécommande : le compagnon ne pose aucun APK sur l'appareil.
+     */
+    fun installerLauncher(paquet: String) {
+        val moteurActif = moteur
+        if (moteurActif == null) {
+            afficher("Connectez-vous d'abord à un téléviseur.")
+            return
+        }
+        viewModelScope.launch {
+            val resultat = moteurActif.ouvrirFicheBoutique(paquet)
+            afficher(
+                if (resultat.reussi) {
+                    "Fiche ouverte sur le téléviseur : validez l'installation à la télécommande, " +
+                        "puis actualisez."
+                } else {
+                    "Impossible d'ouvrir la boutique : ${resultat.message}"
+                },
+            )
+        }
+    }
+
     fun exporterJournal() {
         val actif = journal ?: return
         viewModelScope.launch {

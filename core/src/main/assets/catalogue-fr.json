@@ -10,6 +10,7 @@
     "airplay": "AirPlay d'usine",
     "bloatware_tcl": "Applications constructeur",
     "accueil": "Écran d'accueil",
+    "bloatware_nvidia": "Applications NVIDIA",
     "expert": "Réservé aux experts"
   },
   "profils": {
@@ -101,7 +102,39 @@
 
     "com.tcl.ttvs": { "nom": "Services T-Cast et mises à jour", "description": "Porte les mises à jour du micrologiciel et T-Cast, au prix d'une télémétrie embarquée (BIService, IdentifierService, AwarenessService).", "effetDeBord": "Plus de mises à jour du micrologiciel par voie hertzienne." },
     "com.google.android.tts": { "nom": "Synthèse vocale Google", "description": "Premier consommateur de mémoire du téléviseur.", "effetDeBord": "Coupe la lecture vocale : n'y toucher que si l'accessibilité n'est pas utilisée." },
-    "com.google.android.marvin.talkback": { "nom": "TalkBack", "description": "Lecteur d'écran d'accessibilité.", "effetDeBord": "Coupe le lecteur d'écran : n'y toucher que si l'accessibilité n'est pas utilisée." }
+    "com.google.android.marvin.talkback": { "nom": "TalkBack", "description": "Lecteur d'écran d'accessibilité.", "effetDeBord": "Coupe le lecteur d'écran : n'y toucher que si l'accessibilité n'est pas utilisée." },
+"com.nvidia.stats": { "nom": "Statistiques NVIDIA", "description": "Statistiques d'usage remontées à NVIDIA." },
+    "com.nvidia.feedback": { "nom": "Retour d'expérience NVIDIA", "description": "Envoi de rapports d'usage à NVIDIA." },
+    "com.nvidia.app.messaging": { "nom": "Notifications NVIDIA", "description": "Messages promotionnels de NVIDIA." },
+
+    "com.nvidia.factory": { "nom": "Mode usine", "description": "Mode de test d'usine." },
+    "com.nvidia.factorybundling": { "nom": "Contenus d'usine", "description": "Contenus ajoutés en sortie d'usine." },
+    "com.nvidia.factorysyschecker": { "nom": "Contrôle usine", "description": "Vérification système en fin de chaîne." },
+    "com.nvidia.shield.welcome": { "nom": "Tutoriel de bienvenue", "description": "Tutoriel du premier démarrage, déjà vu." },
+    "com.nvidia.shield.registration": { "nom": "Enregistrement du produit", "description": "Invitation à enregistrer la SHIELD." },
+    "android.autoinstalls.config.nvidia": { "nom": "Liste de préinstallation", "description": "Décide des applications installées automatiquement au premier démarrage.", "effetDeBord": "À réactiver avant une remise à zéro si vous voulez retrouver le jeu d'applications d'origine." },
+
+    "com.nvidia.diagtools": { "nom": "Outils de diagnostic", "description": "Outils de diagnostic du support NVIDIA." },
+    "com.nvidia.tegraprofiler.security": { "nom": "Profileur Tegra", "description": "Profilage développeur de la puce Tegra." },
+    "com.nvidia.developerwidget": { "nom": "Widget développeur", "description": "Widget de développement affiché à l'écran." },
+    "com.nvidia.inputviewer": { "nom": "Visualiseur d'entrées", "description": "Outil développeur montrant les entrées de manette." },
+    "com.nvidia.bluetooth.ps3usbpairer": { "nom": "Appairage manette PS3", "description": "Appaire une manette PlayStation 3 par USB.", "effetDeBord": "À conserver si vous appairez une manette PS3." },
+
+    "com.nvidia.tegrazone3": { "nom": "NVIDIA Games", "description": "Portail et boutique de jeux NVIDIA.", "effetDeBord": "GeForce NOW est une application distincte et continue de fonctionner." },
+    "com.nvidia.benchmarkblocker": { "nom": "Blocage des benchmarks", "description": "Bloque certaines applications de test de performance." },
+    "com.nvidia.nvgamecast": { "nom": "GameStream", "description": "Diffusion de jeux depuis un PC GeForce — service abandonné par NVIDIA en 2023.", "effetDeBord": "Met fin à GameStream depuis un PC ; Moonlight et Parsec ne sont pas touchés." },
+    "com.nvidia.shield.beta": { "nom": "Programme bêta", "description": "Inscription au programme bêta SHIELD." },
+    "com.nvidia.shieldbeta": { "nom": "Mises à jour bêta", "description": "Canal de micrologiciel bêta." },
+    "com.nvidia.shield.smbserver": { "nom": "Partage de fichiers SMB", "description": "Partage le stockage de la SHIELD sur le réseau local.", "effetDeBord": "La SHIELD n'apparaît plus comme partage réseau sur vos ordinateurs." },
+    "com.nvidia.shield.smbauth": { "nom": "Authentification SMB", "description": "Identifiants du partage SMB.", "effetDeBord": "À désactiver en même temps que le partage SMB." },
+    "com.nvidia.shield.nas": { "nom": "Stockage réseau", "description": "Monte des partages réseau sur la SHIELD.", "effetDeBord": "À conserver si la SHIELD monte un NAS." },
+
+    "com.amazon.amazonvideo.livingroom.nvidia": { "nom": "Prime Video", "description": "Prime Video préinstallé par NVIDIA.", "effetDeBord": "La touche Prime Video de la télécommande devient inopérante." },
+
+    "com.google.android.tvlauncher": { "nom": "Écran d'accueil Android TV", "description": "Le launcher Android TV d'avant Google TV. Le désactiver est la seule façon d'imposer un launcher tiers.", "effetDeBord": "Sans launcher tiers actif, l'appareil démarre sur un écran vide." },
+
+    "com.nvidia.ota": { "nom": "Mises à jour NVIDIA", "description": "Apporte les mises à jour du micrologiciel SHIELD.", "effetDeBord": "Plus aucune mise à jour système. NVIDIA suit ce matériel très longtemps — à peser." },
+    "com.nvidia.hotwordsetup": { "nom": "Détection mains libres", "description": "Configure l'activation vocale mains libres.", "effetDeBord": "Met fin au « Hey Google » mains libres ; le micro de la télécommande fonctionne toujours." }
   },
   "proteges": {
     "com.tcl.suspension": "Menu Entrées / Source de la télécommande.",
@@ -124,7 +157,28 @@
     "com.android.devicelockcontroller": "Paquet protégé : Android refuse sa désactivation (SecurityException).",
     "com.android.systemui": "Interface système.",
     "com.android.settings": "Paramètres Android.",
-    "moe.shizuku.privileged.api": "Fournit des privilèges dont d'autres outils dépendent."
+    "moe.shizuku.privileged.api": "Fournit des privilèges dont d'autres outils dépendent.",
+"com.nvidia.shieldtech.hooks": "Couche système fondamentale de la SHIELD.",
+    "com.nvidia.shieldtech.proxy": "Couche système fondamentale de la SHIELD.",
+    "com.nvidia.shieldtech.accessoryui": "Interface de la télécommande et des manettes.",
+    "com.nvidia.shieldservice": "Service principal de la SHIELD.",
+    "com.nvidia.NvCPLSvc": "Service d'affichage : résolution, HDR, colorimétrie.",
+    "com.nvidia.nvaudiosvc": "Service audio.",
+    "com.nvidia.avsync": "Synchronisation audio et vidéo.",
+    "com.nvidia.overscancomp": "Compensation de l'overscan.",
+    "com.nvidia.packagemanagerservice": "Service système de gestion des paquets.",
+    "com.nvidia.blakepairing": "Appairage de la télécommande et des manettes.",
+    "com.nvidia.ControllerMapper": "Mappage des manettes.",
+    "com.nvidia.bluetooth.ShieldBluetoothManager": "Bluetooth : la télécommande en dépend.",
+    "com.nvidia.shield.remote.server": "Serveur de télécommande.",
+    "com.nvidia.irtuner": "Récepteur infrarouge pour télécommandes universelles.",
+    "com.nvidia.remotelocator": "Retrouve une télécommande égarée en la faisant sonner.",
+    "com.nvidia.wifi.countrycode": "Conformité radio réglementaire.",
+    "com.android.networkstack.tethering.nvidia": "Pile réseau."
+  },
+  "launchers": {
+    "com.spocky.projengmenu": { "nom": "Projectivy Launcher", "description": "Gratuit, sans publicité, toujours maintenu. Personnalisation poussée et le plus large choix de fonds d'écran." },
+    "me.efesser.flauncher": { "nom": "FLauncher", "description": "Open source et volontairement sobre : une grille d'applications, rien de plus." }
   },
   "reglages": {
     "low_power_standby_enabled": {

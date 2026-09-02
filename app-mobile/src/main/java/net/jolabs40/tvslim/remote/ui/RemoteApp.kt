@@ -106,6 +106,7 @@ fun RemoteApp() {
                     onActualiser = modele::rafraichir,
                     onScan = modele::appliquerScan,
                     onEchecScan = modele::signalerEchecScan,
+                    onInstallerLauncher = modele::installerLauncher,
                 )
             }
             composable("paquets") {

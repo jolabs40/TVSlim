@@ -24,7 +24,7 @@
       "id": "constructeur",
       "nom": "Manufacturer apps",
       "description": "Gallery, media player, dashboard and other in-house apps that are rarely used.",
-      "categories": ["bloatware_tcl"]
+      "categories": ["bloatware_tcl", "bloatware_nvidia"]
     },
     {
       "id": "accueil",
@@ -42,6 +42,7 @@
     { "id": "airplay", "nom": "Factory AirPlay" },
     { "id": "bloatware_tcl", "nom": "Manufacturer apps" },
     { "id": "accueil", "nom": "Home screen" },
+    { "id": "bloatware_nvidia", "nom": "NVIDIA apps" },
     { "id": "expert", "nom": "Experts only" }
   ],
   "entrees": [
@@ -111,7 +112,39 @@
 
     { "paquet": "com.tcl.ttvs", "nom": "T-Cast and update services", "description": "Carries firmware updates and T-Cast, at the cost of embedded telemetry (BIService, IdentifierService, AwarenessService).", "categorie": "expert", "risque": "eleve", "tailleMo": 58, "effetDeBord": "No more over-the-air firmware updates.", "marque": "TCL" },
     { "paquet": "com.google.android.tts", "nom": "Google text-to-speech", "description": "The television's largest memory consumer.", "categorie": "expert", "risque": "eleve", "tailleMo": 244, "effetDeBord": "Cuts spoken feedback: only touch this if accessibility is unused.", "marque": "Google" },
-    { "paquet": "com.google.android.marvin.talkback", "nom": "TalkBack", "description": "Accessibility screen reader.", "categorie": "expert", "risque": "eleve", "effetDeBord": "Cuts the screen reader: only touch this if accessibility is unused.", "marque": "Google" }
+    { "paquet": "com.google.android.marvin.talkback", "nom": "TalkBack", "description": "Accessibility screen reader.", "categorie": "expert", "risque": "eleve", "effetDeBord": "Cuts the screen reader: only touch this if accessibility is unused.", "marque": "Google" },
+{ "paquet": "com.nvidia.stats", "nom": "NVIDIA statistics", "description": "Usage statistics reported to NVIDIA.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.feedback", "nom": "NVIDIA feedback", "description": "Sends usage reports and feedback to NVIDIA.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.app.messaging", "nom": "NVIDIA notifications", "description": "Promotional messages from NVIDIA.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "NVIDIA" },
+
+    { "paquet": "com.nvidia.factory", "nom": "Factory mode", "description": "Factory test mode.", "categorie": "demo_magasin", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.factorybundling", "nom": "Factory bundling", "description": "Bundled content applied at the factory.", "categorie": "demo_magasin", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.factorysyschecker", "nom": "Factory system check", "description": "Production line system check.", "categorie": "demo_magasin", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.shield.welcome", "nom": "Welcome tutorial", "description": "First-run SHIELD tutorial, already seen.", "categorie": "demo_magasin", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.shield.registration", "nom": "Product registration", "description": "SHIELD product registration prompt.", "categorie": "demo_magasin", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "android.autoinstalls.config.nvidia", "nom": "Preinstall list", "description": "Decides which apps are installed automatically on first boot.", "categorie": "demo_magasin", "risque": "faible", "effetDeBord": "Re-enable before a factory reset if you want the original app set back.", "marque": "NVIDIA" },
+
+    { "paquet": "com.nvidia.diagtools", "nom": "Diagnostic tools", "description": "NVIDIA support diagnostic tools.", "categorie": "inutile_tv", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.tegraprofiler.security", "nom": "Tegra profiler", "description": "Developer profiling of the Tegra chip.", "categorie": "inutile_tv", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.developerwidget", "nom": "Developer widget", "description": "On-screen developer widget.", "categorie": "inutile_tv", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.inputviewer", "nom": "Input viewer", "description": "Developer tool showing controller input.", "categorie": "inutile_tv", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.bluetooth.ps3usbpairer", "nom": "PS3 controller pairing", "description": "Pairs a PlayStation 3 controller over USB.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Keep it if you pair a PS3 controller.", "marque": "NVIDIA" },
+
+    { "paquet": "com.nvidia.tegrazone3", "nom": "NVIDIA Games", "description": "NVIDIA game portal and store front.", "categorie": "bloatware_nvidia", "risque": "faible", "effetDeBord": "GeForce NOW is a separate app and keeps working.", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.benchmarkblocker", "nom": "Benchmark blocker", "description": "Blocks certain benchmark applications.", "categorie": "bloatware_nvidia", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.nvgamecast", "nom": "GameStream", "description": "Game streaming from a GeForce PC — a service NVIDIA discontinued in 2023.", "categorie": "bloatware_nvidia", "risque": "faible", "effetDeBord": "Ends GameStream from a PC; Moonlight and Parsec are unaffected.", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.shield.beta", "nom": "Beta programme", "description": "Enrolment in the SHIELD beta programme.", "categorie": "bloatware_nvidia", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.shieldbeta", "nom": "Beta updates", "description": "Beta firmware channel.", "categorie": "bloatware_nvidia", "risque": "aucun", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.shield.smbserver", "nom": "SMB file sharing", "description": "Shares the SHIELD storage over the local network.", "categorie": "bloatware_nvidia", "risque": "moyen", "effetDeBord": "The SHIELD stops appearing as a network share on your computers.", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.shield.smbauth", "nom": "SMB authentication", "description": "Credentials for the SMB share.", "categorie": "bloatware_nvidia", "risque": "moyen", "effetDeBord": "Disable together with SMB file sharing.", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.shield.nas", "nom": "Network storage", "description": "Attaches network shares to the SHIELD.", "categorie": "bloatware_nvidia", "risque": "moyen", "effetDeBord": "Keep it if the SHIELD mounts a NAS.", "marque": "NVIDIA" },
+
+    { "paquet": "com.amazon.amazonvideo.livingroom.nvidia", "nom": "Prime Video", "description": "Prime Video preinstalled by NVIDIA.", "categorie": "streaming", "risque": "moyen", "effetDeBord": "The Prime Video key on the remote stops working.", "marque": "NVIDIA" },
+
+    { "paquet": "com.google.android.tvlauncher", "nom": "Android TV home screen", "description": "The Android TV launcher used before Google TV. Disabling it is the only way to impose a third-party launcher.", "categorie": "accueil", "risque": "eleve", "ordre": 2, "requiertLauncherTiers": true, "effetDeBord": "With no third-party launcher enabled, the device boots to an empty screen.", "marque": "Google" },
+
+    { "paquet": "com.nvidia.ota", "nom": "NVIDIA system updates", "description": "Delivers SHIELD firmware updates.", "categorie": "expert", "risque": "eleve", "effetDeBord": "No more system updates. NVIDIA supports this hardware for a long time — think twice.", "marque": "NVIDIA" },
+    { "paquet": "com.nvidia.hotwordsetup", "nom": "Hands-free hotword", "description": "Sets up hands-free voice activation.", "categorie": "expert", "risque": "moyen", "effetDeBord": "Ends hands-free « Hey Google »; the remote microphone still works.", "marque": "NVIDIA" }
   ],
   "proteges": [
     { "paquet": "com.tcl.suspension", "raison": "Inputs / Source menu on the remote." },
@@ -134,7 +167,28 @@
     { "paquet": "com.android.devicelockcontroller", "raison": "Protected package: Android refuses to disable it (SecurityException)." },
     { "paquet": "com.android.systemui", "raison": "System interface." },
     { "paquet": "com.android.settings", "raison": "Android settings." },
-    { "paquet": "moe.shizuku.privileged.api", "raison": "Provides privileges other tools depend on." }
+    { "paquet": "moe.shizuku.privileged.api", "raison": "Provides privileges other tools depend on." },
+{ "paquet": "com.nvidia.shieldtech.hooks", "raison": "Core SHIELD system layer." },
+    { "paquet": "com.nvidia.shieldtech.proxy", "raison": "Core SHIELD system layer." },
+    { "paquet": "com.nvidia.shieldtech.accessoryui", "raison": "Remote and controller interface." },
+    { "paquet": "com.nvidia.shieldservice", "raison": "Main SHIELD service." },
+    { "paquet": "com.nvidia.NvCPLSvc", "raison": "Display service: resolution, HDR, colour." },
+    { "paquet": "com.nvidia.nvaudiosvc", "raison": "Audio service." },
+    { "paquet": "com.nvidia.avsync", "raison": "Audio and video synchronisation." },
+    { "paquet": "com.nvidia.overscancomp", "raison": "Overscan compensation." },
+    { "paquet": "com.nvidia.packagemanagerservice", "raison": "System package service." },
+    { "paquet": "com.nvidia.blakepairing", "raison": "Remote and controller pairing." },
+    { "paquet": "com.nvidia.ControllerMapper", "raison": "Controller mapping." },
+    { "paquet": "com.nvidia.bluetooth.ShieldBluetoothManager", "raison": "Bluetooth: the remote depends on it." },
+    { "paquet": "com.nvidia.shield.remote.server", "raison": "Remote control server." },
+    { "paquet": "com.nvidia.irtuner", "raison": "Infrared receiver for universal remotes." },
+    { "paquet": "com.nvidia.remotelocator", "raison": "Finds a lost remote by making it beep." },
+    { "paquet": "com.nvidia.wifi.countrycode", "raison": "Radio regulatory compliance." },
+    { "paquet": "com.android.networkstack.tethering.nvidia", "raison": "Network stack." }
+  ],
+  "launchers": [
+    { "paquet": "com.spocky.projengmenu", "nom": "Projectivy Launcher", "description": "Free, ad-free, actively maintained. Rich customisation and the widest choice of wallpapers." },
+    { "paquet": "me.efesser.flauncher", "nom": "FLauncher", "description": "Open source and deliberately plain: a grid of applications, nothing else." }
   ],
   "reglages": [
     {

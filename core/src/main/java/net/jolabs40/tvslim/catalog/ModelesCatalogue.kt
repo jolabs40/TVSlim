@@ -66,6 +66,17 @@ data class ReglageSysteme(
     val reappliquerAuDemarrage: Boolean = false,
 )
 
+/**
+ * Un écran d'accueil de remplacement, proposé quand l'appareil n'en a aucun : sans lui, le
+ * garde-fou refuse de désactiver l'accueil d'usine — et il a raison.
+ */
+@Serializable
+data class LauncherRecommande(
+    val paquet: String,
+    val nom: String,
+    val description: String,
+)
+
 @Serializable
 data class Catalogue(
     val version: Int = 0,
@@ -75,6 +86,7 @@ data class Catalogue(
     val entrees: List<EntreePaquet> = emptyList(),
     val proteges: List<PaquetProtege> = emptyList(),
     val reglages: List<ReglageSysteme> = emptyList(),
+    val launchers: List<LauncherRecommande> = emptyList(),
 ) {
     private val protegesParPaquet: Map<String, PaquetProtege> by lazy {
         proteges.associateBy { it.paquet }
