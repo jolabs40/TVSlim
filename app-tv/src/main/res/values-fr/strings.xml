@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_subtitle">État du téléviseur et réglages permanents. Le débloat se pilote depuis le compagnon mobile.</string>
+
+    <string name="device_title">Téléviseur</string>
+    <string name="device_model">Modèle</string>
+    <string name="device_android">Android</string>
+    <string name="device_memory">Mémoire</string>
+    <string name="device_memory_value">%1$d / %2$d Mo libres</string>
+    <string name="device_packages_active">Paquets actifs</string>
+    <string name="device_packages_disabled">Paquets désactivés</string>
+    <string name="device_home">Écran d\'accueil</string>
+
+    <string name="companion_title">Compagnon mobile</string>
+    <string name="companion_desc">L\'activation et la désactivation des paquets se pilotent depuis l\'application compagnon, sur téléphone, qui parle à ce téléviseur en ADB. Cette application garde ce qu\'un téléphone ne peut pas faire : les réglages à réappliquer au démarrage.</string>
+    <string name="watchdog_on">Gardien de démarrage actif</string>
+    <string name="watchdog_off">Gardien de démarrage inactif</string>
+
+    <string name="action_settings">Réglages</string>
+    <string name="action_refresh">Actualiser</string>
+
+    <string name="settings_title">Réglages système</string>
+    <string name="settings_subtitle">Valeurs appliquées au téléviseur lui-même.</string>
+    <string name="settings_direct_write_title">Écriture directe</string>
+    <string name="settings_direct_write_yes">Accordée — les réglages survivent aux redémarrages</string>
+    <string name="settings_direct_write_no">Non accordée — rien ne peut être écrit</string>
+    <string name="settings_adb_grant_hint">adb shell pm grant net.jolabs40.tvslim android.permission.WRITE_SECURE_SETTINGS</string>
+    <string name="settings_watchdog_title">Gardien de démarrage</string>
+    <string name="settings_watchdog_desc">Réapplique à chaque démarrage les réglages que le téléviseur remet tout seul à leur valeur d\'usine.</string>
+    <string name="settings_current_value">actuel : %1$s</string>
+
+    <string name="common_working">Traitement en cours…</string>
+</resources>

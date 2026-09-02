@@ -1,9 +1,12 @@
 *.iml
 .gradle/
+.kotlin/
 /.idea/
 .DS_Store
-/build
-/app/build
+
+# Sorties de build de tous les modules (:core, :app-tv, :app-mobile…)
+**/build/
+
 /captures
 .externalNativeBuild
 .cxx

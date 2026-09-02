@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Thème minimal : Compose peint toute l'interface, ceci ne sert qu'au premier dessin. -->
+    <style name="Theme.TvSlimRemote" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+</resources>

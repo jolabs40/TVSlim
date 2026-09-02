@@ -26,4 +26,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "TVSlim"
-include(":app")
+include(":core")
+include(":app-tv")
+include(":app-mobile")

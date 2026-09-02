@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">TV Slim Remote</string>
+
+    <string name="tab_connection">Television</string>
+    <string name="tab_packages">Packages</string>
+    <string name="tab_log">Log</string>
+
+    <string name="connection_title">Connect to a television</string>
+    <string name="connection_subtitle">The phone talks to the television over ADB, on the local network. No computer involved.</string>
+    <string name="connection_host">Address</string>
+    <string name="connection_port">Port</string>
+    <string name="connection_connect">Connect</string>
+    <string name="connection_disconnect">Disconnect</string>
+    <string name="connection_help_title">Before connecting</string>
+    <string name="connection_help_1">1. On the television: Settings → About → tap the build number seven times, then enable network ADB debugging.</string>
+    <string name="connection_help_2">2. Tap Connect. The television asks to allow debugging from this device: accept with the remote, ticking “Always allow”.</string>
+    <string name="connection_help_3">3. That authorisation survives reboots — you will not be asked again.</string>
+
+    <string name="device_title">Television</string>
+    <string name="device_model">Model</string>
+    <string name="device_android">Android</string>
+    <string name="device_memory">Memory</string>
+    <string name="device_memory_value">%1$d / %2$d MB free</string>
+    <string name="device_packages_active">Enabled packages</string>
+    <string name="device_packages_disabled">Disabled packages</string>
+    <string name="device_home">Home screen</string>
+
+    <string name="packages_not_connected">Connect to a television to see its packages.</string>
+    <string name="packages_apply">Apply (%1$d)</string>
+    <string name="packages_clear">Clear</string>
+    <string name="packages_reactivate">Re-enable</string>
+    <string name="side_effect_prefix">Side effect: %1$s</string>
+    <string name="size_mb">%1$d MB</string>
+
+    <string name="journal_title">Log</string>
+    <string name="journal_subtitle">Every action, with the command that undoes it. One log per television.</string>
+    <string name="journal_empty">Nothing recorded yet for this television.</string>
+    <string name="journal_restore_all">Restore everything</string>
+    <string name="journal_export">Export as Markdown</string>
+    <string name="journal_success">OK</string>
+    <string name="journal_failure">failed: %1$s</string>
+
+    <string name="action_refresh">Refresh</string>
+</resources>

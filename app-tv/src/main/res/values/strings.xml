@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">TV Slim</string>
+    <string name="home_subtitle">Device state and lasting settings. Debloating is driven from the mobile companion.</string>
+
+    <string name="device_title">Device</string>
+    <string name="device_model">Model</string>
+    <string name="device_android">Android</string>
+    <string name="device_memory">Memory</string>
+    <string name="device_memory_value">%1$d / %2$d MB free</string>
+    <string name="device_packages_active">Enabled packages</string>
+    <string name="device_packages_disabled">Disabled packages</string>
+    <string name="device_home">Home screen</string>
+
+    <string name="companion_title">Mobile companion</string>
+    <string name="companion_desc">Packages are enabled and disabled from the companion app on your phone, which talks to this television over ADB. This app keeps what a phone cannot do: the settings that must be reapplied at boot.</string>
+    <string name="watchdog_on">Boot watchdog running</string>
+    <string name="watchdog_off">Boot watchdog off</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="action_refresh">Refresh</string>
+
+    <string name="settings_title">System settings</string>
+    <string name="settings_subtitle">Values applied to the television itself.</string>
+    <string name="settings_direct_write_title">Direct write</string>
+    <string name="settings_direct_write_yes">Granted — settings survive reboots</string>
+    <string name="settings_direct_write_no">Not granted — nothing can be written</string>
+    <string name="settings_adb_grant_hint">adb shell pm grant net.jolabs40.tvslim android.permission.WRITE_SECURE_SETTINGS</string>
+    <string name="settings_watchdog_title">Boot watchdog</string>
+    <string name="settings_watchdog_desc">Reapplies at every boot the settings the television resets on its own.</string>
+    <string name="settings_current_value">now: %1$s</string>
+
+    <string name="common_working">Working…</string>
+</resources>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_connection">Téléviseur</string>
+    <string name="tab_packages">Paquets</string>
+    <string name="tab_log">Journal</string>
+
+    <string name="connection_title">Se connecter à un téléviseur</string>
+    <string name="connection_subtitle">Le téléphone parle au téléviseur en ADB, sur le réseau local. Aucun ordinateur n\'intervient.</string>
+    <string name="connection_host">Adresse</string>
+    <string name="connection_port">Port</string>
+    <string name="connection_connect">Se connecter</string>
+    <string name="connection_disconnect">Se déconnecter</string>
+    <string name="connection_help_title">Avant de se connecter</string>
+    <string name="connection_help_1">1. Sur le téléviseur : Paramètres → À propos → sept appuis sur le numéro de build, puis activez le débogage ADB réseau.</string>
+    <string name="connection_help_2">2. Touchez Se connecter. Le téléviseur demande d\'autoriser le débogage depuis cet appareil : acceptez à la télécommande, en cochant « Toujours autoriser ».</string>
+    <string name="connection_help_3">3. Cette autorisation survit aux redémarrages : elle ne sera plus redemandée.</string>
+
+    <string name="device_title">Téléviseur</string>
+    <string name="device_model">Modèle</string>
+    <string name="device_android">Android</string>
+    <string name="device_memory">Mémoire</string>
+    <string name="device_memory_value">%1$d / %2$d Mo libres</string>
+    <string name="device_packages_active">Paquets actifs</string>
+    <string name="device_packages_disabled">Paquets désactivés</string>
+    <string name="device_home">Écran d\'accueil</string>
+
+    <string name="packages_not_connected">Connectez-vous à un téléviseur pour voir ses paquets.</string>
+    <string name="packages_apply">Appliquer (%1$d)</string>
+    <string name="packages_clear">Tout décocher</string>
+    <string name="packages_reactivate">Réactiver</string>
+    <string name="side_effect_prefix">Effet de bord : %1$s</string>
+    <string name="size_mb">%1$d Mo</string>
+
+    <string name="journal_title">Journal</string>
+    <string name="journal_subtitle">Chaque action, avec la commande qui l\'annule. Un journal par téléviseur.</string>
+    <string name="journal_empty">Rien de consigné pour ce téléviseur.</string>
+    <string name="journal_restore_all">Tout restaurer</string>
+    <string name="journal_export">Exporter en Markdown</string>
+    <string name="journal_success">OK</string>
+    <string name="journal_failure">échec : %1$s</string>
+
+    <string name="action_refresh">Actualiser</string>
+</resources>

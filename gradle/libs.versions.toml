@@ -13,7 +13,7 @@ datastore = "1.1.1"
 coroutines = "1.10.2"
 serialization = "1.7.3"
 shizuku = "13.1.5"
-zxing = "3.5.4"
+dadb = "2.0.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 testRunner = "1.6.2"
@@ -29,6 +29,7 @@ compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
 # Compose for TV (Material 3 pour TV)
@@ -58,8 +59,8 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 shizuku-api = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
 shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
 
-# Génération locale des QR codes (aucun appel réseau)
-zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+# Client ADB pur Kotlin : le compagnon parle au téléviseur sans binaire adb
+dadb = { group = "dev.mobile", name = "dadb", version.ref = "dadb" }
 
 # Tests
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -69,6 +70,7 @@ androidx-test-runner = { group = "androidx.test", name = "runner", version.ref =
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
