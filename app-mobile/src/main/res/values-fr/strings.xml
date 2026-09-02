@@ -46,7 +46,7 @@
     <string name="home_title">Écran d\'accueil et launcher</string>
     <string name="home_current">Actuellement : %1$s</string>
     <string name="home_none">Aucun launcher tiers sur cet appareil : l\'accueil d\'usine ne peut pas encore être remplacé.</string>
-    <string name="home_available">Launcher tiers disponible : %1$s</string>
+    <string name="home_available">Launcher tiers disponible :</string>
     <string name="home_install">Ouvrir sur le téléviseur</string>
     <string name="side_effect_prefix">Effet de bord : %1$s</string>
     <string name="size_mb">%1$d Mo</string>

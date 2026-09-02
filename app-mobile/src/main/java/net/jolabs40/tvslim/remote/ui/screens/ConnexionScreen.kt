@@ -319,22 +319,38 @@ private fun EcranAccueil(etat: EtatRemote, onInstaller: (String) -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = if (launchersTiers.isEmpty()) {
-                    stringResource(R.string.home_none)
-                } else {
-                    stringResource(
-                        R.string.home_available,
-                        launchersTiers.joinToString { it.paquet },
+            if (launchersTiers.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.home_none),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.home_available),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                launchersTiers.forEach { launcher ->
+                    // Le nom commercial d'abord quand le catalogue le connaît : « Projectivy
+                    // Launcher » parle, « com.spocky.projengmenu » beaucoup moins.
+                    val nomConnu = etat.catalogue.launchers
+                        .firstOrNull { it.paquet == launcher.paquet }
+                        ?.nom
+                    if (nomConnu != null) {
+                        Text(
+                            text = nomConnu,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                    Text(
+                        text = launcher.paquet,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (launchersTiers.isEmpty()) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
+                }
+            }
 
             if (launchersTiers.isEmpty()) {
                 etat.catalogue.launchers.forEach { launcher ->

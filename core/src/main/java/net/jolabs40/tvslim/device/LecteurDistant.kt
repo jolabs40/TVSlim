@@ -57,6 +57,13 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         )
     }
 
+    /** Une seule question, très courte : ce paquet est-il installé ? Sert à guetter une pose. */
+    suspend fun estInstalle(paquet: String): Boolean {
+        val sortie = executeur.executer("pm list packages $paquet")
+        return sortie.reussi &&
+            sortie.sortie.lineSequence().any { it.trim() == "package:$paquet" }
+    }
+
     private fun decouper(sortie: String): Map<String, List<String>> {
         val sections = mutableMapOf<String, MutableList<String>>()
         var courante: MutableList<String>? = null

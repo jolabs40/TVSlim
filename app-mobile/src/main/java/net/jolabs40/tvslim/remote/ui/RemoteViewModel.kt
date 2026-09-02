@@ -7,6 +7,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -115,6 +118,9 @@ class RemoteViewModel @Inject constructor(
     /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
     private var suiviJournal: Job? = null
 
+    /** Guette l'arrivée d'un launcher que l'on vient d'envoyer installer. */
+    private var guet: Job? = null
+
     init {
         viewModelScope.launch {
             client.connexion.collect { connexion -> _etat.update { it.copy(connexion = connexion) } }
@@ -189,6 +195,8 @@ class RemoteViewModel @Inject constructor(
 
     fun deconnecter() {
         client.deconnecter()
+        guet?.cancel()
+        guet = null
         suiviJournal?.cancel()
         suiviJournal = null
         journal = null
@@ -353,14 +361,34 @@ class RemoteViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val resultat = moteurActif.ouvrirFicheBoutique(paquet)
-            afficher(
-                if (resultat.reussi) {
-                    "Fiche ouverte sur le téléviseur : validez l'installation à la télécommande, " +
-                        "puis actualisez."
-                } else {
-                    "Impossible d'ouvrir la boutique : ${resultat.message}"
-                },
-            )
+            if (!resultat.reussi) {
+                afficher("Impossible d'ouvrir la boutique : ${resultat.message}")
+                return@launch
+            }
+            afficher("Fiche ouverte sur le téléviseur : validez l'installation à la télécommande.")
+            guetterInstallation(paquet)
+        }
+    }
+
+    /**
+     * Guette l'arrivée du launcher après avoir ouvert sa fiche, plutôt que d'exiger un
+     * « Actualiser » manuel : la personne est devant son téléviseur, pas devant le téléphone.
+     * Une question courte toutes les cinq secondes, abandonnée au bout de trois minutes.
+     */
+    private fun guetterInstallation(paquet: String) {
+        guet?.cancel()
+        guet = viewModelScope.launch {
+            withTimeoutOrNull(DUREE_GUET_MS) {
+                while (isActive) {
+                    delay(INTERVALLE_GUET_MS)
+                    if (!_etat.value.connecte) return@withTimeoutOrNull
+                    if (lecteur.estInstalle(paquet)) {
+                        rafraichir()
+                        afficher("Installé. L'accueil d'usine peut maintenant être remplacé.")
+                        return@withTimeoutOrNull
+                    }
+                }
+            }
         }
     }
 
@@ -414,5 +442,7 @@ class RemoteViewModel @Inject constructor(
     private companion object {
         const val MAX_ECHECS = 4
         const val SCHEMA = "tvslim://"
+        const val DUREE_GUET_MS = 3 * 60 * 1000L
+        const val INTERVALLE_GUET_MS = 5_000L
     }
 }

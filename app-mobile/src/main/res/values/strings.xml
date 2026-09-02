@@ -48,7 +48,7 @@
     <string name="home_title">Home screen and launcher</string>
     <string name="home_current">Currently: %1$s</string>
     <string name="home_none">No third-party launcher on this device: the factory home screen cannot be replaced yet.</string>
-    <string name="home_available">Third-party launcher available: %1$s</string>
+    <string name="home_available">Third-party launcher available:</string>
     <string name="home_install">Open on the television</string>
     <string name="side_effect_prefix">Side effect: %1$s</string>
     <string name="size_mb">%1$d MB</string>
