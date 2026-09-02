@@ -123,9 +123,16 @@ fun LigneFocusable(
  * il reste.
  */
 @Composable
-fun CompteurListe(etat: LazyListState, total: Int, modifier: Modifier = Modifier) {
+fun CompteurListe(
+    etat: LazyListState,
+    total: Int,
+    modifier: Modifier = Modifier,
+    indexCourant: Int? = null,
+) {
     if (total <= 0) return
-    val courant = (etat.firstVisibleItemIndex + 1).coerceAtMost(total)
+    // L'élément focalisé prime sur le premier élément visible : c'est lui qu'on regarde.
+    val position = indexCourant?.takeIf { it >= 0 } ?: etat.firstVisibleItemIndex
+    val courant = (position + 1).coerceAtMost(total)
     Text(
         text = "$courant / $total",
         modifier = modifier,
@@ -151,7 +158,10 @@ fun BarreDefilement(etat: LazyListState, modifier: Modifier = Modifier) {
     BoxWithConstraints(
         modifier = modifier
             .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp)),
+            .background(
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                RoundedCornerShape(2.dp),
+            ),
     ) {
         val hauteurCurseur = maxHeight * proportion
         Box(
@@ -159,7 +169,11 @@ fun BarreDefilement(etat: LazyListState, modifier: Modifier = Modifier) {
                 .offset(y = (maxHeight - hauteurCurseur) * avancement.coerceIn(0f, 1f))
                 .height(hauteurCurseur)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(3.dp)),
+                // Un repère, pas un élément d'interface : il ne doit pas attirer l'œil.
+                .background(
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    RoundedCornerShape(2.dp),
+                ),
         )
     }
 }

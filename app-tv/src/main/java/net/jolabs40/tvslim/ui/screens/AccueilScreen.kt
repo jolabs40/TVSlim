@@ -31,6 +31,7 @@ fun AccueilScreen(
     etat: EtatUi,
     onReglages: () -> Unit,
     onAppairage: () -> Unit,
+    onPaquets: () -> Unit,
     onActualiser: () -> Unit,
     onFermerMessage: () -> Unit,
 ) {
@@ -119,6 +120,7 @@ fun AccueilScreen(
             Button(onClick = onAppairage, modifier = Modifier.focusRequester(premierBouton)) {
                 Text(stringResource(R.string.action_pairing))
             }
+            Button(onClick = onPaquets) { Text(stringResource(R.string.action_packages)) }
             Button(onClick = onReglages) { Text(stringResource(R.string.action_settings)) }
             Button(onClick = onActualiser) { Text(stringResource(R.string.action_refresh)) }
         }

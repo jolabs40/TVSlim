@@ -16,12 +16,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.tv.material3.MaterialTheme
 import net.jolabs40.tvslim.ui.screens.AccueilScreen
 import net.jolabs40.tvslim.ui.screens.ConnexionTvScreen
+import net.jolabs40.tvslim.ui.screens.PaquetsScreen
 import net.jolabs40.tvslim.ui.screens.ReglagesScreen
 
 object Routes {
     const val ACCUEIL = "accueil"
     const val REGLAGES = "reglages"
     const val APPAIRAGE = "appairage"
+    const val PAQUETS = "paquets"
 }
 
 @Composable
@@ -44,9 +46,13 @@ fun TvSlimApp() {
                     etat = etat,
                     onReglages = { navigation.navigate(Routes.REGLAGES) },
                     onAppairage = { navigation.navigate(Routes.APPAIRAGE) },
+                    onPaquets = { navigation.navigate(Routes.PAQUETS) },
                     onActualiser = modele::rafraichir,
                     onFermerMessage = modele::effacerMessage,
                 )
+            }
+            composable(Routes.PAQUETS) {
+                PaquetsScreen(etat = etat)
             }
             composable(Routes.APPAIRAGE) {
                 ConnexionTvScreen(etat = etat, onActualiser = modele::rafraichir)

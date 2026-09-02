@@ -16,7 +16,25 @@
     <string name="watchdog_on">Gardien de démarrage actif</string>
     <string name="watchdog_off">Gardien de démarrage inactif</string>
 
+    <string name="action_packages">Paquets</string>
     <string name="action_settings">Réglages</string>
+
+    <string name="packages_title">Paquets</string>
+    <string name="packages_subtitle">Ce que le catalogue connaît, et où en est ce téléviseur. Lecture seule : les changements se font depuis le compagnon.</string>
+    <string name="packages_counts">%1$d connus ici · %2$d désactivés</string>
+    <string name="packages_browse_hint">Parcourez la liste pour voir le détail.</string>
+    <string name="packages_state">État</string>
+    <string name="packages_risk">Risque</string>
+    <string name="packages_size">Taille</string>
+    <string name="packages_origin">Origine</string>
+    <string name="state_active">actif</string>
+    <string name="state_disabled">désactivé</string>
+    <string name="side_effect_prefix">Effet de bord : %1$s</string>
+    <string name="size_mb">%1$d Mo</string>
+    <string name="risk_none">aucun</string>
+    <string name="risk_low">faible</string>
+    <string name="risk_medium">moyen</string>
+    <string name="risk_high">élevé</string>
     <string name="action_refresh">Actualiser</string>
 
     <string name="settings_title">Réglages système</string>
