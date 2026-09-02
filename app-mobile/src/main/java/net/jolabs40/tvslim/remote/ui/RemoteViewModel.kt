@@ -1,6 +1,7 @@
 package net.jolabs40.tvslim.remote.ui
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -107,6 +108,37 @@ class RemoteViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Applique le contenu d'un QR code affiché par le téléviseur, puis se connecte dans la
+     * foulée. Trois formes acceptées : l'URI `tvslim://connect?host=…&port=…` que produit
+     * l'application du téléviseur, une adresse `hôte:port`, ou une adresse seule.
+     */
+    fun appliquerScan(valeur: String) {
+        val brut = valeur.trim()
+        val (hote, port) = when {
+            brut.startsWith(SCHEMA) -> {
+                val uri = Uri.parse(brut)
+                uri.getQueryParameter("host").orEmpty() to
+                    (uri.getQueryParameter("port")?.toIntOrNull() ?: PORT_ADB_PAR_DEFAUT)
+            }
+
+            brut.count { it == ':' } == 1 ->
+                brut.substringBefore(':') to
+                    (brut.substringAfter(':').toIntOrNull() ?: PORT_ADB_PAR_DEFAUT)
+
+            else -> brut to PORT_ADB_PAR_DEFAUT
+        }
+        if (hote.isBlank() || hote.any { it.isWhitespace() }) {
+            afficher("Code non reconnu : $brut")
+            return
+        }
+        _etat.update { it.copy(hoteSaisi = hote, portSaisi = port.toString()) }
+        connecter()
+    }
+
+    fun signalerEchecScan(motif: String) =
+        afficher(if (motif.isBlank()) "Lecture annulée." else motif)
 
     fun deconnecter() {
         client.deconnecter()
@@ -265,5 +297,6 @@ class RemoteViewModel @Inject constructor(
 
     private companion object {
         const val MAX_ECHECS = 4
+        const val SCHEMA = "tvslim://"
     }
 }

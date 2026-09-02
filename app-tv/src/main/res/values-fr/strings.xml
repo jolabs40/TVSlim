@@ -30,4 +30,13 @@
     <string name="settings_current_value">actuel : %1$s</string>
 
     <string name="common_working">Traitement en cours…</string>
+    <string name="action_pairing">Appairer le téléphone</string>
+
+    <string name="pairing_title">Appairer le compagnon</string>
+    <string name="pairing_subtitle">Scannez ce code depuis TV Slim Remote, sur votre téléphone. Il ne contient que l\'adresse de ce téléviseur.</string>
+    <string name="pairing_address_title">Adresse de ce téléviseur</string>
+    <string name="pairing_no_address">Aucune adresse réseau</string>
+    <string name="pairing_unavailable">Rien à scanner pour l\'instant.</string>
+    <string name="pairing_steps">Dans le compagnon, onglet Téléviseur : Scanner. Le téléviseur demandera ensuite d\'autoriser le débogage — acceptez à la télécommande, en cochant « Toujours autoriser ». Cette autorisation survit aux redémarrages.</string>
+    <string name="pairing_enable_adb">Le débogage ADB réseau est désactivé. Paramètres → À propos → sept appuis sur le numéro de build, puis activez le débogage réseau.</string>
 </resources>

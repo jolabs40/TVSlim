@@ -42,4 +42,5 @@
     <string name="journal_failure">failed: %1$s</string>
 
     <string name="action_refresh">Refresh</string>
+    <string name="connection_scan">Scan the TV code</string>
 </resources>

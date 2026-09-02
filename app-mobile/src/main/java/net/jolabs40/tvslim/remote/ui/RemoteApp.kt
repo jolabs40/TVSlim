@@ -95,6 +95,8 @@ fun RemoteApp() {
                     onConnecter = modele::connecter,
                     onDeconnecter = modele::deconnecter,
                     onActualiser = modele::rafraichir,
+                    onScan = modele::appliquerScan,
+                    onEchecScan = modele::signalerEchecScan,
                 )
             }
             composable("paquets") {

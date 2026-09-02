@@ -40,4 +40,5 @@
     <string name="journal_failure">échec : %1$s</string>
 
     <string name="action_refresh">Actualiser</string>
+    <string name="connection_scan">Scanner le code de la TV</string>
 </resources>

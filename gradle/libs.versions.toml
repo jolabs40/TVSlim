@@ -14,6 +14,8 @@ coroutines = "1.10.2"
 serialization = "1.7.3"
 shizuku = "13.1.5"
 dadb = "2.0.0"
+zxing = "3.5.4"
+codeScanner = "16.1.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 testRunner = "1.6.2"
@@ -58,6 +60,13 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 # Shizuku : exécution privilégiée sans root (UID shell)
 shizuku-api = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
 shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
+
+# Génération locale des QR codes côté téléviseur (aucun appel réseau)
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+
+# Lecture du QR côté téléphone : interface fournie par Google Play services,
+# donc aucune permission caméra à demander.
+code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "codeScanner" }
 
 # Client ADB pur Kotlin : le compagnon parle au téléviseur sans binaire adb
 dadb = { group = "dev.mobile", name = "dadb", version.ref = "dadb" }

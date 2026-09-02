@@ -30,6 +30,7 @@ import net.jolabs40.tvslim.ui.components.LigneMesure
 fun AccueilScreen(
     etat: EtatUi,
     onReglages: () -> Unit,
+    onAppairage: () -> Unit,
     onActualiser: () -> Unit,
     onFermerMessage: () -> Unit,
 ) {
@@ -115,9 +116,10 @@ fun AccueilScreen(
         Spacer(Modifier.height(20.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = onReglages, modifier = Modifier.focusRequester(premierBouton)) {
-                Text(stringResource(R.string.action_settings))
+            Button(onClick = onAppairage, modifier = Modifier.focusRequester(premierBouton)) {
+                Text(stringResource(R.string.action_pairing))
             }
+            Button(onClick = onReglages) { Text(stringResource(R.string.action_settings)) }
             Button(onClick = onActualiser) { Text(stringResource(R.string.action_refresh)) }
         }
 

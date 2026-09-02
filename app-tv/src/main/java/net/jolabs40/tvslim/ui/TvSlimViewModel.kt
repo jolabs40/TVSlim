@@ -14,6 +14,8 @@ import net.jolabs40.tvslim.catalog.CatalogueRepository
 import net.jolabs40.tvslim.catalog.ReglageSysteme
 import net.jolabs40.tvslim.device.AppareilRepository
 import net.jolabs40.tvslim.device.InfosAppareil
+import net.jolabs40.tvslim.reseau.InfosReseau
+import net.jolabs40.tvslim.reseau.PointDeContact
 import net.jolabs40.tvslim.system.PreferencesRepository
 import net.jolabs40.tvslim.system.ReglagesSysteme
 import javax.inject.Inject
@@ -30,6 +32,7 @@ data class EtatUi(
     val ecritureDirecte: Boolean = false,
     val gardienActif: Boolean = false,
     val infos: InfosAppareil = InfosAppareil.VIDE,
+    val contact: PointDeContact = PointDeContact(),
     val reglages: List<LigneReglage> = emptyList(),
     val message: String? = null,
 )
@@ -44,6 +47,7 @@ class TvSlimViewModel @Inject constructor(
     private val catalogueRepo: CatalogueRepository,
     private val appareil: AppareilRepository,
     private val reglagesSysteme: ReglagesSysteme,
+    private val infosReseau: InfosReseau,
     private val preferences: PreferencesRepository,
 ) : ViewModel() {
 
@@ -71,10 +75,12 @@ class TvSlimViewModel @Inject constructor(
             val reglages = withContext(Dispatchers.IO) {
                 catalogue.reglages.map { LigneReglage(it, reglagesSysteme.lire(it)) }
             }
+            val contact = withContext(Dispatchers.IO) { infosReseau.pointDeContact() }
             _etat.update {
                 it.copy(
                     chargement = false,
                     infos = infos,
+                    contact = contact,
                     reglages = reglages,
                     ecritureDirecte = reglagesSysteme.ecritureDirectePossible(),
                 )

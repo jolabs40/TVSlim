@@ -16,6 +16,9 @@
     <!-- Gardien de démarrage : réapplique les réglages que le téléviseur remet à zéro au boot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Lecture de l'adresse IP locale, pour l'afficher en QR code à destination du compagnon. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <!--
         Écriture des réglages système. Non accordable depuis l'interface : elle doit l'être une
         fois par ADB, ce qui lui permet ensuite de survivre aux redémarrages — condition sine

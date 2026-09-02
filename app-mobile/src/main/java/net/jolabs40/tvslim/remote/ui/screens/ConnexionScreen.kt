@@ -21,8 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.adb.EtatConnexion
 import net.jolabs40.tvslim.remote.ui.EtatRemote
@@ -36,7 +40,10 @@ fun ConnexionScreen(
     onConnecter: () -> Unit,
     onDeconnecter: () -> Unit,
     onActualiser: () -> Unit,
+    onScan: (String) -> Unit,
+    onEchecScan: (String) -> Unit,
 ) {
+    val contexte = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -89,6 +96,25 @@ fun ConnexionScreen(
                     enabled = etat.connexion.etat != EtatConnexion.CONNEXION,
                 ) {
                     Text(stringResource(R.string.connection_connect))
+                }
+                // Le scanner est fourni par Google Play services : pas de permission caméra à
+                // demander, et rien à afficher tant que l'utilisateur ne l'ouvre pas.
+                OutlinedButton(
+                    onClick = {
+                        val options = GmsBarcodeScannerOptions.Builder()
+                            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                            .build()
+                        GmsBarcodeScanning.getClient(contexte, options)
+                            .startScan()
+                            .addOnSuccessListener { code ->
+                                code.rawValue?.let(onScan)
+                            }
+                            .addOnFailureListener { erreur ->
+                                onEchecScan(erreur.message.orEmpty())
+                            }
+                    },
+                ) {
+                    Text(stringResource(R.string.connection_scan))
                 }
             }
             if (etat.connexion.etat == EtatConnexion.CONNEXION || etat.chargement) {
