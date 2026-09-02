@@ -28,6 +28,20 @@
     <string name="packages_apply">Appliquer (%1$d)</string>
     <string name="packages_clear">Tout décocher</string>
     <string name="packages_reactivate">Réactiver</string>
+    <string name="packages_search">Rechercher un paquet</string>
+    <string name="packages_none_matching">Aucun résultat pour cette recherche.</string>
+    <string name="packages_progress">%1$d sur %2$d</string>
+    <string name="filter_all">Tous</string>
+    <string name="filter_enabled">Actifs (%1$d)</string>
+    <string name="filter_disabled">Désactivés (%1$d)</string>
+
+    <string name="confirm_apply_title">Désactiver ces paquets ?</string>
+    <string name="confirm_apply_body">%1$d paquet(s) vont être désactivés. Rien n\'est désinstallé : chacun se réactive depuis le journal.</string>
+    <string name="confirm_restore_title">Tout restaurer ?</string>
+    <string name="confirm_restore_body">%1$d paquet(s) désactivés depuis ce téléphone vont être réactivés.</string>
+    <string name="confirm_go">Continuer</string>
+    <string name="confirm_cancel">Annuler</string>
+    <string name="journal_undo_one">Annuler celle-ci</string>
     <string name="side_effect_prefix">Effet de bord : %1$s</string>
     <string name="size_mb">%1$d Mo</string>
 

@@ -30,6 +30,20 @@
     <string name="packages_apply">Apply (%1$d)</string>
     <string name="packages_clear">Clear</string>
     <string name="packages_reactivate">Re-enable</string>
+    <string name="packages_search">Search a package</string>
+    <string name="packages_none_matching">Nothing matches this search.</string>
+    <string name="packages_progress">%1$d of %2$d</string>
+    <string name="filter_all">All</string>
+    <string name="filter_enabled">Enabled (%1$d)</string>
+    <string name="filter_disabled">Disabled (%1$d)</string>
+
+    <string name="confirm_apply_title">Disable these packages?</string>
+    <string name="confirm_apply_body">%1$d package(s) will be disabled. Nothing is uninstalled: each one can be re-enabled from the log.</string>
+    <string name="confirm_restore_title">Restore everything?</string>
+    <string name="confirm_restore_body">%1$d package(s) disabled from this phone will be re-enabled.</string>
+    <string name="confirm_go">Go ahead</string>
+    <string name="confirm_cancel">Cancel</string>
+    <string name="journal_undo_one">Undo this one</string>
     <string name="side_effect_prefix">Side effect: %1$s</string>
     <string name="size_mb">%1$d MB</string>
 

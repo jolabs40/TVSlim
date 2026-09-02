@@ -12,11 +12,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.journal.ActionJournal
+import net.jolabs40.tvslim.journal.TypeAction
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.EtatRemote
 import java.text.SimpleDateFormat
@@ -28,6 +30,7 @@ fun JournalScreen(
     etat: EtatRemote,
     onToutRestaurer: () -> Unit,
     onExporter: () -> Unit,
+    onAnnulerAction: (ActionJournal) -> Unit,
 ) {
     val format = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
 
@@ -70,7 +73,14 @@ fun JournalScreen(
 
         LazyColumn {
             items(etat.journal.reversed()) { action ->
-                VueAction(action = action, horodatage = format.format(Date(action.horodatage)))
+                VueAction(
+                    action = action,
+                    horodatage = format.format(Date(action.horodatage)),
+                    onAnnuler = { onAnnulerAction(action) },
+                    annulable = etat.connecte &&
+                        action.reussi &&
+                        action.type == TypeAction.DESACTIVATION,
+                )
                 HorizontalDivider()
             }
         }
@@ -78,7 +88,12 @@ fun JournalScreen(
 }
 
 @Composable
-private fun VueAction(action: ActionJournal, horodatage: String) {
+private fun VueAction(
+    action: ActionJournal,
+    horodatage: String,
+    annulable: Boolean,
+    onAnnuler: () -> Unit,
+) {
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -108,5 +123,11 @@ private fun VueAction(action: ActionJournal, horodatage: String) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // Chaque ligne porte déjà sa commande d'annulation : autant pouvoir la jouer seule.
+        if (annulable) {
+            TextButton(onClick = onAnnuler, modifier = Modifier.padding(top = 4.dp)) {
+                Text(stringResource(R.string.journal_undo_one))
+            }
+        }
     }
 }

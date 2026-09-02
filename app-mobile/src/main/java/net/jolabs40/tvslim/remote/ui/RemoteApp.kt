@@ -29,6 +29,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import net.jolabs40.tvslim.remote.R
+import net.jolabs40.tvslim.remote.ui.screens.ConfirmationDialogue
 import net.jolabs40.tvslim.remote.ui.screens.ConnexionScreen
 import net.jolabs40.tvslim.remote.ui.screens.JournalScreen
 import net.jolabs40.tvslim.remote.ui.screens.PaquetsScreen
@@ -56,6 +57,14 @@ fun RemoteApp() {
             messages.showSnackbar(texte)
             modele.effacerMessage()
         }
+    }
+
+    etat.confirmation?.let { demande ->
+        ConfirmationDialogue(
+            confirmation = demande,
+            onConfirmer = modele::confirmer,
+            onAnnuler = modele::annulerConfirmation,
+        )
     }
 
     Scaffold(
@@ -105,15 +114,18 @@ fun RemoteApp() {
                     onBasculer = modele::basculerSelection,
                     onProfil = modele::selectionnerProfil,
                     onToutDecocher = modele::toutDeselectionner,
-                    onAppliquer = modele::appliquerSelection,
+                    onAppliquer = modele::demanderApplication,
                     onReactiver = { modele.reactiver(listOf(it)) },
+                    onRecherche = modele::majRecherche,
+                    onFiltre = modele::majFiltre,
                 )
             }
             composable("journal") {
                 JournalScreen(
                     etat = etat,
-                    onToutRestaurer = modele::toutRestaurer,
+                    onToutRestaurer = modele::demanderRestauration,
                     onExporter = modele::exporterJournal,
+                    onAnnulerAction = modele::annulerAction,
                 )
             }
         }

@@ -17,8 +17,11 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,6 +35,7 @@ import net.jolabs40.tvslim.catalog.Risque
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.EtatRemote
+import net.jolabs40.tvslim.remote.ui.Filtre
 import net.jolabs40.tvslim.remote.ui.LignePaquet
 import net.jolabs40.tvslim.remote.ui.theme.CouleursRisque
 
@@ -44,6 +48,8 @@ fun PaquetsScreen(
     onToutDecocher: () -> Unit,
     onAppliquer: () -> Unit,
     onReactiver: (String) -> Unit,
+    onRecherche: (String) -> Unit,
+    onFiltre: (Filtre) -> Unit,
 ) {
     if (!etat.connecte) {
         Box(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
@@ -56,9 +62,66 @@ fun PaquetsScreen(
         return
     }
 
-    val parCategorie = etat.presentes.groupBy { it.entree.categorie }
+    val affichees = etat.affichees
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        etat.progression?.let { progression ->
+            LinearProgressIndicator(
+                progress = {
+                    if (progression.total == 0) 0f else progression.fait.toFloat() / progression.total
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                text = stringResource(
+                    R.string.packages_progress,
+                    progression.fait,
+                    progression.total,
+                ),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        OutlinedTextField(
+            value = etat.recherche,
+            onValueChange = onRecherche,
+            label = { Text(stringResource(R.string.packages_search)) },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        )
+
+        LazyRow(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item {
+                FilterChip(
+                    selected = etat.filtre == Filtre.TOUS,
+                    onClick = { onFiltre(Filtre.TOUS) },
+                    label = { Text(stringResource(R.string.filter_all)) },
+                )
+            }
+            item {
+                FilterChip(
+                    selected = etat.filtre == Filtre.ACTIFS,
+                    onClick = { onFiltre(Filtre.ACTIFS) },
+                    label = { Text(stringResource(R.string.filter_enabled, etat.nombreActifs)) },
+                )
+            }
+            item {
+                FilterChip(
+                    selected = etat.filtre == Filtre.DESACTIVES,
+                    onClick = { onFiltre(Filtre.DESACTIVES) },
+                    label = {
+                        Text(stringResource(R.string.filter_disabled, etat.nombreDesactives))
+                    },
+                )
+            }
+        }
+
         LazyRow(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -85,28 +148,28 @@ fun PaquetsScreen(
 
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
+        if (affichees.isEmpty()) {
+            Text(
+                text = stringResource(R.string.packages_none_matching),
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return@Column
+        }
+
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            parCategorie.forEach { (categorie, lignes) ->
-                item(key = "cat-$categorie") {
-                    Text(
-                        text = etat.catalogue.nomCategorie(categorie),
-                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                items(lignes, key = { it.entree.paquet }) { ligne ->
-                    VuePaquet(
-                        ligne = ligne,
-                        onClick = {
-                            if (ligne.etat == EtatPaquet.DESACTIVE) {
-                                onReactiver(ligne.entree.paquet)
-                            } else {
-                                onBasculer(ligne.entree.paquet)
-                            }
-                        },
-                    )
-                }
+            items(affichees, key = { it.entree.paquet }) { ligne ->
+                VuePaquet(
+                    ligne = ligne,
+                    onClick = {
+                        if (ligne.etat == EtatPaquet.DESACTIVE) {
+                            onReactiver(ligne.entree.paquet)
+                        } else {
+                            onBasculer(ligne.entree.paquet)
+                        }
+                    },
+                )
             }
         }
     }

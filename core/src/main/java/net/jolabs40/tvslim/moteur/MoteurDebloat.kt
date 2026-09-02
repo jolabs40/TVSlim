@@ -37,27 +37,30 @@ class MoteurDebloat(
         catalogue: Catalogue,
         etats: Map<String, EtatPaquet>,
         launchersDisponibles: Boolean,
+        surProgression: (fait: Int, total: Int) -> Unit = { _, _ -> },
     ): List<ResultatAction> {
         val resultats = mutableListOf<ResultatAction>()
         val aJournaliser = mutableListOf<ActionJournal>()
 
-        entrees.sortedBy { it.ordre }.forEach { entree ->
+        val aTraiter = entrees.sortedBy { it.ordre }
+        aTraiter.forEachIndexed { rang, entree ->
+            surProgression(rang, aTraiter.size)
             val refus = motifDeRefus(entree, catalogue, launchersDisponibles)
             if (refus != null) {
                 resultats += ResultatAction(entree.paquet, entree.nom, false, refus)
-                return@forEach
+                return@forEachIndexed
             }
             when (etats[entree.paquet] ?: EtatPaquet.ABSENT) {
                 EtatPaquet.ABSENT -> {
                     resultats += ResultatAction(
                         entree.paquet, entree.nom, false, "Paquet absent de ce téléviseur.",
                     )
-                    return@forEach
+                    return@forEachIndexed
                 }
 
                 EtatPaquet.DESACTIVE -> {
                     resultats += ResultatAction(entree.paquet, entree.nom, true, "Déjà désactivé.")
-                    return@forEach
+                    return@forEachIndexed
                 }
 
                 EtatPaquet.ACTIF -> Unit
@@ -79,15 +82,20 @@ class MoteurDebloat(
             )
         }
 
+        surProgression(aTraiter.size, aTraiter.size)
         journal.ajouter(aJournaliser)
         return resultats
     }
 
-    suspend fun reactiver(paquets: List<String>): List<ResultatAction> {
+    suspend fun reactiver(
+        paquets: List<String>,
+        surProgression: (fait: Int, total: Int) -> Unit = { _, _ -> },
+    ): List<ResultatAction> {
         val resultats = mutableListOf<ResultatAction>()
         val aJournaliser = mutableListOf<ActionJournal>()
 
-        paquets.forEach { paquet ->
+        paquets.forEachIndexed { rang, paquet ->
+            surProgression(rang, paquets.size)
             val sortie = executeur.executer("pm enable $paquet")
             val reussi = sortie.reussi && sortie.sortie.contains("enabled")
             val message = if (reussi) "" else sortie.sortie.ifBlank { "Échec inexpliqué." }
@@ -104,6 +112,7 @@ class MoteurDebloat(
             )
         }
 
+        surProgression(paquets.size, paquets.size)
         journal.ajouter(aJournaliser)
         return resultats
     }

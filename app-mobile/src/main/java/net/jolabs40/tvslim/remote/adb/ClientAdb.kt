@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import net.jolabs40.tvslim.shell.ExecuteurCommande
 import net.jolabs40.tvslim.shell.ResultatShell
 import java.io.File
@@ -71,7 +72,9 @@ class ClientAdb @Inject constructor(
                 fermerSession()
                 _connexion.value = ConnexionUi(EtatConnexion.CONNEXION, hote, port)
                 try {
-                    val ouverte = Dadb.create(hote, port, cles())
+                    val ouverte = withTimeoutOrNull(DELAI_CONNEXION_MS) {
+                        Dadb.create(hote, port, cles())
+                    } ?: throw java.net.SocketTimeoutException(MESSAGE_ATTENTE_AUTORISATION)
                     session = ouverte
                     _connexion.value = ConnexionUi(EtatConnexion.CONNECTE, hote, port)
                     true
@@ -97,25 +100,45 @@ class ClientAdb @Inject constructor(
         verrou.withLock {
             val active = session
                 ?: return@withLock ResultatShell.indisponible("Aucun téléviseur connecté.")
-            try {
-                val reponse = active.shell(commande)
-                ResultatShell(
-                    code = reponse.exitCode,
-                    sortie = listOf(reponse.output, reponse.errorOutput)
-                        .filter { it.isNotBlank() }
-                        .joinToString("\n")
-                        .trim(),
-                )
-            } catch (erreur: Throwable) {
-                Log.w(TAG, "Commande refusée : $commande", erreur)
-                fermerSession()
-                _connexion.value = _connexion.value.copy(
-                    etat = EtatConnexion.ERREUR,
-                    message = diagnostic(erreur),
-                )
-                ResultatShell.indisponible(diagnostic(erreur))
+
+            // Sans délai maximal, un téléviseur qui se fige ou s'endort en pleine commande
+            // bloquerait l'application pour toujours — et le verrou avec elle. Fermer la
+            // session est ce qui débloque réellement la lecture en cours.
+            val reponse = withTimeoutOrNull(DELAI_COMMANDE_MS) {
+                runCatching { active.shell(commande) }
+            }
+
+            when {
+                reponse == null -> {
+                    Log.w(TAG, "Délai dépassé : $commande")
+                    fermerSession()
+                    signalerRupture(MESSAGE_DELAI)
+                    ResultatShell.indisponible(MESSAGE_DELAI)
+                }
+
+                reponse.isFailure -> {
+                    val erreur = reponse.exceptionOrNull() ?: IllegalStateException()
+                    Log.w(TAG, "Commande refusée : $commande", erreur)
+                    fermerSession()
+                    signalerRupture(diagnostic(erreur))
+                    ResultatShell.indisponible(diagnostic(erreur))
+                }
+
+                else -> reponse.getOrThrow().let { sortie ->
+                    ResultatShell(
+                        code = sortie.exitCode,
+                        sortie = listOf(sortie.output, sortie.errorOutput)
+                            .filter { it.isNotBlank() }
+                            .joinToString("\n")
+                            .trim(),
+                    )
+                }
             }
         }
+    }
+
+    private fun signalerRupture(message: String) {
+        _connexion.value = _connexion.value.copy(etat = EtatConnexion.ERREUR, message = message)
     }
 
     private fun fermerSession() {
@@ -149,5 +172,17 @@ class ClientAdb @Inject constructor(
 
     private companion object {
         const val TAG = "TVSlim/Adb"
+
+        /** Large : la connexion attend que quelqu'un accepte la demande sur le téléviseur. */
+        const val DELAI_CONNEXION_MS = 45_000L
+
+        /** Une commande de gestion de paquets répond en quelques dizaines de millisecondes. */
+        const val DELAI_COMMANDE_MS = 20_000L
+
+        const val MESSAGE_DELAI =
+            "Le téléviseur n'a pas répondu à temps. Vérifiez qu'il est allumé et réessayez."
+
+        const val MESSAGE_ATTENTE_AUTORISATION =
+            "timed out: la demande d'autorisation attend peut-être sur le téléviseur."
     }
 }
