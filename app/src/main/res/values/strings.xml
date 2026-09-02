@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">TV Slim</string>
+    <string name="home_subtitle">Android TV tuning — every change is reversible</string>
+
+    <string name="device_title">Device</string>
+    <string name="device_model">Model</string>
+    <string name="device_android">Android</string>
+    <string name="device_memory">Memory</string>
+    <string name="device_memory_value">%1$d / %2$d MB free</string>
+    <string name="device_packages_active">Enabled packages</string>
+    <string name="device_packages_disabled">Disabled packages</string>
+    <string name="device_home">Home screen</string>
+
+    <string name="privileges_title">Privileges</string>
+    <string name="privilege_unknown">Checking…</string>
+    <string name="privilege_absent">Shizuku not installed</string>
+    <string name="privilege_service_stopped">Shizuku service stopped</string>
+    <string name="privilege_permission_required">Authorisation required</string>
+    <string name="privilege_refused">Authorisation denied</string>
+    <string name="privilege_ready">Ready</string>
+    <string name="privilege_hint_absent">Install Shizuku, then start its service. Without it the app only reads the device state.</string>
+    <string name="privilege_hint_service">Restart it after every reboot, from the Shizuku app: “Start via wireless debugging”.</string>
+    <string name="privilege_hint_permission">Grant TV Slim access to Shizuku to run privileged commands.</string>
+    <string name="privilege_hint_ready">Commands run with shell privileges, exactly as an ADB session would.</string>
+    <string name="privilege_hint_unknown">Reading the Shizuku state.</string>
+
+    <string name="action_packages">Packages</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_journal">Log</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_grant_privileges">Grant access</string>
+
+    <string name="packages_title">Packages</string>
+    <string name="packages_subtitle">Pick a profile, then apply. Protected packages are never offered.</string>
+    <string name="packages_apply">Apply (%1$d)</string>
+    <string name="packages_clear">Clear</string>
+    <string name="state_active">enabled</string>
+    <string name="state_disabled">disabled</string>
+    <string name="side_effect_prefix">Side effect: %1$s</string>
+    <string name="size_mb">%1$d MB</string>
+
+    <string name="settings_title">System settings</string>
+    <string name="settings_subtitle">Values applied to the television itself.</string>
+    <string name="settings_direct_write_title">Direct write</string>
+    <string name="settings_direct_write_yes">Granted — settings survive reboots</string>
+    <string name="settings_direct_write_no">Not granted — Shizuku required</string>
+    <string name="settings_adb_grant_hint">adb shell pm grant net.jolabs40.tvslim android.permission.WRITE_SECURE_SETTINGS</string>
+    <string name="settings_watchdog_title">Boot watchdog</string>
+    <string name="settings_watchdog_desc">Reapplies at every boot the settings the television resets on its own.</string>
+    <string name="settings_current_value">now: %1$s</string>
+
+    <string name="journal_title">Log</string>
+    <string name="journal_subtitle">Every action, with the command that undoes it.</string>
+    <string name="journal_empty">Nothing recorded yet.</string>
+    <string name="journal_restore_all">Restore everything</string>
+    <string name="journal_export">Export as Markdown</string>
+    <string name="journal_success">OK</string>
+    <string name="journal_failure">failed: %1$s</string>
+
+    <string name="common_working">Working…</string>
+
+    <string name="action_install_shizuku">Install Shizuku</string>
+    <string name="shizuku_title">Install Shizuku</string>
+    <string name="shizuku_intro">TV Slim runs its commands through Shizuku, an open-source service that lends shell privileges. Scan a code with your phone: Shizuku is not listed in the television Play Store.</string>
+    <string name="shizuku_qr_play">Play Store</string>
+    <string name="shizuku_qr_play_hint">Opens the store page on your phone, where this television can be picked as the install target.</string>
+    <string name="shizuku_qr_download">Direct download</string>
+    <string name="shizuku_qr_download_hint">Official site: download the APK, then send it to the television (X-plore, Send Files to TV…).</string>
+    <string name="shizuku_steps_title">Then</string>
+    <string name="shizuku_step1">Install Shizuku on the television.</string>
+    <string name="shizuku_step2">Start its service: wireless debugging from the television itself, or ADB from a computer.</string>
+    <string name="shizuku_step3">Come back here and grant TV Slim access.</string>
+    <string name="shizuku_open_store">Try the television Play Store</string>
+    <string name="shizuku_store_missing">No store and no browser on this television — use one of the QR codes.</string>
+
+    <string name="shizuku_install_direct">Download and install</string>
+    <string name="shizuku_allow_sources">Allow app installation</string>
+    <string name="shizuku_install_unavailable">Built-in installation needs Android 9 or later — use a QR code instead.</string>
+    <string name="shizuku_sources_screen_missing">This television offers no screen to allow app installation.</string>
+    <string name="shizuku_signature_note">The downloaded APK is installed only if its certificate matches the pinned Shizuku signature (CN=Rikka). Otherwise it is deleted.</string>
+    <string name="phase_search">Looking up the latest release…</string>
+    <string name="phase_download">Downloading… %1$d%%</string>
+    <string name="phase_verify">Checking the signature…</string>
+    <string name="phase_confirm">Waiting for your confirmation on screen.</string>
+    <string name="phase_success">Shizuku installed.</string>
+    <string name="phase_failure">Installation failed.</string>
+
+    <string name="shizuku_url_play" translatable="false">https://play.google.com/store/apps/details?id=moe.shizuku.privileged.api</string>
+    <string name="shizuku_url_download" translatable="false">https://shizuku.rikka.app/download/</string>
+</resources>

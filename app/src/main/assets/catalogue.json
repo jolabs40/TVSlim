@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "source": "Intervention TCL 65C89K (Smart TV Pro, Android 14) du 2026-08-31 — 56 paquets désactivés, aucun désinstallé.",
+  "profils": [
+    {
+      "id": "essentiel",
+      "nom": "Publicité, télémétrie et mode démo",
+      "description": "Régies publicitaires, remontée de statistiques et vestiges du mode magasin. Aucun risque connu, aucune fonction perdue.",
+      "categories": ["pub_telemetrie", "demo_magasin"]
+    },
+    {
+      "id": "confort",
+      "nom": "Assistants vocaux et écrans de veille",
+      "description": "Assistant Google, Alexa, écrans de veille et composants sans objet sur un téléviseur.",
+      "categories": ["assistants", "inutile_tv"]
+    },
+    {
+      "id": "streaming",
+      "nom": "Services de streaming préinstallés",
+      "description": "À n'appliquer que si vous n'utilisez aucun de ces services. La touche dédiée de la télécommande devient inopérante.",
+      "categories": ["streaming", "airplay"]
+    },
+    {
+      "id": "constructeur",
+      "nom": "Applications du constructeur",
+      "description": "Galerie, lecteur média, tableau de bord et autres applications maison rarement utilisées.",
+      "categories": ["bloatware_tcl"]
+    },
+    {
+      "id": "accueil",
+      "nom": "Remplacement de l'écran d'accueil",
+      "description": "Désactive l'accueil Google TV au profit d'un launcher tiers. Exige qu'un launcher alternatif soit déjà installé.",
+      "categories": ["accueil"]
+    }
+  ],
+  "categories": [
+    { "id": "pub_telemetrie", "nom": "Publicité et télémétrie" },
+    { "id": "demo_magasin", "nom": "Démo magasin et première installation" },
+    { "id": "assistants", "nom": "Assistants vocaux et veille" },
+    { "id": "inutile_tv", "nom": "Sans objet sur un téléviseur" },
+    { "id": "streaming", "nom": "Streaming préinstallé" },
+    { "id": "airplay", "nom": "AirPlay d'usine" },
+    { "id": "bloatware_tcl", "nom": "Applications constructeur" },
+    { "id": "accueil", "nom": "Écran d'accueil" },
+    { "id": "expert", "nom": "Réservé aux experts" }
+  ],
+  "entrees": [
+    { "paquet": "com.tcl.waterfall.overseas", "nom": "Recommandations TCL", "description": "Moteur de recommandations et de publicités TCL sur l'écran d'accueil.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.channelplus", "nom": "Channel+", "description": "Chaînes gratuites TCL financées par la publicité.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.messagebox", "nom": "Notifications TCL", "description": "Notifications promotionnelles du constructeur.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.logkit", "nom": "LogKit", "description": "Collecte et remontée de journaux vers TCL.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.android.adservices.api", "nom": "Privacy Sandbox", "description": "API publicitaire Android (Topics, Attribution).", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "com.android.ondevicepersonalization.services", "nom": "Personnalisation sur l'appareil", "description": "Profilage publicitaire exécuté localement.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "com.android.federatedcompute.services", "nom": "Calcul fédéré", "description": "Apprentissage fédéré : entraîne les modèles Google sur vos données.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "com.google.android.feedback", "nom": "Rapports d'erreur Google", "description": "Envoi automatique des rapports de plantage à Google.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Google" },
+    { "paquet": "com.android.tv.feedbackconsent", "nom": "Consentement Android TV", "description": "Écran de consentement au programme d'amélioration.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Google" },
+    { "paquet": "com.google.android.partnersetup", "nom": "Statistiques partenaire", "description": "Remontée de statistiques d'usage vers le constructeur.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Google" },
+    { "paquet": "com.google.android.syncadapters.calendar", "nom": "Sync calendrier", "description": "Synchronisation du calendrier Google, sans objet sur un téléviseur.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Google" },
+    { "paquet": "com.android.wallpaperbackup", "nom": "Sauvegarde du fond d'écran", "description": "Sauvegarde du fond d'écran vers le cloud.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "AOSP" },
+
+    { "paquet": "com.tcl.exhibit", "nom": "Mode exposition", "description": "Mode démonstration pour magasin.", "categorie": "demo_magasin", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.esticker", "nom": "Étiquette électronique", "description": "Étiquette de rayon et démo de barre de son.", "categorie": "demo_magasin", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.ocean.instructions", "nom": "Tutoriel d'accueil", "description": "Tutoriel de bienvenue TCL.", "categorie": "demo_magasin", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.factory.view", "nom": "Menu usine", "description": "Menu de réglages usine.", "categorie": "demo_magasin", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.useragreement", "nom": "Conditions d'utilisation", "description": "Écran d'acceptation des CGU, déjà validé.", "categorie": "demo_magasin", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.initsetup", "nom": "Première configuration", "description": "Assistant de première installation, déjà effectuée.", "categorie": "demo_magasin", "risque": "faible", "effetDeBord": "À réactiver avant une remise à zéro d'usine.", "marque": "TCL" },
+    { "paquet": "com.tcl.repairguide", "nom": "Guide de réparation", "description": "Guide de dépannage intégré.", "categorie": "demo_magasin", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.google.android.onetimeinitializer", "nom": "Initialisation unique", "description": "Initialisation du premier démarrage, déjà passée.", "categorie": "demo_magasin", "risque": "aucun", "marque": "Google" },
+
+    { "paquet": "com.google.android.apps.tv.dreamx", "nom": "Ambient Mode", "description": "Écran de veille Ambient et panneau maison connectée.", "categorie": "assistants", "risque": "faible", "tailleMo": 72, "effetDeBord": "Plus d'écran de veille photo au repos.", "marque": "Google" },
+    { "paquet": "com.google.android.katniss", "nom": "Assistant Google", "description": "Recherche et commande vocale au micro de la télécommande.", "categorie": "assistants", "risque": "moyen", "tailleMo": 75, "effetDeBord": "Le bouton micro de la télécommande devient inopérant.", "marque": "Google" },
+    { "paquet": "com.tcl.smartalexa", "nom": "Alexa", "description": "Amazon Alexa intégré par TCL.", "categorie": "assistants", "risque": "faible", "marque": "TCL" },
+    { "paquet": "com.tcl.eva", "nom": "Assistant EVA", "description": "Assistant vocal maison TCL.", "categorie": "assistants", "risque": "faible", "marque": "TCL" },
+    { "paquet": "com.android.dreams.basic", "nom": "Écrans de veille Android", "description": "Écrans de veille de base d'Android.", "categorie": "assistants", "risque": "aucun", "marque": "AOSP" },
+
+    { "paquet": "com.android.printspooler", "nom": "File d'impression", "description": "Service d'impression Android.", "categorie": "inutile_tv", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "com.android.healthconnect.controller", "nom": "Health Connect", "description": "Interface des données de santé.", "categorie": "inutile_tv", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "com.android.health.connect.backuprestore", "nom": "Sauvegarde santé", "description": "Sauvegarde et restauration des données de santé.", "categorie": "inutile_tv", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "com.android.cts.ctsshim", "nom": "Stub CTS", "description": "Stub de test de conformité Android.", "categorie": "inutile_tv", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "com.android.cts.priv.ctsshim", "nom": "Stub CTS privilégié", "description": "Stub de conformité privilégié.", "categorie": "inutile_tv", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "com.android.dynsystem", "nom": "Dynamic System Updates", "description": "Outil développeur de démarrage sur image système alternative.", "categorie": "inutile_tv", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "com.android.managedprovisioning", "nom": "Provisionnement d'entreprise", "description": "Enrôlement dans une flotte gérée.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Bloque la mise en place d'un profil professionnel.", "marque": "AOSP" },
+    { "paquet": "com.android.se", "nom": "Secure Element", "description": "Élément sécurisé pour le paiement NFC, absent des téléviseurs.", "categorie": "inutile_tv", "risque": "aucun", "marque": "AOSP" },
+    { "paquet": "tv.mopa.ginga", "nom": "Ginga", "description": "Middleware de TV interactive brésilien.", "categorie": "inutile_tv", "risque": "aucun", "effetDeBord": "À conserver au Brésil : la TNT interactive locale en dépend.", "marque": "TCL" },
+
+    { "paquet": "com.netflix.ninja", "nom": "Netflix", "description": "Application Netflix préinstallée.", "categorie": "streaming", "risque": "moyen", "effetDeBord": "La touche Netflix de la télécommande devient inopérante.", "marque": "Tiers" },
+    { "paquet": "com.netflix.tokenmanager", "nom": "Netflix Token Manager", "description": "Gestion des jetons d'authentification Netflix.", "categorie": "streaming", "risque": "moyen", "marque": "Tiers" },
+    { "paquet": "com.google.android.youtube.tv", "nom": "YouTube", "description": "YouTube officiel.", "categorie": "streaming", "risque": "moyen", "effetDeBord": "Le cast YouTube depuis un téléphone cesse de fonctionner.", "marque": "Google" },
+    { "paquet": "com.amazon.amazonvideo.livingroom", "nom": "Prime Video", "description": "Prime Video préinstallé.", "categorie": "streaming", "risque": "moyen", "effetDeBord": "La touche Prime Video de la télécommande devient inopérante.", "marque": "Tiers" },
+    { "paquet": "com.google.android.videos", "nom": "Google TV Films", "description": "Boutique de films et séries Google.", "categorie": "streaming", "risque": "faible", "marque": "Google" },
+    { "paquet": "com.google.android.play.games", "nom": "Play Jeux", "description": "Services de jeux Google Play.", "categorie": "streaming", "risque": "faible", "effetDeBord": "Les jeux qui exigent la connexion Play Jeux ne fonctionneront plus.", "marque": "Google" },
+    { "paquet": "com.google.android.youtube.tvmusic", "nom": "YouTube Music", "description": "YouTube Music pour téléviseur.", "categorie": "streaming", "risque": "faible", "marque": "Google" },
+
+    { "paquet": "com.tcl.airplay2", "nom": "AirPlay 2", "description": "Réception AirPlay 2 d'usine.", "categorie": "airplay", "risque": "faible", "effetDeBord": "Plus de diffusion depuis un iPhone, sauf via une application tierce comme AirScreen.", "marque": "TCL" },
+    { "paquet": "com.mediatek.AirplayAPK", "nom": "AirPlay MediaTek", "description": "Composant AirPlay du chipset MediaTek.", "categorie": "airplay", "risque": "faible", "marque": "MediaTek" },
+    { "paquet": "com.mediatek.airplaydaemon", "nom": "Démon AirPlay", "description": "Service d'arrière-plan AirPlay MediaTek.", "categorie": "airplay", "risque": "faible", "marque": "MediaTek" },
+
+    { "paquet": "com.tcl.gallery", "nom": "Galerie TCL", "description": "Visionneuse de photos du constructeur.", "categorie": "bloatware_tcl", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.ui_mediaCenter", "nom": "Lecteur média TCL", "description": "Lecture des clés USB par l'application maison.", "categorie": "bloatware_tcl", "risque": "faible", "effetDeBord": "Prévoir un explorateur tiers (X-plore, VLC) pour les clés USB.", "marque": "TCL" },
+    { "paquet": "com.tcl.gamebar", "nom": "Barre de jeu", "description": "Superposition ALLM/VRR pour consoles.", "categorie": "bloatware_tcl", "risque": "faible", "effetDeBord": "À conserver si vous jouez sur console et surveillez le VRR.", "marque": "TCL" },
+    { "paquet": "com.tcl.usercenter", "nom": "Compte TCL", "description": "Gestion du compte utilisateur TCL.", "categorie": "bloatware_tcl", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.guard", "nom": "TCL Guard", "description": "« Bouclier de permissions » et nettoyeur maison.", "categorie": "bloatware_tcl", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.dashboard", "nom": "Tableau de bord TCL", "description": "Tableau de bord du constructeur.", "categorie": "bloatware_tcl", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.interactive", "nom": "Service interactif TCL", "description": "Service InteractiveTclService.", "categorie": "bloatware_tcl", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.tv.tclhome_passive", "nom": "Accueil passif TCL", "description": "Bandeaux promotionnels sur l'écran d'accueil.", "categorie": "bloatware_tcl", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.t_solo", "nom": "Écoute privée", "description": "Écoute au casque Bluetooth.", "categorie": "bloatware_tcl", "risque": "faible", "effetDeBord": "Supprime l'écoute privée au casque Bluetooth.", "marque": "TCL" },
+    { "paquet": "com.tcl.hearaid", "nom": "Aide auditive", "description": "Aide auditive, haut-parleurs sans fil et loupe de texte.", "categorie": "bloatware_tcl", "risque": "moyen", "effetDeBord": "Fonction d'accessibilité : à conserver si elle est utilisée.", "marque": "TCL" },
+
+    { "paquet": "com.google.android.tungsten.setupwraith", "nom": "Assistant de configuration Google TV", "description": "Sa RecoveryActivity est déclarée en priorité 1 sur category.HOME : sans sa désactivation, couper l'accueil Google donne la main à cet écran de récupération au lieu du launcher tiers.", "categorie": "accueil", "risque": "eleve", "ordre": 1, "requiertLauncherTiers": true, "effetDeBord": "À réactiver avant toute remise à zéro d'usine.", "marque": "Google" },
+    { "paquet": "com.google.android.apps.tv.launcherx", "nom": "Écran d'accueil Google TV", "description": "Rangées de recommandations, bandeaux sponsorisés et onglets boutique. Google lui attribue priority=2 sur category.HOME, ce qui écrase la préférence utilisateur : le désactiver est la seule façon d'imposer un launcher tiers.", "categorie": "accueil", "risque": "eleve", "ordre": 2, "tailleMo": 122, "requiertLauncherTiers": true, "effetDeBord": "Sans launcher tiers actif, le téléviseur démarre sur un écran vide.", "marque": "Google" },
+
+    { "paquet": "com.tcl.ttvs", "nom": "Services T-Cast et mises à jour", "description": "Porte les mises à jour du micrologiciel et T-Cast, au prix d'une télémétrie embarquée (BIService, IdentifierService, AwarenessService).", "categorie": "expert", "risque": "eleve", "tailleMo": 58, "effetDeBord": "Plus de mises à jour du micrologiciel par voie hertzienne.", "marque": "TCL" },
+    { "paquet": "com.google.android.tts", "nom": "Synthèse vocale Google", "description": "Premier consommateur de mémoire du téléviseur.", "categorie": "expert", "risque": "eleve", "tailleMo": 244, "effetDeBord": "Coupe la lecture vocale : n'y toucher que si l'accessibilité n'est pas utilisée.", "marque": "Google" },
+    { "paquet": "com.google.android.marvin.talkback", "nom": "TalkBack", "description": "Lecteur d'écran d'accessibilité.", "categorie": "expert", "risque": "eleve", "effetDeBord": "Coupe le lecteur d'écran : n'y toucher que si l'accessibilité n'est pas utilisée.", "marque": "Google" }
+  ],
+  "proteges": [
+    { "paquet": "com.tcl.suspension", "raison": "Menu Entrées / Source de la télécommande." },
+    { "paquet": "com.tcl.tv", "raison": "Tuner antenne et entrées." },
+    { "paquet": "com.tcl.tvinput", "raison": "Entrées HDMI." },
+    { "paquet": "com.tcl.partnercustomizer", "raison": "Touches partenaires de la télécommande (TKeyActivity)." },
+    { "paquet": "com.tcl.globalkeyoverlay", "raison": "Gestion des touches globales de la télécommande." },
+    { "paquet": "com.tcl.autopair", "raison": "Appairage de la télécommande." },
+    { "paquet": "com.google.android.tv.remote.service", "raison": "Service de télécommande." },
+    { "paquet": "com.google.android.gms", "raison": "Services Google Play." },
+    { "paquet": "com.google.android.gsf", "raison": "Google Services Framework." },
+    { "paquet": "com.android.vending", "raison": "Play Store." },
+    { "paquet": "com.android.location.fused", "raison": "Sa désactivation provoque une boucle de redémarrage." },
+    { "paquet": "com.google.android.inputmethod.latin", "raison": "Clavier virtuel." },
+    { "paquet": "com.tcl.inputmethod.international", "raison": "Clavier virtuel du constructeur." },
+    { "paquet": "com.tcl.systemserver", "raison": "Service système du constructeur." },
+    { "paquet": "com.tcl.providers.config", "raison": "Fournisseur de configuration système." },
+    { "paquet": "com.tvos", "raison": "Couche plateforme du téléviseur." },
+    { "paquet": "com.tpa.kb", "raison": "Composant plateforme." },
+    { "paquet": "com.android.devicelockcontroller", "raison": "Paquet protégé : Android refuse sa désactivation (SecurityException)." },
+    { "paquet": "com.android.systemui", "raison": "Interface système." },
+    { "paquet": "com.android.settings", "raison": "Paramètres Android." },
+    { "paquet": "moe.shizuku.privileged.api", "raison": "Fournit les privilèges dont cette application dépend." }
+  ],
+  "reglages": [
+    {
+      "cle": "low_power_standby_enabled",
+      "portee": "global",
+      "nom": "Veille basse consommation",
+      "description": "À 1, le téléviseur coupe le réseau pendant la veille et devient injoignable en ADB. Ce réglage repasse à 1 à chaque redémarrage : le gardien au démarrage le remet à 0 tout seul.",
+      "valeurOptimisee": "0",
+      "valeurDefaut": "1",
+      "reappliquerAuDemarrage": true
+    },
+    {
+      "cle": "window_animation_scale",
+      "portee": "global",
+      "nom": "Animations de fenêtre",
+      "description": "Divise par deux la durée des animations de fenêtre : l'interface paraît plus vive.",
+      "valeurOptimisee": "0.5",
+      "valeurDefaut": "1.0",
+      "reappliquerAuDemarrage": false
+    },
+    {
+      "cle": "transition_animation_scale",
+      "portee": "global",
+      "nom": "Animations de transition",
+      "description": "Divise par deux la durée des transitions entre écrans.",
+      "valeurOptimisee": "0.5",
+      "valeurDefaut": "1.0",
+      "reappliquerAuDemarrage": false
+    },
+    {
+      "cle": "animator_duration_scale",
+      "portee": "global",
+      "nom": "Durée des animations",
+      "description": "Divise par deux la durée des animations internes aux applications.",
+      "valeurOptimisee": "0.5",
+      "valeurDefaut": "1.0",
+      "reappliquerAuDemarrage": false
+    }
+  ]
+}

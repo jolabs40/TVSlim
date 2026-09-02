@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#101418"
+        android:pathData="M0,0h320v180h-320z" />
+    <!-- Écran -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#7FD1AE"
+        android:strokeWidth="6"
+        android:pathData="M60,50h200a6,6 0 0 1 6,6v62a6,6 0 0 1 -6,6h-200a6,6 0 0 1 -6,-6v-62a6,6 0 0 1 6,-6z" />
+    <!-- Pied -->
+    <path
+        android:fillColor="#7FD1AE"
+        android:pathData="M140,132h40v6h-40z" />
+    <!-- Coche -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#8AB4F8"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:pathData="M130,88l17,17l38,-40" />
+</vector>
