@@ -28,6 +28,7 @@
     <string name="settings_watchdog_title">Gardien de démarrage</string>
     <string name="settings_watchdog_desc">Réapplique à chaque démarrage les réglages que le téléviseur remet tout seul à leur valeur d\'usine.</string>
     <string name="settings_current_value">actuel : %1$s</string>
+    <string name="settings_list_title">Réglages de ce téléviseur</string>
 
     <string name="common_working">Traitement en cours…</string>
     <string name="action_pairing">Appairer le téléphone</string>

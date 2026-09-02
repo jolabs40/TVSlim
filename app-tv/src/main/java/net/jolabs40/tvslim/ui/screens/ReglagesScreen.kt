@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,7 +23,9 @@ import net.jolabs40.tvslim.R
 import net.jolabs40.tvslim.ui.EtatUi
 import net.jolabs40.tvslim.ui.LigneReglage
 import net.jolabs40.tvslim.ui.components.Bandeau
+import net.jolabs40.tvslim.ui.components.BarreDefilement
 import net.jolabs40.tvslim.ui.components.Bloc
+import net.jolabs40.tvslim.ui.components.CompteurListe
 import net.jolabs40.tvslim.ui.components.EnTete
 import net.jolabs40.tvslim.ui.components.LigneFocusable
 
@@ -74,30 +78,60 @@ fun ReglagesScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            item(key = "gardien") {
-                LigneFocusable(onClick = { onGardien(!etat.gardienActif) }) {
-                    LigneBascule(
-                        coche = etat.gardienActif,
-                        titre = stringResource(R.string.settings_watchdog_title),
-                        description = stringResource(R.string.settings_watchdog_desc),
-                    )
+        val etatListe = rememberLazyListState()
+        val total = etat.reglages.size + 1 // + le gardien de démarrage
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_list_title),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            CompteurListe(etat = etatListe, total = total)
+        }
+
+        Row(modifier = Modifier.fillMaxWidth()) {
+            LazyColumn(
+                state = etatListe,
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                item(key = "gardien") {
+                    LigneFocusable(onClick = { onGardien(!etat.gardienActif) }) {
+                        LigneBascule(
+                            coche = etat.gardienActif,
+                            titre = stringResource(R.string.settings_watchdog_title),
+                            description = stringResource(R.string.settings_watchdog_desc),
+                        )
+                    }
+                }
+
+                items(etat.reglages, key = { it.reglage.cle }) { ligne ->
+                    LigneFocusable(onClick = { onBasculerReglage(ligne) }) {
+                        LigneBascule(
+                            coche = ligne.optimise,
+                            titre = ligne.reglage.nom,
+                            description = ligne.reglage.description,
+                            valeur = stringResource(
+                                R.string.settings_current_value,
+                                ligne.valeurActuelle ?: "—",
+                            ),
+                        )
+                    }
                 }
             }
 
-            items(etat.reglages, key = { it.reglage.cle }) { ligne ->
-                LigneFocusable(onClick = { onBasculerReglage(ligne) }) {
-                    LigneBascule(
-                        coche = ligne.optimise,
-                        titre = ligne.reglage.nom,
-                        description = ligne.reglage.description,
-                        valeur = stringResource(
-                            R.string.settings_current_value,
-                            ligne.valeurActuelle ?: "—",
-                        ),
-                    )
-                }
-            }
+            BarreDefilement(
+                etat = etatListe,
+                modifier = Modifier
+                    .padding(start = 10.dp)
+                    .width(4.dp),
+            )
         }
     }
 }

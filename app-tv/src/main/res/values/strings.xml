@@ -29,6 +29,7 @@
     <string name="settings_watchdog_title">Boot watchdog</string>
     <string name="settings_watchdog_desc">Reapplies at every boot the settings the television resets on its own.</string>
     <string name="settings_current_value">now: %1$s</string>
+    <string name="settings_list_title">Settings on this television</string>
 
     <string name="common_working">Working…</string>
     <string name="action_pairing">Pair phone</string>
