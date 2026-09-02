@@ -104,6 +104,7 @@ dependencies {
     // Client ADB : le téléphone parle au téléviseur sans binaire adb ni serveur ADB.
     implementation(libs.dadb)
     implementation(libs.code.scanner)
+    implementation(libs.play.services.base)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

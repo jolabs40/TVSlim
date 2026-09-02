@@ -43,4 +43,9 @@
 
     <string name="action_refresh">Refresh</string>
     <string name="connection_scan">Scan the TV code</string>
+    <string name="connection_scan_title">Scan the television</string>
+    <string name="connection_scan_hint">On the television, open TV Slim → Pair phone. Scan the code it shows: no address to type.</string>
+    <string name="connection_scan_preparing">Preparing the scanner…</string>
+    <string name="connection_scan_unavailable">Scanner unavailable on this device — type the address below.</string>
+    <string name="connection_manual_title">Or type the address</string>
 </resources>

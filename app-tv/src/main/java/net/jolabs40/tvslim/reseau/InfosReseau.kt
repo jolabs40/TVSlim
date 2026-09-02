@@ -10,15 +10,22 @@ import javax.inject.Singleton
 
 /**
  * Tout ce que le compagnon a besoin de savoir pour joindre ce téléviseur : son adresse sur le
- * réseau local, et l'état du débogage ADB.
+ * réseau local, et l'état des trois réglages qui conditionnent la connexion.
+ *
+ * Ces trois-là sont affichés un par un plutôt qu'en bloc : quand la connexion est impossible,
+ * il faut savoir lequel manque.
  */
 data class PointDeContact(
     val adresse: String = "",
     val port: Int = 0,
-    val adbActive: Boolean = false,
+    val optionsDeveloppeur: Boolean = false,
+    val debogageActive: Boolean = false,
 ) {
+    val debogageReseau: Boolean get() = port > 0
+
     /** Vrai quand une connexion est possible ici et maintenant. */
-    val joignable: Boolean get() = adresse.isNotBlank() && port > 0 && adbActive
+    val joignable: Boolean
+        get() = adresse.isNotBlank() && debogageReseau && debogageActive
 
     /** Contenu du QR code, lu par le compagnon. */
     fun uri(): String = "tvslim://connect?host=$adresse&port=$port"
@@ -32,7 +39,8 @@ class InfosReseau @Inject constructor(
     fun pointDeContact(): PointDeContact = PointDeContact(
         adresse = adresseLocale().orEmpty(),
         port = portAdb() ?: 0,
-        adbActive = debogageActive(),
+        optionsDeveloppeur = reglageActif(Settings.Global.DEVELOPMENT_SETTINGS_ENABLED),
+        debogageActive = reglageActif(Settings.Global.ADB_ENABLED),
     )
 
     /** Première adresse IPv4 non locale de l'interface active — celle que verra le téléphone. */
@@ -59,8 +67,8 @@ class InfosReseau @Inject constructor(
         sortie.toIntOrNull()?.takeIf { it in 1..65535 }
     }.getOrNull()
 
-    private fun debogageActive(): Boolean = runCatching {
-        Settings.Global.getInt(contexte.contentResolver, Settings.Global.ADB_ENABLED, 0) == 1
+    private fun reglageActif(cle: String): Boolean = runCatching {
+        Settings.Global.getInt(contexte.contentResolver, cle, 0) == 1
     }.getOrDefault(false)
 
     private companion object {

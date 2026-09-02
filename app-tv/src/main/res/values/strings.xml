@@ -40,4 +40,7 @@
     <string name="pairing_unavailable">Nothing to scan yet.</string>
     <string name="pairing_steps">In the companion, Television tab: Scan. The television will then ask to allow debugging — accept with the remote, ticking “Always allow”. That authorisation survives reboots.</string>
     <string name="pairing_enable_adb">Network ADB debugging is off. Settings → About → tap the build number seven times, then enable network debugging.</string>
+    <string name="pairing_check_developer">Developer options enabled</string>
+    <string name="pairing_check_adb">ADB debugging enabled</string>
+    <string name="pairing_check_network">Network debugging listening</string>
 </resources>

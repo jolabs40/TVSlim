@@ -41,4 +41,9 @@
 
     <string name="action_refresh">Actualiser</string>
     <string name="connection_scan">Scanner le code de la TV</string>
+    <string name="connection_scan_title">Scanner le téléviseur</string>
+    <string name="connection_scan_hint">Sur le téléviseur, ouvrez TV Slim → Appairer le téléphone. Scannez le code affiché : aucune adresse à saisir.</string>
+    <string name="connection_scan_preparing">Préparation du scanner…</string>
+    <string name="connection_scan_unavailable">Scanner indisponible sur cet appareil — saisissez l\'adresse ci-dessous.</string>
+    <string name="connection_manual_title">Ou saisir l\'adresse</string>
 </resources>

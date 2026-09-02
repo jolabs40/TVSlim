@@ -39,4 +39,7 @@
     <string name="pairing_unavailable">Rien à scanner pour l\'instant.</string>
     <string name="pairing_steps">Dans le compagnon, onglet Téléviseur : Scanner. Le téléviseur demandera ensuite d\'autoriser le débogage — acceptez à la télécommande, en cochant « Toujours autoriser ». Cette autorisation survit aux redémarrages.</string>
     <string name="pairing_enable_adb">Le débogage ADB réseau est désactivé. Paramètres → À propos → sept appuis sur le numéro de build, puis activez le débogage réseau.</string>
+    <string name="pairing_check_developer">Options développeur activées</string>
+    <string name="pairing_check_adb">Débogage ADB activé</string>
+    <string name="pairing_check_network">Débogage réseau à l\'écoute</string>
 </resources>
