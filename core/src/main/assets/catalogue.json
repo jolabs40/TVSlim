@@ -24,7 +24,7 @@
       "id": "constructeur",
       "nom": "Manufacturer apps",
       "description": "Gallery, media player, dashboard and other in-house apps that are rarely used.",
-      "categories": ["bloatware_tcl", "bloatware_nvidia"]
+      "categories": ["bloatware_tcl", "bloatware_nvidia", "bloatware_xiaomi"]
     },
     {
       "id": "accueil",
@@ -43,6 +43,7 @@
     { "id": "bloatware_tcl", "nom": "Manufacturer apps" },
     { "id": "accueil", "nom": "Home screen" },
     { "id": "bloatware_nvidia", "nom": "NVIDIA apps" },
+    { "id": "bloatware_xiaomi", "nom": "Xiaomi apps" },
     { "id": "expert", "nom": "Experts only" }
   ],
   "entrees": [
@@ -144,7 +145,19 @@
     { "paquet": "com.google.android.tvlauncher", "nom": "Android TV home screen", "description": "The Android TV launcher used before Google TV. Disabling it is the only way to impose a third-party launcher.", "categorie": "accueil", "risque": "eleve", "ordre": 2, "requiertLauncherTiers": true, "effetDeBord": "With no third-party launcher enabled, the device boots to an empty screen.", "marque": "Google" },
 
     { "paquet": "com.nvidia.ota", "nom": "NVIDIA system updates", "description": "Delivers SHIELD firmware updates.", "categorie": "expert", "risque": "eleve", "effetDeBord": "No more system updates. NVIDIA supports this hardware for a long time — think twice.", "marque": "NVIDIA" },
-    { "paquet": "com.nvidia.hotwordsetup", "nom": "Hands-free hotword", "description": "Sets up hands-free voice activation.", "categorie": "expert", "risque": "moyen", "effetDeBord": "Ends hands-free « Hey Google »; the remote microphone still works.", "marque": "NVIDIA" }
+    { "paquet": "com.nvidia.hotwordsetup", "nom": "Hands-free hotword", "description": "Sets up hands-free voice activation.", "categorie": "expert", "risque": "moyen", "effetDeBord": "Ends hands-free « Hey Google »; the remote microphone still works.", "marque": "NVIDIA" },
+{ "paquet": "com.mitv.tvhome.michannel", "nom": "MiTV channels", "description": "Recommendation and promotion rows from Xiaomi.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Xiaomi" },
+    { "paquet": "android.autoinstalls.config.xioami.mibox3", "nom": "Preinstall list", "description": "Decides which apps are installed automatically on first boot.", "categorie": "demo_magasin", "risque": "faible", "effetDeBord": "Re-enable before a factory reset if you want the original app set back.", "marque": "Xiaomi" },
+    { "paquet": "com.mitv.tvhome.atv", "nom": "MiTV home screen", "description": "Xiaomi's own launcher, unused while another home screen is active.", "categorie": "bloatware_xiaomi", "risque": "faible", "effetDeBord": "Keep it if you ever want to go back to the Xiaomi home screen.", "marque": "Xiaomi" },
+    { "paquet": "com.mitv.videoplayer", "nom": "MiTV media player", "description": "Xiaomi in-house video player.", "categorie": "bloatware_xiaomi", "risque": "faible", "effetDeBord": "Keep a third-party player (VLC, MX Player) for local files.", "marque": "Xiaomi" },
+    { "paquet": "com.mitv.milinkservice", "nom": "MiLink casting", "description": "Xiaomi screen mirroring service.", "categorie": "bloatware_xiaomi", "risque": "moyen", "effetDeBord": "Ends casting from Xiaomi phones; Chromecast and third-party apps are unaffected.", "marque": "Xiaomi" },
+    { "paquet": "com.mitv.download.service", "nom": "MiTV downloader", "description": "Xiaomi download service, used by its own store and updates.", "categorie": "bloatware_xiaomi", "risque": "moyen", "effetDeBord": "May prevent Xiaomi-side downloads and updates.", "marque": "Xiaomi" },
+    { "paquet": "com.xiaomi.mitv.updateservice", "nom": "Xiaomi system updates", "description": "Delivers MiBox firmware updates.", "categorie": "expert", "risque": "eleve", "effetDeBord": "No more system updates.", "marque": "Xiaomi" },
+
+    { "paquet": "com.google.android.inputmethod.pinyin", "nom": "Pinyin keyboard", "description": "Chinese input method.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Only disable if you never type in this language.", "marque": "Google" },
+    { "paquet": "com.google.android.apps.inputmethod.zhuyin", "nom": "Zhuyin keyboard", "description": "Traditional Chinese input method.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Only disable if you never type in this language.", "marque": "Google" },
+    { "paquet": "com.google.android.inputmethod.japanese", "nom": "Japanese keyboard", "description": "Japanese input method.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Only disable if you never type in this language.", "marque": "Google" },
+    { "paquet": "com.google.android.apps.inputmethod.hindi", "nom": "Hindi keyboard", "description": "Hindi input method.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Only disable if you never type in this language.", "marque": "Google" }
   ],
   "proteges": [
     { "paquet": "com.tcl.suspension", "raison": "Inputs / Source menu on the remote." },
@@ -184,7 +197,10 @@
     { "paquet": "com.nvidia.irtuner", "raison": "Infrared receiver for universal remotes." },
     { "paquet": "com.nvidia.remotelocator", "raison": "Finds a lost remote by making it beep." },
     { "paquet": "com.nvidia.wifi.countrycode", "raison": "Radio regulatory compliance." },
-    { "paquet": "com.android.networkstack.tethering.nvidia", "raison": "Network stack." }
+    { "paquet": "com.android.networkstack.tethering.nvidia", "raison": "Network stack." },
+{ "paquet": "com.xiaomi.android.tvsetup.partnercustomizer", "raison": "Partner keys on the remote." },
+    { "paquet": "com.xiaomi.mitv.res", "raison": "Shared system resources." },
+    { "paquet": "mitv.service", "raison": "Xiaomi platform service." }
   ],
   "launchers": [
     { "paquet": "com.spocky.projengmenu", "nom": "Projectivy Launcher", "description": "Free, ad-free, actively maintained. Rich customisation and the widest choice of wallpapers." },

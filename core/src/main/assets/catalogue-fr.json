@@ -11,6 +11,7 @@
     "bloatware_tcl": "Applications constructeur",
     "accueil": "Écran d'accueil",
     "bloatware_nvidia": "Applications NVIDIA",
+    "bloatware_xiaomi": "Applications Xiaomi",
     "expert": "Réservé aux experts"
   },
   "profils": {
@@ -134,7 +135,19 @@
     "com.google.android.tvlauncher": { "nom": "Écran d'accueil Android TV", "description": "Le launcher Android TV d'avant Google TV. Le désactiver est la seule façon d'imposer un launcher tiers.", "effetDeBord": "Sans launcher tiers actif, l'appareil démarre sur un écran vide." },
 
     "com.nvidia.ota": { "nom": "Mises à jour NVIDIA", "description": "Apporte les mises à jour du micrologiciel SHIELD.", "effetDeBord": "Plus aucune mise à jour système. NVIDIA suit ce matériel très longtemps — à peser." },
-    "com.nvidia.hotwordsetup": { "nom": "Détection mains libres", "description": "Configure l'activation vocale mains libres.", "effetDeBord": "Met fin au « Hey Google » mains libres ; le micro de la télécommande fonctionne toujours." }
+    "com.nvidia.hotwordsetup": { "nom": "Détection mains libres", "description": "Configure l'activation vocale mains libres.", "effetDeBord": "Met fin au « Hey Google » mains libres ; le micro de la télécommande fonctionne toujours." },
+"com.mitv.tvhome.michannel": { "nom": "Chaînes MiTV", "description": "Rangées de recommandations et de promotions Xiaomi." },
+    "android.autoinstalls.config.xioami.mibox3": { "nom": "Liste de préinstallation", "description": "Décide des applications installées automatiquement au premier démarrage.", "effetDeBord": "À réactiver avant une remise à zéro si vous voulez retrouver le jeu d'applications d'origine." },
+    "com.mitv.tvhome.atv": { "nom": "Écran d'accueil MiTV", "description": "Le launcher maison de Xiaomi, inutilisé tant qu'un autre écran d'accueil est actif.", "effetDeBord": "À conserver si vous comptez revenir à l'accueil Xiaomi." },
+    "com.mitv.videoplayer": { "nom": "Lecteur média MiTV", "description": "Lecteur vidéo maison de Xiaomi.", "effetDeBord": "Prévoir un lecteur tiers (VLC, MX Player) pour les fichiers locaux." },
+    "com.mitv.milinkservice": { "nom": "Diffusion MiLink", "description": "Service de recopie d'écran Xiaomi.", "effetDeBord": "Met fin à la diffusion depuis un téléphone Xiaomi ; Chromecast et les applications tierces ne sont pas touchés." },
+    "com.mitv.download.service": { "nom": "Téléchargement MiTV", "description": "Service de téléchargement Xiaomi, utilisé par sa boutique et ses mises à jour.", "effetDeBord": "Peut empêcher les téléchargements et mises à jour côté Xiaomi." },
+    "com.xiaomi.mitv.updateservice": { "nom": "Mises à jour Xiaomi", "description": "Apporte les mises à jour du micrologiciel de la MiBox.", "effetDeBord": "Plus aucune mise à jour système." },
+
+    "com.google.android.inputmethod.pinyin": { "nom": "Clavier pinyin", "description": "Méthode de saisie chinoise.", "effetDeBord": "À ne désactiver que si vous n'écrivez jamais dans cette langue." },
+    "com.google.android.apps.inputmethod.zhuyin": { "nom": "Clavier zhuyin", "description": "Méthode de saisie chinoise traditionnelle.", "effetDeBord": "À ne désactiver que si vous n'écrivez jamais dans cette langue." },
+    "com.google.android.inputmethod.japanese": { "nom": "Clavier japonais", "description": "Méthode de saisie japonaise.", "effetDeBord": "À ne désactiver que si vous n'écrivez jamais dans cette langue." },
+    "com.google.android.apps.inputmethod.hindi": { "nom": "Clavier hindi", "description": "Méthode de saisie hindi.", "effetDeBord": "À ne désactiver que si vous n'écrivez jamais dans cette langue." }
   },
   "proteges": {
     "com.tcl.suspension": "Menu Entrées / Source de la télécommande.",
@@ -174,7 +187,10 @@
     "com.nvidia.irtuner": "Récepteur infrarouge pour télécommandes universelles.",
     "com.nvidia.remotelocator": "Retrouve une télécommande égarée en la faisant sonner.",
     "com.nvidia.wifi.countrycode": "Conformité radio réglementaire.",
-    "com.android.networkstack.tethering.nvidia": "Pile réseau."
+    "com.android.networkstack.tethering.nvidia": "Pile réseau.",
+"com.xiaomi.android.tvsetup.partnercustomizer": "Touches partenaires de la télécommande.",
+    "com.xiaomi.mitv.res": "Ressources système partagées.",
+    "mitv.service": "Service plateforme Xiaomi."
   },
   "launchers": {
     "com.spocky.projengmenu": { "nom": "Projectivy Launcher", "description": "Gratuit, sans publicité, toujours maintenu. Personnalisation poussée et le plus large choix de fonds d'écran." },
