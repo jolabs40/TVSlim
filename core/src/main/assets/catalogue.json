@@ -204,7 +204,8 @@
   ],
   "launchers": [
     { "paquet": "com.spocky.projengmenu", "nom": "Projectivy Launcher", "description": "Free, ad-free, actively maintained. Rich customisation and the widest choice of wallpapers." },
-    { "paquet": "me.efesser.flauncher", "nom": "FLauncher", "description": "Open source and deliberately plain: a grid of applications, nothing else." }
+    { "paquet": "me.efesser.flauncher", "nom": "FLauncher", "description": "Open source and deliberately plain: a grid of applications, nothing else." },
+    { "paquet": "ca.dstudio.atvlauncher.pro", "nom": "ATV Launcher Pro", "description": "Paid, very configurable: rows, folders and sidebar all rearrangeable." }
   ],
   "reglages": [
     {

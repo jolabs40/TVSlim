@@ -352,8 +352,25 @@ private fun EcranAccueil(etat: EtatRemote, onInstaller: (String) -> Unit) {
                 }
             }
 
-            if (launchersTiers.isEmpty()) {
-                etat.catalogue.launchers.forEach { launcher ->
+            // Ceux du catalogue qui ne sont pas encore là. Proposés même quand un launcher tiers
+            // existe déjà : en avoir un n'empêche pas d'en vouloir essayer un autre.
+            val aProposer = etat.catalogue.launchers
+                .filterNot { propose -> launchersTiers.any { it.paquet == propose.paquet } }
+
+            if (aProposer.isNotEmpty()) {
+                Text(
+                    text = stringResource(
+                        if (launchersTiers.isEmpty()) {
+                            R.string.home_to_install
+                        } else {
+                            R.string.home_others
+                        },
+                    ),
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                aProposer.forEach { launcher ->
                     Text(
                         text = launcher.nom,
                         style = MaterialTheme.typography.bodyLarge,

@@ -194,7 +194,8 @@
   },
   "launchers": {
     "com.spocky.projengmenu": { "nom": "Projectivy Launcher", "description": "Gratuit, sans publicité, toujours maintenu. Personnalisation poussée et le plus large choix de fonds d'écran." },
-    "me.efesser.flauncher": { "nom": "FLauncher", "description": "Open source et volontairement sobre : une grille d'applications, rien de plus." }
+    "me.efesser.flauncher": { "nom": "FLauncher", "description": "Open source et volontairement sobre : une grille d'applications, rien de plus." },
+    "ca.dstudio.atvlauncher.pro": { "nom": "ATV Launcher Pro", "description": "Payant, très configurable : rangées, dossiers et barre latérale réorganisables." }
   },
   "reglages": {
     "low_power_standby_enabled": {

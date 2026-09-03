@@ -60,6 +60,8 @@
     <string name="home_none">Aucun launcher tiers sur cet appareil : l\'accueil d\'usine ne peut pas encore être remplacé.</string>
     <string name="home_available">Launcher tiers disponible :</string>
     <string name="home_install">Ouvrir sur le téléviseur</string>
+    <string name="home_to_install">En installer un</string>
+    <string name="home_others">Autres launchers à essayer</string>
     <string name="side_effect_prefix">Effet de bord : %1$s</string>
     <string name="size_mb">%1$d Mo</string>
 

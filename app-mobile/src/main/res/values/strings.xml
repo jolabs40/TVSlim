@@ -62,6 +62,8 @@
     <string name="home_none">No third-party launcher on this device: the factory home screen cannot be replaced yet.</string>
     <string name="home_available">Third-party launcher available:</string>
     <string name="home_install">Open on the television</string>
+    <string name="home_to_install">Install one</string>
+    <string name="home_others">Other launchers to try</string>
     <string name="side_effect_prefix">Side effect: %1$s</string>
     <string name="size_mb">%1$d MB</string>
 
