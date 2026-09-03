@@ -67,6 +67,7 @@ data class EtatRemote(
     val lignes: List<LignePaquet> = emptyList(),
     val journal: List<ActionJournal> = emptyList(),
     val detectes: List<AppareilDecouvert> = emptyList(),
+    val nomsConnus: Map<String, String> = emptyMap(),
     val recherche: String = "",
     val filtre: Filtre = Filtre.TOUS,
     val memoire: RepartitionMemoire = RepartitionMemoire(),
@@ -139,6 +140,7 @@ class RemoteViewModel @Inject constructor(
                 it.copy(
                     hoteSaisi = preferences.dernierHote(),
                     portSaisi = preferences.dernierPort().toString(),
+                    nomsConnus = preferences.nomsConnus(),
                     catalogue = catalogueRepo.catalogue(),
                 )
             }
@@ -154,7 +156,17 @@ class RemoteViewModel @Inject constructor(
         if (veille?.isActive == true) return
         veille = viewModelScope.launch {
             decouverte.flux().collect { appareils ->
-                _etat.update { it.copy(detectes = appareils) }
+                _etat.update { courant ->
+                    courant.copy(
+                        // Le nom du cast d'abord, celui retenu d'une visite précédente ensuite.
+                        detectes = appareils.map { appareil ->
+                            appareil.copy(
+                                nomConvivial = appareil.nomConvivial
+                                    ?: courant.nomsConnus[appareil.hote],
+                            )
+                        },
+                    )
+                }
             }
         }
     }
@@ -255,11 +267,16 @@ class RemoteViewModel @Inject constructor(
             )
             val selection = _etat.value.selection.map { it.entree.paquet }.toSet()
 
+            // Le modèle vient d'être lu : on le retient pour nommer l'appareil la prochaine fois.
+            val nom = "${photo.infos.marque} ${photo.infos.modele}".trim()
+            if (nom.isNotBlank()) preferences.retenirNom(_etat.value.connexion.hote, nom)
+
             _etat.update { courant ->
                 courant.copy(
                     chargement = false,
                     catalogue = catalogue,
                     infos = photo.infos,
+                    nomsConnus = courant.nomsConnus + (_etat.value.connexion.hote to nom),
                     lignes = catalogue.entrees.map { entree ->
                         val etatPaquet = photo.etats[entree.paquet] ?: EtatPaquet.ABSENT
                         LignePaquet(

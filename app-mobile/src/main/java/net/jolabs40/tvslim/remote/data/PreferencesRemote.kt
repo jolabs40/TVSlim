@@ -26,6 +26,22 @@ class PreferencesRemote @Inject constructor(
     suspend fun dernierPort(): Int =
         contexte.magasin.data.first()[CLE_PORT] ?: PORT_ADB_PAR_DEFAUT
 
+    /**
+     * Retient comment s'appelle l'appareil à cette adresse. Le service ADB ne publie qu'un
+     * numéro de série ; une fois connecté une première fois, on connaît son modèle, autant
+     * s'en servir pour les fois suivantes.
+     */
+    suspend fun retenirNom(hote: String, nom: String) {
+        if (hote.isBlank() || nom.isBlank()) return
+        contexte.magasin.edit { it[stringPreferencesKey(PREFIXE_NOM + hote)] = nom }
+    }
+
+    suspend fun nomsConnus(): Map<String, String> = contexte.magasin.data.first()
+        .asMap()
+        .filterKeys { it.name.startsWith(PREFIXE_NOM) }
+        .map { (cle, valeur) -> cle.name.removePrefix(PREFIXE_NOM) to valeur.toString() }
+        .toMap()
+
     suspend fun retenir(hote: String, port: Int) {
         contexte.magasin.edit {
             it[CLE_HOTE] = hote
@@ -34,6 +50,7 @@ class PreferencesRemote @Inject constructor(
     }
 
     private companion object {
+        const val PREFIXE_NOM = "nom_"
         val CLE_HOTE = stringPreferencesKey("dernier_hote")
         val CLE_PORT = intPreferencesKey("dernier_port")
     }

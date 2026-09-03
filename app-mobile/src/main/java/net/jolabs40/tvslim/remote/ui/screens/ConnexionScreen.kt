@@ -138,7 +138,17 @@ fun ConnexionScreen(
                             onClick = { onConnecterA(appareil) },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text("${appareil.hote}:${appareil.port}")
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = appareil.libelle,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Text(
+                                    text = "${appareil.hote}:${appareil.port}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
                         }
                     }
                 }

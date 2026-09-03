@@ -17,7 +17,12 @@ data class AppareilDecouvert(
     val nom: String,
     val hote: String,
     val port: Int,
-)
+    /** Le nom que la personne a donné à l'appareil, s'il se laisse trouver. */
+    val nomConvivial: String? = null,
+) {
+    /** Ce qu'on affiche : le nom donné par la personne, sinon l'adresse. */
+    val libelle: String get() = nomConvivial ?: hote
+}
 
 /**
  * Découverte des téléviseurs par mDNS.
@@ -45,10 +50,22 @@ class DecouverteTv @Inject constructor(
         }
 
         val trouves = ConcurrentHashMap<String, AppareilDecouvert>()
+
+        /**
+         * Le service ADB ne porte qu'un numéro de série. Le Chromecast intégré, lui, publie
+         * `_googlecast._tcp` avec le nom que la personne a donné à l'appareil — « Salon »,
+         * « TV du bas ». On les rapproche par adresse IP.
+         */
+        val nomsParHote = ConcurrentHashMap<String, String>()
+
         val aResoudre = ArrayDeque<NsdServiceInfo>()
         var resolutionEnCours = false
 
-        fun publier() = trySend(trouves.values.sortedBy { it.hote })
+        fun publier() = trySend(
+            trouves.values
+                .map { it.copy(nomConvivial = nomsParHote[it.hote]) }
+                .sortedBy { it.libelle },
+        )
 
         // Une résolution à la fois : NsdManager refuse les demandes simultanées.
         fun resoudreSuivant() {
@@ -67,11 +84,15 @@ class DecouverteTv @Inject constructor(
                     override fun onServiceResolved(info: NsdServiceInfo) {
                         val adresse = info.host?.hostAddress
                         if (adresse != null) {
-                            trouves[info.serviceName] = AppareilDecouvert(
-                                nom = info.serviceName,
-                                hote = adresse,
-                                port = info.port,
-                            )
+                            if (info.serviceType.contains(TYPE_CAST.trim('.'))) {
+                                nomConvivial(info)?.let { nomsParHote[adresse] = it }
+                            } else {
+                                trouves[info.serviceName] = AppareilDecouvert(
+                                    nom = info.serviceName,
+                                    hote = adresse,
+                                    port = info.port,
+                                )
+                            }
                             publier()
                         }
                         resolutionEnCours = false
@@ -102,7 +123,7 @@ class DecouverteTv @Inject constructor(
             }
         }
 
-        val ecoutes = listOf(TYPE_ADB, TYPE_ADB_TLS).mapNotNull { type ->
+        val ecoutes = listOf(TYPE_ADB, TYPE_ADB_TLS, TYPE_CAST).mapNotNull { type ->
             val ecoute = ecouteur()
             runCatching {
                 gestionnaire.discoverServices(type, NsdManager.PROTOCOL_DNS_SD, ecoute)
@@ -123,5 +144,16 @@ class DecouverteTv @Inject constructor(
 
         /** Débogage sans fil d'Android 11+, une fois l'appareil appairé. */
         const val TYPE_ADB_TLS = "_adb-tls-connect._tcp"
+
+        /** Chromecast intégré : c'est lui qui porte le nom donné à l'appareil. */
+        const val TYPE_CAST = "_googlecast._tcp"
+
+        /** `fn` (friendly name) dans les attributs du service cast, `md` à défaut (modèle). */
+        fun nomConvivial(info: NsdServiceInfo): String? {
+            val attributs = info.attributes ?: return null
+            return listOf("fn", "md")
+                .firstNotNullOfOrNull { cle -> attributs[cle]?.toString(Charsets.UTF_8) }
+                ?.takeIf { it.isNotBlank() }
+        }
     }
 }
