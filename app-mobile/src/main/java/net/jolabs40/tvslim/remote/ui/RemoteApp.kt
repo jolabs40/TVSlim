@@ -16,6 +16,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -23,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
@@ -53,6 +57,18 @@ fun RemoteApp() {
     val navigation = rememberNavController()
     val pileCourante by navigation.currentBackStackEntryAsState()
     val messages = remember { SnackbarHostState() }
+
+    // Une session ADB ne survit pas à la veille du téléviseur, ni forcément à un long
+    // passage dans une autre application. Au retour à l'écran, on retente le dernier
+    // téléviseur sans rien demander ; l'échec reste silencieux.
+    val proprietaire = LocalLifecycleOwner.current
+    DisposableEffect(proprietaire) {
+        val observateur = LifecycleEventObserver { _, evenement ->
+            if (evenement == Lifecycle.Event.ON_START) modele.reprendreConnexion()
+        }
+        proprietaire.lifecycle.addObserver(observateur)
+        onDispose { proprietaire.lifecycle.removeObserver(observateur) }
+    }
 
     // Chaque retour d'action passe par la même bannière, puis est consommé.
     LaunchedEffect(etat.message) {
@@ -132,6 +148,7 @@ fun RemoteApp() {
                     etat = etat,
                     onActualiser = modele::rafraichirMemoire,
                     onForcerArret = modele::forcerArret,
+                    onRedefinirReference = modele::redefinirReference,
                 )
             }
             composable("journal") {

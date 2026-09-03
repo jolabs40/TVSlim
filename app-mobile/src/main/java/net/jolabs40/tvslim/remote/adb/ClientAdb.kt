@@ -1,10 +1,7 @@
 package net.jolabs40.tvslim.remote.adb
 
-import android.content.Context
 import android.util.Log
-import dadb.AdbKeyPair
 import dadb.Dadb
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +12,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import net.jolabs40.tvslim.shell.ExecuteurCommande
 import net.jolabs40.tvslim.shell.ResultatShell
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,11 +35,11 @@ const val PORT_ADB_PAR_DEFAUT = 5555
  * dans `/data/misc/adb/adb_keys` du téléviseur : **l'autorisation survit aux redémarrages**.
  * C'est précisément ce qui manque à un service privilégié local, qui meurt à chaque extinction.
  *
- * La clé privée ne quitte jamais le stockage interne de l'application.
+ * La clé privée ne quitte jamais l'appareil, et y dort chiffrée (voir [DepotCles]).
  */
 @Singleton
 class ClientAdb @Inject constructor(
-    @ApplicationContext private val contexte: Context,
+    private val depotCles: DepotCles,
 ) : ExecuteurCommande {
 
     private val _connexion = MutableStateFlow(ConnexionUi())
@@ -52,89 +48,154 @@ class ClientAdb @Inject constructor(
     private val verrou = Mutex()
     private var session: Dadb? = null
 
-    private val dossierCles: File by lazy {
-        File(contexte.filesDir, "adb").apply { mkdirs() }
-    }
+    /** Le dernier téléviseur joint volontairement : c'est vers lui que va toute reprise. */
+    private var cible: Pair<String, Int>? = null
 
-    /** Paire de clés propre à cette installation, créée une fois pour toutes. */
-    private fun cles(): AdbKeyPair {
-        val privee = File(dossierCles, "adbkey")
-        val publique = File(dossierCles, "adbkey.pub")
-        if (!privee.exists() || !publique.exists()) {
-            AdbKeyPair.generate(privee, publique)
-        }
-        return AdbKeyPair.read(privee, publique)
-    }
+    /** Quand la dernière reprise a échoué, pour ne pas la retenter à chaque commande. */
+    private var dernierEchecReprise = 0L
 
-    suspend fun connecter(hote: String, port: Int = PORT_ADB_PAR_DEFAUT): Boolean =
-        withContext(Dispatchers.IO) {
-            verrou.withLock {
-                fermerSession()
-                _connexion.value = ConnexionUi(EtatConnexion.CONNEXION, hote, port)
-                try {
-                    val ouverte = withTimeoutOrNull(DELAI_CONNEXION_MS) {
-                        Dadb.create(hote, port, cles())
-                    } ?: throw java.net.SocketTimeoutException(MESSAGE_ATTENTE_AUTORISATION)
-                    session = ouverte
-                    _connexion.value = ConnexionUi(EtatConnexion.CONNECTE, hote, port)
-                    true
-                } catch (erreur: Throwable) {
-                    Log.w(TAG, "Connexion à $hote:$port impossible", erreur)
-                    _connexion.value = ConnexionUi(
-                        etat = EtatConnexion.ERREUR,
-                        hote = hote,
-                        port = port,
-                        message = diagnostic(erreur),
-                    )
-                    false
+    /**
+     * Ouvre la connexion. [discret] sert aux tentatives que personne n'a demandées — au retour
+     * dans l'application, par exemple : un échec y est banal (téléviseur éteint) et ne mérite
+     * pas d'afficher une erreur en travers de l'écran.
+     */
+    suspend fun connecter(
+        hote: String,
+        port: Int = PORT_ADB_PAR_DEFAUT,
+        discret: Boolean = false,
+    ): Boolean = withContext(Dispatchers.IO) {
+        verrou.withLock {
+            fermerSession()
+            _connexion.value = ConnexionUi(EtatConnexion.CONNEXION, hote, port)
+            try {
+                val delai = if (discret) DELAI_REPRISE_MS else DELAI_CONNEXION_MS
+                val ouverte = withTimeoutOrNull(delai) {
+                    Dadb.create(hote, port, depotCles.paire())
+                } ?: throw java.net.SocketTimeoutException(MESSAGE_ATTENTE_AUTORISATION)
+                session = ouverte
+                cible = hote to port
+                dernierEchecReprise = 0L
+                _connexion.value = ConnexionUi(EtatConnexion.CONNECTE, hote, port)
+                true
+            } catch (erreur: Throwable) {
+                Log.w(TAG, "Connexion à $hote:$port impossible", erreur)
+                _connexion.value = if (discret) {
+                    ConnexionUi(EtatConnexion.DECONNECTE, hote, port)
+                } else {
+                    ConnexionUi(EtatConnexion.ERREUR, hote, port, diagnostic(erreur))
                 }
+                false
             }
         }
+    }
 
     fun deconnecter() {
         fermerSession()
+        // Se déconnecter est un choix : rien ne doit rouvrir la session dans le dos.
+        cible = null
         _connexion.value = ConnexionUi()
     }
 
+    /**
+     * Un téléviseur qui s'endort ferme sa session sans prévenir, et l'affaire se découvre à la
+     * commande suivante. Plutôt que de renvoyer la personne sur « Se connecter », on rouvre
+     * une fois et on rejoue.
+     *
+     * Le rejeu est sans danger parce que **toutes** les commandes envoyées d'ici sont
+     * idempotentes : lectures, `pm disable-user`, `pm enable`, `am force-stop`, `settings put`,
+     * ouverture d'une fiche de boutique. Rien qui compte, ajoute ou supprime. Une commande qui
+     * ne le serait pas ne devrait pas passer par ce chemin.
+     */
     override suspend fun executer(commande: String): ResultatShell = withContext(Dispatchers.IO) {
         verrou.withLock {
-            val active = session
-                ?: return@withLock ResultatShell.indisponible("Aucun téléviseur connecté.")
+            when (val premiere = tenter(commande)) {
+                is Issue.Repondu -> premiere.resultat
+                is Issue.Rompue ->
+                    if (!reprendre()) {
+                        signalerRupture(premiere.motif)
+                        ResultatShell.indisponible(premiere.motif)
+                    } else {
+                        when (val seconde = tenter(commande)) {
+                            is Issue.Repondu -> seconde.resultat
+                            is Issue.Rompue -> {
+                                signalerRupture(seconde.motif)
+                                ResultatShell.indisponible(seconde.motif)
+                            }
+                        }
+                    }
+            }
+        }
+    }
 
-            // Sans délai maximal, un téléviseur qui se fige ou s'endort en pleine commande
-            // bloquerait l'application pour toujours — et le verrou avec elle. Fermer la
-            // session est ce qui débloque réellement la lecture en cours.
-            val reponse = withTimeoutOrNull(DELAI_COMMANDE_MS) {
-                runCatching { active.shell(commande) }
+    /** Ce qu'une commande a donné : une réponse, ou une session à rouvrir. */
+    private sealed interface Issue {
+        data class Repondu(val resultat: ResultatShell) : Issue
+        data class Rompue(val motif: String) : Issue
+    }
+
+    private suspend fun tenter(commande: String): Issue {
+        val active = session ?: return Issue.Rompue("Aucun téléviseur connecté.")
+
+        // Sans délai maximal, un téléviseur qui se fige ou s'endort en pleine commande
+        // bloquerait l'application pour toujours — et le verrou avec elle. Fermer la
+        // session est ce qui débloque réellement la lecture en cours.
+        val reponse = withTimeoutOrNull(DELAI_COMMANDE_MS) {
+            runCatching { active.shell(commande) }
+        }
+
+        return when {
+            reponse == null -> {
+                Log.w(TAG, "Délai dépassé : $commande")
+                fermerSession()
+                Issue.Rompue(MESSAGE_DELAI)
             }
 
-            when {
-                reponse == null -> {
-                    Log.w(TAG, "Délai dépassé : $commande")
-                    fermerSession()
-                    signalerRupture(MESSAGE_DELAI)
-                    ResultatShell.indisponible(MESSAGE_DELAI)
-                }
+            reponse.isFailure -> {
+                val erreur = reponse.exceptionOrNull() ?: IllegalStateException()
+                Log.w(TAG, "Commande refusée : $commande", erreur)
+                fermerSession()
+                Issue.Rompue(diagnostic(erreur))
+            }
 
-                reponse.isFailure -> {
-                    val erreur = reponse.exceptionOrNull() ?: IllegalStateException()
-                    Log.w(TAG, "Commande refusée : $commande", erreur)
-                    fermerSession()
-                    signalerRupture(diagnostic(erreur))
-                    ResultatShell.indisponible(diagnostic(erreur))
-                }
-
-                else -> reponse.getOrThrow().let { sortie ->
+            else -> reponse.getOrThrow().let { sortie ->
+                Issue.Repondu(
                     ResultatShell(
                         code = sortie.exitCode,
                         sortie = listOf(sortie.output, sortie.errorOutput)
                             .filter { it.isNotBlank() }
                             .joinToString("\n")
                             .trim(),
-                    )
-                }
+                    ),
+                )
             }
         }
+    }
+
+    /**
+     * Rouvre la session sur le même téléviseur, sans rien demander à personne : la clé est déjà
+     * autorisée, il n'y a pas de dialogue à valider à la télécommande.
+     *
+     * Un échec met la reprise au repos un moment. Sans cela, une désactivation de quatre-vingts
+     * paquets sur un téléviseur qu'on vient d'éteindre tenterait quatre-vingts reconnexions.
+     */
+    private suspend fun reprendre(): Boolean {
+        val (hote, port) = cible ?: return false
+        val maintenant = System.currentTimeMillis()
+        if (maintenant - dernierEchecReprise < REPOS_APRES_ECHEC_MS) return false
+
+        Log.i(TAG, "Session rompue, reprise sur $hote:$port")
+        _connexion.value = _connexion.value.copy(etat = EtatConnexion.CONNEXION)
+        val ouverte = withTimeoutOrNull(DELAI_REPRISE_MS) {
+            runCatching { Dadb.create(hote, port, depotCles.paire()) }.getOrNull()
+        }
+        if (ouverte == null) {
+            dernierEchecReprise = maintenant
+            return false
+        }
+        session = ouverte
+        dernierEchecReprise = 0L
+        _connexion.value = ConnexionUi(EtatConnexion.CONNECTE, hote, port)
+        return true
     }
 
     private fun signalerRupture(message: String) {
@@ -178,6 +239,12 @@ class ClientAdb @Inject constructor(
 
         /** Une commande de gestion de paquets répond en quelques dizaines de millisecondes. */
         const val DELAI_COMMANDE_MS = 20_000L
+
+        /** Court : une reprise ne demande aucune validation, elle aboutit ou l'appareil dort. */
+        const val DELAI_REPRISE_MS = 12_000L
+
+        /** Après un échec de reprise, on laisse le téléviseur tranquille un moment. */
+        const val REPOS_APRES_ECHEC_MS = 20_000L
 
         const val MESSAGE_DELAI =
             "Le téléviseur n'a pas répondu à temps. Vérifiez qu'il est allumé et réessayez."

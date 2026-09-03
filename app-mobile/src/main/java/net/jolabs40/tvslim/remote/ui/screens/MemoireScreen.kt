@@ -41,6 +41,7 @@ fun MemoireScreen(
     etat: EtatRemote,
     onActualiser: () -> Unit,
     onForcerArret: (String) -> Unit,
+    onRedefinirReference: () -> Unit,
 ) {
     if (!etat.connecte) {
         Box(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
@@ -60,63 +61,70 @@ fun MemoireScreen(
 
     val memoire = etat.memoire
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Card(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.memory_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
+    // Tout défile ensemble : sur un téléphone, deux cartes fixes ne laisseraient presque rien
+    // à la liste des processus, qui est pourtant le cœur de cet écran.
+    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+        item {
+            CarteGain(mesures = etat.mesures, onRedefinirReference = onRedefinirReference)
+        }
 
-                if (memoire.renseignee) {
-                    Jauge(memoire.utiliseeKo, memoire.totalKo)
-                    Ligne(stringResource(R.string.memory_total), mo(memoire.totalKo))
-                    Ligne(stringResource(R.string.memory_used), mo(memoire.utiliseeKo))
-                    Ligne(stringResource(R.string.memory_free), mo(memoire.libreKo))
-                    if (memoire.cacheKo > 0) {
-                        Ligne(stringResource(R.string.memory_cached), mo(memoire.cacheKo))
-                    }
-                    if (memoire.zramKo > 0) {
-                        Ligne(stringResource(R.string.memory_zram), mo(memoire.zramKo))
-                    }
-                } else {
+        item {
+            Card(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     Text(
-                        text = stringResource(R.string.memory_reading),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = stringResource(R.string.memory_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                     )
-                }
 
-                Button(onClick = onActualiser, enabled = !etat.chargement) {
-                    Text(stringResource(R.string.action_refresh))
+                    if (memoire.renseignee) {
+                        Jauge(memoire.utiliseeKo, memoire.totalKo)
+                        Ligne(stringResource(R.string.memory_total), mo(memoire.totalKo))
+                        Ligne(stringResource(R.string.memory_used), mo(memoire.utiliseeKo))
+                        Ligne(stringResource(R.string.memory_free), mo(memoire.libreKo))
+                        if (memoire.cacheKo > 0) {
+                            Ligne(stringResource(R.string.memory_cached), mo(memoire.cacheKo))
+                        }
+                        if (memoire.zramKo > 0) {
+                            Ligne(stringResource(R.string.memory_zram), mo(memoire.zramKo))
+                        }
+                    } else {
+                        Text(
+                            text = stringResource(R.string.memory_reading),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    Button(onClick = onActualiser, enabled = !etat.chargement) {
+                        Text(stringResource(R.string.action_refresh))
+                    }
                 }
             }
         }
 
-        HorizontalDivider()
+        item {
+            HorizontalDivider()
+            Text(
+                text = stringResource(R.string.memory_processes, memoire.processus.size),
+                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
 
-        Text(
-            text = stringResource(R.string.memory_processes, memoire.processus.size),
-            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-        )
-
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(memoire.processus, key = { "${it.pid}-${it.nom}" }) { processus ->
-                VueProcessus(
-                    processus = processus,
-                    nomConnu = etat.catalogue.entrees
-                        .firstOrNull { it.paquet == processus.paquet }
-                        ?.nom,
-                    totalKo = memoire.totalKo,
-                    onArreter = { onForcerArret(processus.paquet) },
-                )
-            }
+        items(memoire.processus, key = { "${it.pid}-${it.nom}" }) { processus ->
+            VueProcessus(
+                processus = processus,
+                nomConnu = etat.catalogue.entrees
+                    .firstOrNull { it.paquet == processus.paquet }
+                    ?.nom,
+                totalKo = memoire.totalKo,
+                onArreter = { onForcerArret(processus.paquet) },
+            )
         }
     }
 }

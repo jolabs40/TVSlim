@@ -15,90 +15,26 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import net.jolabs40.tvslim.catalog.Catalogue
 import net.jolabs40.tvslim.catalog.CatalogueRepository
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LecteurDistant
-import net.jolabs40.tvslim.device.RepartitionMemoire
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.journal.TypeAction
+import net.jolabs40.tvslim.mesure.HistoriqueMesures
+import net.jolabs40.tvslim.mesure.Mesure
+import net.jolabs40.tvslim.mesure.MesuresRepository
 import net.jolabs40.tvslim.moteur.MoteurDebloat
 import net.jolabs40.tvslim.remote.adb.AppareilDecouvert
 import net.jolabs40.tvslim.remote.adb.ClientAdb
 import net.jolabs40.tvslim.remote.adb.DecouverteTv
-import net.jolabs40.tvslim.remote.adb.ConnexionUi
-import net.jolabs40.tvslim.remote.adb.EtatConnexion
 import net.jolabs40.tvslim.remote.adb.PORT_ADB_PAR_DEFAUT
 import net.jolabs40.tvslim.remote.data.PreferencesRemote
 import java.io.File
 import javax.inject.Inject
-
-data class LignePaquet(
-    val entree: EntreePaquet,
-    val etat: EtatPaquet,
-    val selectionne: Boolean = false,
-)
-
-/** Filtre d'affichage de la liste. */
-enum class Filtre { TOUS, ACTIFS, DESACTIVES }
-
-/** Ce qu'on s'apprête à faire, soumis à confirmation. */
-sealed interface Confirmation {
-    /** Désactivation : on montre surtout les effets de bord, connus mais jamais affichés avant. */
-    data class Application(val entrees: List<EntreePaquet>) : Confirmation
-
-    data class Restauration(val paquets: List<String>) : Confirmation
-}
-
-data class Progression(val fait: Int, val total: Int)
-
-data class EtatRemote(
-    val hoteSaisi: String = "",
-    val portSaisi: String = PORT_ADB_PAR_DEFAUT.toString(),
-    val connexion: ConnexionUi = ConnexionUi(),
-    val chargement: Boolean = false,
-    val progression: Progression? = null,
-    val catalogue: Catalogue = Catalogue(),
-    val infos: InfosAppareil = InfosAppareil.VIDE,
-    val lignes: List<LignePaquet> = emptyList(),
-    val journal: List<ActionJournal> = emptyList(),
-    val detectes: List<AppareilDecouvert> = emptyList(),
-    val nomsConnus: Map<String, String> = emptyMap(),
-    val recherche: String = "",
-    val filtre: Filtre = Filtre.TOUS,
-    val memoire: RepartitionMemoire = RepartitionMemoire(),
-    val confirmation: Confirmation? = null,
-    val message: String? = null,
-) {
-    val connecte: Boolean get() = connexion.etat == EtatConnexion.CONNECTE
-    val travailEnCours: Boolean get() = progression != null
-    val selection: List<LignePaquet> get() = lignes.filter { it.selectionne }
-
-    private val presentes: List<LignePaquet> get() = lignes.filter { it.etat != EtatPaquet.ABSENT }
-
-    /** Ce que la liste affiche vraiment, une fois la recherche et le filtre appliqués. */
-    val affichees: List<LignePaquet>
-        get() = presentes
-            .filter { ligne ->
-                when (filtre) {
-                    Filtre.TOUS -> true
-                    Filtre.ACTIFS -> ligne.etat == EtatPaquet.ACTIF
-                    Filtre.DESACTIVES -> ligne.etat == EtatPaquet.DESACTIVE
-                }
-            }
-            .filter { ligne ->
-                recherche.isBlank() ||
-                    ligne.entree.nom.contains(recherche, ignoreCase = true) ||
-                    ligne.entree.paquet.contains(recherche, ignoreCase = true)
-            }
-
-    val nombreActifs: Int get() = presentes.count { it.etat == EtatPaquet.ACTIF }
-    val nombreDesactives: Int get() = presentes.count { it.etat == EtatPaquet.DESACTIVE }
-}
 
 /**
  * Pilote du compagnon : une connexion ADB, un catalogue, un journal par téléviseur.
@@ -120,10 +56,14 @@ class RemoteViewModel @Inject constructor(
 
     private val lecteur = LecteurDistant(client)
     private var journal: JournalRepository? = null
+    private var mesures: MesuresRepository? = null
     private var moteur: MoteurDebloat? = null
 
     /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
     private var suiviJournal: Job? = null
+
+    /** Une reconnexion silencieuse à la fois, sinon le retour à l'écran en lancerait une chaque fois. */
+    private var reprise: Job? = null
 
     /** Guette l'arrivée d'un launcher que l'on vient d'envoyer installer. */
     private var guet: Job? = null
@@ -209,6 +149,27 @@ class RemoteViewModel @Inject constructor(
     }
 
     /**
+     * Retente le dernier téléviseur au retour dans l'application, sans le demander.
+     *
+     * Une session ADB ne survit pas à la mise en veille du téléviseur ; retrouver l'application
+     * déconnectée après avoir simplement changé de fenêtre n'a aucun sens, alors que la clé est
+     * autorisée et que l'adresse est connue. En cas d'échec — téléviseur éteint, le cas le plus
+     * banal — rien ne s'affiche : la personne n'a rien demandé.
+     */
+    fun reprendreConnexion() {
+        if (_etat.value.connecte || reprise?.isActive == true) return
+        reprise = viewModelScope.launch {
+            val hote = _etat.value.hoteSaisi.ifBlank { preferences.dernierHote() }
+            if (hote.isBlank()) return@launch
+            val port = _etat.value.portSaisi.toIntOrNull() ?: preferences.dernierPort()
+            if (client.connecter(hote, port, discret = true)) {
+                ouvrirJournal(hote)
+                rafraichir()
+            }
+        }
+    }
+
+    /**
      * Applique le contenu d'un QR code affiché par le téléviseur, puis se connecte dans la
      * foulée. Trois formes acceptées : l'URI `tvslim://connect?host=…&port=…` que produit
      * l'application du téléviseur, une adresse `hôte:port`, ou une adresse seule.
@@ -243,11 +204,21 @@ class RemoteViewModel @Inject constructor(
         client.deconnecter()
         guet?.cancel()
         guet = null
+        reprise?.cancel()
+        reprise = null
         suiviJournal?.cancel()
         suiviJournal = null
         journal = null
+        mesures = null
         moteur = null
-        _etat.update { it.copy(lignes = emptyList(), infos = InfosAppareil.VIDE, journal = emptyList()) }
+        _etat.update {
+            it.copy(
+                lignes = emptyList(),
+                infos = InfosAppareil.VIDE,
+                journal = emptyList(),
+                mesures = HistoriqueMesures(),
+            )
+        }
     }
 
     fun rafraichir() {
@@ -271,6 +242,18 @@ class RemoteViewModel @Inject constructor(
             val nom = "${photo.infos.marque} ${photo.infos.modele}".trim()
             if (nom.isNotBlank()) preferences.retenirNom(_etat.value.connexion.hote, nom)
 
+            // Chaque photographie sert aussi de mesure : la première fait référence, et c'est
+            // à elle qu'on comparera l'appareil une fois dégraissé.
+            mesures?.enregistrer(
+                Mesure(
+                    horodatage = System.currentTimeMillis(),
+                    paquetsActifs = photo.infos.paquetsInstalles,
+                    paquetsDesactives = photo.infos.paquetsDesactives,
+                    memoireTotaleMo = photo.infos.memoireTotaleMo,
+                    memoireLibreMo = photo.infos.memoireLibreMo,
+                ),
+            )
+
             _etat.update { courant ->
                 courant.copy(
                     chargement = false,
@@ -291,38 +274,11 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
-    fun basculerSelection(paquet: String) {
-        _etat.update { courant ->
-            courant.copy(
-                lignes = courant.lignes.map { ligne ->
-                    if (ligne.entree.paquet == paquet && ligne.etat == EtatPaquet.ACTIF) {
-                        ligne.copy(selectionne = !ligne.selectionne)
-                    } else {
-                        ligne
-                    }
-                },
-            )
-        }
-    }
+    fun basculerSelection(paquet: String) = _etat.update { it.avecBascule(paquet) }
 
-    fun selectionnerProfil(profil: Profil) {
-        _etat.update { courant ->
-            courant.copy(
-                lignes = courant.lignes.map { ligne ->
-                    if (ligne.entree.categorie in profil.categories &&
-                        ligne.etat == EtatPaquet.ACTIF
-                    ) {
-                        ligne.copy(selectionne = true)
-                    } else {
-                        ligne
-                    }
-                },
-            )
-        }
-    }
+    fun selectionnerProfil(profil: Profil) = _etat.update { it.avecProfil(profil) }
 
-    fun toutDeselectionner() =
-        _etat.update { c -> c.copy(lignes = c.lignes.map { it.copy(selectionne = false) }) }
+    fun toutDeselectionner() = _etat.update { it.sansSelection() }
 
     // --- Confirmation ---------------------------------------------------------------------
 
@@ -498,15 +454,37 @@ class RemoteViewModel @Inject constructor(
         rafraichir()
     }
 
+    /**
+     * Repart d'une page blanche : l'état actuel devient le « avant ». Utile après une remise à
+     * zéro du téléviseur, ou quand on veut mesurer une nouvelle passe.
+     */
+    fun redefinirReference() {
+        val actives = mesures ?: return
+        viewModelScope.launch {
+            actives.redefinirReference()
+            afficher("Nouveau point de départ enregistré.")
+        }
+    }
+
     private suspend fun ouvrirJournal(hote: String) {
         suiviJournal?.cancel()
-        val fichier = File(File(contexte.filesDir, "journaux"), "${hote.replace('.', '_')}.json")
-        val ouvert = JournalRepository(fichier)
+        val cle = hote.replace('.', '_')
+        val ouvert = JournalRepository(File(File(contexte.filesDir, "journaux"), "$cle.json"))
         ouvert.charger()
         journal = ouvert
         moteur = MoteurDebloat(client, ouvert)
+
+        val relevees = MesuresRepository(File(File(contexte.filesDir, "mesures"), "$cle.json"))
+        relevees.charger()
+        mesures = relevees
+
         suiviJournal = viewModelScope.launch {
-            ouvert.actions.collect { actions -> _etat.update { it.copy(journal = actions) } }
+            launch {
+                ouvert.actions.collect { actions -> _etat.update { it.copy(journal = actions) } }
+            }
+            launch {
+                relevees.historique.collect { h -> _etat.update { it.copy(mesures = h) } }
+            }
         }
     }
 

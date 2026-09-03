@@ -84,4 +84,16 @@
     <string name="connection_manual_title">Or type the address</string>
     <string name="discovery_title">Televisions found</string>
     <string name="discovery_hint">Announced on your network as reachable over ADB. Tap one to connect.</string>
+
+    <string name="gain_title">Before / after</string>
+    <string name="gain_since">Baseline taken on %1$s</string>
+    <string name="gain_packages">Packages disabled</string>
+    <string name="gain_memory">Free memory</string>
+    <string name="gain_before">Before</string>
+    <string name="gain_now">Now</string>
+    <string name="gain_delta_plus">+%1$d</string>
+    <string name="gain_delta_minus">%1$d</string>
+    <string name="gain_waiting">The first reading is the baseline. Come back after disabling a few packages to see what it changed.</string>
+    <string name="gain_reset">Use current state as new baseline</string>
+    <string name="gain_memory_caveat">Free memory swings with what the television is doing: read it as a trend, not as a verdict.</string>
 </resources>

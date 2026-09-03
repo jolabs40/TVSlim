@@ -17,6 +17,7 @@ dadb = "2.0.0"
 zxing = "3.5.4"
 codeScanner = "16.1.0"
 playServicesBase = "18.10.1"
+securityCrypto = "1.1.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 testRunner = "1.6.2"
@@ -71,6 +72,9 @@ code-scanner = { group = "com.google.android.gms", name = "play-services-code-sc
 
 # ModuleInstall : pré-télécharge l'interface de scan avant qu'on en ait besoin.
 play-services-base = { group = "com.google.android.gms", name = "play-services-base", version.ref = "playServicesBase" }
+
+# Chiffrement au repos de la clé ADB, avec une clé maître du keystore Android.
+security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
 # Client ADB pur Kotlin : le compagnon parle au téléviseur sans binaire adb
 dadb = { group = "dev.mobile", name = "dadb", version.ref = "dadb" }
