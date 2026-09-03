@@ -80,4 +80,6 @@
     <string name="connection_scan_preparing">Préparation du scanner…</string>
     <string name="connection_scan_unavailable">Scanner indisponible sur cet appareil — saisissez l\'adresse ci-dessous.</string>
     <string name="connection_manual_title">Ou saisir l\'adresse</string>
+    <string name="discovery_title">Téléviseurs détectés</string>
+    <string name="discovery_hint">Annoncés sur votre réseau comme joignables en ADB. Touchez-en un pour vous connecter.</string>
 </resources>

@@ -110,6 +110,9 @@ fun RemoteApp() {
                     onScan = modele::appliquerScan,
                     onEchecScan = modele::signalerEchecScan,
                     onInstallerLauncher = modele::installerLauncher,
+                    onChercher = modele::chercherAppareils,
+                    onArreterRecherche = modele::arreterRecherche,
+                    onConnecterA = modele::connecterA,
                 )
             }
             composable("paquets") {

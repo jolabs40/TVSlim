@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +55,9 @@ fun ConnexionScreen(
     onScan: (String) -> Unit,
     onEchecScan: (String) -> Unit,
     onInstallerLauncher: (String) -> Unit,
+    onChercher: () -> Unit,
+    onArreterRecherche: () -> Unit,
+    onConnecterA: (net.jolabs40.tvslim.remote.adb.AppareilDecouvert) -> Unit,
 ) {
     val contexte = LocalContext.current
     val options = remember {
@@ -105,6 +109,40 @@ fun ConnexionScreen(
             EcranAccueil(etat = etat, onInstaller = onInstallerLauncher)
             AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
             return@Column
+        }
+
+        // Le plus court des chemins quand il aboutit : l'appareil s'annonce, on le touche.
+        DisposableEffect(Unit) {
+            onChercher()
+            onDispose { onArreterRecherche() }
+        }
+
+        if (etat.detectes.isNotEmpty()) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.discovery_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = stringResource(R.string.discovery_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    etat.detectes.forEach { appareil ->
+                        OutlinedButton(
+                            onClick = { onConnecterA(appareil) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("${appareil.hote}:${appareil.port}")
+                        }
+                    }
+                }
+            }
         }
 
         // Chemin principal : scanner le code affiché par le téléviseur.

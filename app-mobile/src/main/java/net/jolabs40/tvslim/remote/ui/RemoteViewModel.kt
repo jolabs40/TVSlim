@@ -27,7 +27,9 @@ import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.journal.TypeAction
 import net.jolabs40.tvslim.moteur.MoteurDebloat
+import net.jolabs40.tvslim.remote.adb.AppareilDecouvert
 import net.jolabs40.tvslim.remote.adb.ClientAdb
+import net.jolabs40.tvslim.remote.adb.DecouverteTv
 import net.jolabs40.tvslim.remote.adb.ConnexionUi
 import net.jolabs40.tvslim.remote.adb.EtatConnexion
 import net.jolabs40.tvslim.remote.adb.PORT_ADB_PAR_DEFAUT
@@ -64,6 +66,7 @@ data class EtatRemote(
     val infos: InfosAppareil = InfosAppareil.VIDE,
     val lignes: List<LignePaquet> = emptyList(),
     val journal: List<ActionJournal> = emptyList(),
+    val detectes: List<AppareilDecouvert> = emptyList(),
     val recherche: String = "",
     val filtre: Filtre = Filtre.TOUS,
     val memoire: RepartitionMemoire = RepartitionMemoire(),
@@ -108,6 +111,7 @@ class RemoteViewModel @Inject constructor(
     private val client: ClientAdb,
     private val catalogueRepo: CatalogueRepository,
     private val preferences: PreferencesRemote,
+    private val decouverte: DecouverteTv,
 ) : ViewModel() {
 
     private val _etat = MutableStateFlow(EtatRemote())
@@ -123,6 +127,9 @@ class RemoteViewModel @Inject constructor(
     /** Guette l'arrivée d'un launcher que l'on vient d'envoyer installer. */
     private var guet: Job? = null
 
+    /** La découverte mDNS ne tourne que pendant qu'on regarde l'écran de connexion. */
+    private var veille: Job? = null
+
     init {
         viewModelScope.launch {
             client.connexion.collect { connexion -> _etat.update { it.copy(connexion = connexion) } }
@@ -136,6 +143,31 @@ class RemoteViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    /**
+     * Cherche les téléviseurs qui s'annoncent sur le réseau. Un appareil dont le débogage
+     * réseau est actif publie un service `_adb._tcp` : autant s'en servir plutôt que d'exiger
+     * une adresse IP ou un QR code.
+     */
+    fun chercherAppareils() {
+        if (veille?.isActive == true) return
+        veille = viewModelScope.launch {
+            decouverte.flux().collect { appareils ->
+                _etat.update { it.copy(detectes = appareils) }
+            }
+        }
+    }
+
+    fun arreterRecherche() {
+        veille?.cancel()
+        veille = null
+    }
+
+    /** Se connecte à un appareil trouvé sur le réseau, sans rien saisir. */
+    fun connecterA(appareil: AppareilDecouvert) {
+        _etat.update { it.copy(hoteSaisi = appareil.hote, portSaisi = appareil.port.toString()) }
+        connecter()
     }
 
     fun majHote(valeur: String) = _etat.update { it.copy(hoteSaisi = valeur.trim()) }

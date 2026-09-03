@@ -82,4 +82,6 @@
     <string name="connection_scan_preparing">Preparing the scanner…</string>
     <string name="connection_scan_unavailable">Scanner unavailable on this device — type the address below.</string>
     <string name="connection_manual_title">Or type the address</string>
+    <string name="discovery_title">Televisions found</string>
+    <string name="discovery_hint">Announced on your network as reachable over ADB. Tap one to connect.</string>
 </resources>
