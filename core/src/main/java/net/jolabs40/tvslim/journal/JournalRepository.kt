@@ -16,7 +16,7 @@ import java.util.Date
 import java.util.Locale
 
 @Serializable
-enum class TypeAction { DESACTIVATION, REACTIVATION, REGLAGE, ACCUEIL }
+enum class TypeAction { DESACTIVATION, REACTIVATION, REGLAGE, ACCUEIL, PERMISSION, APP_OP }
 
 @Serializable
 data class ActionJournal(
@@ -91,6 +91,23 @@ class JournalRepository(
         return restauration
     }
 
+    /**
+     * Commandes qui rendent leurs permissions aux applications, la plus récente l'emportant.
+     * Les app-ops y figurent aussi : une permission accompagnée d'un app-op ne se rend
+     * complètement qu'en remettant les deux.
+     *
+     * Même principe que pour les réglages : c'est la dernière décision prise sur une cible qui
+     * compte, pas l'historique complet.
+     */
+    fun annulationsDesPermissions(): Map<String, String> {
+        val concernees = setOf(TypeAction.PERMISSION, TypeAction.APP_OP)
+        val restauration = LinkedHashMap<String, String>()
+        _actions.value.filter { it.reussi && it.type in concernees }.forEach { action ->
+            restauration[action.cible] = action.commandeAnnulation
+        }
+        return restauration
+    }
+
     suspend fun vider() = withContext(Dispatchers.IO) {
         verrou.withLock {
             _actions.value = emptyList()
@@ -121,6 +138,7 @@ class JournalRepository(
             appendLine("```bash")
             paquetsADesactivationActive().forEach { appendLine("adb shell pm enable $it") }
             annulationsDesReglages().values.forEach { appendLine("adb shell $it") }
+            annulationsDesPermissions().values.forEach { appendLine("adb shell $it") }
             appendLine("```")
         }
         cible.parentFile?.mkdirs()

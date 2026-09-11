@@ -120,6 +120,95 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             sortie.sortie.lineSequence().any { it.trim() == "package:$paquet" }
     }
 
+    /**
+     * Permissions qu'une application déclare, et celles qu'elle a effectivement obtenues.
+     *
+     * Sert avant un `pm grant` : le manifeste fait foi, et une permission qui n'y figure pas se
+     * refuse ici, avec une phrase, plutôt que sur le téléviseur, avec une exception Java.
+     *
+     * `dumpsys package` range les permissions en sections indentées — `requested permissions:`
+     * énumère ce que le manifeste demande, `install permissions:` et `runtime permissions:` ce
+     * qui est réellement accordé. `declared permissions:` liste au contraire ce que
+     * l'application *définit* pour les autres : elle ne nous intéresse pas.
+     */
+    suspend fun permissions(paquet: String): PermissionsPaquet {
+        if (!IDENTIFIANT.matches(paquet)) return PermissionsPaquet()
+        val sortie = executeur.executer("dumpsys package $paquet")
+        if (!sortie.reussi) return PermissionsPaquet()
+
+        val demandees = mutableSetOf<String>()
+        val accordees = mutableSetOf<String>()
+        var trouve = false
+        var section = SectionPermissions.AUCUNE
+
+        sortie.sortie.lineSequence().forEach { ligne ->
+            val nette = ligne.trim()
+
+            // Un en-tête de section : une ligne qui se termine par « : » sans rien porter
+            // d'autre. « User 0: ceDataInode=… » n'en est pas un, et sépare pourtant les
+            // permissions d'installation de celles d'exécution.
+            if (nette.endsWith(":") && !nette.contains("granted=")) {
+                val titre = nette.lowercase()
+                section = when {
+                    titre.startsWith("requested permissions") -> SectionPermissions.DEMANDEES
+                    titre.startsWith("install permissions") ||
+                        titre.startsWith("runtime permissions") -> SectionPermissions.ACCORDEES
+
+                    else -> SectionPermissions.AUCUNE
+                }
+                // Seul un paquet réellement installé porte ces sections : `dumpsys` répond
+                // « Unable to find package » et rien d'autre pour les autres.
+                if (section != SectionPermissions.AUCUNE) trouve = true
+                return@forEach
+            }
+            if (section == SectionPermissions.AUCUNE) return@forEach
+
+            // Tout ce qui n'est pas un nom de permission est ignoré sans quitter la section :
+            // `dumpsys` y glisse des lignes de service, et en sortir trop tôt ferait manquer
+            // les permissions suivantes.
+            val trouvee = LIGNE_PERMISSION.find(nette) ?: return@forEach
+            val nom = trouvee.groupValues[1]
+            if (section == SectionPermissions.DEMANDEES) {
+                demandees += nom
+            } else if (trouvee.groupValues[2].contains("granted=true")) {
+                accordees += nom
+            }
+        }
+
+        return PermissionsPaquet(paquetTrouve = trouve, demandees = demandees, accordees = accordees)
+    }
+
+    /**
+     * Mode d'un app-op : « allow », « ignore », « deny » ou « default ».
+     *
+     * Certaines permissions ne suffisent pas à elles seules — `PACKAGE_USAGE_STATS` est aussi
+     * gouvernée par l'app-op `GET_USAGE_STATS`. Tant que celui-ci vaut « default », la
+     * permission tranche ; posé à « ignore », il la contredit, et l'application ne voit rien
+     * malgré un `pm grant` réussi.
+     *
+     * Trois sorties possibles, toutes rencontrées sur du vrai matériel :
+     * « GET_USAGE_STATS: allow; time=… », « No operations. » suivi de « Default mode: default »,
+     * ou une ligne « Error: … » quand le paquet ou l'op n'existe pas.
+     */
+    suspend fun modeAppOp(paquet: String, appOp: String): String {
+        if (!IDENTIFIANT.matches(paquet) || !IDENTIFIANT.matches(appOp)) return ""
+        val sortie = executeur.executer("cmd appops get $paquet $appOp")
+        if (!sortie.reussi) return ""
+
+        var defaut = ""
+        sortie.sortie.lineSequence().forEach { ligne ->
+            val nette = ligne.trim()
+            when {
+                nette.startsWith("Error:") -> return ""
+                nette.startsWith("$appOp:") ->
+                    return nette.substringAfter(':').substringBefore(';').trim()
+
+                nette.startsWith("Default mode:") -> defaut = nette.substringAfter(':').trim()
+            }
+        }
+        return defaut
+    }
+
     private fun decouper(sortie: String): Map<String, List<String>> {
         val sections = mutableMapOf<String, MutableList<String>>()
         var courante: MutableList<String>? = null
@@ -187,8 +276,18 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     private fun estUnRepliSysteme(priorite: Int, composant: String): Boolean =
         priorite < 0 || composant.contains("FallbackHome", ignoreCase = true)
 
+    /** Où l'on se trouve dans la sortie de `dumpsys package`. */
+    private enum class SectionPermissions { AUCUNE, DEMANDEES, ACCORDEES }
+
     internal companion object {
         private val PRIORITE = Regex("""priority=(-?\d+)""")
+
+        /** « android.permission.DUMP » seul, ou suivi de « : granted=true ». */
+        private val LIGNE_PERMISSION =
+            Regex("""^([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+)(?::(.*))?$""")
+
+        /** Un nom de paquet, et rien d'autre : la commande part dans un shell. */
+        private val IDENTIFIANT = Regex("""[A-Za-z0-9_.]+""")
 
         /** « 161,015K: com.spocky.projengmenu (pid 4799 state 14 oom 150 / activities) » */
         private val PROCESSUS = Regex("""^([\d,]+)K:\s+(\S+)\s+\(pid\s+(\d+)""")

@@ -38,6 +38,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.adb.EtatConnexion
+import net.jolabs40.tvslim.remote.ui.ActionsPermissions
 import net.jolabs40.tvslim.remote.ui.EtatRemote
 
 /** Le module d'interface du scanner n'est pas dans l'APK : Play services le télécharge. */
@@ -58,6 +59,7 @@ fun ConnexionScreen(
     onChercher: () -> Unit,
     onArreterRecherche: () -> Unit,
     onConnecterA: (net.jolabs40.tvslim.remote.adb.AppareilDecouvert) -> Unit,
+    actionsPermissions: ActionsPermissions,
 ) {
     val contexte = LocalContext.current
     val options = remember {
@@ -108,6 +110,9 @@ fun ConnexionScreen(
             // trouver le seul bouton utile est un écran raté.
             EcranAccueil(etat = etat, onInstaller = onInstallerLauncher)
             AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
+            // En dernier : accorder une permission privilégiée est rare, et sans rapport avec
+            // le débloat. Elle n'a de sens que téléviseur joint, d'où sa place ici.
+            CartePermissions(etat = etat.permissions, actions = actionsPermissions)
             return@Column
         }
 

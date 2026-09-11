@@ -129,6 +129,13 @@ fun RemoteApp() {
                     onChercher = modele::chercherAppareils,
                     onArreterRecherche = modele::arreterRecherche,
                     onConnecterA = modele::connecterA,
+                    actionsPermissions = ActionsPermissions(
+                        onPaquet = modele.permissions::majPaquet,
+                        onPermission = modele.permissions::majPermission,
+                        onLire = modele.permissions::lire,
+                        onAccorder = modele.permissions::accorder,
+                        onRetirer = modele.permissions::retirer,
+                    ),
                 )
             }
             composable("paquets") {

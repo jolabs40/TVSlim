@@ -184,6 +184,118 @@ class MoteurDebloat(
         return ResultatAction(cle, nom, sortie.reussi, sortie.sortie)
     }
 
+    /**
+     * Accorde à une application du téléviseur une permission qu'aucune application ne peut
+     * s'attribuer seule — `DUMP`, `WRITE_SECURE_SETTINGS`, `READ_LOGS`. Elle ne s'obtient que
+     * d'une session ADB, et l'octroi survit aux redémarrages.
+     *
+     * Deux garde-fous, parce que c'est le seul endroit où une commande se construit à partir
+     * d'un texte saisi plutôt que du catalogue :
+     *
+     *  - le paquet et la permission doivent être des identifiants. Sans cela, une saisie
+     *    contenant `;` ouvrirait une seconde commande sur le téléviseur ;
+     *  - la permission doit figurer parmi celles que l'application déclare. `pm grant` la
+     *    refuserait de toute façon, mais par une exception Java là où une phrase est plus utile.
+     */
+    suspend fun accorderPermission(
+        paquet: String,
+        permission: String,
+        permissionsDeclarees: Set<String>,
+    ): ResultatAction {
+        val refus = motifDeRefusPermission(paquet, permission, permissionsDeclarees)
+        if (refus != null) return ResultatAction(paquet, permission, false, refus)
+        return changerPermission(paquet, permission, accorder = true)
+    }
+
+    /** Retire une permission accordée. Rendre est toujours licite : rien à vérifier au manifeste. */
+    suspend fun retirerPermission(paquet: String, permission: String): ResultatAction {
+        val refus = motifDeRefusPermission(paquet, permission, permissionsDeclarees = null)
+        if (refus != null) return ResultatAction(paquet, permission, false, refus)
+        return changerPermission(paquet, permission, accorder = false)
+    }
+
+    private suspend fun changerPermission(
+        paquet: String,
+        permission: String,
+        accorder: Boolean,
+    ): ResultatAction {
+        val verbe = if (accorder) "grant" else "revoke"
+        val inverse = if (accorder) "revoke" else "grant"
+        val sortie = executeur.executer("pm $verbe $paquet $permission")
+
+        // `pm grant` se tait quand il réussit : toute sortie est une exception du téléviseur.
+        val reussi = sortie.reussi && sortie.sortie.isBlank()
+        val message = if (reussi) "" else sortie.sortie.ifBlank { "Échec inexpliqué." }
+
+        journal.ajouter(
+            ActionJournal(
+                horodatage = System.currentTimeMillis(),
+                type = TypeAction.PERMISSION,
+                cible = "$paquet $permission",
+                libelle = "$paquet — ${permission.substringAfterLast('.')}",
+                commandeAnnulation = "pm $inverse $paquet $permission",
+                reussi = reussi,
+                message = message,
+            ),
+        )
+        return ResultatAction(paquet, permission, reussi, message)
+    }
+
+    /**
+     * Pose le mode d'un app-op — le second verrou d'Android, à côté des permissions.
+     *
+     * `PACKAGE_USAGE_STATS` en est l'exemple : le `pm grant` réussit, et l'application ne voit
+     * pourtant rien tant que `GET_USAGE_STATS` reste refusé. L'inverse est vrai aussi, d'où
+     * [modePrecedent] : l'annulation remet le mode trouvé avant, pas un « default » supposé.
+     */
+    suspend fun reglerAppOp(
+        paquet: String,
+        appOp: String,
+        mode: String,
+        modePrecedent: String,
+    ): ResultatAction {
+        val refus = when {
+            !IDENTIFIANT.matches(paquet) -> "Nom de paquet invalide : $paquet"
+            !IDENTIFIANT.matches(appOp) -> "Nom d'app-op invalide : $appOp"
+            mode !in MODES_APP_OP -> "Mode d'app-op inconnu : $mode"
+            else -> null
+        }
+        if (refus != null) return ResultatAction(paquet, appOp, false, refus)
+
+        val sortie = executeur.executer("cmd appops set $paquet $appOp $mode")
+
+        // Comme `pm grant`, `cmd appops set` se tait quand il réussit.
+        val reussi = sortie.reussi && sortie.sortie.isBlank()
+        val message = if (reussi) "" else sortie.sortie.ifBlank { "Échec inexpliqué." }
+        val retour = modePrecedent.ifBlank { MODE_APP_OP_DEFAUT }
+
+        journal.ajouter(
+            ActionJournal(
+                horodatage = System.currentTimeMillis(),
+                type = TypeAction.APP_OP,
+                cible = "$paquet $appOp",
+                libelle = "$paquet — $appOp",
+                commandeAnnulation = "cmd appops set $paquet $appOp $retour",
+                reussi = reussi,
+                message = message,
+            ),
+        )
+        return ResultatAction(paquet, appOp, reussi, message)
+    }
+
+    private fun motifDeRefusPermission(
+        paquet: String,
+        permission: String,
+        permissionsDeclarees: Set<String>?,
+    ): String? = when {
+        !IDENTIFIANT.matches(paquet) -> "Nom de paquet invalide : $paquet"
+        !IDENTIFIANT.matches(permission) -> "Nom de permission invalide : $permission"
+        permissionsDeclarees != null && permission !in permissionsDeclarees ->
+            "$paquet ne demande pas $permission dans son manifeste : rien à accorder."
+
+        else -> null
+    }
+
     private fun motifDeRefus(
         entree: EntreePaquet,
         catalogue: Catalogue,
@@ -196,5 +308,15 @@ class MoteurDebloat(
             "Aucun launcher tiers installé : le téléviseur démarrerait sur un écran vide."
 
         else -> null
+    }
+
+    private companion object {
+        /** Le shell du téléviseur prend la ligne telle quelle : un nom, et rien d'autre. */
+        val IDENTIFIANT = Regex("""[A-Za-z0-9_.]+""")
+
+        const val MODE_APP_OP_DEFAUT = "default"
+
+        /** Les quatre modes qu'`appops` accepte. Tout le reste est une faute de frappe. */
+        val MODES_APP_OP = setOf("allow", "deny", "ignore", MODE_APP_OP_DEFAUT)
     }
 }

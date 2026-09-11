@@ -232,4 +232,161 @@ class MoteurDebloatTest {
             carnet.actions.value.single().commandeAnnulation,
         )
     }
+
+    // --- Permissions privilégiées -----------------------------------------------------------
+    //
+    // C'est le seul endroit du moteur où une commande se construit à partir d'un texte saisi et
+    // non du catalogue : la saisie est donc traitée comme hostile.
+
+    @Test
+    fun `une permission absente du manifeste n'est pas accordee`() = runTest {
+        val espion = ExecuteurEspion { ResultatShell(0, "") }
+        val carnet = journal()
+        val moteur = MoteurDebloat(espion, carnet)
+
+        val resultat = moteur.accorderPermission(
+            paquet = "net.jolabs40.hippietv.launcher.debug",
+            permission = "android.permission.DUMP",
+            permissionsDeclarees = setOf("android.permission.INTERNET"),
+        )
+
+        assertFalse(resultat.reussi)
+        assertTrue("Rien ne part vers le téléviseur", espion.commandes.isEmpty())
+        assertTrue("Un refus ne se journalise pas", carnet.actions.value.isEmpty())
+    }
+
+    @Test
+    fun `une saisie qui ouvrirait une seconde commande est refusee`() = runTest {
+        val espion = ExecuteurEspion { ResultatShell(0, "") }
+        val moteur = MoteurDebloat(espion, journal())
+
+        val resultat = moteur.accorderPermission(
+            paquet = "com.tcl.gallery; reboot",
+            permission = "android.permission.DUMP",
+            permissionsDeclarees = setOf("android.permission.DUMP"),
+        )
+
+        assertFalse(resultat.reussi)
+        assertTrue("Le point-virgule ne doit jamais atteindre le shell", espion.commandes.isEmpty())
+    }
+
+    @Test
+    fun `accorder journalise le revoke qui l'annule`() = runTest {
+        val espion = ExecuteurEspion { ResultatShell(0, "") }
+        val carnet = journal()
+        val moteur = MoteurDebloat(espion, carnet)
+
+        val resultat = moteur.accorderPermission(
+            paquet = "net.jolabs40.hippietv.launcher.debug",
+            permission = "android.permission.DUMP",
+            permissionsDeclarees = setOf("android.permission.DUMP"),
+        )
+
+        assertTrue(resultat.message, resultat.reussi)
+        assertEquals(
+            "pm grant net.jolabs40.hippietv.launcher.debug android.permission.DUMP",
+            espion.commandes.single(),
+        )
+        assertEquals(
+            "pm revoke net.jolabs40.hippietv.launcher.debug android.permission.DUMP",
+            carnet.actions.value.single().commandeAnnulation,
+        )
+        assertEquals(
+            mapOf(
+                "net.jolabs40.hippietv.launcher.debug android.permission.DUMP" to
+                    "pm revoke net.jolabs40.hippietv.launcher.debug android.permission.DUMP",
+            ),
+            carnet.annulationsDesPermissions(),
+        )
+    }
+
+    @Test
+    fun `un pm grant bavard reste un echec malgre un code nul`() = runTest {
+        // `pm grant` se tait quand il réussit. Une exception Java avec un code de retour nul
+        // est exactement le piège déjà rencontré sur `pm disable-user`.
+        val espion = ExecuteurEspion {
+            ResultatShell(0, "java.lang.SecurityException: Permission is not a changeable")
+        }
+        val carnet = journal()
+        val moteur = MoteurDebloat(espion, carnet)
+
+        val resultat = moteur.accorderPermission(
+            paquet = "com.tcl.gallery",
+            permission = "android.permission.DUMP",
+            permissionsDeclarees = setOf("android.permission.DUMP"),
+        )
+
+        assertFalse("Une sortie inattendue reste un échec", resultat.reussi)
+        assertFalse(carnet.actions.value.single().reussi)
+    }
+
+    @Test
+    fun `retirer une permission ne consulte pas le manifeste`() = runTest {
+        val espion = ExecuteurEspion { ResultatShell(0, "") }
+        val carnet = journal()
+        val moteur = MoteurDebloat(espion, carnet)
+
+        val resultat = moteur.retirerPermission("com.tcl.gallery", "android.permission.DUMP")
+
+        assertTrue(resultat.reussi)
+        assertEquals("pm revoke com.tcl.gallery android.permission.DUMP", espion.commandes.single())
+        assertEquals(
+            "pm grant com.tcl.gallery android.permission.DUMP",
+            carnet.actions.value.single().commandeAnnulation,
+        )
+    }
+    @Test
+    fun `un app-op journalise le retour a son mode precedent`() = runTest {
+        val espion = ExecuteurEspion { ResultatShell(0, "") }
+        val carnet = journal()
+        val moteur = MoteurDebloat(espion, carnet)
+
+        val resultat = moteur.reglerAppOp(
+            paquet = "net.jolabs40.hippietv.launcher.debug",
+            appOp = "GET_USAGE_STATS",
+            mode = "allow",
+            modePrecedent = "ignore",
+        )
+
+        assertTrue(resultat.message, resultat.reussi)
+        assertEquals(
+            "cmd appops set net.jolabs40.hippietv.launcher.debug GET_USAGE_STATS allow",
+            espion.commandes.single(),
+        )
+        assertEquals(
+            "cmd appops set net.jolabs40.hippietv.launcher.debug GET_USAGE_STATS ignore",
+            carnet.actions.value.single().commandeAnnulation,
+        )
+    }
+
+    @Test
+    fun `un mode d'app-op inconnu est refuse`() = runTest {
+        val espion = ExecuteurEspion { ResultatShell(0, "") }
+        val moteur = MoteurDebloat(espion, journal())
+
+        val resultat = moteur.reglerAppOp(
+            paquet = "com.tcl.gallery",
+            appOp = "GET_USAGE_STATS",
+            mode = "autorise",
+            modePrecedent = "default",
+        )
+
+        assertFalse(resultat.reussi)
+        assertTrue(espion.commandes.isEmpty())
+    }
+
+    @Test
+    fun `un mode precedent inconnu se rend en default`() = runTest {
+        // Lecture impossible au moment de poser l'op : l'annulation doit rester jouable.
+        val espion = ExecuteurEspion { ResultatShell(0, "") }
+        val carnet = journal()
+        val moteur = MoteurDebloat(espion, carnet)
+
+        moteur.reglerAppOp("com.tcl.gallery", "GET_USAGE_STATS", "allow", modePrecedent = "")
+
+        assertEquals(
+            "cmd appops set com.tcl.gallery GET_USAGE_STATS default",
+            carnet.actions.value.single().commandeAnnulation,
+        )
+    }
 }

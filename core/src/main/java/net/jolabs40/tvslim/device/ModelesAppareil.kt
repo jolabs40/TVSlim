@@ -58,3 +58,19 @@ data class LauncherInstalle(
     val nom: String,
     val composant: String,
 )
+
+/**
+ * Ce qu'une application déclare vouloir, et ce qu'elle a réellement obtenu.
+ *
+ * Une permission absente de [demandees] ne s'accorde pas : le manifeste fait foi, et `pm grant`
+ * la refuserait de toute façon — mais par une exception Java, là où une phrase est plus utile.
+ */
+data class PermissionsPaquet(
+    val paquetTrouve: Boolean = false,
+    val demandees: Set<String> = emptySet(),
+    val accordees: Set<String> = emptySet(),
+) {
+    fun estAccordee(permission: String): Boolean = permission in accordees
+
+    fun estDeclaree(permission: String): Boolean = permission in demandees
+}

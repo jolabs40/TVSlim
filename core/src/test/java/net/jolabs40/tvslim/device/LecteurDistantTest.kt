@@ -154,4 +154,86 @@ class LecteurDistantTest {
         assertEquals(0, photo.infos.paquetsInstalles)
         assertFalse("Aucune propriété ne doit être inventée", photo.infos.modele.isNotBlank())
     }
+    @Test
+    fun `les permissions demandees se distinguent de celles reellement accordees`() = runTest {
+        // Extrait fidèle de `dumpsys package` : les sections ne sont séparées que par leur
+        // indentation, et « declared permissions » liste ce que l'application définit pour les
+        // autres — surtout pas ce qu'elle demande.
+        val executeur = ExecuteurFixe(
+            """
+            Permissions:
+              Permission [net.jolabs40.hippietv.permission.RECEVOIR] (7f3):
+                sourcePackage=net.jolabs40.hippietv.launcher.debug
+            Packages:
+              Package [net.jolabs40.hippietv.launcher.debug] (a1b2c3):
+                userId=10123
+                declared permissions:
+                  net.jolabs40.hippietv.permission.RECEVOIR: prot=signature, INSTALLED
+                requested permissions:
+                  android.permission.INTERNET
+                  android.permission.DUMP
+                  android.permission.POST_NOTIFICATIONS
+                install permissions:
+                  android.permission.INTERNET: granted=true
+                  android.permission.DUMP: granted=false
+                User 0: ceDataInode=123 installed=true hidden=false
+                  runtime permissions:
+                    android.permission.POST_NOTIFICATIONS: granted=true, flags=[ USER_SET ]
+                    android.permission.READ_MEDIA_IMAGES: granted=true, flags=[ USER_SET|USER_SENSITIVE_WHEN_GRANTED ]
+            """.trimIndent(),
+        )
+
+        val lues = LecteurDistant(executeur).permissions("net.jolabs40.hippietv.launcher.debug")
+
+        assertTrue(lues.paquetTrouve)
+        assertTrue(lues.estDeclaree("android.permission.DUMP"))
+        assertFalse(
+            "DUMP est demandée mais pas encore accordée",
+            lues.estAccordee("android.permission.DUMP"),
+        )
+        assertEquals(
+            setOf(
+                "android.permission.INTERNET",
+                "android.permission.POST_NOTIFICATIONS",
+                "android.permission.READ_MEDIA_IMAGES",
+            ),
+            lues.accordees,
+        )
+        assertFalse(
+            "Une permission que l'application définit n'est pas une permission qu'elle demande",
+            lues.estDeclaree("net.jolabs40.hippietv.permission.RECEVOIR"),
+        )
+    }
+
+    @Test
+    fun `un nom de paquet douteux n'atteint jamais le shell`() = runTest {
+        val executeur = ExecuteurFixe("")
+
+        val lues = LecteurDistant(executeur).permissions("com.tcl.gallery; reboot")
+
+        assertFalse(lues.paquetTrouve)
+        assertEquals(null, executeur.recue)
+    }
+    @Test
+    fun `le mode d'un app-op se lit dans ses trois formes`() = runTest {
+        // Les trois sorties relevées sur un appareil réel.
+        val pose = LecteurDistant(ExecuteurFixe("GET_USAGE_STATS: allow; time=+13m59s344ms ago"))
+        assertEquals("allow", pose.modeAppOp("com.exemple", "GET_USAGE_STATS"))
+
+        val jamaisPose = LecteurDistant(ExecuteurFixe("No operations." + System.lineSeparator() + "Default mode: default"))
+        assertEquals("default", jamaisPose.modeAppOp("com.exemple", "GET_USAGE_STATS"))
+
+        val enErreur = LecteurDistant(ExecuteurFixe("Error: No UID for com.exemple in user 0"))
+        assertEquals("", enErreur.modeAppOp("com.exemple", "GET_USAGE_STATS"))
+    }
+
+    @Test
+    fun `un app-op au nom douteux n'atteint jamais le shell`() = runTest {
+        val executeur = ExecuteurFixe("GET_USAGE_STATS: allow")
+
+        val mode = LecteurDistant(executeur).modeAppOp("com.exemple", "GET_USAGE_STATS; reboot")
+
+        assertEquals("", mode)
+        assertEquals(null, executeur.recue)
+    }
 }

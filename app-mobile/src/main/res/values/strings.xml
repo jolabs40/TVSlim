@@ -96,4 +96,17 @@
     <string name="gain_waiting">The first reading is the baseline. Come back after disabling a few packages to see what it changed.</string>
     <string name="gain_reset">Use current state as new baseline</string>
     <string name="gain_memory_caveat">Free memory swings with what the television is doing: read it as a trend, not as a verdict.</string>
+
+    <string name="permissions_title">Privileged permissions</string>
+    <string name="permissions_hint">Some permissions can only be granted from a computer — or from here. The grant survives reboots, and the log keeps the command that takes it back.</string>
+    <string name="permissions_package">Package</string>
+    <string name="permissions_permission">Permission</string>
+    <string name="permissions_check">Check</string>
+    <string name="permissions_grant">Grant</string>
+    <string name="permissions_revoke">Revoke</string>
+    <string name="permissions_state_granted">Already granted.</string>
+    <string name="permissions_state_pending">Requested in the manifest, not granted yet.</string>
+    <string name="permissions_state_undeclared">This application does not request that permission: nothing to grant.</string>
+    <string name="permissions_state_unknown">Package not found on this television.</string>
+    <string name="permissions_state_appop">App-op %1$s: %2$s</string>
 </resources>

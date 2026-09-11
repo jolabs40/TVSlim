@@ -94,4 +94,17 @@
     <string name="gain_waiting">La première lecture sert de point de départ. Revenez après avoir désactivé quelques paquets pour voir ce que ça a changé.</string>
     <string name="gain_reset">Repartir de l\'état actuel</string>
     <string name="gain_memory_caveat">La mémoire libre varie selon ce que fait le téléviseur : à lire comme une tendance, pas comme un verdict.</string>
+
+    <string name="permissions_title">Permissions privilégiées</string>
+    <string name="permissions_hint">Certaines permissions ne s\'accordent que depuis un ordinateur — ou d\'ici. L\'octroi survit aux redémarrages, et le journal garde la commande qui le reprend.</string>
+    <string name="permissions_package">Paquet</string>
+    <string name="permissions_permission">Permission</string>
+    <string name="permissions_check">Vérifier</string>
+    <string name="permissions_grant">Accorder</string>
+    <string name="permissions_revoke">Retirer</string>
+    <string name="permissions_state_granted">Déjà accordée.</string>
+    <string name="permissions_state_pending">Demandée au manifeste, pas encore accordée.</string>
+    <string name="permissions_state_undeclared">Cette application ne demande pas cette permission : rien à accorder.</string>
+    <string name="permissions_state_unknown">Paquet introuvable sur ce téléviseur.</string>
+    <string name="permissions_state_appop">App-op %1$s : %2$s</string>
 </resources>

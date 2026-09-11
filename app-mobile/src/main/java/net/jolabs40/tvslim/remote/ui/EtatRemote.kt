@@ -48,6 +48,7 @@ data class EtatRemote(
     val recherche: String = "",
     val filtre: Filtre = Filtre.TOUS,
     val memoire: RepartitionMemoire = RepartitionMemoire(),
+    val permissions: EtatPermissions = EtatPermissions(),
     val confirmation: Confirmation? = null,
     val message: String? = null,
 ) {

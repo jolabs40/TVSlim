@@ -1,7 +1,6 @@
 package net.jolabs40.tvslim.remote.ui
 
 import android.content.Context
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,9 +54,21 @@ class RemoteViewModel @Inject constructor(
     val etat: StateFlow<EtatRemote> = _etat.asStateFlow()
 
     private val lecteur = LecteurDistant(client)
+
     private var journal: JournalRepository? = null
     private var mesures: MesuresRepository? = null
     private var moteur: MoteurDebloat? = null
+
+    /**
+     * Les permissions privilégiées ont leur propre pilote : leur état — un paquet, une
+     * permission, ce que le téléviseur en dit — n'a rien à voir avec celui du débloat.
+     */
+    val permissions = PilotePermissions(
+        lecteur = lecteur,
+        moteur = { moteur },
+        portee = viewModelScope,
+        afficher = ::afficher,
+    )
 
     /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
     private var suiviJournal: Job? = null
@@ -74,6 +85,9 @@ class RemoteViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             client.connexion.collect { connexion -> _etat.update { it.copy(connexion = connexion) } }
+        }
+        viewModelScope.launch {
+            permissions.etat.collect { lues -> _etat.update { it.copy(permissions = lues) } }
         }
         viewModelScope.launch {
             _etat.update {
@@ -169,31 +183,14 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Applique le contenu d'un QR code affiché par le téléviseur, puis se connecte dans la
-     * foulée. Trois formes acceptées : l'URI `tvslim://connect?host=…&port=…` que produit
-     * l'application du téléviseur, une adresse `hôte:port`, ou une adresse seule.
-     */
+    /** Applique le contenu d'un code scanné, puis se connecte dans la foulée. */
     fun appliquerScan(valeur: String) {
-        val brut = valeur.trim()
-        val (hote, port) = when {
-            brut.startsWith(SCHEMA) -> {
-                val uri = Uri.parse(brut)
-                uri.getQueryParameter("host").orEmpty() to
-                    (uri.getQueryParameter("port")?.toIntOrNull() ?: PORT_ADB_PAR_DEFAUT)
-            }
-
-            brut.count { it == ':' } == 1 ->
-                brut.substringBefore(':') to
-                    (brut.substringAfter(':').toIntOrNull() ?: PORT_ADB_PAR_DEFAUT)
-
-            else -> brut to PORT_ADB_PAR_DEFAUT
-        }
-        if (hote.isBlank() || hote.any { it.isWhitespace() }) {
-            afficher("Code non reconnu : $brut")
+        val adresse = lireCodeAppairage(valeur)
+        if (adresse == null) {
+            afficher("Code non reconnu : ${valeur.trim()}")
             return
         }
-        _etat.update { it.copy(hoteSaisi = hote, portSaisi = port.toString()) }
+        _etat.update { it.copy(hoteSaisi = adresse.hote, portSaisi = adresse.port.toString()) }
         connecter()
     }
 
@@ -211,6 +208,7 @@ class RemoteViewModel @Inject constructor(
         journal = null
         mesures = null
         moteur = null
+        permissions.oublier()
         _etat.update {
             it.copy(
                 lignes = emptyList(),
@@ -352,6 +350,7 @@ class RemoteViewModel @Inject constructor(
     fun annulerAction(action: ActionJournal) {
         when (action.type) {
             TypeAction.DESACTIVATION -> reactiver(listOf(action.cible))
+            TypeAction.PERMISSION, TypeAction.APP_OP -> permissions.annuler(action)
             else -> afficher("Cette action ne s'annule pas depuis ici.")
         }
     }
@@ -492,7 +491,6 @@ class RemoteViewModel @Inject constructor(
 
     private companion object {
         const val MAX_ECHECS = 4
-        const val SCHEMA = "tvslim://"
         const val DUREE_GUET_MS = 3 * 60 * 1000L
         const val INTERVALLE_GUET_MS = 5_000L
     }
