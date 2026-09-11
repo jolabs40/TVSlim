@@ -18,7 +18,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleStartEffect
 import com.google.android.gms.common.moduleinstall.ModuleInstall
 import com.google.android.gms.common.moduleinstall.ModuleInstallRequest
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -117,9 +117,14 @@ fun ConnexionScreen(
         }
 
         // Le plus court des chemins quand il aboutit : l'appareil s'annonce, on le touche.
-        DisposableEffect(Unit) {
+        //
+        // Adossé au cycle de vie, et non à la seule composition : quitter l'application ne
+        // défait pas l'arbre, l'Activity restant vivante. La découverte écoutait alors trois
+        // types de services indéfiniment — de la radio réveillée pour rien pendant qu'on va
+        // allumer le téléviseur. ON_START relance, ON_STOP arrête.
+        LifecycleStartEffect(Unit) {
             onChercher()
-            onDispose { onArreterRecherche() }
+            onStopOrDispose { onArreterRecherche() }
         }
 
         if (etat.detectes.isNotEmpty()) {

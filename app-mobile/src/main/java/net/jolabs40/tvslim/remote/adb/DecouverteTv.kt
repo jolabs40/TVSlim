@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -59,7 +60,12 @@ class DecouverteTv @Inject constructor(
         val nomsParHote = ConcurrentHashMap<String, String>()
 
         val aResoudre = ArrayDeque<NsdServiceInfo>()
-        var resolutionEnCours = false
+
+        // Un drapeau nu ne suffit pas : il est lu et écrit depuis les fils du binder, et deux
+        // services trouvés en même temps pouvaient tous deux le voir à `false` — c'est
+        // exactement le FAILURE_ALREADY_ACTIVE qu'on cherche à éviter. On réserve la place
+        // avant de piocher, et on la rend si la file était vide.
+        val resolutionEnCours = AtomicBoolean(false)
 
         fun publier() = trySend(
             trouves.values
@@ -69,15 +75,18 @@ class DecouverteTv @Inject constructor(
 
         // Une résolution à la fois : NsdManager refuse les demandes simultanées.
         fun resoudreSuivant() {
-            if (resolutionEnCours) return
-            val service = synchronized(aResoudre) { aResoudre.removeFirstOrNull() } ?: return
-            resolutionEnCours = true
+            if (!resolutionEnCours.compareAndSet(false, true)) return
+            val service = synchronized(aResoudre) { aResoudre.removeFirstOrNull() }
+            if (service == null) {
+                resolutionEnCours.set(false)
+                return
+            }
             gestionnaire.resolveService(
                 service,
                 object : NsdManager.ResolveListener {
                     override fun onResolveFailed(info: NsdServiceInfo?, code: Int) {
                         Log.w(TAG, "Résolution impossible ($code)" + detail(info?.serviceName.orEmpty()))
-                        resolutionEnCours = false
+                        resolutionEnCours.set(false)
                         resoudreSuivant()
                     }
 
@@ -95,7 +104,7 @@ class DecouverteTv @Inject constructor(
                             }
                             publier()
                         }
-                        resolutionEnCours = false
+                        resolutionEnCours.set(false)
                         resoudreSuivant()
                     }
                 },

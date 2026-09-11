@@ -17,6 +17,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -30,7 +33,7 @@ import net.jolabs40.tvslim.ui.theme.CouleursRisque
 
 /** Titre d'écran, avec sa ligne d'explication. */
 @Composable
-fun EnTete(titre: String, sousTitre: String? = null, modifier: Modifier = Modifier) {
+fun EnTete(titre: String, modifier: Modifier = Modifier, sousTitre: String? = null) {
     Column(modifier = modifier.padding(bottom = 16.dp)) {
         Text(
             text = titre,
@@ -131,8 +134,16 @@ fun CompteurListe(
 ) {
     if (total <= 0) return
     // L'élément focalisé prime sur le premier élément visible : c'est lui qu'on regarde.
-    val position = indexCourant?.takeIf { it >= 0 } ?: etat.firstVisibleItemIndex
-    val courant = (position + 1).coerceAtMost(total)
+    //
+    // Isolé dans un état dérivé : `firstVisibleItemIndex` bouge à chaque image du défilement,
+    // le nombre affiché seulement quand on change de ligne. Sans cela, le compteur se
+    // recompose soixante fois par seconde pour écrire le même chiffre.
+    val courant by remember(etat, total, indexCourant) {
+        derivedStateOf {
+            val position = indexCourant?.takeIf { it >= 0 } ?: etat.firstVisibleItemIndex
+            (position + 1).coerceAtMost(total)
+        }
+    }
     Text(
         text = "$courant / $total",
         modifier = modifier,
@@ -147,13 +158,19 @@ fun CompteurListe(
  */
 @Composable
 fun BarreDefilement(etat: LazyListState, modifier: Modifier = Modifier) {
-    val info = etat.layoutInfo
-    val total = info.totalItemsCount
-    val visibles = info.visibleItemsInfo.size
+    // `layoutInfo` est réécrit à chaque image du défilement ; ces trois nombres, non. Les
+    // isoler évite de redessiner la barre pour une position identique.
+    val assiette by remember(etat) {
+        derivedStateOf {
+            val info = etat.layoutInfo
+            Assiette(info.totalItemsCount, info.visibleItemsInfo.size, etat.firstVisibleItemIndex)
+        }
+    }
+    val (total, visibles, premier) = assiette
     if (total == 0 || visibles == 0 || total <= visibles) return
 
     val proportion = (visibles.toFloat() / total).coerceIn(FRACTION_MIN, 1f)
-    val avancement = etat.firstVisibleItemIndex.toFloat() / (total - visibles).coerceAtLeast(1)
+    val avancement = premier.toFloat() / (total - visibles).coerceAtLeast(1)
 
     BoxWithConstraints(
         modifier = modifier
@@ -203,6 +220,9 @@ fun Bandeau(message: String, onFermer: () -> Unit, modifier: Modifier = Modifier
         }
     }
 }
+
+/** Ce que la barre a besoin de savoir de la liste, et rien de plus. */
+private data class Assiette(val total: Int, val visibles: Int, val premier: Int)
 
 /** En dessous, le curseur deviendrait un trait invisible sur une liste très longue. */
 private const val FRACTION_MIN = 0.08f

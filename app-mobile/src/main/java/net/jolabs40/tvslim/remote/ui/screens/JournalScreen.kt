@@ -14,6 +14,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -32,7 +33,10 @@ fun JournalScreen(
     onExporter: () -> Unit,
     onAnnulerAction: (ActionJournal) -> Unit,
 ) {
-    val format = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
+    // Un SimpleDateFormat est coûteux à construire, et la liste inversée était recopiée
+    // en entier : deux allocations à chaque recomposition, pour un résultat identique.
+    val format = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()) }
+    val recentes = remember(etat.journal) { etat.journal.asReversed() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -72,7 +76,7 @@ fun JournalScreen(
         }
 
         LazyColumn {
-            items(etat.journal.reversed()) { action ->
+            items(recentes) { action ->
                 VueAction(
                     action = action,
                     horodatage = format.format(Date(action.horodatage)),

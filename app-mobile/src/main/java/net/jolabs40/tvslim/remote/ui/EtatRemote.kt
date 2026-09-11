@@ -1,5 +1,6 @@
 package net.jolabs40.tvslim.remote.ui
 
+import androidx.compose.runtime.Immutable
 import net.jolabs40.tvslim.catalog.Catalogue
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
@@ -13,6 +14,13 @@ import net.jolabs40.tvslim.remote.adb.ConnexionUi
 import net.jolabs40.tvslim.remote.adb.EtatConnexion
 import net.jolabs40.tvslim.remote.adb.PORT_ADB_PAR_DEFAUT
 
+/**
+ * Stable pour Compose, et honnêtement : `EntreePaquet` vient du noyau, qui n'applique pas le
+ * compilateur Compose — son inférence de stabilité ne traverse donc pas la frontière de module,
+ * et toute la liste passait pour instable. Sans cette promesse, les cinquante-six lignes de
+ * l'écran Paquets se redessinent à chaque avancée de la barre de progression.
+ */
+@Immutable
 data class LignePaquet(
     val entree: EntreePaquet,
     val etat: EtatPaquet,
@@ -30,8 +38,15 @@ sealed interface Confirmation {
     data class Restauration(val paquets: List<String>) : Confirmation
 }
 
+@Immutable
 data class Progression(val fait: Int, val total: Int)
 
+/**
+ * Tenu pour immuable : tous les champs sont des `val`, et aucune des listes n'est jamais mutée
+ * en place — chaque changement passe par `copy()`. La promesse est donc tenue, et elle permet
+ * aux écrans de sauter une recomposition quand ce qui les concerne n'a pas bougé.
+ */
+@Immutable
 data class EtatRemote(
     val hoteSaisi: String = "",
     val portSaisi: String = PORT_ADB_PAR_DEFAUT.toString(),
@@ -54,13 +69,18 @@ data class EtatRemote(
 ) {
     val connecte: Boolean get() = connexion.etat == EtatConnexion.CONNECTE
     val travailEnCours: Boolean get() = progression != null
-    val selection: List<LignePaquet> get() = lignes.filter { it.selectionne }
+    val selection: List<LignePaquet> by lazy { lignes.filter { it.selectionne } }
 
-    private val presentes: List<LignePaquet> get() = lignes.filter { it.etat != EtatPaquet.ABSENT }
+    // Calculées une fois par état, et non à chaque lecture : l'écran Paquets en consulte
+    // cinq — `affichees`, `nombreActifs`, `nombreDesactives`, `selection` — et chacune
+    // reparcourait les quatre-vingt-seize entrées.
+    private val presentes: List<LignePaquet> by lazy {
+        lignes.filter { it.etat != EtatPaquet.ABSENT }
+    }
 
     /** Ce que la liste affiche vraiment, une fois la recherche et le filtre appliqués. */
-    val affichees: List<LignePaquet>
-        get() = presentes
+    val affichees: List<LignePaquet> by lazy {
+        presentes
             .filter { ligne ->
                 when (filtre) {
                     Filtre.TOUS -> true
@@ -73,9 +93,10 @@ data class EtatRemote(
                     ligne.entree.nom.contains(recherche, ignoreCase = true) ||
                     ligne.entree.paquet.contains(recherche, ignoreCase = true)
             }
+    }
 
-    val nombreActifs: Int get() = presentes.count { it.etat == EtatPaquet.ACTIF }
-    val nombreDesactives: Int get() = presentes.count { it.etat == EtatPaquet.DESACTIVE }
+    val nombreActifs: Int by lazy { presentes.count { it.etat == EtatPaquet.ACTIF } }
+    val nombreDesactives: Int by lazy { presentes.count { it.etat == EtatPaquet.DESACTIVE } }
 }
 
 // --- Transformations de la sélection ------------------------------------------------------

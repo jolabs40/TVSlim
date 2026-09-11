@@ -90,12 +90,21 @@ class RemoteViewModel @Inject constructor(
             permissions.etat.collect { lues -> _etat.update { it.copy(permissions = lues) } }
         }
         viewModelScope.launch {
+            // Les lectures d'abord, la mise à jour ensuite. `update` est une boucle de
+            // comparaison-et-échange : elle rejoue son bloc quand quelqu'un d'autre a écrit
+            // entre-temps — et il y a quelqu'un, les deux `collect` ci-dessus alimentant le
+            // même état au même instant. Quatre lectures disque rejouées, au mieux du travail
+            // refait, au pire un état reconstruit sur une photographie périmée.
+            val hote = preferences.dernierHote()
+            val port = preferences.dernierPort()
+            val noms = preferences.nomsConnus()
+            val catalogue = catalogueRepo.catalogue()
             _etat.update {
                 it.copy(
-                    hoteSaisi = preferences.dernierHote(),
-                    portSaisi = preferences.dernierPort().toString(),
-                    nomsConnus = preferences.nomsConnus(),
-                    catalogue = catalogueRepo.catalogue(),
+                    hoteSaisi = hote,
+                    portSaisi = port.toString(),
+                    nomsConnus = noms,
+                    catalogue = catalogue,
                 )
             }
         }
@@ -238,7 +247,8 @@ class RemoteViewModel @Inject constructor(
 
             // Le modèle vient d'être lu : on le retient pour nommer l'appareil la prochaine fois.
             val nom = "${photo.infos.marque} ${photo.infos.modele}".trim()
-            if (nom.isNotBlank()) preferences.retenirNom(_etat.value.connexion.hote, nom)
+            val hote = _etat.value.connexion.hote
+            if (nom.isNotBlank()) preferences.retenirNom(hote, nom)
 
             // Chaque photographie sert aussi de mesure : la première fait référence, et c'est
             // à elle qu'on comparera l'appareil une fois dégraissé.
@@ -257,7 +267,7 @@ class RemoteViewModel @Inject constructor(
                     chargement = false,
                     catalogue = catalogue,
                     infos = photo.infos,
-                    nomsConnus = courant.nomsConnus + (_etat.value.connexion.hote to nom),
+                    nomsConnus = courant.nomsConnus + (hote to nom),
                     lignes = catalogue.entrees.map { entree ->
                         val etatPaquet = photo.etats[entree.paquet] ?: EtatPaquet.ABSENT
                         LignePaquet(
