@@ -389,4 +389,77 @@ class MoteurDebloatTest {
             carnet.actions.value.single().commandeAnnulation,
         )
     }
+
+    // --- Les trois commandes qui echappaient au filtre ------------------------------------
+    //
+    // Huit appels du moteur validaient deja leur cible ; ces trois-la partaient en
+    // interpolation directe. Leurs valeurs viennent de sorties de `dumpsys` et de
+    // `cmd package`, donc d'une source contrainte par Android — l'asymetrie, elle, ne l'etait
+    // pas, et c'est elle qui se paie a la relecture suivante.
+
+    @Test
+    fun `un composant d'accueil malforme est refuse et aucune commande ne part`() = runTest {
+        val espion = ExecuteurEspion()
+        val moteur = MoteurDebloat(espion, journal())
+
+        val resultat = moteur.definirAccueil(
+            composant = "com.exemple/.Main; rm -rf /sdcard",
+            ancienAccueil = "com.tcl.launcher/.Home",
+        )
+
+        assertFalse(resultat.reussi)
+        assertTrue(espion.commandes.isEmpty())
+    }
+
+    @Test
+    fun `un ancien accueil malforme est refuse aussi, il sera rejoue depuis le journal`() = runTest {
+        val espion = ExecuteurEspion()
+        val carnet = journal()
+        val moteur = MoteurDebloat(espion, carnet)
+
+        val resultat = moteur.definirAccueil(
+            composant = "com.spocky.projengmenu/.MainActivity",
+            ancienAccueil = "n'importe quoi",
+        )
+
+        assertFalse(resultat.reussi)
+        assertTrue(espion.commandes.isEmpty())
+        assertTrue(carnet.actions.value.isEmpty())
+    }
+
+    @Test
+    fun `un composant bien forme passe`() = runTest {
+        val espion = ExecuteurEspion { ResultatShell(0, "") }
+        val moteur = MoteurDebloat(espion, journal())
+
+        moteur.definirAccueil("com.spocky.projengmenu/.MainActivity", "com.tcl.launcher/.Home")
+
+        assertEquals(
+            "cmd package set-home-activity com.spocky.projengmenu/.MainActivity",
+            espion.commandes.single(),
+        )
+    }
+
+    @Test
+    fun `forcer l'arret d'un nom de processus douteux est refuse`() = runTest {
+        val espion = ExecuteurEspion()
+        val moteur = MoteurDebloat(espion, journal())
+
+        // Ce nom-la sort d'une expression reguliere appliquee a `dumpsys meminfo`.
+        val resultat = moteur.forcerArret("com.tcl.gallery; reboot")
+
+        assertFalse(resultat.reussi)
+        assertTrue(espion.commandes.isEmpty())
+    }
+
+    @Test
+    fun `ouvrir une fiche de boutique verifie aussi le nom du paquet`() = runTest {
+        val espion = ExecuteurEspion()
+        val moteur = MoteurDebloat(espion, journal())
+
+        val resultat = moteur.ouvrirFicheBoutique("com.spocky.projengmenu&id=autre")
+
+        assertFalse(resultat.reussi)
+        assertTrue(espion.commandes.isEmpty())
+    }
 }

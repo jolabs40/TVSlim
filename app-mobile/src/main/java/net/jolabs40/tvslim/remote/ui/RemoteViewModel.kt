@@ -425,7 +425,7 @@ class RemoteViewModel @Inject constructor(
         viewModelScope.launch {
             val infos = _etat.value.infos
             val dossier = contexte.getExternalFilesDir(null) ?: contexte.filesDir
-            val nom = "TVSlim-${_etat.value.connexion.hote.replace('.', '-')}.md"
+            val nom = "TVSlim-${cleDeFichier(_etat.value.connexion.hote)}.md"
             val chemin = actif.exporterMarkdown(
                 cible = File(dossier, nom),
                 entete = "Appareil : ${infos.marque} ${infos.modele} — Android " +
@@ -467,7 +467,7 @@ class RemoteViewModel @Inject constructor(
 
     private suspend fun ouvrirJournal(hote: String) {
         suiviJournal?.cancel()
-        val cle = hote.replace('.', '_')
+        val cle = cleDeFichier(hote)
         val ouvert = JournalRepository(File(File(contexte.filesDir, "journaux"), "$cle.json"))
         ouvert.charger()
         journal = ouvert

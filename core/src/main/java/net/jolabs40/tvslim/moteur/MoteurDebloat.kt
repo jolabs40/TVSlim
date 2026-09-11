@@ -122,6 +122,12 @@ class MoteurDebloat(
      * qu'il est actif, la commande répond `Success` sans le moindre effet.
      */
     suspend fun definirAccueil(composant: String, ancienAccueil: String): ResultatAction {
+        // Les deux partent dans une commande : celui d'annulation aussi, et il sera rejoué tel
+        // quel depuis le journal, longtemps après. Ils viennent d'une sortie de `cmd package`,
+        // donc d'une source contrainte — mais c'est l'asymétrie qui se paie à la relecture.
+        val refus = motifDeRefusComposant(composant) ?: motifDeRefusComposant(ancienAccueil)
+        if (refus != null) return ResultatAction(composant, "Écran d'accueil", false, refus)
+
         val sortie = executeur.executer("cmd package set-home-activity $composant")
         journal.ajouter(
             ActionJournal(
@@ -145,6 +151,9 @@ class MoteurDebloat(
      * n'installe rien d'elle-même. Le seul chemin passe par la boutique officielle.
      */
     suspend fun ouvrirFicheBoutique(paquet: String): ResultatAction {
+        if (!IDENTIFIANT.matches(paquet)) {
+            return ResultatAction(paquet, paquet, false, "Nom de paquet invalide : $paquet")
+        }
         val sortie = executeur.executer(
             "am start -a android.intent.action.VIEW -d market://details?id=$paquet",
         )
@@ -157,6 +166,11 @@ class MoteurDebloat(
      * service la rappelle.
      */
     suspend fun forcerArret(paquet: String): ResultatAction {
+        // Ce nom-ci sort d'une expression régulière appliquée à `dumpsys meminfo` : le seul du
+        // moteur qui ne vienne ni du catalogue ni d'une liste de paquets.
+        if (!IDENTIFIANT.matches(paquet)) {
+            return ResultatAction(paquet, paquet, false, "Nom de paquet invalide : $paquet")
+        }
         val sortie = executeur.executer("am force-stop $paquet")
         return ResultatAction(paquet, paquet, sortie.reussi, sortie.sortie)
     }
@@ -283,6 +297,9 @@ class MoteurDebloat(
         return ResultatAction(paquet, appOp, reussi, message)
     }
 
+    private fun motifDeRefusComposant(composant: String): String? =
+        if (COMPOSANT.matches(composant)) null else "Composant invalide : $composant"
+
     private fun motifDeRefusPermission(
         paquet: String,
         permission: String,
@@ -313,6 +330,9 @@ class MoteurDebloat(
     private companion object {
         /** Le shell du téléviseur prend la ligne telle quelle : un nom, et rien d'autre. */
         val IDENTIFIANT = Regex("""[A-Za-z0-9_.]+""")
+
+        /** « com.spocky.projengmenu/.MainActivity » : deux identifiants, une barre, rien de plus. */
+        val COMPOSANT = Regex("""[A-Za-z0-9_.]+/[A-Za-z0-9_.]+""")
 
         const val MODE_APP_OP_DEFAUT = "default"
 
