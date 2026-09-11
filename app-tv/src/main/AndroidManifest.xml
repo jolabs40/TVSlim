@@ -10,8 +10,24 @@
         android:name="android.software.leanback"
         android:required="true" />
 
-    <!-- Lecture de l'état des paquets du système, y compris désactivés. Lecture seule. -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <!--
+        Lecture de l'état des paquets du système, y compris désactivés. Lecture seule.
+
+        Lint la refuse, et il a raison dans le cas général. Ici elle n'alimente qu'un seul
+        appel — `getInstalledApplications()` dans AppareilRepository — donc les deux compteurs
+        de l'écran d'accueil. Tout le reste (état des 96 entrées du catalogue, accueil courant,
+        launchers tiers) passe par le <queries> déclaré plus bas.
+
+        La remplacer par 96 <package> ferait tomber ces compteurs à 96 : ils ne diraient plus
+        que ce que le catalogue connaît déjà, et la seule vue d'ensemble serait perdue — le
+        fait qu'un téléviseur en porte trois fois plus.
+
+        L'application ne va pas sur le Play Store (distribution en sideload, tranché le
+        2026-09-11) : la restriction de Google ne s'y applique pas. Ne pas « corriger ».
+    -->
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <!-- Gardien de démarrage : réapplique les réglages que le téléviseur remet à zéro au boot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
