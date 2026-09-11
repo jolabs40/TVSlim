@@ -80,6 +80,8 @@ android {
     }
     buildFeatures {
         compose = true
+        // BuildConfig.DEBUG : le détail des traces ne part qu'en debug (voir adb/Traces.kt).
+        buildConfig = true
     }
     packaging {
         resources {

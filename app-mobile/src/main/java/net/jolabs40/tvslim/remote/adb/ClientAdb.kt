@@ -78,7 +78,7 @@ class ClientAdb @Inject constructor(
                 _connexion.value = ConnexionUi(EtatConnexion.CONNECTE, hote, port)
                 true
             } catch (erreur: Throwable) {
-                Log.w(TAG, "Connexion à $hote:$port impossible", erreur)
+                Log.w(TAG, "Connexion impossible" + detail("$hote:$port"), erreur)
                 _connexion.value = if (discret) {
                     ConnexionUi(EtatConnexion.DECONNECTE, hote, port)
                 } else {
@@ -145,14 +145,14 @@ class ClientAdb @Inject constructor(
 
         return when {
             reponse == null -> {
-                Log.w(TAG, "Délai dépassé : $commande")
+                Log.w(TAG, "Délai dépassé" + detail(commande))
                 fermerSession()
                 Issue.Rompue(MESSAGE_DELAI)
             }
 
             reponse.isFailure -> {
                 val erreur = reponse.exceptionOrNull() ?: IllegalStateException()
-                Log.w(TAG, "Commande refusée : $commande", erreur)
+                Log.w(TAG, "Commande refusée" + detail(commande), erreur)
                 fermerSession()
                 Issue.Rompue(diagnostic(erreur))
             }
@@ -183,7 +183,7 @@ class ClientAdb @Inject constructor(
         val maintenant = System.currentTimeMillis()
         if (maintenant - dernierEchecReprise < REPOS_APRES_ECHEC_MS) return false
 
-        Log.i(TAG, "Session rompue, reprise sur $hote:$port")
+        Log.i(TAG, "Session rompue, reprise" + detail("$hote:$port"))
         _connexion.value = _connexion.value.copy(etat = EtatConnexion.CONNEXION)
         val ouverte = withTimeoutOrNull(DELAI_REPRISE_MS) {
             runCatching { Dadb.create(hote, port, depotCles.paire()) }.getOrNull()

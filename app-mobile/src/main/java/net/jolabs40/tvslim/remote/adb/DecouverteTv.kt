@@ -76,7 +76,7 @@ class DecouverteTv @Inject constructor(
                 service,
                 object : NsdManager.ResolveListener {
                     override fun onResolveFailed(info: NsdServiceInfo?, code: Int) {
-                        Log.w(TAG, "Résolution impossible pour ${info?.serviceName} ($code)")
+                        Log.w(TAG, "Résolution impossible ($code)" + detail(info?.serviceName.orEmpty()))
                         resolutionEnCours = false
                         resoudreSuivant()
                     }
@@ -105,7 +105,7 @@ class DecouverteTv @Inject constructor(
         // Un écouteur par type : NsdManager en refuse un qui serait déjà enregistré ailleurs.
         fun ecouteur() = object : NsdManager.DiscoveryListener {
             override fun onStartDiscoveryFailed(type: String?, code: Int) {
-                Log.w(TAG, "Découverte impossible pour $type ($code)")
+                Log.w(TAG, "Découverte impossible ($code)" + detail(type.orEmpty()))
             }
 
             override fun onStopDiscoveryFailed(type: String?, code: Int) = Unit
