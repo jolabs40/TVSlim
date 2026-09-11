@@ -11,3 +11,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Clés de signature release. Le dépôt ne doit jamais pouvoir les porter :
+# une clé versionnée est une clé publiée, et elle ne se remplace pas en sideload.
+*.keystore
+*.jks
+keystore.properties
