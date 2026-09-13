@@ -71,6 +71,13 @@ Au démarrage, TV Slim demande à GitHub s'il existe une nouvelle version — d�
 par une clé Ed25519 : TV Slim vérifie la signature avant de l'exécuter, refuse tout le reste, puis
 redémarre tout seul.
 
+Chacun peut refaire cette vérification sur un fichier téléchargé, avec un JDK 17 ou plus récent,
+depuis une copie de ce dépôt et avec le fichier `.msi.sig` à côté de l'installateur :
+
+```sh
+java "TVSlim Windows/outils/VerifierMiseAJour.java" TVSlim-Windows-x.y.z.msi x.y.z "TVSlim Windows/gradle.properties"
+```
+
 ## Confidentialité
 
 TV Slim parle à votre téléviseur sur votre réseau local, et à GitHub pour chercher les mises à

@@ -1,5 +1,6 @@
 package net.jolabs40.tvslim.windows.maj
 
+import net.jolabs40.tvslim.windows.InfosApp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -7,7 +8,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.security.KeyFactory
 import java.security.KeyPairGenerator
+import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
 /**
@@ -38,6 +41,47 @@ class VerificationSignatureTest {
         val sortie = processus.inputStream.bufferedReader().readText()
         assertEquals(sortie, 0, processus.waitFor())
         return File(fichier.path + ".sig").readText()
+    }
+
+    /** L'outil de vérification de la publication, lancé tel quel : son code de sortie. */
+    private fun verifierAvecOutil(fichier: File, version: String, clePublique: String): Int {
+        val proprietes = File(dossier.newFolder(), "gradle.properties").apply {
+            writeText("# clé de test\nclePubliqueMisesAJour=$clePublique\n")
+        }
+        val java = File(System.getProperty("java.home"), "bin/java").path
+        val outil = File(System.getProperty("tvslim.projet"), "outils/VerifierMiseAJour.java").path
+        val processus = ProcessBuilder(java, outil, fichier.path, version, proprietes.path)
+            .redirectErrorStream(true)
+            .start()
+        processus.inputStream.bufferedReader().readText()
+        return processus.waitFor()
+    }
+
+    @Test
+    fun `l'outil de verification de la publication s'accorde avec l'application`() {
+        val msi = installateur()
+        val signature = signerAvecOutil(msi, "1.2.3")
+        val autreCle = Base64.getEncoder()
+            .encodeToString(KeyPairGenerator.getInstance("Ed25519").generateKeyPair().public.encoded)
+
+        assertEquals(0, verifierAvecOutil(msi, "1.2.3", publique))
+        assertEquals(1, verifierAvecOutil(msi, "1.2.4", publique))
+        assertEquals(1, verifierAvecOutil(msi, "1.2.3", autreCle))
+
+        msi.appendText("!")
+        assertEquals(1, verifierAvecOutil(msi, "1.2.3", publique))
+        assertFalse(VerificationSignature.verifier(msi, "1.2.3", signature, publique))
+    }
+
+    @Test
+    fun `la cle publique embarquee dans l'application est une cle Ed25519 lisible`() {
+        val cle = InfosApp.CLE_PUBLIQUE_MISES_A_JOUR
+        assertTrue("aucune clé publique : toutes les mises à jour seraient refusées", cle.isNotBlank())
+
+        val lue = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(Base64.getDecoder().decode(cle)))
+
+        // Une clé publique Ed25519 en X.509 : douze octets d'en-tête, trente-deux de clé.
+        assertEquals(44, lue.encoded.size)
     }
 
     @Test

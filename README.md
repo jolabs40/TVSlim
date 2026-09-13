@@ -66,6 +66,13 @@ TV Slim asks GitHub for a new version when it starts — this can be switched of
 Nothing is downloaded until you click **Install**. Every installer is signed with an Ed25519 key:
 TV Slim checks the signature before running it, refuses anything else, and restarts on its own.
 
+Anyone can run the same check on a download, with JDK 17 or later, from a copy of this repository
+and with the `.msi.sig` file next to the installer:
+
+```sh
+java "TVSlim Windows/outils/VerifierMiseAJour.java" TVSlim-Windows-x.y.z.msi x.y.z "TVSlim Windows/gradle.properties"
+```
+
 ## Privacy
 
 TV Slim talks to your television over your local network, and to GitHub to look for updates —
