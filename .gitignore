@@ -1,0 +1,18 @@
+# L'application Android garde son propre .gitignore, dans TVSlim/.
+
+# Version Windows : sorties de build et caches
+TVSlim Windows/.gradle/
+TVSlim Windows/.kotlin/
+TVSlim Windows/build/
+TVSlim Windows/publication/
+TVSlim Windows/local.properties
+TVSlim Windows/.idea/
+*.iml
+
+# Aucune clé ne doit pouvoir entrer dans le dépôt : une clé versionnée est une clé publiée.
+*.keystore
+*.jks
+keystore.properties
+cle-privee*.json
+
+.DS_Store
