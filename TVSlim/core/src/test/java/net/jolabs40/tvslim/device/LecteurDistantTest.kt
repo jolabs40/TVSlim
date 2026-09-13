@@ -230,6 +230,36 @@ class LecteurDistantTest {
     }
 
     @Test
+    fun `les paquets systeme sont tout ce que la personne n'a pas installe`() = runTest {
+        val sortie = """
+            @@TVSLIM_D
+            package:com.google.android.apps.tv.launcherx
+            package:com.tcl.tv.tclhome_passive
+            @@TVSLIM_E
+            package:com.spocky.projengmenu
+            package:com.mediatek.wwtv.tvcenter
+            @@TVSLIM_T
+            package:com.spocky.projengmenu
+        """.trimIndent()
+
+        val photo = LecteurDistant(ExecuteurFixe(sortie)).photographie(emptyList(), emptySet())
+
+        assertEquals(
+            mapOf(
+                "com.google.android.apps.tv.launcherx" to EtatPaquet.DESACTIVE,
+                "com.tcl.tv.tclhome_passive" to EtatPaquet.DESACTIVE,
+                "com.mediatek.wwtv.tvcenter" to EtatPaquet.ACTIF,
+            ),
+            photo.paquetsSysteme,
+        )
+
+        // Sans la liste des applications tierces, rien : Projectivy passerait pour un paquet système.
+        val sansTiers = LecteurDistant(ExecuteurFixe(sortie.substringBefore("@@TVSLIM_T")))
+            .photographie(emptyList(), emptySet())
+        assertTrue(sansTiers.paquetsSysteme.isEmpty())
+    }
+
+    @Test
     fun `sans la liste des applications tierces, seuls les accueils du catalogue passent pour d'usine`() = runTest {
         val sortie = """
             @@TVSLIM_D

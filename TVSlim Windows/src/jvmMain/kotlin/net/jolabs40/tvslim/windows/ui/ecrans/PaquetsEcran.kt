@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.device.EtatPaquet
+import net.jolabs40.tvslim.device.origine
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.baseline_arrow_drop_down_24
 import net.jolabs40.tvslim.windows.ressources.baseline_search_24
@@ -73,6 +74,7 @@ import net.jolabs40.tvslim.windows.ui.EtatApp
 import net.jolabs40.tvslim.windows.ui.Filtre
 import net.jolabs40.tvslim.windows.ui.LignePaquet
 import net.jolabs40.tvslim.windows.ui.composants.EcranVide
+import net.jolabs40.tvslim.windows.ui.composants.IconeOrigine
 import net.jolabs40.tvslim.windows.ui.composants.PastilleRisque
 import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import org.jetbrains.compose.resources.painterResource
@@ -97,6 +99,7 @@ fun PaquetsEcran(
     onFiltre: (Filtre) -> Unit,
     onSauvegarder: () -> Unit,
     onReinjecter: () -> Unit,
+    onExporterInconnus: () -> Unit,
 ) {
     if (!etat.connecte) {
         EcranVide(stringResource(Res.string.packages_not_connected))
@@ -174,7 +177,8 @@ fun PaquetsEcran(
 
         Row(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(1.35f).fillMaxHeight()) {
-                if (affichees.isEmpty()) {
+                val inconnus = etat.inconnusAffiches
+                if (affichees.isEmpty() && inconnus.isEmpty()) {
                     TexteSecondaire(
                         stringResource(Res.string.packages_none_matching),
                         modifier = Modifier.padding(16.dp),
@@ -190,6 +194,10 @@ fun PaquetsEcran(
                                 onBasculer = { onBasculer(ligne.entree.paquet) },
                                 onReactiver = { onReactiver(ligne.entree.paquet) },
                             )
+                        }
+                        // Après le catalogue, ce qu'il ne connaît pas : montré, jamais proposé.
+                        if (etat.inconnus.isNotEmpty()) {
+                            sectionInconnus(affiches = inconnus, total = etat.inconnus.size, onExporter = onExporterInconnus)
                         }
                     }
                     VerticalScrollbar(
@@ -329,6 +337,7 @@ private fun VuePaquet(
         }
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconeOrigine(ligne.entree.origine, modifier = Modifier.padding(end = 8.dp))
                 PastilleRisque(ligne.entree.risque)
                 Text(
                     text = ligne.entree.nom,

@@ -34,8 +34,11 @@ import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.Fabricant
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LauncherInstalle
+import net.jolabs40.tvslim.device.OriginePaquet
 import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.device.StockageApplication
+import net.jolabs40.tvslim.device.origine
+import net.jolabs40.tvslim.device.paquetsInconnus
 import net.jolabs40.tvslim.windows.adb.ConnexionUi
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.reseau.AppareilDecouvert
@@ -248,7 +251,30 @@ class PlancheLogosTest {
             lignes = lignes,
         )
         rendre("14-paquets-profils-ouverts", 1280, 860, cadre = false, clic = Offset(1080f, 110f)) {
-            PaquetsEcran(paquets, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+            PaquetsEcran(paquets, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+        }
+
+        // Une ligne du catalogue par origine, puis ce qu'il ignore, rangé par éditeur.
+        val inconnus = EtatApp(
+            catalogue = catalogue,
+            connexion = ConnexionUi(etat = EtatConnexion.CONNECTE, hote = "192.168.2.135"),
+            lignes = OriginePaquet.ORDRE.mapNotNull { origine -> lignes.firstOrNull { it.entree.origine == origine } },
+            inconnus = catalogue.paquetsInconnus(
+                systeme = mapOf(
+                    "com.tcl.guard" to EtatPaquet.ACTIF,
+                    "com.tcl.tvinput" to EtatPaquet.ACTIF,
+                    "com.tcl.inputmethod.international" to EtatPaquet.ACTIF,
+                    "com.mediatek.android.tv.mdns.offload.overlay" to EtatPaquet.ACTIF,
+                    "com.mediatek.AirplayAPK" to EtatPaquet.DESACTIVE,
+                    "com.google.android.tv.remote.service" to EtatPaquet.ACTIF,
+                    "com.android.se" to EtatPaquet.ACTIF,
+                    "com.dolby.android.audio.service" to EtatPaquet.ACTIF,
+                ),
+                fabricant = Fabricant.TCL,
+            ),
+        )
+        rendre("24-paquets-inconnus", 1280, 860, cadre = false) {
+            PaquetsEcran(inconnus, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         }
     }
 

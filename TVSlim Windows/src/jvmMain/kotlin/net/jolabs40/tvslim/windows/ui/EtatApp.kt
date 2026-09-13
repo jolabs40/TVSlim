@@ -7,6 +7,7 @@ import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.configuration.PlanReinjection
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
+import net.jolabs40.tvslim.device.PaquetInconnu
 import net.jolabs40.tvslim.device.RepartitionMemoire
 import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.journal.ActionJournal
@@ -63,6 +64,8 @@ data class EtatApp(
     val catalogue: Catalogue = Catalogue(),
     val infos: InfosAppareil = InfosAppareil.VIDE,
     val lignes: List<LignePaquet> = emptyList(),
+    /** Les paquets livrés avec le téléviseur que le catalogue ne décrit pas : montrés, jamais proposés. */
+    val inconnus: List<PaquetInconnu> = emptyList(),
     val journal: List<ActionJournal> = emptyList(),
     val mesures: HistoriqueMesures = HistoriqueMesures(),
     val decouverte: ResultatDecouverte = ResultatDecouverte(),
@@ -105,6 +108,19 @@ data class EtatApp(
                     ligne.entree.nom.contains(recherche, ignoreCase = true) ||
                     ligne.entree.paquet.contains(recherche, ignoreCase = true)
             }
+    }
+
+    /** Les inconnus que la liste montre, sous le même filtre et la même recherche que le catalogue. */
+    val inconnusAffiches: List<PaquetInconnu> by lazy {
+        inconnus
+            .filter { inconnu ->
+                when (filtre) {
+                    Filtre.TOUS -> true
+                    Filtre.ACTIFS -> inconnu.etat == EtatPaquet.ACTIF
+                    Filtre.DESACTIVES -> inconnu.etat == EtatPaquet.DESACTIVE
+                }
+            }
+            .filter { recherche.isBlank() || it.paquet.contains(recherche, ignoreCase = true) }
     }
 
     val nombreActifs: Int by lazy { presentes.count { it.etat == EtatPaquet.ACTIF } }

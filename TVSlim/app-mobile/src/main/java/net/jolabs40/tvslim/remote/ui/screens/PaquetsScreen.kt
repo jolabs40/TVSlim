@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.catalog.Risque
 import net.jolabs40.tvslim.device.EtatPaquet
+import net.jolabs40.tvslim.device.origine
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.EtatRemote
 import net.jolabs40.tvslim.remote.ui.Filtre
@@ -57,6 +58,7 @@ fun PaquetsScreen(
     onFiltre: (Filtre) -> Unit,
     onSauvegarder: () -> Unit,
     onReinjecter: () -> Unit,
+    onExporterInconnus: () -> Unit,
 ) {
     if (!etat.connecte) {
         Box(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
@@ -180,7 +182,8 @@ fun PaquetsScreen(
 
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
-        if (affichees.isEmpty()) {
+        val inconnus = etat.inconnusAffiches
+        if (affichees.isEmpty() && inconnus.isEmpty()) {
             Text(
                 text = stringResource(R.string.packages_none_matching),
                 modifier = Modifier.padding(16.dp),
@@ -203,6 +206,10 @@ fun PaquetsScreen(
                     },
                 )
             }
+            // Après le catalogue, ce qu'il ne connaît pas : montré, jamais proposé.
+            if (etat.inconnus.isNotEmpty()) {
+                sectionInconnus(affiches = inconnus, total = etat.inconnus.size, onExporter = onExporterInconnus)
+            }
         }
     }
 }
@@ -224,6 +231,7 @@ private fun VuePaquet(ligne: LignePaquet, onClick: () -> Unit) {
         }
         Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconeOrigine(ligne.entree.origine, modifier = Modifier.padding(end = 8.dp))
                 Box(
                     modifier = Modifier
                         .size(9.dp)

@@ -148,6 +148,9 @@ fun RemoteApp() {
                 val reinjection = rememberLauncherForActivityResult(
                     ActivityResultContracts.OpenDocument(),
                 ) { uri -> uri?.let(modele.configuration::charger) }
+                val inventaire = rememberLauncherForActivityResult(
+                    ActivityResultContracts.CreateDocument("text/markdown"),
+                ) { uri -> uri?.let(modele.configuration::exporterInconnus) }
                 PaquetsScreen(
                     etat = etat,
                     onBasculer = modele::basculerSelection,
@@ -162,6 +165,7 @@ fun RemoteApp() {
                     onReinjecter = {
                         reinjection.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
                     },
+                    onExporterInconnus = { inventaire.launch(modele.configuration.nomExportInconnus()) },
                 )
             }
             composable("memoire") {

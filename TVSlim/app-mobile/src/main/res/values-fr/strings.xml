@@ -62,6 +62,12 @@
     <string name="packages_progress">%1$d sur %2$d</string>
     <string name="config_save">Sauvegarder la config</string>
     <string name="config_reinject">Réinjecter une config</string>
+    <string name="origin_android">Android</string>
+    <string name="origin_maker">Constructeur</string>
+    <string name="origin_other">Autre</string>
+    <string name="unknown_title">Inconnus du catalogue (%1$d)</string>
+    <string name="unknown_hint">Paquets livrés avec le téléviseur que TV Slim ne décrit pas encore, avec leur origine devinée. Montrés pour information : rien à désactiver d\'ici. Exportez la liste pour aider à les décrire : elle ajoute ce qu\'ADB dit de chacun — emplacement, droits du système, déclarations sensibles, icône, mémoire vive et stockage.</string>
+    <string name="unknown_export">Exporter la liste</string>
     <string name="filter_all">Tous</string>
     <string name="filter_enabled">Actifs (%1$d)</string>
     <string name="filter_disabled">Désactivés (%1$d)</string>
@@ -147,4 +153,7 @@
     <string name="msg_config_invalid">Ce fichier n\'est pas une configuration TV Slim.</string>
     <string name="msg_config_up_to_date">Ce téléviseur correspond déjà à cette configuration.</string>
     <string name="msg_config_home_missing">Les paquets correspondent déjà ; %1$s n\'est pas installé sur ce téléviseur, l\'écran d\'accueil reste tel quel.</string>
+    <string name="msg_unknown_reading">Relevé des paquets inconnus sur le téléviseur…</string>
+    <string name="msg_unknown_exported">Liste exportée.</string>
+    <string name="msg_unknown_export_failed">Impossible d\'exporter la liste : %1$s</string>
 </resources>

@@ -24,6 +24,9 @@ import net.jolabs40.tvslim.windows.maj.ModeDistribution
 import net.jolabs40.tvslim.windows.maj.PiloteMisesAJour
 import net.jolabs40.tvslim.windows.maj.Version
 import net.jolabs40.tvslim.windows.reseau.DecouverteTv
+import net.jolabs40.tvslim.windows.ressources.Res
+import net.jolabs40.tvslim.windows.ressources.msg_unknown_export_failed
+import net.jolabs40.tvslim.windows.ressources.msg_unknown_exported
 import net.jolabs40.tvslim.windows.ui.theme.TvSlimTheme
 import org.jetbrains.skia.EncodedImageFormat
 import org.junit.Assert.assertTrue
@@ -204,6 +207,28 @@ class CapturesMaterielTest {
         releves += "stockage: lu=$stockageLu, totalKo=${stockage.totalKo}, libreKo=${stockage.libreKo}, " +
             "applications=${stockage.applications.size}"
         assertTrue("Le stockage du téléviseur doit se lire", stockage.renseignee)
+
+        // L'inventaire des inconnus, relu et écrit comme par le bouton d'export, à côté des captures. Aucune
+        // fenêtre n'est ouverte à ce moment : le message de fin reste là pour dire comment ça s'est passé.
+        val inventaire = File(sortie, "inconnus.md").apply { delete() }
+        pilote.configuration.exporterInconnus(inventaire)
+        val fins = setOf(Res.string.msg_unknown_exported, Res.string.msg_unknown_export_failed)
+        val termine = attendre(60_000) { (pilote.etat.value.message as? MessageUi.Texte)?.ressource in fins }
+        val rapport = inventaire.takeIf { it.isFile }?.readText().orEmpty()
+        releves += "inconnus: ${lu.inconnus.size}, termine=$termine, message=${pilote.etat.value.message}"
+        releves += rapport.lineSequence().filter { it.startsWith("- Lu sur") || it.startsWith("- Avec les droits") }.joinToString(" / ")
+        assertTrue("L'inventaire doit s'écrire : ${pilote.etat.value.message}", rapport.isNotEmpty())
+        assertTrue(
+            "Les trois lectures doivent aboutir : ${rapport.take(800)}",
+            rapport.contains("- Lu sur l'appareil : indices ADB, mémoire vive, stockage\n"),
+        )
+
+        // La section des inconnus, amenée en tête de liste par le nom de la première famille.
+        lu.inconnus.firstOrNull()?.let { premier ->
+            pilote.majRecherche(premier.famille)
+            capturer("08-paquets-inconnus", Onglet.PAQUETS)
+            pilote.majRecherche("")
+        }
 
         Locale.setDefault(Locale.ENGLISH)
         capturer("07-paquets-anglais", Onglet.PAQUETS)

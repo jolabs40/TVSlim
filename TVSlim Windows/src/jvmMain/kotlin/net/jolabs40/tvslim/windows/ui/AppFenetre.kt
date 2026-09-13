@@ -62,6 +62,7 @@ import net.jolabs40.tvslim.windows.ressources.tab_connection
 import net.jolabs40.tvslim.windows.ressources.tab_log
 import net.jolabs40.tvslim.windows.ressources.tab_memory
 import net.jolabs40.tvslim.windows.ressources.tab_packages
+import net.jolabs40.tvslim.windows.ressources.unknown_export_dialog
 import net.jolabs40.tvslim.windows.ui.ecrans.AProposDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereMiseAJour
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
@@ -106,6 +107,7 @@ fun AppFenetre(
     val titreExport = stringResource(Res.string.journal_export_dialog)
     val titreSauvegarde = stringResource(Res.string.config_save_dialog)
     val titreReinjection = stringResource(Res.string.config_open_dialog)
+    val titreInconnus = stringResource(Res.string.unknown_export_dialog)
 
     // Une session ADB ne survit pas à la veille du téléviseur. Au retour sur la fenêtre — sortie de
     // la barre des tâches — on retente le dernier téléviseur sans rien demander.
@@ -229,6 +231,10 @@ fun AppFenetre(
                             },
                             onReinjecter = {
                                 choisirFichierImport(titreReinjection)?.let(pilote.configuration::charger)
+                            },
+                            onExporterInconnus = {
+                                choisirFichierExport(pilote.configuration.nomExportInconnus(), titreInconnus)
+                                    ?.let(pilote.configuration::exporterInconnus)
                             },
                         )
 

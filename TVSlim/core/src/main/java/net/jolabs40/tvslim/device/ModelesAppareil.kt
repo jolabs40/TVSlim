@@ -37,6 +37,15 @@ data class InfosAppareil(
     /** Le nom à montrer et à retenir : la marque vendue plutôt que le sous-traitant (« TPV »). */
     val nomAffiche: String get() = "${fabricant?.nom ?: marque} $modele".trim()
 
+    /** Le même nom, prêt à entrer dans un nom de fichier : « Philips-55PUS8807-12 ». */
+    val nomPourFichier: String
+        get() = nomAffiche
+            .map { if (it.isLetterOrDigit()) it else '-' }
+            .joinToString("")
+            .replace(Regex("-+"), "-")
+            .trim('-')
+            .ifBlank { "televiseur" }
+
     companion object {
         val VIDE = InfosAppareil()
     }
@@ -72,6 +81,10 @@ data class RepartitionMemoire(
     val processus: List<ProcessusMemoire> = emptyList(),
 ) {
     val renseignee: Boolean get() = totalKo > 0
+
+    /** Ce qu'occupe chaque paquet, ses processus réunis : « com.android.vending » et « …:background ». */
+    val kilooctetsParPaquet: Map<String, Long>
+        get() = processus.groupBy { it.paquet }.mapValues { (_, siens) -> siens.sumOf { it.kilooctets } }
 }
 
 data class LauncherInstalle(

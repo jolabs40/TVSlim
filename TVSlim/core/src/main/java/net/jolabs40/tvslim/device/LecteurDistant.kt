@@ -6,6 +6,12 @@ import net.jolabs40.tvslim.shell.ExecuteurCommande
 data class Photographie(
     val infos: InfosAppareil = InfosAppareil.VIDE,
     val etats: Map<String, EtatPaquet> = emptyMap(),
+    /**
+     * Chaque paquet livré avec l'appareil — tout sauf ce que la personne a installé —, actif ou
+     * désactivé. Vide quand la liste des applications tierces manque : sans elle, on ne saurait pas
+     * les distinguer, et une application installée passerait pour un paquet du constructeur.
+     */
+    val paquetsSysteme: Map<String, EtatPaquet> = emptyMap(),
 )
 
 /**
@@ -65,6 +71,10 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
                     else -> EtatPaquet.ABSENT
                 }
             },
+            paquetsSysteme = tiers?.let { installes ->
+                (actifs.associateWith { EtatPaquet.ACTIF } + desactives.associateWith { EtatPaquet.DESACTIVE })
+                    .filterKeys { it !in installes }
+            }.orEmpty(),
         )
     }
 
@@ -127,6 +137,14 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         val sortie = executeur.executer(COMMANDE_STOCKAGE)
         return if (sortie.reussi) LectureStockage.interpreter(sortie.sortie) else RepartitionStockage()
     }
+
+    /**
+     * Ce que chaque paquet déclare au système — emplacement, identité, services sensibles, icône —, pour
+     * l'inventaire des inconnus : à la demande, comme la mémoire. Le code de sortie n'est que celui de la
+     * dernière requête ; chaque section se lit pour elle-même, quoi qu'il vaille.
+     */
+    suspend fun indices(): Map<String, IndicesPaquet> =
+        LectureIndices.interpreter(executeur.executer(LectureIndices.COMMANDE).sortie)
 
     private fun nombre(brut: String): Long = brut.replace(",", "").trim().toLongOrNull() ?: 0L
 
@@ -227,20 +245,6 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             }
         }
         return defaut
-    }
-
-    private fun decouper(sortie: String): Map<String, List<String>> {
-        val sections = mutableMapOf<String, MutableList<String>>()
-        var courante: MutableList<String>? = null
-        sortie.lineSequence().forEach { ligne ->
-            val nette = ligne.trim()
-            if (nette.startsWith(PREFIXE_MARQUEUR)) {
-                courante = mutableListOf<String>().also { sections[nette] = it }
-            } else if (nette.isNotBlank()) {
-                courante?.add(nette)
-            }
-        }
-        return sections
     }
 
     private fun paquets(lignes: List<String>?): Set<String> =
@@ -370,6 +374,21 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         private val PROCESSUS = Regex("""^([\d,]+)K:\s+(\S+)\s+\(pid\s+(\d+)""")
         private val NOMBRE = Regex("""([\d,]+)K""")
         private val CACHE = Regex("""([\d,]+)K cached pss""")
+
+        /** Range chaque ligne sous le dernier marqueur rencontré, débarrassée de ses blancs ; les lignes vides sautent. */
+        internal fun decouper(sortie: String): Map<String, List<String>> {
+            val sections = mutableMapOf<String, MutableList<String>>()
+            var courante: MutableList<String>? = null
+            sortie.lineSequence().forEach { ligne ->
+                val nette = ligne.trim()
+                if (nette.startsWith(PREFIXE_MARQUEUR)) {
+                    courante = mutableListOf<String>().also { sections[nette] = it }
+                } else if (nette.isNotBlank()) {
+                    courante?.add(nette)
+                }
+            }
+            return sections
+        }
 
         // Surtout pas de « # » : dans un shell, un mot qui commence par # ouvre un commentaire
         // et avale tout le reste de la ligne — la commande entière se réduisait à un echo vide.

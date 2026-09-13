@@ -99,13 +99,6 @@ object FichierConfiguration {
             ?.takeIf { it.application == ConfigurationTv.APPLICATION && it.format in 1..ConfigurationTv.FORMAT }
 
     /** « TVSlim-TCL-Smart-TV-Pro-2026-09-13.json » : l'appareil et le jour, sans caractère qui gêne. */
-    fun nomPropose(infos: InfosAppareil, jour: LocalDate = LocalDate.now()): String {
-        val appareil = infos.nomAffiche
-            .map { if (it.isLetterOrDigit()) it else '-' }
-            .joinToString("")
-            .replace(Regex("-+"), "-")
-            .trim('-')
-            .ifBlank { "televiseur" }
-        return "TVSlim-$appareil-$jour.json"
-    }
+    fun nomPropose(infos: InfosAppareil, jour: LocalDate = LocalDate.now()): String =
+        "TVSlim-${infos.nomPourFichier}-$jour.json"
 }

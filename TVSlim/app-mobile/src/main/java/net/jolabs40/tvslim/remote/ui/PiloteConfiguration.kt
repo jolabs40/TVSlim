@@ -16,14 +16,18 @@ import net.jolabs40.tvslim.configuration.Reinjecteur
 import net.jolabs40.tvslim.configuration.configurationDe
 import net.jolabs40.tvslim.configuration.planifier
 import net.jolabs40.tvslim.device.LecteurDistant
+import net.jolabs40.tvslim.device.RapportInconnus
+import net.jolabs40.tvslim.device.ReleveInconnus
 import net.jolabs40.tvslim.moteur.MoteurDebloat
 import net.jolabs40.tvslim.moteur.ResultatAction
+import net.jolabs40.tvslim.remote.BuildConfig
 import net.jolabs40.tvslim.remote.R
 import java.io.FileNotFoundException
 
 /**
  * La configuration du téléviseur : son écran d'accueil — la fiche du launcher recommandé, le guet de
- * son installation — et la sauvegarde qu'on réinjecte plus tard, launcher et paquets ensemble.
+ * son installation — et la sauvegarde qu'on réinjecte plus tard, launcher et paquets ensemble. S'y ajoute
+ * l'inventaire de ce que le catalogue ignore, relevé et exporté à la demande.
  *
  * Tirée du pilote principal comme les permissions : elle n'en partage que l'état et le moteur. Les
  * fichiers passent par le sélecteur d'Android : rien n'est écrit ni lu sans qu'on l'ait désigné.
@@ -108,14 +112,7 @@ class PiloteConfiguration(
         }
         val texte = FichierConfiguration.ecrire(courant.catalogue.configurationDe(courant.infos, courant.etats()))
         portee.launch {
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    // « wt » : un fichier réécrit se tronque, sans quoi un JSON plus court laisserait une queue.
-                    val flux = contexte.contentResolver.openOutputStream(cible, "wt")
-                        ?: throw FileNotFoundException(cible.toString())
-                    flux.use { it.write(texte.toByteArray()) }
-                }
-            }
+            runCatching { ecrire(cible, texte) }
                 .onSuccess { afficher(contexte.getString(R.string.msg_config_saved)) }
                 .onFailure { afficher(contexte.getString(R.string.msg_config_save_failed, it.message.orEmpty())) }
         }
@@ -181,6 +178,50 @@ class PiloteConfiguration(
             )
             terminer(resultats)
         }
+    }
+
+    // --- Inventaire des inconnus ----------------------------------------------------------
+
+    /** Nom proposé pour l'inventaire : l'appareil et le jour. */
+    fun nomExportInconnus(): String = RapportInconnus.nomPropose(etat().infos)
+
+    /**
+     * Écrit l'inventaire des paquets que le catalogue ignore, avec ce qu'ADB dit de chacun : emplacement,
+     * droits, déclarations sensibles, icône, mémoire vive et stockage. Tout est relu au moment de l'export,
+     * par trois lectures ; rien n'est écrit sur le téléviseur.
+     */
+    fun exporterInconnus(cible: Uri) {
+        if (!etat().connecte) {
+            afficher(contexte.getString(R.string.msg_connect_first))
+            return
+        }
+        portee.launch {
+            afficher(contexte.getString(R.string.msg_unknown_reading))
+            runCatching {
+                val releve = ReleveInconnus(
+                    indices = lecteur.indices(),
+                    memoire = lecteur.memoire(),
+                    stockage = lecteur.stockage(),
+                )
+                val courant = etat()
+                val rapport = RapportInconnus.markdown(
+                    infos = courant.infos,
+                    inconnus = courant.inconnus,
+                    application = "${contexte.getString(R.string.app_name)} ${BuildConfig.VERSION_NAME}",
+                    releve = releve,
+                )
+                ecrire(cible, rapport)
+            }
+                .onSuccess { afficher(contexte.getString(R.string.msg_unknown_exported)) }
+                .onFailure { afficher(contexte.getString(R.string.msg_unknown_export_failed, it.message.orEmpty())) }
+        }
+    }
+
+    /** « wt » : un fichier réécrit se tronque, sans quoi un contenu plus court laisserait une queue. */
+    private suspend fun ecrire(cible: Uri, texte: String) = withContext(Dispatchers.IO) {
+        val flux = contexte.contentResolver.openOutputStream(cible, "wt")
+            ?: throw FileNotFoundException(cible.toString())
+        flux.use { it.write(texte.toByteArray()) }
     }
 
     private fun EtatRemote.etats() = lignes.associate { it.entree.paquet to it.etat }

@@ -27,11 +27,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.catalog.Catalogue
 import net.jolabs40.tvslim.device.EtatPaquet
+import net.jolabs40.tvslim.device.origine
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.baseline_info_24
 import net.jolabs40.tvslim.windows.ressources.baseline_warning_24
 import net.jolabs40.tvslim.windows.ressources.packages_detail_category
 import net.jolabs40.tvslim.windows.ressources.packages_detail_hint
+import net.jolabs40.tvslim.windows.ressources.packages_detail_origin
 import net.jolabs40.tvslim.windows.ressources.packages_detail_risk
 import net.jolabs40.tvslim.windows.ressources.packages_detail_selected
 import net.jolabs40.tvslim.windows.ressources.packages_detail_size
@@ -43,7 +45,9 @@ import net.jolabs40.tvslim.windows.ressources.size_mb
 import net.jolabs40.tvslim.windows.ressources.state_disabled
 import net.jolabs40.tvslim.windows.ressources.state_enabled
 import net.jolabs40.tvslim.windows.ui.LignePaquet
+import net.jolabs40.tvslim.windows.ui.composants.IconeOrigine
 import net.jolabs40.tvslim.windows.ui.composants.LigneValeur
+import net.jolabs40.tvslim.windows.ui.composants.libelleOrigine
 import net.jolabs40.tvslim.windows.ui.composants.PastilleRisque
 import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import net.jolabs40.tvslim.windows.ui.composants.libelleRisque
@@ -112,6 +116,12 @@ fun DetailPaquet(
                 Text(text = libelleRisque(entree.risque), style = MaterialTheme.typography.bodyMedium)
             }
             LigneValeur(stringResource(Res.string.packages_detail_category), catalogue.nomCategorie(entree.categorie))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TexteSecondaire(stringResource(Res.string.packages_detail_origin), modifier = Modifier.weight(1f))
+                IconeOrigine(entree.origine)
+                Spacer(Modifier.width(8.dp))
+                Text(text = libelleOrigine(entree.origine), style = MaterialTheme.typography.bodyMedium)
+            }
             entree.tailleMo?.let { taille ->
                 LigneValeur(stringResource(Res.string.packages_detail_size), stringResource(Res.string.size_mb, taille))
             }

@@ -16,6 +16,7 @@ import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LecteurDistant
 import net.jolabs40.tvslim.device.RepartitionMemoire
 import net.jolabs40.tvslim.device.RepartitionStockage
+import net.jolabs40.tvslim.device.paquetsInconnus
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.journal.TypeAction
@@ -213,6 +214,7 @@ class PiloteApp(
         _etat.update {
             it.copy(
                 lignes = emptyList(),
+                inconnus = emptyList(),
                 infos = InfosAppareil.VIDE,
                 journal = emptyList(),
                 mesures = HistoriqueMesures(),
@@ -271,6 +273,8 @@ class PiloteApp(
                             selectionne = entree.paquet in selection && etatPaquet == EtatPaquet.ACTIF,
                         )
                     },
+                    // Ce que le catalogue ne décrit pas : montré à part, sans rien proposer.
+                    inconnus = catalogue.paquetsInconnus(photo.paquetsSysteme, photo.infos.fabricant),
                 )
             }
         }

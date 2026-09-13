@@ -45,6 +45,13 @@ enum class Fabricant(
     FREEBOX("Freebox", TypeAppareil.BOX, listOf("freebox")),
     ;
 
+    /**
+     * Vrai quand un segment du nom de paquet porte la marque : « com.tcl.tv », « com.nvidia.ota ».
+     * Sert à reconnaître, parmi les paquets que le catalogue ignore, ceux du constructeur.
+     */
+    fun signePaquet(paquet: String): Boolean =
+        paquet.lowercase().split('.').any { segment -> signes.any { segment.startsWith(it) } }
+
     /** Téléviseur ou box : Xiaomi fait les deux, et le modèle le dit (« MIBOX4 », « Mi TV Stick »). */
     fun typePour(modele: String): TypeAppareil {
         val nomModele = normaliser(modele)
