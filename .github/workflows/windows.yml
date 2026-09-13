@@ -2,7 +2,9 @@
 #
 #  - Pull request ou push sur main touchant la version Windows ou le noyau partagé : tests,
 #    installateur et version portable, gardés comme artefact pour qu'on puisse les essayer.
-#  - Tag annoté windows-vX.Y.Z : la même chose, puis signature de l'installateur et publication.
+#  - Tag annoté windows-vX.Y.Z : la même chose, puis signature de l'installateur, vérification de
+#    cette signature contre la clé embarquée dans l'application, et publication — le message du
+#    tag sert de notes de version.
 #
 # La clé privée de signature (secret TVSLIM_CLE_SIGNATURE) n'est lue que par le job de publication,
 # et seulement sur un tag. Les actions sont épinglées par empreinte de commit : une étiquette se
@@ -81,12 +83,12 @@ jobs:
         run: |
           $sortie = New-Item -ItemType Directory -Force publication
           $msi = Get-ChildItem build/compose/binaries/main/msi -Filter *.msi | Select-Object -First 1
-          Copy-Item $msi.FullName (Join-Path $sortie "TVSlim-Windows-$env:VERSION.msi")
+          Copy-Item -LiteralPath $msi.FullName (Join-Path $sortie "TVSlim-Windows-$env:VERSION.msi")
 
           # La version portable porte un marqueur : elle ne tente pas de s'installer elle-même.
           $image = Get-ChildItem build/compose/binaries/main/app -Directory | Select-Object -First 1
           New-Item -ItemType File -Force (Join-Path $image.FullName 'app/portable') | Out-Null
-          Compress-Archive -Path $image.FullName -DestinationPath (Join-Path $sortie "TVSlim-Windows-$env:VERSION-portable.zip")
+          Compress-Archive -LiteralPath $image.FullName -DestinationPath (Join-Path $sortie "TVSlim-Windows-$env:VERSION-portable.zip")
 
           Get-ChildItem $sortie -File |
             ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } |
@@ -109,8 +111,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          sparse-checkout: |
-            TVSlim Windows/outils
 
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
@@ -128,6 +128,28 @@ jobs:
           VERSION: ${{ needs.construire.outputs.version }}
         run: java "TVSlim Windows/outils/SignerMiseAJour.java" "publication/TVSlim-Windows-$VERSION.msi" "$VERSION"
 
+      # Une clé privée qui ne correspondrait pas à la clé publique embarquée produirait une version
+      # que toutes les installations refuseraient : on vérifie comme elles, avant de publier.
+      - name: Vérifier la signature contre la clé embarquée
+        env:
+          VERSION: ${{ needs.construire.outputs.version }}
+        run: java "TVSlim Windows/outils/VerifierMiseAJour.java" "publication/TVSlim-Windows-$VERSION.msi" "$VERSION" "TVSlim Windows/gradle.properties"
+
+      # actions/checkout rapatrie un tag par l'empreinte de son commit : il arrive « léger », sans son
+      # message — et `gh release create --notes-from-tag` ne lit rien quand --repo est donné. Les
+      # notes se lisent donc par l'API, sur l'objet tag lui-même.
+      - name: Notes de version, depuis le message du tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          objet=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha')
+          if [ "${objet%% *}" != "tag" ]; then
+            echo "::error::$TAG doit être un tag annoté : son message sert de notes de version."
+            exit 1
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/git/tags/${objet#* }" --jq .message > notes.md
+
       - name: Publier sur GitHub
         env:
           GH_TOKEN: ${{ github.token }}
@@ -136,5 +158,6 @@ jobs:
         run: |
           gh release create "$TAG" publication/* \
             --repo "$GITHUB_REPOSITORY" \
-            --title "TV Slim pour Windows $VERSION" \
-            --notes-from-tag
+            --title "TV Slim for Windows $VERSION" \
+            --notes-file notes.md \
+            --verify-tag
