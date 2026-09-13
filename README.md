@@ -42,15 +42,16 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 ## What you can do
 
 - **Television** — model and maker, Android version, memory, enabled and disabled packages; the
-  home screen and the launchers installed, recognised by their logo; the recommended replacement,
-  Startlight Launcher (coming soon to the Play Store); grant the privileged permissions some apps
-  need (`WRITE_SECURE_SETTINGS`, `DUMP`…).
+  home screen and the launchers installed, recognised by their logo, the factory home screen
+  included even once disabled; the recommended replacement, Startlight Launcher (coming soon to the
+  Play Store); grant the privileged permissions some apps need (`WRITE_SECURE_SETTINGS`, `DUMP`…).
 - **Packages** — the known packages actually present on *your* TV, with risk level, size,
   description and known side effects; ready-made profiles (ads and telemetry, voice assistants,
   preinstalled streaming services…); applied in one go, after a confirmation that lists the side
-  effects.
-- **Memory** — what each running process really costs, and the before/after comparison since your
-  first visit.
+  effects. Save the TV's configuration — packages and home screen — to a file, and reinject it
+  later, on the same TV or on another one of the same model.
+- **Memory** — RAM: what each running process really costs, and the before/after comparison since
+  your first visit. Storage: free and used space, and the largest applications.
 - **Log** — every action with the command that undoes it; undo a single line or restore everything;
   export as Markdown.
 

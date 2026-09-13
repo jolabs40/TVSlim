@@ -46,15 +46,19 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
 ## Ce qu'on peut faire
 
 - **Téléviseur** — modèle et fabricant, version d'Android, mémoire, paquets actifs et désactivés ;
-  l'écran d'accueil et les launchers installés, reconnus à leur logo ; le remplaçant recommandé,
-  Startlight Launcher (bientôt sur le Play Store) ; accorder les permissions privilégiées dont
-  certaines applications ont besoin (`WRITE_SECURE_SETTINGS`, `DUMP`…).
+  l'écran d'accueil et les launchers installés, reconnus à leur logo, l'accueil d'usine compris même
+  désactivé ; le remplaçant recommandé, Startlight Launcher (bientôt sur le Play Store) ; accorder
+  les permissions privilégiées dont certaines applications ont besoin (`WRITE_SECURE_SETTINGS`,
+  `DUMP`…).
 - **Paquets** — les paquets connus réellement présents sur *votre* téléviseur, avec leur niveau de
   risque, leur taille, leur description et leurs effets de bord connus ; des profils prêts à
   l'emploi (publicité et télémétrie, assistants vocaux, services de streaming préinstallés…) ;
-  application en une fois, après une confirmation qui liste les effets de bord.
-- **Mémoire** — ce que coûte réellement chaque processus, et la comparaison avant/après depuis la
-  première visite.
+  application en une fois, après une confirmation qui liste les effets de bord. Sauvegarder la
+  configuration du téléviseur — paquets et écran d'accueil — dans un fichier, et la réinjecter plus
+  tard, sur le même téléviseur ou sur un autre du même modèle.
+- **Mémoire** — mémoire vive : ce que coûte réellement chaque processus, et la comparaison
+  avant/après depuis la première visite. Stockage : l'espace libre et occupé, et les applications
+  les plus lourdes.
 - **Journal** — chaque action, avec la commande qui l'annule ; annuler une seule ligne ou tout
   restaurer ; export en Markdown.
 
