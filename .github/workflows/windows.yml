@@ -1,0 +1,140 @@
+# Construit, teste et publie TV Slim pour Windows.
+#
+#  - Pull request ou push sur main touchant la version Windows ou le noyau partagé : tests,
+#    installateur et version portable, gardés comme artefact pour qu'on puisse les essayer.
+#  - Tag annoté windows-vX.Y.Z : la même chose, puis signature de l'installateur et publication.
+#
+# La clé privée de signature (secret TVSLIM_CLE_SIGNATURE) n'est lue que par le job de publication,
+# et seulement sur un tag. Les actions sont épinglées par empreinte de commit : une étiquette se
+# déplace, une empreinte non.
+
+name: TV Slim Windows
+
+on:
+  push:
+    tags: ['windows-v*']
+    branches: [main]
+    paths:
+      - 'TVSlim Windows/**'
+      - 'TVSlim/core/**'
+      - '.github/workflows/windows.yml'
+  pull_request:
+    paths:
+      - 'TVSlim Windows/**'
+      - 'TVSlim/core/**'
+      - '.github/workflows/windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  construire:
+    name: Tests, installateur et version portable
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: 'TVSlim Windows'
+    outputs:
+      version: ${{ steps.version.outputs.valeur }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+
+      - name: Version
+        id: version
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if ($env:REF -like 'refs/tags/windows-v*') {
+            $version = $env:REF.Substring('refs/tags/windows-v'.Length)
+          } else {
+            $ligne = Get-Content gradle.properties | Where-Object { $_ -match '^versionApp=' }
+            $version = $ligne -replace '^versionApp=', ''
+          }
+          # Contrainte de MSI : trois nombres, le premier sous 256.
+          if ($version -notmatch '^\d{1,3}\.\d{1,3}\.\d{1,5}$') { throw "Version invalide : $version" }
+          "valeur=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Tests (le noyau partagé avec Android compris)
+        run: ./gradlew.bat jvmTest "-PversionApp=${{ steps.version.outputs.valeur }}"
+
+      - name: Installateur MSI et image portable
+        run: ./gradlew.bat packageMsi createDistributable "-PversionApp=${{ steps.version.outputs.valeur }}"
+
+      - name: Rassembler les fichiers à publier
+        env:
+          VERSION: ${{ steps.version.outputs.valeur }}
+        run: |
+          $sortie = New-Item -ItemType Directory -Force publication
+          $msi = Get-ChildItem build/compose/binaries/main/msi -Filter *.msi | Select-Object -First 1
+          Copy-Item $msi.FullName (Join-Path $sortie "TVSlim-Windows-$env:VERSION.msi")
+
+          # La version portable porte un marqueur : elle ne tente pas de s'installer elle-même.
+          $image = Get-ChildItem build/compose/binaries/main/app -Directory | Select-Object -First 1
+          New-Item -ItemType File -Force (Join-Path $image.FullName 'app/portable') | Out-Null
+          Compress-Archive -Path $image.FullName -DestinationPath (Join-Path $sortie "TVSlim-Windows-$env:VERSION-portable.zip")
+
+          Get-ChildItem $sortie -File |
+            ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } |
+            Set-Content (Join-Path $sortie 'SHA256SUMS.txt') -Encoding ascii
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tvslim-windows
+          path: 'TVSlim Windows/publication/'
+          if-no-files-found: error
+
+  publier:
+    name: Signature et publication
+    needs: construire
+    if: startsWith(github.ref, 'refs/tags/windows-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            TVSlim Windows/outils
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: tvslim-windows
+          path: publication
+
+      - name: Signer l'installateur
+        env:
+          TVSLIM_CLE_SIGNATURE: ${{ secrets.TVSLIM_CLE_SIGNATURE }}
+          VERSION: ${{ needs.construire.outputs.version }}
+        run: java "TVSlim Windows/outils/SignerMiseAJour.java" "publication/TVSlim-Windows-$VERSION.msi" "$VERSION"
+
+      - name: Publier sur GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.construire.outputs.version }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" publication/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "TV Slim pour Windows $VERSION" \
+            --notes-from-tag
