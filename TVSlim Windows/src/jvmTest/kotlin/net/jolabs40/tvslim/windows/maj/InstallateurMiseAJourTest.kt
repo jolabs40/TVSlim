@@ -18,6 +18,7 @@ import java.security.KeyPairGenerator
 import java.security.PrivateKey
 import java.security.Signature
 import java.util.Base64
+import java.util.concurrent.TimeUnit
 
 class InstallateurMiseAJourTest {
 
@@ -173,11 +174,18 @@ class InstallateurMiseAJourTest {
         val cible = File(dossier.newFolder("Zoë O'Brien"), "temoin.txt")
         val script = "Set-Content -Path '${cible.absolutePath.replace("'", "''")}' -Value 'relais-ok'"
 
-        val lancement = ProcessBuilder(InstallateurMiseAJour.commandeLancement(script)).redirectErrorStream(true).start()
-        val sortie = lancement.inputStream.bufferedReader().readText()
-        assertEquals("WMI doit accepter la création : $sortie", 0, lancement.waitFor())
+        // Borné de bout en bout : un WMI qui ne répond pas ne doit jamais figer la CI.
+        val journal = File(dossier.root, "lancement.log")
+        val lancement = ProcessBuilder(InstallateurMiseAJour.commandeLancement(script))
+            .redirectErrorStream(true)
+            .redirectOutput(journal)
+            .start()
+        val termine = lancement.waitFor(90, TimeUnit.SECONDS)
+        if (!termine) lancement.destroyForcibly()
+        assertTrue("WMI n'a pas répondu en 90 s : ${journal.readText()}", termine)
+        assertEquals("WMI doit accepter la création : ${journal.readText()}", 0, lancement.exitValue())
 
-        val limite = System.currentTimeMillis() + 20_000
+        val limite = System.currentTimeMillis() + 60_000
         while (!cible.exists() && System.currentTimeMillis() < limite) Thread.sleep(200)
         assertTrue("le relais créé par WMI n'a rien écrit", cible.exists())
         assertEquals("relais-ok", cible.readText().trim())
