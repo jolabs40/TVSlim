@@ -55,7 +55,10 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
   l'emploi (publicité et télémétrie, assistants vocaux, services de streaming préinstallés…) ;
   application en une fois, après une confirmation qui liste les effets de bord. Sauvegarder la
   configuration du téléviseur — paquets et écran d'accueil — dans un fichier, et la réinjecter plus
-  tard, sur le même téléviseur ou sur un autre du même modèle.
+  tard, sur le même téléviseur ou sur un autre du même modèle. Chaque paquet porte une icône
+  d'origine : Android, constructeur ou autre. Ceux que TV Slim ne connaît pas encore sont listés à
+  part, sans rien proposer d'en faire ; leur inventaire s'exporte — emplacement, droits du système,
+  services sensibles déclarés, mémoire et stockage — pour enrichir le catalogue.
 - **Mémoire** — mémoire vive : ce que coûte réellement chaque processus, et la comparaison
   avant/après depuis la première visite. Stockage : l'espace libre et occupé, et les applications
   les plus lourdes.
