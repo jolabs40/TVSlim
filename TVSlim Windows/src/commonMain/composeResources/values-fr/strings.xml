@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Slim</string>
+
+    <string name="tab_connection">Téléviseur</string>
+    <string name="tab_packages">Paquets</string>
+    <string name="tab_memory">Mémoire</string>
+    <string name="tab_log">Journal</string>
+    <string name="about_title">À propos</string>
+
+    <string name="status_connected">Connecté à %1$s</string>
+    <string name="status_connecting">Connexion à %1$s…</string>
+    <string name="status_disconnected">Aucun téléviseur connecté</string>
+    <string name="status_error">Connexion perdue avec %1$s</string>
+
+    <!-- Onglet Téléviseur -->
+    <string name="connection_title">Se connecter à un téléviseur</string>
+    <string name="connection_subtitle">Cet ordinateur parle au téléviseur en ADB, sur votre réseau local. Rien à installer sur le téléviseur.</string>
+    <string name="connection_host">Adresse</string>
+    <string name="connection_host_hint">Par exemple 192.168.1.20</string>
+    <string name="connection_port">Port</string>
+    <string name="connection_connect">Se connecter</string>
+    <string name="connection_disconnect">Se déconnecter</string>
+    <string name="connection_manual_title">Ou saisir l'adresse</string>
+    <string name="connection_waiting">En attente du téléviseur… S'il demande d'autoriser le débogage depuis cet ordinateur, acceptez à la télécommande.</string>
+    <string name="connection_problem_refused">Connexion refusée : le débogage réseau ne semble pas activé sur le téléviseur.</string>
+    <string name="connection_problem_timeout">Le téléviseur n'a pas répondu à temps. S'il affiche une demande d'autorisation, acceptez-la à la télécommande, puis réessayez.</string>
+    <string name="connection_problem_unauthorized">Le téléviseur a fermé la connexion. Acceptez la demande de débogage à la télécommande, en cochant « Toujours autoriser sur cet ordinateur ».</string>
+    <string name="connection_problem_unreachable">Téléviseur injoignable : vérifiez qu'il est allumé et branché sur le même réseau que cet ordinateur.</string>
+    <string name="connection_problem_other">La connexion a échoué.</string>
+    <string name="connection_help_title">Première fois ? Préparer le téléviseur</string>
+    <string name="connection_help_1">1. Sur le téléviseur, ouvrez Paramètres → À propos (parfois sous Système ou Préférences de l'appareil), puis appuyez sept fois sur OK sur le numéro de build. Les options pour les développeurs apparaissent.</string>
+    <string name="connection_help_2">2. Dans les options pour les développeurs, activez le débogage réseau — selon le téléviseur, il s'appelle « Débogage réseau », « Débogage ADB » ou « Débogage USB ».</string>
+    <string name="connection_help_3">3. Revenez ici : le téléviseur apparaît dans la liste ci-dessus en quelques secondes. Sinon, saisissez son adresse IP, indiquée dans Paramètres → Réseau.</string>
+    <string name="connection_help_4">4. À la première connexion, le téléviseur demande d'autoriser le débogage depuis cet ordinateur : acceptez à la télécommande, en cochant « Toujours autoriser ». Il ne le redemandera plus, même après un redémarrage.</string>
+
+    <string name="discovery_title">Téléviseurs sur votre réseau</string>
+    <string name="discovery_hint">Joignables en ADB. Cliquez sur l'un d'eux pour vous connecter.</string>
+    <string name="discovery_searching">Recherche sur votre réseau…</string>
+    <string name="discovery_none">Aucun téléviseur ne répond pour l'instant. Vérifiez que le débogage réseau y est activé, ou saisissez son adresse ci-dessous.</string>
+    <string name="discovery_wireless">Débogage sans fil uniquement : activez plutôt le débogage réseau sur le port 5555.</string>
+
+    <string name="device_title">Téléviseur</string>
+    <string name="device_model">Modèle</string>
+    <string name="device_android">Android</string>
+    <string name="device_memory">Mémoire</string>
+    <string name="device_memory_value">%1$d / %2$d Mo libres</string>
+    <string name="device_packages_active">Paquets actifs</string>
+    <string name="device_packages_disabled">Paquets désactivés</string>
+    <string name="device_home">Écran d'accueil</string>
+
+    <string name="home_title">Écran d'accueil et launcher</string>
+    <string name="home_current">Actuellement : %1$s</string>
+    <string name="home_none">Aucun launcher tiers sur cet appareil : l'accueil d'usine ne peut pas encore être remplacé.</string>
+    <string name="home_available">Launcher tiers disponible :</string>
+    <string name="home_install">Ouvrir sur le téléviseur</string>
+    <string name="home_to_install">En installer un</string>
+    <string name="home_others">Autres launchers à essayer</string>
+
+    <!-- Onglet Paquets -->
+    <string name="packages_not_connected">Connectez-vous à un téléviseur pour voir ses paquets.</string>
+    <string name="packages_apply">Appliquer (%1$d)</string>
+    <string name="packages_clear">Tout décocher</string>
+    <string name="packages_reactivate">Réactiver</string>
+    <string name="packages_search">Rechercher un paquet</string>
+    <string name="packages_none_matching">Aucun résultat pour cette recherche.</string>
+    <string name="packages_progress">%1$d sur %2$d</string>
+    <string name="packages_profiles">Profils</string>
+    <string name="packages_detail_hint">Sélectionnez un paquet pour lire son détail.</string>
+    <string name="packages_detail_package">Paquet</string>
+    <string name="packages_detail_category">Catégorie</string>
+    <string name="packages_detail_risk">Risque</string>
+    <string name="packages_detail_size">Taille</string>
+    <string name="packages_detail_state">État</string>
+    <string name="packages_detail_selected">Sélectionné pour la désactivation</string>
+    <string name="packages_requires_launcher">Exige qu'un launcher tiers soit installé d'abord.</string>
+    <string name="state_enabled">Actif</string>
+    <string name="state_disabled">Désactivé</string>
+    <string name="risk_none">Aucun</string>
+    <string name="risk_low">Faible</string>
+    <string name="risk_medium">Moyen</string>
+    <string name="risk_high">Élevé</string>
+    <string name="filter_all">Tous</string>
+    <string name="filter_enabled">Actifs (%1$d)</string>
+    <string name="filter_disabled">Désactivés (%1$d)</string>
+    <string name="side_effect_prefix">Effet de bord : %1$s</string>
+    <string name="size_mb">%1$d Mo</string>
+
+    <string name="confirm_apply_title">Désactiver ces paquets ?</string>
+    <string name="confirm_apply_body">%1$d paquet(s) vont être désactivés. Rien n'est désinstallé : chacun se réactive depuis le journal.</string>
+    <string name="confirm_restore_title">Tout restaurer ?</string>
+    <string name="confirm_restore_body">%1$d paquet(s) désactivés depuis cet ordinateur vont être réactivés.</string>
+    <string name="confirm_go">Continuer</string>
+    <string name="confirm_cancel">Annuler</string>
+
+    <!-- Onglet Mémoire -->
+    <string name="memory_title">Occupation de la mémoire</string>
+    <string name="memory_reading">Lecture en cours…</string>
+    <string name="memory_unavailable">Aucune lecture : le téléviseur n’a pas répondu. Essayez Actualiser.</string>
+    <string name="memory_total">Totale</string>
+    <string name="memory_used">Utilisée</string>
+    <string name="memory_free">Libre</string>
+    <string name="memory_cached">Dont cache</string>
+    <string name="memory_zram">Compressée (ZRAM)</string>
+    <string name="memory_processes">Processus en cours (%1$d)</string>
+    <string name="memory_mb">%1$d Mo</string>
+    <string name="memory_stop">Arrêter</string>
+    <string name="memory_not_connected">Connectez-vous à un téléviseur pour voir sa mémoire.</string>
+    <string name="action_refresh">Actualiser</string>
+
+    <string name="gain_title">Avant / après</string>
+    <string name="gain_since">Point de départ mesuré le %1$s</string>
+    <string name="gain_packages">Paquets désactivés</string>
+    <string name="gain_memory">Mémoire libre</string>
+    <string name="gain_before">Avant</string>
+    <string name="gain_now">Maintenant</string>
+    <string name="gain_delta_plus">+%1$d</string>
+    <string name="gain_delta_minus">%1$d</string>
+    <string name="gain_waiting">La première lecture sert de point de départ. Revenez après avoir désactivé quelques paquets pour voir ce que ça a changé.</string>
+    <string name="gain_reset">Repartir de l'état actuel</string>
+    <string name="gain_memory_caveat">La mémoire libre varie selon ce que fait le téléviseur : à lire comme une tendance, pas comme un verdict.</string>
+
+    <!-- Onglet Journal -->
+    <string name="journal_title">Journal</string>
+    <string name="journal_subtitle">Chaque action, avec la commande qui l'annule. Un journal par téléviseur.</string>
+    <string name="journal_empty">Rien de consigné pour ce téléviseur.</string>
+    <string name="journal_restore_all">Tout restaurer</string>
+    <string name="journal_export">Exporter en Markdown</string>
+    <string name="journal_export_dialog">Exporter le journal</string>
+    <string name="journal_success">OK</string>
+    <string name="journal_failure">échec : %1$s</string>
+    <string name="journal_undo_one">Annuler celle-ci</string>
+    <string name="journal_not_connected">Connectez-vous à un téléviseur pour voir son journal.</string>
+
+    <string name="permissions_title">Permissions privilégiées</string>
+    <string name="permissions_hint">Certaines permissions ne s'accordent qu'en ADB — donc d'ici. L'octroi survit aux redémarrages, et le journal garde la commande qui le reprend.</string>
+    <string name="permissions_package">Paquet</string>
+    <string name="permissions_permission">Permission</string>
+    <string name="permissions_check">Vérifier</string>
+    <string name="permissions_grant">Accorder</string>
+    <string name="permissions_revoke">Retirer</string>
+    <string name="permissions_state_granted">Déjà accordée.</string>
+    <string name="permissions_state_pending">Demandée au manifeste, pas encore accordée.</string>
+    <string name="permissions_state_undeclared">Cette application ne demande pas cette permission : rien à accorder.</string>
+    <string name="permissions_state_unknown">Paquet introuvable sur ce téléviseur.</string>
+    <string name="permissions_state_appop">App-op %1$s : %2$s</string>
+
+    <!-- Messages -->
+    <string name="msg_enter_address">Renseignez l'adresse du téléviseur.</string>
+    <string name="msg_connect_first">Connectez-vous d'abord à un téléviseur.</string>
+    <string name="msg_nothing_selected">Aucun paquet sélectionné.</string>
+    <string name="msg_nothing_to_restore">Rien à restaurer sur ce téléviseur.</string>
+    <string name="msg_not_undoable">Cette action ne s'annule pas depuis ici.</string>
+    <string name="msg_store_failed">Impossible d'ouvrir la boutique : %1$s</string>
+    <string name="msg_store_opened">Fiche ouverte sur le téléviseur : validez l'installation à la télécommande.</string>
+    <string name="msg_launcher_installed">Installé. L'accueil d'usine peut maintenant être remplacé.</string>
+    <string name="msg_stopped">%1$s arrêté.</string>
+    <string name="msg_failure">Échec : %1$s</string>
+    <string name="msg_journal_exported">Journal exporté : %1$s</string>
+    <string name="msg_journal_export_failed">Impossible d'exporter le journal : %1$s</string>
+    <string name="msg_baseline_reset">Nouveau point de départ enregistré.</string>
+    <string name="msg_perm_enter_package">Indiquez le paquet de l'application.</string>
+    <string name="msg_perm_enter_both">Indiquez le paquet et la permission.</string>
+    <string name="msg_perm_not_found">%1$s est introuvable sur ce téléviseur.</string>
+    <string name="msg_perm_granted">%1$s accordée.</string>
+    <string name="msg_perm_reopen">Rouvrez l'application sur le téléviseur.</string>
+    <string name="msg_perm_revoked">%1$s retirée.</string>
+    <string name="msg_appop_set">App-op %1$s : %2$s.</string>
+    <string name="msg_appop_failed">App-op %1$s non posé : %2$s</string>
+    <string name="msg_undone">Annulé.</string>
+    <string name="msg_wireless_unsupported">Ce téléviseur ne propose que le débogage sans fil, que TV Slim ne sait pas encore utiliser. Activez le débogage réseau sur le port 5555.</string>
+    <string name="result_summary">%1$d sur %2$d réussis.</string>
+
+    <!-- À propos -->
+    <string name="about_version">Version %1$s</string>
+    <string name="about_description">Débloat réversible des téléviseurs Android, en ADB depuis cet ordinateur. Rien n'est désinstallé, rien n'est installé sur le téléviseur : chaque changement est consigné au journal avec la commande qui l'annule.</string>
+    <string name="about_open_source">Code ouvert : chacun peut lire le code, recompiler l'application et vérifier ce qu'elle fait.</string>
+    <string name="about_source">Voir le code source</string>
+    <string name="about_license">Licence : %1$s</string>
+    <string name="about_data_folder">Ouvrir le dossier des données</string>
+    <string name="about_close">Fermer</string>
+
+    <!-- Mises à jour -->
+    <string name="update_auto_check">Rechercher les mises à jour au démarrage</string>
+    <string name="update_check_now">Rechercher maintenant</string>
+    <string name="update_checking">Recherche…</string>
+    <string name="update_up_to_date">TV Slim est à jour.</string>
+    <string name="update_available">La version %1$s est disponible.</string>
+    <string name="update_install">Installer et redémarrer</string>
+    <string name="update_download_page">Ouvrir la page de téléchargement</string>
+    <string name="update_later">Plus tard</string>
+    <string name="update_downloading">Téléchargement de la mise à jour…</string>
+    <string name="update_verifying">Vérification de la signature…</string>
+    <string name="update_installing">Installation : TV Slim va redémarrer tout seul.</string>
+    <string name="update_failed">La mise à jour a échoué : %1$s</string>
+    <string name="update_check_failed">Impossible de vérifier les mises à jour : %1$s</string>
+    <string name="update_signature_invalid">Le fichier téléchargé n'a pas passé la vérification de signature et a été supprimé. Rien n'a été installé.</string>
+    <string name="update_whats_new">Nouveautés</string>
+    <string name="update_portable">Version portable : téléchargez la nouvelle archive et remplacez ce dossier par son contenu.</string>
+    <string name="update_dev">Version de développement : les mises à jour automatiques sont désactivées.</string>
+</resources>

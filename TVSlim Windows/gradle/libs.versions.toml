@@ -1,0 +1,45 @@
+[versions]
+kotlin = "2.4.20"
+composeMultiplatform = "1.12.0"
+material3 = "1.9.0"
+lifecycle = "2.11.0"
+coroutines = "1.11.0"
+serialization = "1.11.0"
+# Le même client ADB que le compagnon Android : même bibliothèque, même version.
+dadb = "2.0.0"
+jmdns = "3.6.3"
+jna = "5.19.1"
+junit = "4.13.2"
+
+[libraries]
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+compose-ui-test-junit4 = { module = "org.jetbrains.compose.ui:ui-test-junit4", version.ref = "composeMultiplatform" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
+
+lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+
+# Dispatchers.Main sur le bureau : la file d'événements Swing.
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+
+# Client ADB pur Kotlin : ni adb.exe, ni serveur ADB à installer.
+dadb = { module = "dev.mobile:dadb", version.ref = "dadb" }
+
+# Découverte des téléviseurs qui s'annoncent sur le réseau (_adb._tcp, _googlecast._tcp).
+jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
+
+# DPAPI : la clé ADB dort chiffrée par Windows, lisible par ce seul compte utilisateur.
+jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
+
+junit = { module = "junit:junit", version.ref = "junit" }
+
+[plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Slim</string>
+
+    <string name="tab_connection">Television</string>
+    <string name="tab_packages">Packages</string>
+    <string name="tab_memory">Memory</string>
+    <string name="tab_log">Log</string>
+    <string name="about_title">About</string>
+
+    <string name="status_connected">Connected to %1$s</string>
+    <string name="status_connecting">Connecting to %1$s…</string>
+    <string name="status_disconnected">No television connected</string>
+    <string name="status_error">Connection lost with %1$s</string>
+
+    <!-- Television tab -->
+    <string name="connection_title">Connect to a television</string>
+    <string name="connection_subtitle">This computer talks to the television over ADB, on your local network. Nothing to install on the television.</string>
+    <string name="connection_host">Address</string>
+    <string name="connection_host_hint">For example 192.168.1.20</string>
+    <string name="connection_port">Port</string>
+    <string name="connection_connect">Connect</string>
+    <string name="connection_disconnect">Disconnect</string>
+    <string name="connection_manual_title">Or type the address</string>
+    <string name="connection_waiting">Waiting for the television… If it asks to allow debugging from this computer, accept with the remote.</string>
+    <string name="connection_problem_refused">Connection refused: network debugging does not seem to be enabled on the television.</string>
+    <string name="connection_problem_timeout">The television did not answer in time. If it shows an authorisation request, accept it with the remote, then try again.</string>
+    <string name="connection_problem_unauthorized">The television closed the connection. Accept the debugging request with the remote, ticking “Always allow from this computer”.</string>
+    <string name="connection_problem_unreachable">Television unreachable: check that it is switched on and connected to the same network as this computer.</string>
+    <string name="connection_problem_other">The connection failed.</string>
+    <string name="connection_help_title">First time? Prepare the television</string>
+    <string name="connection_help_1">1. On the television, open Settings → About (sometimes under System or Device preferences), then press OK seven times on the build number. Developer options appear.</string>
+    <string name="connection_help_2">2. In Developer options, enable network debugging — depending on the television it is called “Network debugging”, “ADB debugging” or “USB debugging”.</string>
+    <string name="connection_help_3">3. Come back here: the television appears in the list above within a few seconds. Otherwise, type its IP address, shown in Settings → Network.</string>
+    <string name="connection_help_4">4. On the first connection, the television asks to allow debugging from this computer: accept with the remote, ticking “Always allow”. It will not ask again, even after a reboot.</string>
+
+    <string name="discovery_title">Televisions on your network</string>
+    <string name="discovery_hint">Reachable over ADB. Click one to connect.</string>
+    <string name="discovery_searching">Searching your network…</string>
+    <string name="discovery_none">No television answers yet. Check that network debugging is enabled on it, or type its address below.</string>
+    <string name="discovery_wireless">Wireless debugging only: enable network debugging on port 5555 instead.</string>
+
+    <string name="device_title">Television</string>
+    <string name="device_model">Model</string>
+    <string name="device_android">Android</string>
+    <string name="device_memory">Memory</string>
+    <string name="device_memory_value">%1$d / %2$d MB free</string>
+    <string name="device_packages_active">Enabled packages</string>
+    <string name="device_packages_disabled">Disabled packages</string>
+    <string name="device_home">Home screen</string>
+
+    <string name="home_title">Home screen and launcher</string>
+    <string name="home_current">Currently: %1$s</string>
+    <string name="home_none">No third-party launcher on this device: the factory home screen cannot be replaced yet.</string>
+    <string name="home_available">Third-party launcher available:</string>
+    <string name="home_install">Open on the television</string>
+    <string name="home_to_install">Install one</string>
+    <string name="home_others">Other launchers to try</string>
+
+    <!-- Packages tab -->
+    <string name="packages_not_connected">Connect to a television to see its packages.</string>
+    <string name="packages_apply">Apply (%1$d)</string>
+    <string name="packages_clear">Clear</string>
+    <string name="packages_reactivate">Re-enable</string>
+    <string name="packages_search">Search a package</string>
+    <string name="packages_none_matching">Nothing matches this search.</string>
+    <string name="packages_progress">%1$d of %2$d</string>
+    <string name="packages_profiles">Profiles</string>
+    <string name="packages_detail_hint">Select a package to read its details.</string>
+    <string name="packages_detail_package">Package</string>
+    <string name="packages_detail_category">Category</string>
+    <string name="packages_detail_risk">Risk</string>
+    <string name="packages_detail_size">Size</string>
+    <string name="packages_detail_state">State</string>
+    <string name="packages_detail_selected">Selected for disabling</string>
+    <string name="packages_requires_launcher">Requires a third-party launcher to be installed first.</string>
+    <string name="state_enabled">Enabled</string>
+    <string name="state_disabled">Disabled</string>
+    <string name="risk_none">None</string>
+    <string name="risk_low">Low</string>
+    <string name="risk_medium">Medium</string>
+    <string name="risk_high">High</string>
+    <string name="filter_all">All</string>
+    <string name="filter_enabled">Enabled (%1$d)</string>
+    <string name="filter_disabled">Disabled (%1$d)</string>
+    <string name="side_effect_prefix">Side effect: %1$s</string>
+    <string name="size_mb">%1$d MB</string>
+
+    <string name="confirm_apply_title">Disable these packages?</string>
+    <string name="confirm_apply_body">%1$d package(s) will be disabled. Nothing is uninstalled: each one can be re-enabled from the log.</string>
+    <string name="confirm_restore_title">Restore everything?</string>
+    <string name="confirm_restore_body">%1$d package(s) disabled from this computer will be re-enabled.</string>
+    <string name="confirm_go">Go ahead</string>
+    <string name="confirm_cancel">Cancel</string>
+
+    <!-- Memory tab -->
+    <string name="memory_title">Memory usage</string>
+    <string name="memory_reading">Reading…</string>
+    <string name="memory_unavailable">No reading: the television did not answer. Try Refresh.</string>
+    <string name="memory_total">Total</string>
+    <string name="memory_used">Used</string>
+    <string name="memory_free">Free</string>
+    <string name="memory_cached">Of which cached</string>
+    <string name="memory_zram">Compressed (ZRAM)</string>
+    <string name="memory_processes">Running processes (%1$d)</string>
+    <string name="memory_mb">%1$d MB</string>
+    <string name="memory_stop">Stop</string>
+    <string name="memory_not_connected">Connect to a television to see its memory.</string>
+    <string name="action_refresh">Refresh</string>
+
+    <string name="gain_title">Before / after</string>
+    <string name="gain_since">Baseline taken on %1$s</string>
+    <string name="gain_packages">Packages disabled</string>
+    <string name="gain_memory">Free memory</string>
+    <string name="gain_before">Before</string>
+    <string name="gain_now">Now</string>
+    <string name="gain_delta_plus">+%1$d</string>
+    <string name="gain_delta_minus">%1$d</string>
+    <string name="gain_waiting">The first reading is the baseline. Come back after disabling a few packages to see what it changed.</string>
+    <string name="gain_reset">Use current state as new baseline</string>
+    <string name="gain_memory_caveat">Free memory swings with what the television is doing: read it as a trend, not as a verdict.</string>
+
+    <!-- Log tab -->
+    <string name="journal_title">Log</string>
+    <string name="journal_subtitle">Every action, with the command that undoes it. One log per television.</string>
+    <string name="journal_empty">Nothing recorded yet for this television.</string>
+    <string name="journal_restore_all">Restore everything</string>
+    <string name="journal_export">Export as Markdown</string>
+    <string name="journal_export_dialog">Export the log</string>
+    <string name="journal_success">OK</string>
+    <string name="journal_failure">failed: %1$s</string>
+    <string name="journal_undo_one">Undo this one</string>
+    <string name="journal_not_connected">Connect to a television to see its log.</string>
+
+    <string name="permissions_title">Privileged permissions</string>
+    <string name="permissions_hint">Some permissions can only be granted over ADB — from here. The grant survives reboots, and the log keeps the command that takes it back.</string>
+    <string name="permissions_package">Package</string>
+    <string name="permissions_permission">Permission</string>
+    <string name="permissions_check">Check</string>
+    <string name="permissions_grant">Grant</string>
+    <string name="permissions_revoke">Revoke</string>
+    <string name="permissions_state_granted">Already granted.</string>
+    <string name="permissions_state_pending">Requested in the manifest, not granted yet.</string>
+    <string name="permissions_state_undeclared">This application does not request that permission: nothing to grant.</string>
+    <string name="permissions_state_unknown">Package not found on this television.</string>
+    <string name="permissions_state_appop">App-op %1$s: %2$s</string>
+
+    <!-- Messages -->
+    <string name="msg_enter_address">Enter the television's address.</string>
+    <string name="msg_connect_first">Connect to a television first.</string>
+    <string name="msg_nothing_selected">No package selected.</string>
+    <string name="msg_nothing_to_restore">Nothing to restore on this television.</string>
+    <string name="msg_not_undoable">This action cannot be undone from here.</string>
+    <string name="msg_store_failed">Could not open the store: %1$s</string>
+    <string name="msg_store_opened">Listing opened on the television: confirm the installation with the remote.</string>
+    <string name="msg_launcher_installed">Installed. The factory home screen can now be replaced.</string>
+    <string name="msg_stopped">%1$s stopped.</string>
+    <string name="msg_failure">Failed: %1$s</string>
+    <string name="msg_journal_exported">Log exported: %1$s</string>
+    <string name="msg_journal_export_failed">Could not export the log: %1$s</string>
+    <string name="msg_baseline_reset">New starting point recorded.</string>
+    <string name="msg_perm_enter_package">Enter the application's package.</string>
+    <string name="msg_perm_enter_both">Enter the package and the permission.</string>
+    <string name="msg_perm_not_found">%1$s is not installed on this television.</string>
+    <string name="msg_perm_granted">%1$s granted.</string>
+    <string name="msg_perm_reopen">Reopen the application on the television.</string>
+    <string name="msg_perm_revoked">%1$s revoked.</string>
+    <string name="msg_appop_set">App-op %1$s: %2$s.</string>
+    <string name="msg_appop_failed">App-op %1$s not set: %2$s</string>
+    <string name="msg_undone">Undone.</string>
+    <string name="msg_wireless_unsupported">This television only offers wireless debugging, which TV Slim cannot use yet. Enable network debugging on port 5555.</string>
+    <string name="result_summary">%1$d of %2$d succeeded.</string>
+
+    <!-- About -->
+    <string name="about_version">Version %1$s</string>
+    <string name="about_description">Reversible debloat for Android TV, over ADB from this computer. Nothing is uninstalled and nothing is installed on the television: every change is recorded in the log with the command that undoes it.</string>
+    <string name="about_open_source">Open source: anyone can read the code, rebuild the application and check what it does.</string>
+    <string name="about_source">View the source code</string>
+    <string name="about_license">Licence: %1$s</string>
+    <string name="about_data_folder">Open the data folder</string>
+    <string name="about_close">Close</string>
+
+    <!-- Updates -->
+    <string name="update_auto_check">Check for updates at startup</string>
+    <string name="update_check_now">Check now</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_up_to_date">TV Slim is up to date.</string>
+    <string name="update_available">Version %1$s is available.</string>
+    <string name="update_install">Install and restart</string>
+    <string name="update_download_page">Open the download page</string>
+    <string name="update_later">Later</string>
+    <string name="update_downloading">Downloading the update…</string>
+    <string name="update_verifying">Checking the signature…</string>
+    <string name="update_installing">Installing: TV Slim will restart on its own.</string>
+    <string name="update_failed">The update failed: %1$s</string>
+    <string name="update_check_failed">Could not check for updates: %1$s</string>
+    <string name="update_signature_invalid">The downloaded file did not pass the signature check and was deleted. Nothing was installed.</string>
+    <string name="update_whats_new">What's new</string>
+    <string name="update_portable">Portable version: download the new archive and replace this folder with it.</string>
+    <string name="update_dev">Development build: automatic updates are disabled.</string>
+</resources>
