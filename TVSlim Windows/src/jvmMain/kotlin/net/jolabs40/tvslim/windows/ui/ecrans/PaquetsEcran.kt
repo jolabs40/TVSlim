@@ -1,7 +1,5 @@
 package net.jolabs40.tvslim.windows.ui.ecrans
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,22 +20,27 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.windows.ressources.Res
+import net.jolabs40.tvslim.windows.ressources.baseline_arrow_drop_down_24
 import net.jolabs40.tvslim.windows.ressources.baseline_search_24
 import net.jolabs40.tvslim.windows.ressources.filter_all
 import net.jolabs40.tvslim.windows.ressources.filter_disabled
@@ -128,9 +132,9 @@ fun PaquetsEcran(
                 }
             }
 
-            FlowRow(
+            Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 FilterChip(
                     selected = etat.filtre == Filtre.TOUS,
@@ -147,14 +151,14 @@ fun PaquetsEcran(
                     onClick = { onFiltre(Filtre.DESACTIVES) },
                     label = { Text(stringResource(Res.string.filter_disabled, etat.nombreDesactives)) },
                 )
-                Spacer(Modifier.width(16.dp))
-                Text(
-                    text = stringResource(Res.string.packages_profiles),
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Spacer(Modifier.weight(1f))
+                // Une liste déroulante plutôt qu'une rangée de boutons : cinq profils aux noms longs
+                // passaient sur deux lignes, et chacun peut désormais dire ce qu'il coche.
+                ListeProfils(
+                    profils = etat.catalogue.profils,
+                    selectionVide = etat.selection.isEmpty(),
+                    onProfil = onProfil,
                 )
-                etat.catalogue.profils.forEach { profil -> PuceProfil(profil = profil, onProfil = onProfil) }
             }
         }
 
@@ -198,28 +202,65 @@ fun PaquetsEcran(
     }
 }
 
-/** Un profil, avec sa description au survol : c'est elle qui dit ce qu'on perd en l'appliquant. */
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * Les profils, en liste déroulante. En choisir un coche tout ce qu'il couvre, sans rien décocher ;
+ * sa description, sous son nom, dit ce qu'on perd en l'appliquant. Le champ rappelle le dernier
+ * profil appliqué, tant que la sélection n'a pas été vidée.
+ */
 @Composable
-private fun PuceProfil(profil: Profil, onProfil: (Profil) -> Unit) {
-    TooltipArea(
-        tooltip = {
-            Surface(
-                color = MaterialTheme.colorScheme.inverseSurface,
-                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                shape = MaterialTheme.shapes.small,
-                shadowElevation = 4.dp,
-            ) {
-                Text(
-                    text = profil.description,
-                    modifier = Modifier.widthIn(max = 360.dp).padding(10.dp),
-                    style = MaterialTheme.typography.bodySmall,
+private fun ListeProfils(profils: List<Profil>, selectionVide: Boolean, onProfil: (Profil) -> Unit) {
+    var ouverte by remember { mutableStateOf(false) }
+    var dernier by remember { mutableStateOf<Profil?>(null) }
+
+    Box(modifier = Modifier.width(360.dp)) {
+        OutlinedTextField(
+            value = if (selectionVide) "" else dernier?.nom.orEmpty(),
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            label = { Text(stringResource(Res.string.packages_profiles)) },
+            trailingIcon = {
+                Icon(painter = painterResource(Res.drawable.baseline_arrow_drop_down_24), contentDescription = null)
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        // Un champ en lecture seule garde le clic pour lui : une surface transparente le reçoit.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(top = 8.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .clickable { ouverte = true },
+        )
+        DropdownMenu(
+            expanded = ouverte,
+            onDismissRequest = { ouverte = false },
+            modifier = Modifier.width(460.dp),
+        ) {
+            profils.forEach { profil ->
+                DropdownMenuItem(
+                    text = {
+                        Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                            Text(
+                                text = profil.nom,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Text(
+                                text = profil.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                    onClick = {
+                        ouverte = false
+                        dernier = profil
+                        onProfil(profil)
+                    },
                 )
             }
-        },
-        delayMillis = 400,
-    ) {
-        AssistChip(onClick = { onProfil(profil) }, label = { Text(profil.nom) })
+        }
     }
 }
 
