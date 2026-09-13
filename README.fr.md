@@ -45,8 +45,9 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
 
 ## Ce qu'on peut faire
 
-- **Téléviseur** — modèle, version d'Android, mémoire, paquets actifs et désactivés, écran
-  d'accueil ; installer un launcher de remplacement ; accorder les permissions privilégiées dont
+- **Téléviseur** — modèle et fabricant, version d'Android, mémoire, paquets actifs et désactivés ;
+  l'écran d'accueil et les launchers installés, reconnus à leur logo ; le remplaçant recommandé,
+  Startlight Launcher (bientôt sur le Play Store) ; accorder les permissions privilégiées dont
   certaines applications ont besoin (`WRITE_SECURE_SETTINGS`, `DUMP`…).
 - **Paquets** — les paquets connus réellement présents sur *votre* téléviseur, avec leur niveau de
   risque, leur taille, leur description et leurs effets de bord connus ; des profils prêts à
@@ -119,5 +120,7 @@ signature vient du secret `TVSLIM_CLE_SIGNATURE`. Un fork doit générer sa prop
 
 Voir [LICENSE](LICENSE).
 
-TV Slim n'est affilié ni à TCL, ni à Google, ni à NVIDIA, ni à Xiaomi. Chaque changement qu'il fait
-est réversible, mais vous restez maître de ce que vous désactivez.
+TV Slim n'est affilié à aucun fabricant de téléviseurs, de box ou de launchers. Les noms et logos des
+marques appartiennent à leurs propriétaires et ne servent qu'à identifier l'appareil ou l'application
+détectés ; [NOTICE-LOGOS.md](NOTICE-LOGOS.md) dit d'où vient chacun. Startlight Launcher, que TV Slim recommande, vient du même auteur. Chaque changement que
+fait TV Slim est réversible, mais vous restez maître de ce que vous désactivez.

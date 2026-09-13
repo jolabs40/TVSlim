@@ -41,9 +41,10 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 
 ## What you can do
 
-- **Television** — model, Android version, memory, enabled and disabled packages, home screen;
-  install a replacement launcher; grant the privileged permissions some apps need
-  (`WRITE_SECURE_SETTINGS`, `DUMP`…).
+- **Television** — model and maker, Android version, memory, enabled and disabled packages; the
+  home screen and the launchers installed, recognised by their logo; the recommended replacement,
+  Startlight Launcher (coming soon to the Play Store); grant the privileged permissions some apps
+  need (`WRITE_SECURE_SETTINGS`, `DUMP`…).
 - **Packages** — the known packages actually present on *your* TV, with risk level, size,
   description and known side effects; ready-made profiles (ads and telemetry, voice assistants,
   preinstalled streaming services…); applied in one go, after a confirmation that lists the side
@@ -112,5 +113,7 @@ before its first release.
 
 See [LICENSE](LICENSE).
 
-TV Slim is not affiliated with TCL, Google, NVIDIA or Xiaomi. Every change it makes is reversible,
-but you remain in charge of what you disable.
+TV Slim is not affiliated with any television, TV box or launcher maker. Brand names and logos
+belong to their owners and are shown only to identify the device or the application detected;
+[NOTICE-LOGOS.md](NOTICE-LOGOS.md) says where each one comes from. Startlight Launcher, which TV Slim recommends, comes from the same author. Every change TV Slim
+makes is reversible, but you remain in charge of what you disable.
