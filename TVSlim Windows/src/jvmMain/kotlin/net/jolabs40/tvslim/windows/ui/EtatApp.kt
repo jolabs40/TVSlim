@@ -4,9 +4,11 @@ import androidx.compose.runtime.Immutable
 import net.jolabs40.tvslim.catalog.Catalogue
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
+import net.jolabs40.tvslim.configuration.PlanReinjection
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.RepartitionMemoire
+import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.mesure.HistoriqueMesures
 import net.jolabs40.tvslim.windows.adb.ConnexionUi
@@ -36,6 +38,9 @@ sealed interface Confirmation {
     data class Application(val entrees: List<EntreePaquet>) : Confirmation
 
     data class Restauration(val paquets: List<String>) : Confirmation
+
+    /** Réinjection d'une configuration sauvegardée : on montre ce qu'elle changera, et seulement cela. */
+    data class Reinjection(val plan: PlanReinjection) : Confirmation
 }
 
 @Immutable
@@ -68,6 +73,9 @@ data class EtatApp(
     val memoire: RepartitionMemoire = RepartitionMemoire(),
     /** Une lecture de la mémoire a abouti ou échoué : « lecture en cours » ne dure pas au-delà. */
     val lectureMemoireTentee: Boolean = false,
+    val stockage: RepartitionStockage = RepartitionStockage(),
+    /** Comme pour la mémoire : un échec de lecture se dit, au lieu d'un « lecture en cours » sans fin. */
+    val lectureStockageTentee: Boolean = false,
     val permissions: EtatPermissions = EtatPermissions(),
     val confirmation: Confirmation? = null,
     val message: MessageUi? = null,

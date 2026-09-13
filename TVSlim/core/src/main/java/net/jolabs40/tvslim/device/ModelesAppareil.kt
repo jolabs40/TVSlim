@@ -19,7 +19,14 @@ data class InfosAppareil(
     val paquetsInstalles: Int = 0,
     val paquetsDesactives: Int = 0,
     val accueilActuel: String = "",
+    /** Le composant entier de l'accueil en place (« paquet/.Activité ») : ce qu'on saurait rétablir. */
+    val composantAccueil: String = "",
     val launchersTiers: List<LauncherInstalle> = emptyList(),
+    /**
+     * Les écrans d'accueil livrés avec l'appareil — Google TV, l'accueil Android TV, celui du
+     * constructeur —, **désactivés compris** : c'est justement une fois coupés qu'il faut les retrouver.
+     */
+    val accueilsUsine: List<AccueilUsine> = emptyList(),
 ) {
     /** Le fabricant reconnu, marque vendue d'abord : voir [Fabricant]. */
     val fabricant: Fabricant? get() = Fabricant.identifier(marqueCommerciale, marque)
@@ -71,6 +78,13 @@ data class LauncherInstalle(
     val paquet: String,
     val nom: String,
     val composant: String,
+)
+
+/** Un écran d'accueil d'usine, et s'il est encore actif. [composant] reste vide quand Android l'a tu. */
+data class AccueilUsine(
+    val paquet: String,
+    val composant: String,
+    val actif: Boolean,
 )
 
 /**

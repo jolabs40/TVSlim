@@ -1,5 +1,7 @@
 package net.jolabs40.tvslim.remote.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cast
@@ -125,7 +127,7 @@ fun RemoteApp() {
                     onActualiser = modele::rafraichir,
                     onScan = modele::appliquerScan,
                     onEchecScan = modele::signalerEchecScan,
-                    onInstallerLauncher = modele::installerLauncher,
+                    onInstallerLauncher = modele.configuration::installerLauncher,
                     onChercher = modele::chercherAppareils,
                     onArreterRecherche = modele::arreterRecherche,
                     onConnecterA = modele::connecterA,
@@ -139,6 +141,13 @@ fun RemoteApp() {
                 )
             }
             composable("paquets") {
+                // Le sélecteur d'Android désigne l'emplacement : rien n'est écrit ni lu sans qu'on l'ait choisi.
+                val sauvegarde = rememberLauncherForActivityResult(
+                    ActivityResultContracts.CreateDocument("application/json"),
+                ) { uri -> uri?.let(modele.configuration::sauvegarder) }
+                val reinjection = rememberLauncherForActivityResult(
+                    ActivityResultContracts.OpenDocument(),
+                ) { uri -> uri?.let(modele.configuration::charger) }
                 PaquetsScreen(
                     etat = etat,
                     onBasculer = modele::basculerSelection,
@@ -148,12 +157,18 @@ fun RemoteApp() {
                     onReactiver = { modele.reactiver(listOf(it)) },
                     onRecherche = modele::majRecherche,
                     onFiltre = modele::majFiltre,
+                    onSauvegarder = { sauvegarde.launch(modele.configuration.nomFichier()) },
+                    // Selon le gestionnaire de fichiers, un .json passe pour du texte ou pour du binaire.
+                    onReinjecter = {
+                        reinjection.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+                    },
                 )
             }
             composable("memoire") {
                 MemoireScreen(
                     etat = etat,
                     onActualiser = modele::rafraichirMemoire,
+                    onActualiserStockage = modele::rafraichirStockage,
                     onForcerArret = modele::forcerArret,
                     onRedefinirReference = modele::redefinirReference,
                 )

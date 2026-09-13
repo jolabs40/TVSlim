@@ -21,10 +21,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.catalog.Catalogue
 import net.jolabs40.tvslim.catalog.LauncherRecommande
+import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.TypeAppareil
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.action_refresh
@@ -42,12 +44,14 @@ import net.jolabs40.tvslim.windows.ressources.device_title
 import net.jolabs40.tvslim.windows.ressources.device_type_box
 import net.jolabs40.tvslim.windows.ressources.home_available
 import net.jolabs40.tvslim.windows.ressources.home_coming_soon
-import net.jolabs40.tvslim.windows.ressources.home_current
+import net.jolabs40.tvslim.windows.ressources.home_current_title
+import net.jolabs40.tvslim.windows.ressources.home_factory_badge
 import net.jolabs40.tvslim.windows.ressources.home_install
 import net.jolabs40.tvslim.windows.ressources.home_none
 import net.jolabs40.tvslim.windows.ressources.home_recommended
 import net.jolabs40.tvslim.windows.ressources.home_recommended_badge
 import net.jolabs40.tvslim.windows.ressources.home_title
+import net.jolabs40.tvslim.windows.ressources.state_disabled
 import net.jolabs40.tvslim.windows.ui.EtatApp
 import net.jolabs40.tvslim.windows.ui.composants.CarteSection
 import net.jolabs40.tvslim.windows.ui.composants.LigneValeur
@@ -111,18 +115,22 @@ fun CarteAppareil(
 @Composable
 fun CarteAccueil(etat: EtatApp, onInstaller: (String) -> Unit) {
     val catalogue = etat.catalogue
-    val installes = etat.infos.launchersTiers
+    val infos = etat.infos
+    val usines = infos.accueilsUsine
+    // Un accueil d'usine ne se montre qu'à sa place, pas une seconde fois parmi les launchers tiers.
+    val installes = infos.launchersTiers.filterNot { launcher -> usines.any { it.paquet == launcher.paquet } }
 
     CarteSection(titre = stringResource(Res.string.home_title), espacement = 10.dp) {
-        AccueilActuel(catalogue = catalogue, paquet = etat.infos.accueilActuel)
+        AccueilActuel(catalogue = catalogue, infos = infos)
 
-        if (installes.isEmpty()) {
+        if (infos.launchersTiers.isEmpty()) {
             Text(
                 text = stringResource(Res.string.home_none),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
-        } else {
+        }
+        if (installes.isNotEmpty() || usines.isNotEmpty()) {
             Text(
                 text = stringResource(Res.string.home_available),
                 modifier = Modifier.padding(top = 4.dp),
@@ -137,6 +145,18 @@ fun CarteAccueil(etat: EtatApp, onInstaller: (String) -> Unit) {
                     recommande = catalogue.launcherRecommande(launcher.paquet) != null,
                 )
             }
+            // Google TV, l'accueil Android TV, celui du constructeur : listés même désactivés, sans quoi
+            // l'accueil d'origine semblerait avoir disparu du téléviseur.
+            usines.forEach { usine ->
+                LigneLauncher(
+                    id = null,
+                    nom = catalogue.entrees.firstOrNull { it.paquet == usine.paquet }?.nom,
+                    paquet = usine.paquet,
+                    recommande = false,
+                    usine = true,
+                    desactive = !usine.actif,
+                )
+            }
         }
 
         catalogue.launchersAProposer(installes.map { it.paquet }).forEach { launcher ->
@@ -145,24 +165,44 @@ fun CarteAccueil(etat: EtatApp, onInstaller: (String) -> Unit) {
     }
 }
 
-/** « Actuellement : » et, quand on sait le nommer, le logo et le nom de l'accueil en place. */
+/** L'accueil en place, en grand : c'est lui qu'on voit en allumant le téléviseur. */
 @Composable
-private fun AccueilActuel(catalogue: Catalogue, paquet: String) {
+private fun AccueilActuel(catalogue: Catalogue, infos: InfosAppareil) {
+    val paquet = infos.accueilActuel
     val nom = paquet.takeIf { it.isNotBlank() }?.let { actuel ->
         catalogue.nomLauncher(actuel) ?: catalogue.entrees.firstOrNull { it.paquet == actuel }?.nom
     }
     val id = paquet.takeIf { it.isNotBlank() }?.let(catalogue::idLauncher)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        if (id != null) LogoLauncher(id = id, taille = 20.dp)
-        TexteSecondaire(stringResource(Res.string.home_current, nom ?: paquet.ifBlank { "—" }), petit = true)
+        // Plus grand que ceux de la liste, où il figure aussi.
+        LogoLauncher(id = id, taille = 64.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            TexteSecondaire(stringResource(Res.string.home_current_title), petit = true)
+            Text(
+                text = nom ?: paquet.ifBlank { "—" },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            if (nom != null) TexteSecondaire(paquet, petit = true)
+            if (infos.accueilsUsine.any { it.paquet == paquet }) {
+                Etiquette(stringResource(Res.string.home_factory_badge), MaterialTheme.colorScheme.tertiaryContainer)
+            }
+        }
     }
 }
 
 @Composable
-private fun LigneLauncher(id: String?, nom: String?, paquet: String, recommande: Boolean) {
+private fun LigneLauncher(
+    id: String?,
+    nom: String?,
+    paquet: String,
+    recommande: Boolean,
+    usine: Boolean = false,
+    desactive: Boolean = false,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -170,18 +210,31 @@ private fun LigneLauncher(id: String?, nom: String?, paquet: String, recommande:
     ) {
         LogoLauncher(id = id, taille = 40.dp)
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = nom ?: paquet, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(
+                text = nom ?: paquet,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = if (desactive) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified,
+            )
             if (nom != null) TexteSecondaire(paquet, petit = true)
         }
+        if (usine) Etiquette(stringResource(Res.string.home_factory_badge), MaterialTheme.colorScheme.tertiaryContainer)
+        if (desactive) Etiquette(stringResource(Res.string.state_disabled), MaterialTheme.colorScheme.errorContainer)
         if (recommande) {
-            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(50)) {
-                Text(
-                    text = stringResource(Res.string.home_recommended_badge),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+            Etiquette(stringResource(Res.string.home_recommended_badge), MaterialTheme.colorScheme.primaryContainer)
         }
+    }
+}
+
+/** Une étiquette arrondie : « Recommandé », « Launcher d'usine », « Désactivé ». */
+@Composable
+private fun Etiquette(texte: String, fond: Color) {
+    Surface(color = fond, shape = RoundedCornerShape(50)) {
+        Text(
+            text = texte,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelMedium,
+        )
     }
 }
 

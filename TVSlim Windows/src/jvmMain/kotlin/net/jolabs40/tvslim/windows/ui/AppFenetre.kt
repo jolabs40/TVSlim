@@ -51,6 +51,8 @@ import net.jolabs40.tvslim.windows.ressources.baseline_history_24
 import net.jolabs40.tvslim.windows.ressources.baseline_info_24
 import net.jolabs40.tvslim.windows.ressources.baseline_inventory_2_24
 import net.jolabs40.tvslim.windows.ressources.baseline_memory_24
+import net.jolabs40.tvslim.windows.ressources.config_open_dialog
+import net.jolabs40.tvslim.windows.ressources.config_save_dialog
 import net.jolabs40.tvslim.windows.ressources.journal_export_dialog
 import net.jolabs40.tvslim.windows.ressources.status_connected
 import net.jolabs40.tvslim.windows.ressources.status_connecting
@@ -95,12 +97,15 @@ fun AppFenetre(
     ouvrirLien: (String) -> Unit,
     ouvrirDossierDonnees: () -> Unit,
     choisirFichierExport: (nomPropose: String, titre: String) -> File?,
+    choisirFichierImport: (titre: String) -> File?,
 ) {
     val etat by pilote.etat.collectAsStateWithLifecycle()
     val etatMaj by misesAJour.etat.collectAsStateWithLifecycle()
     val messages = remember { SnackbarHostState() }
     var aPropos by remember { mutableStateOf(false) }
     val titreExport = stringResource(Res.string.journal_export_dialog)
+    val titreSauvegarde = stringResource(Res.string.config_save_dialog)
+    val titreReinjection = stringResource(Res.string.config_open_dialog)
 
     // Une session ADB ne survit pas à la veille du téléviseur. Au retour sur la fenêtre — sortie de
     // la barre des tâches — on retente le dernier téléviseur sans rien demander.
@@ -201,7 +206,7 @@ fun AppFenetre(
                             onConnecter = pilote::connecter,
                             onDeconnecter = pilote::deconnecter,
                             onActualiser = pilote::rafraichir,
-                            onInstallerLauncher = pilote::installerLauncher,
+                            onInstallerLauncher = pilote.configuration::installerLauncher,
                             onChercher = pilote::chercherAppareils,
                             onArreterRecherche = pilote::arreterRecherche,
                             onConnecterA = pilote::connecterA,
@@ -218,11 +223,19 @@ fun AppFenetre(
                             onReactiver = { pilote.reactiver(listOf(it)) },
                             onRecherche = pilote::majRecherche,
                             onFiltre = pilote::majFiltre,
+                            onSauvegarder = {
+                                choisirFichierExport(pilote.configuration.nomFichier(), titreSauvegarde)
+                                    ?.let(pilote.configuration::sauvegarder)
+                            },
+                            onReinjecter = {
+                                choisirFichierImport(titreReinjection)?.let(pilote.configuration::charger)
+                            },
                         )
 
                         Onglet.MEMOIRE -> MemoireEcran(
                             etat = etat,
                             onActualiser = pilote::rafraichirMemoire,
+                            onActualiserStockage = pilote::rafraichirStockage,
                             onForcerArret = pilote::forcerArret,
                             onRedefinirReference = pilote::redefinirReference,
                         )

@@ -25,10 +25,17 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.runBlocking
 import net.jolabs40.tvslim.catalog.CatalogueRepository
+import net.jolabs40.tvslim.configuration.AppareilSauvegarde
+import net.jolabs40.tvslim.configuration.ChangementAccueil
+import net.jolabs40.tvslim.configuration.ConfigurationTv
+import net.jolabs40.tvslim.configuration.PlanReinjection
+import net.jolabs40.tvslim.device.AccueilUsine
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.Fabricant
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LauncherInstalle
+import net.jolabs40.tvslim.device.RepartitionStockage
+import net.jolabs40.tvslim.device.StockageApplication
 import net.jolabs40.tvslim.windows.adb.ConnexionUi
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.reseau.AppareilDecouvert
@@ -38,7 +45,9 @@ import net.jolabs40.tvslim.windows.ui.composants.LogoLauncher
 import net.jolabs40.tvslim.windows.ui.composants.PlaqueMarque
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAccueil
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAppareil
+import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
+import net.jolabs40.tvslim.windows.ui.ecrans.MemoireEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.PaquetsEcran
 import net.jolabs40.tvslim.windows.ui.theme.TvSlimTheme
 import org.jetbrains.skia.EncodedImageFormat
@@ -160,6 +169,75 @@ class PlancheLogosTest {
             ConnexionEcran(decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}))
         }
 
+        // L'accueil d'usine coupé reste listé, et l'accueil en place se lit en grand.
+        val launcherx = "com.google.android.apps.tv.launcherx"
+        val usineCoupee = EtatApp(
+            catalogue = catalogue,
+            infos = InfosAppareil(
+                marque = "TCL",
+                modele = "Smart TV Pro",
+                accueilActuel = "net.jolabs40.startlight.debug",
+                launchersTiers = listOf("com.spocky.projengmenu", "net.jolabs40.startlight.debug")
+                    .map { LauncherInstalle(paquet = it, nom = it, composant = "$it/.Accueil") },
+                accueilsUsine = listOf(AccueilUsine(launcherx, "$launcherx/.home.HomeActivity", actif = false)),
+            ),
+        )
+        rendre("20-accueil-usine-desactive", 720, 560) { CarteAccueil(usineCoupee) {} }
+
+        val usineSeule = EtatApp(
+            catalogue = catalogue,
+            infos = InfosAppareil(
+                marque = "TCL",
+                modele = "Smart TV Pro",
+                accueilActuel = launcherx,
+                accueilsUsine = listOf(AccueilUsine(launcherx, "$launcherx/.home.HomeActivity", actif = true)),
+            ),
+        )
+        rendre("21-accueil-usine-seul", 720, 900) { CarteAccueil(usineSeule) {} }
+
+        // Ce qu'une configuration réinjectée changerait, avant d'y toucher.
+        val plan = PlanReinjection(
+            configuration = ConfigurationTv(
+                application = ConfigurationTv.APPLICATION,
+                format = ConfigurationTv.FORMAT,
+                sauvegardeLe = 1_789_300_000_000,
+                appareil = AppareilSauvegarde(nom = "TCL Smart TV Pro", versionAndroid = "14"),
+            ),
+            aReactiver = catalogue.entrees.filter { it.categorie == "streaming" }.take(1),
+            aDesactiver = catalogue.entrees.filter { it.marque == "TCL" }.take(4),
+            ignores = listOf("com.nvidia.stats", "com.nvidia.feedback"),
+            accueil = ChangementAccueil("com.spocky.projengmenu", "Projectivy Launcher", composant = ""),
+        )
+        rendre("22-reinjection", 900, 760, cadre = false) {
+            ConfirmationDialogue(Confirmation.Reinjection(plan), {}, {})
+        }
+
+        // L'onglet Mémoire, basculé sur le stockage d'un clic sur le second segment.
+        val stockage = EtatApp(
+            catalogue = catalogue,
+            connexion = ConnexionUi(etat = EtatConnexion.CONNECTE, hote = "192.168.2.135"),
+            lectureStockageTentee = true,
+            stockage = RepartitionStockage(
+                totalKo = 51_170_024,
+                libreKo = 45_111_156,
+                applicationsOctets = 2_664_341_504,
+                donneesOctets = 1_880_899_072,
+                cacheOctets = 961_830_912,
+                photosOctets = 129_970_176,
+                autresOctets = 764_686_336,
+                applications = listOf(
+                    StockageApplication("com.netflix.ninja", 152_000_000, 71_000_000, 43_000_000),
+                    StockageApplication("com.google.android.apps.mediashell", 114_307_072, 376_832, 24_576),
+                    StockageApplication("com.spocky.projengmenu", 48_000_000, 12_000_000, 3_000_000),
+                    StockageApplication("com.tcl.esticker", 53_248, 221_184, 16_384),
+                ),
+            ),
+        )
+        // Le sélecteur fait 360 de large à partir de 20 : le second segment couvre 200 à 380.
+        rendre("23-stockage", 1280, 720, cadre = false, clic = Offset(290f, 36f)) {
+            MemoireEcran(stockage, {}, {}, {}, {})
+        }
+
         // L'onglet Paquets, liste des profils ouverte d'un clic : le champ est en haut à droite.
         val lignes = catalogue.entrees.mapIndexed { rang, entree ->
             LignePaquet(entree, if (rang % 5 == 0) EtatPaquet.DESACTIVE else EtatPaquet.ACTIF)
@@ -170,7 +248,7 @@ class PlancheLogosTest {
             lignes = lignes,
         )
         rendre("14-paquets-profils-ouverts", 1280, 860, cadre = false, clic = Offset(1080f, 110f)) {
-            PaquetsEcran(paquets, {}, {}, {}, {}, {}, {}, {}, {})
+            PaquetsEcran(paquets, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         }
     }
 

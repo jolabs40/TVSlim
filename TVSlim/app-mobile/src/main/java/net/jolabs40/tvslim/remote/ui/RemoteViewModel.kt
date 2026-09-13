@@ -6,9 +6,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +17,7 @@ import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LecteurDistant
+import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.journal.TypeAction
@@ -70,14 +68,29 @@ class RemoteViewModel @Inject constructor(
         afficher = ::afficher,
     )
 
+    /**
+     * L'écran d'accueil — fiche du launcher, guet de son installation — et la configuration qu'on
+     * sauvegarde puis réinjecte ont aussi le leur : ils ne partagent que l'état et le moteur.
+     */
+    val configuration = PiloteConfiguration(
+        contexte = contexte,
+        lecteur = lecteur,
+        moteur = { moteur },
+        etat = { _etat.value },
+        majEtat = { transformation -> _etat.update { transformation(it) } },
+        portee = viewModelScope,
+        afficher = ::afficher,
+        rafraichir = ::rafraichir,
+        terminer = { resultats ->
+            terminer(resultats.count { it.reussi }, resultats.size, resultats.filterNot { it.reussi })
+        },
+    )
+
     /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
     private var suiviJournal: Job? = null
 
     /** Une reconnexion silencieuse à la fois, sinon le retour à l'écran en lancerait une chaque fois. */
     private var reprise: Job? = null
-
-    /** Guette l'arrivée d'un launcher que l'on vient d'envoyer installer. */
-    private var guet: Job? = null
 
     /** La découverte mDNS ne tourne que pendant qu'on regarde l'écran de connexion. */
     private var veille: Job? = null
@@ -208,8 +221,7 @@ class RemoteViewModel @Inject constructor(
 
     fun deconnecter() {
         client.deconnecter()
-        guet?.cancel()
-        guet = null
+        configuration.oublier()
         reprise?.cancel()
         reprise = null
         suiviJournal?.cancel()
@@ -224,6 +236,7 @@ class RemoteViewModel @Inject constructor(
                 infos = InfosAppareil.VIDE,
                 journal = emptyList(),
                 mesures = HistoriqueMesures(),
+                stockage = RepartitionStockage(),
             )
         }
     }
@@ -316,6 +329,7 @@ class RemoteViewModel @Inject constructor(
         when (val demande = _etat.value.confirmation) {
             is Confirmation.Application -> appliquer(demande.entrees)
             is Confirmation.Restauration -> reactiver(demande.paquets)
+            is Confirmation.Reinjection -> configuration.reinjecter(demande.plan)
             null -> Unit
         }
         annulerConfirmation()
@@ -365,49 +379,6 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Ouvre la fiche d'un launcher dans la boutique du téléviseur. L'installation elle-même se
-     * valide à la télécommande : le compagnon ne pose aucun APK sur l'appareil.
-     */
-    fun installerLauncher(paquet: String) {
-        val moteurActif = moteur
-        if (moteurActif == null) {
-            afficher("Connectez-vous d'abord à un téléviseur.")
-            return
-        }
-        viewModelScope.launch {
-            val resultat = moteurActif.ouvrirFicheBoutique(paquet)
-            if (!resultat.reussi) {
-                afficher("Impossible d'ouvrir la boutique : ${resultat.message}")
-                return@launch
-            }
-            afficher("Fiche ouverte sur le téléviseur : validez l'installation à la télécommande.")
-            guetterInstallation(paquet)
-        }
-    }
-
-    /**
-     * Guette l'arrivée du launcher après avoir ouvert sa fiche, plutôt que d'exiger un
-     * « Actualiser » manuel : la personne est devant son téléviseur, pas devant le téléphone.
-     * Une question courte toutes les cinq secondes, abandonnée au bout de trois minutes.
-     */
-    private fun guetterInstallation(paquet: String) {
-        guet?.cancel()
-        guet = viewModelScope.launch {
-            withTimeoutOrNull(DUREE_GUET_MS) {
-                while (isActive) {
-                    delay(INTERVALLE_GUET_MS)
-                    if (!_etat.value.connecte) return@withTimeoutOrNull
-                    if (lecteur.estInstalle(paquet)) {
-                        rafraichir()
-                        afficher("Installé. L'accueil d'usine peut maintenant être remplacé.")
-                        return@withTimeoutOrNull
-                    }
-                }
-            }
-        }
-    }
-
     /** Lit la répartition de la mémoire. Séparé du rafraîchissement : la commande est lourde. */
     fun rafraichirMemoire() {
         if (!_etat.value.connecte) return
@@ -415,6 +386,16 @@ class RemoteViewModel @Inject constructor(
             _etat.update { it.copy(chargement = true) }
             val memoire = lecteur.memoire()
             _etat.update { it.copy(chargement = false, memoire = memoire) }
+        }
+    }
+
+    /** Lit l'occupation du stockage, à la demande comme la mémoire : seul son onglet en a besoin. */
+    fun rafraichirStockage() {
+        if (!_etat.value.connecte) return
+        viewModelScope.launch {
+            _etat.update { it.copy(chargement = true) }
+            val stockage = lecteur.stockage()
+            _etat.update { it.copy(chargement = false, stockage = stockage) }
         }
     }
 
@@ -501,7 +482,5 @@ class RemoteViewModel @Inject constructor(
 
     private companion object {
         const val MAX_ECHECS = 4
-        const val DUREE_GUET_MS = 3 * 60 * 1000L
-        const val INTERVALLE_GUET_MS = 5_000L
     }
 }

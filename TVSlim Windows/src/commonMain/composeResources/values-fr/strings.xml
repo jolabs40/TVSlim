@@ -51,7 +51,8 @@
     <string name="device_type_box">Box TV</string>
 
     <string name="home_title">Écran d'accueil et launcher</string>
-    <string name="home_current">Actuellement : %1$s</string>
+    <string name="home_current_title">Écran d'accueil actuel</string>
+    <string name="home_factory_badge">Launcher d'usine</string>
     <string name="home_none">Aucun launcher tiers sur cet appareil : l'accueil d'usine ne peut pas encore être remplacé.</string>
     <string name="home_available">Launchers installés</string>
     <string name="home_install">Ouvrir sur le téléviseur</string>
@@ -68,6 +69,10 @@
     <string name="packages_none_matching">Aucun résultat pour cette recherche.</string>
     <string name="packages_progress">%1$d sur %2$d</string>
     <string name="packages_profiles">Profils</string>
+    <string name="config_save">Sauvegarder la config</string>
+    <string name="config_reinject">Réinjecter une config</string>
+    <string name="config_save_dialog">Sauvegarder la configuration</string>
+    <string name="config_open_dialog">Choisir une configuration à réinjecter</string>
     <string name="packages_detail_hint">Sélectionnez un paquet pour lire son détail.</string>
     <string name="packages_detail_package">Paquet</string>
     <string name="packages_detail_category">Catégorie</string>
@@ -94,6 +99,13 @@
     <string name="confirm_restore_body">%1$d paquet(s) désactivés depuis cet ordinateur vont être réactivés.</string>
     <string name="confirm_go">Continuer</string>
     <string name="confirm_cancel">Annuler</string>
+    <string name="confirm_reinject_title">Réinjecter cette configuration ?</string>
+    <string name="confirm_reinject_source">Sauvegardée le %1$s depuis %2$s.</string>
+    <string name="confirm_reinject_enable">À réactiver (%1$d)</string>
+    <string name="confirm_reinject_disable">À désactiver (%1$d)</string>
+    <string name="confirm_reinject_home">Écran d'accueil : %1$s</string>
+    <string name="confirm_reinject_home_missing">%1$s n'est pas installé sur ce téléviseur : l'écran d'accueil restera tel quel.</string>
+    <string name="confirm_reinject_ignored">%1$d paquet(s) de la configuration sont absents de ce téléviseur et seront ignorés.</string>
 
     <!-- Onglet Mémoire -->
     <string name="memory_title">Occupation de la mémoire</string>
@@ -108,6 +120,22 @@
     <string name="memory_mb">%1$d Mo</string>
     <string name="memory_stop">Arrêter</string>
     <string name="memory_not_connected">Connectez-vous à un téléviseur pour voir sa mémoire.</string>
+    <string name="memory_view_ram">Mémoire vive</string>
+    <string name="memory_view_storage">Stockage</string>
+    <string name="storage_title">Stockage interne</string>
+    <string name="storage_breakdown">Répartition</string>
+    <string name="storage_apps">Applications</string>
+    <string name="storage_app_data">Données des applications</string>
+    <string name="storage_cache">Cache</string>
+    <string name="storage_photos">Photos</string>
+    <string name="storage_videos">Vidéos</string>
+    <string name="storage_audio">Audio</string>
+    <string name="storage_downloads">Téléchargements</string>
+    <string name="storage_other">Autres</string>
+    <string name="storage_largest">Applications les plus lourdes (%1$d)</string>
+    <string name="storage_estimate">La taille de chaque application vient de la dernière estimation d'Android, refaite environ une fois par jour.</string>
+    <string name="storage_app_detail">Appli %1$s · données %2$s · cache %3$s</string>
+    <string name="size_gb">%1$s Go</string>
     <string name="action_refresh">Actualiser</string>
 
     <string name="gain_title">Avant / après</string>
@@ -171,6 +199,12 @@
     <string name="msg_appop_failed">App-op %1$s non posé : %2$s</string>
     <string name="msg_undone">Annulé.</string>
     <string name="msg_wireless_unsupported">Ce téléviseur ne propose que le débogage sans fil, que TV Slim ne sait pas encore utiliser. Activez le débogage réseau sur le port 5555.</string>
+    <string name="msg_config_saved">Configuration sauvegardée : %1$s</string>
+    <string name="msg_config_save_failed">Impossible de sauvegarder la configuration : %1$s</string>
+    <string name="msg_config_read_failed">Impossible de lire le fichier : %1$s</string>
+    <string name="msg_config_invalid">Ce fichier n'est pas une configuration TV Slim.</string>
+    <string name="msg_config_up_to_date">Ce téléviseur correspond déjà à cette configuration.</string>
+    <string name="msg_config_home_missing">Les paquets correspondent déjà ; %1$s n'est pas installé sur ce téléviseur, l'écran d'accueil reste tel quel.</string>
     <string name="result_summary">%1$d sur %2$d réussis.</string>
 
     <!-- À propos -->

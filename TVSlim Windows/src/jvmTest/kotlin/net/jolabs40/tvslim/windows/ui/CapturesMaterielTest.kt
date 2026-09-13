@@ -8,6 +8,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import net.jolabs40.tvslim.catalog.CatalogueRepository
+import net.jolabs40.tvslim.configuration.FichierConfiguration
+import net.jolabs40.tvslim.configuration.configurationDe
+import net.jolabs40.tvslim.configuration.planifier
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.windows.Emplacements
 import net.jolabs40.tvslim.windows.adb.ClientAdb
@@ -29,6 +32,7 @@ import org.junit.Test
 import java.io.File
 import java.nio.file.Files
 import java.util.Locale
+import javax.swing.SwingUtilities
 
 /**
  * La fenêtre, rendue hors écran avec les données d'un **vrai** téléviseur : connexion ADB réelle,
@@ -48,6 +52,18 @@ class CapturesMaterielTest {
     private val proprietaire = object : LifecycleOwner {
         val registre = LifecycleRegistry.createUnsafe(this).apply { currentState = Lifecycle.State.RESUMED }
         override val lifecycle: Lifecycle get() = registre
+    }
+
+    /**
+     * Exécute [bloc] sur le fil d'AWT, celui de `Dispatchers.Main`. Le registre ci-dessus n'a aucun
+     * verrou : la composition l'alimentait depuis le fil du test pendant que `collectAsStateWithLifecycle`
+     * y touchait depuis AWT, et un `ArrayIndexOutOfBoundsException` finissait par tomber. Un seul fil,
+     * plus de course.
+     */
+    private fun <T> surFilAwt(bloc: () -> T): T {
+        var resultat: Result<T>? = null
+        SwingUtilities.invokeAndWait { resultat = runCatching(bloc) }
+        return resultat!!.getOrThrow()
     }
 
     @Test
@@ -75,33 +91,38 @@ class CapturesMaterielTest {
         )
 
         fun capturer(nom: String, onglet: Onglet, sombre: Boolean = false, attenteMs: Long = 1_500, prete: () -> Boolean = { true }) {
-            val scene = ImageComposeScene(width = 1280, height = 860, density = Density(1f)) {
-                CompositionLocalProvider(LocalLifecycleOwner provides proprietaire) {
-                    TvSlimTheme(sombre = sombre) {
-                        AppFenetre(
-                            pilote = pilote,
-                            misesAJour = misesAJour,
-                            onglet = onglet,
-                            onOnglet = {},
-                            ouvrirLien = {},
-                            ouvrirDossierDonnees = {},
-                            choisirFichierExport = { _, _ -> null },
-                        )
+            // Création, rendus et fermeture sur le fil d'AWT ; les attentes, elles, restent sur celui du
+            // test, pour laisser AWT dérouler les coroutines du pilote pendant ce temps.
+            val scene = surFilAwt {
+                ImageComposeScene(width = 1280, height = 860, density = Density(1f)) {
+                    CompositionLocalProvider(LocalLifecycleOwner provides proprietaire) {
+                        TvSlimTheme(sombre = sombre) {
+                            AppFenetre(
+                                pilote = pilote,
+                                misesAJour = misesAJour,
+                                onglet = onglet,
+                                onOnglet = {},
+                                ouvrirLien = {},
+                                ouvrirDossierDonnees = {},
+                                choisirFichierExport = { _, _ -> null },
+                                choisirFichierImport = { null },
+                            )
+                        }
                     }
                 }
             }
             try {
-                scene.render(0)
+                surFilAwt { scene.render(0) }
                 val limite = System.currentTimeMillis() + attenteMs
                 while (System.currentTimeMillis() < limite && !prete()) Thread.sleep(200)
                 repeat(3) { i ->
                     Thread.sleep(250)
-                    scene.render((i + 1) * 1_000_000_000L)
+                    surFilAwt { scene.render((i + 1) * 1_000_000_000L) }
                 }
-                val image = scene.render(5_000_000_000L)
+                val image = surFilAwt { scene.render(5_000_000_000L) }
                 File(sortie, "$nom.png").writeBytes(image.encodeToData(EncodedImageFormat.PNG)!!.bytes)
             } finally {
-                scene.close()
+                surFilAwt { scene.close() }
             }
         }
 
@@ -162,6 +183,27 @@ class CapturesMaterielTest {
             capturer("05b-memoire-explicite", Onglet.MEMOIRE)
         }
         capturer("06-journal", Onglet.JOURNAL)
+
+        // La sauvegarde, relue contre le téléviseur qu'elle décrit, ne doit rien demander à
+        // réinjecter. Tout se calcule en mémoire : aucune commande ne part vers le téléviseur.
+        val lu = pilote.etat.value
+        val etatsLus = lu.lignes.associate { it.entree.paquet to it.etat }
+        val sauvegarde = lu.catalogue.configurationDe(lu.infos, etatsLus)
+        val plan = FichierConfiguration.lire(FichierConfiguration.ecrire(sauvegarde))
+            ?.planifier(lu.catalogue, etatsLus, lu.infos)
+        releves += "configuration: desactives=${sauvegarde.desactives.size}, actifs=${sauvegarde.actifs.size}, " +
+            "accueil=${sauvegarde.accueil?.paquet}, actions=${plan?.nombreActions}, accueilAChanger=${plan?.accueil}"
+        releves += "accueilsUsine=${lu.infos.accueilsUsine}"
+        assertTrue("Une configuration relue doit correspondre au téléviseur : $plan", plan != null && plan.rienAFaire)
+        assertTrue("L'accueil en place ne doit pas être à rétablir : ${plan?.accueil}", plan?.accueil == null)
+
+        // Le stockage, lu comme l'onglet le ferait.
+        pilote.rafraichirStockage()
+        val stockageLu = attendre(40_000) { pilote.etat.value.lectureStockageTentee }
+        val stockage = pilote.etat.value.stockage
+        releves += "stockage: lu=$stockageLu, totalKo=${stockage.totalKo}, libreKo=${stockage.libreKo}, " +
+            "applications=${stockage.applications.size}"
+        assertTrue("Le stockage du téléviseur doit se lire", stockage.renseignee)
 
         Locale.setDefault(Locale.ENGLISH)
         capturer("07-paquets-anglais", Onglet.PAQUETS)

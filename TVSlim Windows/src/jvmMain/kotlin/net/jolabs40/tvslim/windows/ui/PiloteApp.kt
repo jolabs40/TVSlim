@@ -3,14 +3,11 @@ package net.jolabs40.tvslim.windows.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import net.jolabs40.tvslim.catalog.CatalogueRepository
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
@@ -18,6 +15,7 @@ import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LecteurDistant
 import net.jolabs40.tvslim.device.RepartitionMemoire
+import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.journal.TypeAction
@@ -41,13 +39,10 @@ import net.jolabs40.tvslim.windows.ressources.msg_enter_address
 import net.jolabs40.tvslim.windows.ressources.msg_failure
 import net.jolabs40.tvslim.windows.ressources.msg_journal_export_failed
 import net.jolabs40.tvslim.windows.ressources.msg_journal_exported
-import net.jolabs40.tvslim.windows.ressources.msg_launcher_installed
 import net.jolabs40.tvslim.windows.ressources.msg_not_undoable
 import net.jolabs40.tvslim.windows.ressources.msg_nothing_selected
 import net.jolabs40.tvslim.windows.ressources.msg_nothing_to_restore
 import net.jolabs40.tvslim.windows.ressources.msg_stopped
-import net.jolabs40.tvslim.windows.ressources.msg_store_failed
-import net.jolabs40.tvslim.windows.ressources.msg_store_opened
 import net.jolabs40.tvslim.windows.ressources.msg_wireless_unsupported
 import java.io.File
 
@@ -83,14 +78,26 @@ class PiloteApp(
         afficher = ::afficher,
     )
 
+    /**
+     * L'écran d'accueil — fiche du launcher, guet de son installation — et la configuration qu'on
+     * sauvegarde puis réinjecte ont aussi le leur : ils ne partagent que l'état et le moteur.
+     */
+    val configuration = PiloteConfiguration(
+        lecteur = lecteur,
+        moteur = { moteur },
+        etat = { _etat.value },
+        majEtat = { transformation -> _etat.update { transformation(it) } },
+        portee = viewModelScope,
+        afficher = ::afficher,
+        rafraichir = ::rafraichir,
+        terminer = ::terminer,
+    )
+
     /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
     private var suiviJournal: Job? = null
 
     /** Une reconnexion silencieuse à la fois. */
     private var reprise: Job? = null
-
-    /** Guette l'arrivée d'un launcher que l'on vient d'envoyer installer. */
-    private var guet: Job? = null
 
     /** La recherche sur le réseau ne tourne que pendant qu'on regarde l'écran de connexion. */
     private var veille: Job? = null
@@ -195,8 +202,8 @@ class PiloteApp(
     fun deconnecter() {
         deconnexionVolontaire = true
         client.deconnecter()
-        listOf(guet, reprise, suiviJournal).forEach { it?.cancel() }
-        guet = null
+        listOf(reprise, suiviJournal).forEach { it?.cancel() }
+        configuration.oublier()
         reprise = null
         suiviJournal = null
         journal = null
@@ -213,6 +220,8 @@ class PiloteApp(
                 // celle du suivant, que l'onglet ne relirait pas.
                 memoire = RepartitionMemoire(),
                 lectureMemoireTentee = false,
+                stockage = RepartitionStockage(),
+                lectureStockageTentee = false,
                 paquetDetaille = null,
             )
         }
@@ -309,6 +318,7 @@ class PiloteApp(
         when (val demande = _etat.value.confirmation) {
             is Confirmation.Application -> appliquer(demande.entrees)
             is Confirmation.Restauration -> reactiver(demande.paquets)
+            is Confirmation.Reinjection -> configuration.reinjecter(demande.plan)
             null -> Unit
         }
         annulerConfirmation()
@@ -358,44 +368,6 @@ class PiloteApp(
         }
     }
 
-    /**
-     * Ouvre la fiche d'un launcher dans la boutique du téléviseur. L'installation se valide à la
-     * télécommande : l'application ne pose aucun APK sur l'appareil.
-     */
-    fun installerLauncher(paquet: String) {
-        val moteurActif = moteur ?: return afficher(texte(Res.string.msg_connect_first))
-        viewModelScope.launch {
-            val resultat = moteurActif.ouvrirFicheBoutique(paquet)
-            if (!resultat.reussi) {
-                afficher(texte(Res.string.msg_store_failed, resultat.message))
-                return@launch
-            }
-            afficher(texte(Res.string.msg_store_opened))
-            guetterInstallation(paquet)
-        }
-    }
-
-    /**
-     * Guette l'arrivée du launcher plutôt que d'exiger un « Actualiser » : la personne est devant
-     * son téléviseur, pas devant l'écran. Une question courte toutes les cinq secondes, trois minutes.
-     */
-    private fun guetterInstallation(paquet: String) {
-        guet?.cancel()
-        guet = viewModelScope.launch {
-            withTimeoutOrNull(DUREE_GUET_MS) {
-                while (isActive) {
-                    delay(INTERVALLE_GUET_MS)
-                    if (!_etat.value.connecte) return@withTimeoutOrNull
-                    if (lecteur.estInstalle(paquet)) {
-                        rafraichir()
-                        afficher(texte(Res.string.msg_launcher_installed))
-                        return@withTimeoutOrNull
-                    }
-                }
-            }
-        }
-    }
-
     /** Lit la répartition de la mémoire. Séparé du rafraîchissement : la commande est lourde. */
     fun rafraichirMemoire() {
         if (!_etat.value.connecte) return
@@ -403,6 +375,16 @@ class PiloteApp(
             _etat.update { it.copy(chargement = true) }
             val memoire = lecteur.memoire()
             _etat.update { it.copy(chargement = false, memoire = memoire, lectureMemoireTentee = true) }
+        }
+    }
+
+    /** Lit l'occupation du stockage, à la demande comme la mémoire : seul son onglet en a besoin. */
+    fun rafraichirStockage() {
+        if (!_etat.value.connecte) return
+        viewModelScope.launch {
+            _etat.update { it.copy(chargement = true) }
+            val stockage = lecteur.stockage()
+            _etat.update { it.copy(chargement = false, stockage = stockage, lectureStockageTentee = true) }
         }
     }
 
@@ -480,7 +462,13 @@ class PiloteApp(
         mesures = relevees
 
         _etat.update {
-            it.copy(memoire = RepartitionMemoire(), lectureMemoireTentee = false, paquetDetaille = null)
+            it.copy(
+                memoire = RepartitionMemoire(),
+                lectureMemoireTentee = false,
+                stockage = RepartitionStockage(),
+                lectureStockageTentee = false,
+                paquetDetaille = null,
+            )
         }
         suiviJournal = viewModelScope.launch {
             launch { ouvert.actions.collect { actions -> _etat.update { it.copy(journal = actions) } } }
@@ -492,7 +480,5 @@ class PiloteApp(
 
     private companion object {
         const val MAX_ECHECS = 4
-        const val DUREE_GUET_MS = 3 * 60 * 1000L
-        const val INTERVALLE_GUET_MS = 5_000L
     }
 }

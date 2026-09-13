@@ -104,7 +104,12 @@ fun main() {
             onKeyEvent = { evenement ->
                 // F5 relit le téléviseur, comme on rafraîchit une page.
                 if (evenement.type == KeyEventType.KeyDown && evenement.key == Key.F5) {
-                    if (onglet == Onglet.MEMOIRE) pilote.rafraichirMemoire() else pilote.rafraichir()
+                    if (onglet == Onglet.MEMOIRE) {
+                        pilote.rafraichirMemoire()
+                        pilote.rafraichirStockage()
+                    } else {
+                        pilote.rafraichir()
+                    }
                     true
                 } else {
                     false
@@ -121,6 +126,7 @@ fun main() {
                     ouvrirLien = ::ouvrirLien,
                     ouvrirDossierDonnees = { ouvrirDossier(emplacements.donnees) },
                     choisirFichierExport = { nom, titre -> choisirFichier(window, titre, nom) },
+                    choisirFichierImport = { titre -> choisirFichierAOuvrir(window, titre) },
                 )
             }
         }
@@ -153,7 +159,24 @@ private fun choisirFichier(parent: Frame, titre: String, nomPropose: String): Fi
         isVisible = true // bloquant jusqu'au choix
     }
     val nom = dialogue.file ?: return null
-    return File(dialogue.directory, if (nom.endsWith(".md", ignoreCase = true)) nom else "$nom.md")
+    // L'extension du nom proposé — .md pour le journal, .json pour une configuration — si on l'a ôtée.
+    val extension = nomPropose.substringAfterLast('.', "").let { if (it.isBlank()) "" else ".$it" }
+    return File(
+        dialogue.directory,
+        if (extension.isEmpty() || nom.endsWith(extension, ignoreCase = true)) nom else "$nom$extension",
+    )
+}
+
+/** La fenêtre « Ouvrir » de Windows, sur le dossier Documents, limitée aux configurations JSON. */
+private fun choisirFichierAOuvrir(parent: Frame, titre: String): File? {
+    val dialogue = FileDialog(parent, titre, FileDialog.LOAD).apply {
+        directory = dossierDocuments().path
+        // Le filtre que respecte la fenêtre de Windows ; setFilenameFilter y est ignoré.
+        file = "*.json"
+        isVisible = true // bloquant jusqu'au choix
+    }
+    val nom = dialogue.file ?: return null
+    return File(dialogue.directory, nom)
 }
 
 /** Le vrai dossier Documents — souvent redirigé vers OneDrive — et non `~/Documents` supposé. */

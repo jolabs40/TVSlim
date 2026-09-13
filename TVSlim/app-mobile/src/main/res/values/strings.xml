@@ -17,6 +17,22 @@
     <string name="memory_processes">Running processes (%1$d)</string>
     <string name="memory_mb">%1$d MB</string>
     <string name="memory_stop">Stop</string>
+    <string name="memory_view_ram">RAM</string>
+    <string name="memory_view_storage">Storage</string>
+    <string name="storage_title">Internal storage</string>
+    <string name="storage_breakdown">Breakdown</string>
+    <string name="storage_apps">Applications</string>
+    <string name="storage_app_data">Application data</string>
+    <string name="storage_cache">Cache</string>
+    <string name="storage_photos">Photos</string>
+    <string name="storage_videos">Videos</string>
+    <string name="storage_audio">Audio</string>
+    <string name="storage_downloads">Downloads</string>
+    <string name="storage_other">Other</string>
+    <string name="storage_largest">Largest applications (%1$d)</string>
+    <string name="storage_estimate">Per-application sizes come from Android\'s latest estimate, refreshed about once a day.</string>
+    <string name="storage_app_detail">App %1$s · data %2$s · cache %3$s</string>
+    <string name="size_gb">%1$s GB</string>
 
     <string name="connection_title">Connect to a television</string>
     <string name="connection_subtitle">The phone talks to the television over ADB, on the local network. No computer involved.</string>
@@ -46,6 +62,8 @@
     <string name="packages_search">Search a package</string>
     <string name="packages_none_matching">Nothing matches this search.</string>
     <string name="packages_progress">%1$d of %2$d</string>
+    <string name="config_save">Save config</string>
+    <string name="config_reinject">Reinject a config</string>
     <string name="filter_all">All</string>
     <string name="filter_enabled">Enabled (%1$d)</string>
     <string name="filter_disabled">Disabled (%1$d)</string>
@@ -56,10 +74,19 @@
     <string name="confirm_restore_body">%1$d package(s) disabled from this phone will be re-enabled.</string>
     <string name="confirm_go">Go ahead</string>
     <string name="confirm_cancel">Cancel</string>
+    <string name="confirm_reinject_title">Reinject this configuration?</string>
+    <string name="confirm_reinject_source">Saved on %1$s from %2$s.</string>
+    <string name="confirm_reinject_enable">To re-enable (%1$d)</string>
+    <string name="confirm_reinject_disable">To disable (%1$d)</string>
+    <string name="confirm_reinject_home">Home screen: %1$s</string>
+    <string name="confirm_reinject_home_missing">%1$s is not installed on this television: the home screen will stay as it is.</string>
+    <string name="confirm_reinject_ignored">%1$d package(s) of the configuration are not on this television and will be ignored.</string>
     <string name="journal_undo_one">Undo this one</string>
 
     <string name="home_title">Home screen and launcher</string>
-    <string name="home_current">Currently: %1$s</string>
+    <string name="home_current_title">Current home screen</string>
+    <string name="home_factory_badge">Factory launcher</string>
+    <string name="home_disabled_badge">Disabled</string>
     <string name="home_none">No third-party launcher on this device: the factory home screen cannot be replaced yet.</string>
     <string name="home_available">Installed launchers</string>
     <string name="home_install">Open on the television</string>
@@ -111,4 +138,15 @@
     <string name="permissions_state_undeclared">This application does not request that permission: nothing to grant.</string>
     <string name="permissions_state_unknown">Package not found on this television.</string>
     <string name="permissions_state_appop">App-op %1$s: %2$s</string>
+
+    <string name="msg_connect_first">Connect to a television first.</string>
+    <string name="msg_store_failed">Could not open the store: %1$s</string>
+    <string name="msg_store_opened">Listing opened on the television: confirm the installation with the remote.</string>
+    <string name="msg_launcher_installed">Installed. The factory home screen can now be replaced.</string>
+    <string name="msg_config_saved">Configuration saved.</string>
+    <string name="msg_config_save_failed">Could not save the configuration: %1$s</string>
+    <string name="msg_config_read_failed">Could not read the file: %1$s</string>
+    <string name="msg_config_invalid">This file is not a TV Slim configuration.</string>
+    <string name="msg_config_up_to_date">This television already matches this configuration.</string>
+    <string name="msg_config_home_missing">The packages already match; %1$s is not installed on this television, so the home screen stays as it is.</string>
 </resources>

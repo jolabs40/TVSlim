@@ -24,12 +24,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
@@ -50,6 +54,8 @@ import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.baseline_arrow_drop_down_24
 import net.jolabs40.tvslim.windows.ressources.baseline_search_24
+import net.jolabs40.tvslim.windows.ressources.config_reinject
+import net.jolabs40.tvslim.windows.ressources.config_save
 import net.jolabs40.tvslim.windows.ressources.filter_all
 import net.jolabs40.tvslim.windows.ressources.filter_disabled
 import net.jolabs40.tvslim.windows.ressources.filter_enabled
@@ -89,6 +95,8 @@ fun PaquetsEcran(
     onReactiver: (String) -> Unit,
     onRecherche: (String) -> Unit,
     onFiltre: (Filtre) -> Unit,
+    onSauvegarder: () -> Unit,
+    onReinjecter: () -> Unit,
 ) {
     if (!etat.connecte) {
         EcranVide(stringResource(Res.string.packages_not_connected))
@@ -126,6 +134,15 @@ fun PaquetsEcran(
                     singleLine = true,
                     modifier = Modifier.weight(1f).widthIn(max = 480.dp),
                 )
+                // La configuration du téléviseur — launcher et paquets — se sauvegarde et se réinjecte
+                // d'ici : une sauvegarde est un profil qu'on s'est fait soi-même. Sur cette ligne, le
+                // champ de recherche cède la place ; la ligne des filtres, elle, n'en a pas.
+                OutlinedButton(onClick = onSauvegarder, enabled = !etat.travailEnCours) {
+                    Text(stringResource(Res.string.config_save))
+                }
+                OutlinedButton(onClick = onReinjecter, enabled = !etat.travailEnCours) {
+                    Text(stringResource(Res.string.config_reinject))
+                }
                 TextButton(onClick = onToutDecocher) { Text(stringResource(Res.string.packages_clear)) }
                 Button(onClick = onAppliquer, enabled = !etat.travailEnCours) {
                     Text(stringResource(Res.string.packages_apply, etat.selection.size))
@@ -136,20 +153,11 @@ fun PaquetsEcran(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                FilterChip(
-                    selected = etat.filtre == Filtre.TOUS,
-                    onClick = { onFiltre(Filtre.TOUS) },
-                    label = { Text(stringResource(Res.string.filter_all)) },
-                )
-                FilterChip(
-                    selected = etat.filtre == Filtre.ACTIFS,
-                    onClick = { onFiltre(Filtre.ACTIFS) },
-                    label = { Text(stringResource(Res.string.filter_enabled, etat.nombreActifs)) },
-                )
-                FilterChip(
-                    selected = etat.filtre == Filtre.DESACTIVES,
-                    onClick = { onFiltre(Filtre.DESACTIVES) },
-                    label = { Text(stringResource(Res.string.filter_disabled, etat.nombreDesactives)) },
+                FiltreEtat(
+                    filtre = etat.filtre,
+                    actifs = etat.nombreActifs,
+                    desactives = etat.nombreDesactives,
+                    onFiltre = onFiltre,
                 )
                 Spacer(Modifier.weight(1f))
                 // Une liste déroulante plutôt qu'une rangée de boutons : cinq profils aux noms longs
@@ -202,6 +210,33 @@ fun PaquetsEcran(
     }
 }
 
+/** Tous, actifs ou désactivés : un seul interrupteur à trois positions plutôt que trois boutons. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FiltreEtat(filtre: Filtre, actifs: Int, desactives: Int, onFiltre: (Filtre) -> Unit) {
+    // Largeur fixe et sans coche : la rangée prend sinon la largeur minimale de ses libellés, et
+    // « Désactivés (55) » y perdait son compteur.
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.width(456.dp)) {
+        Filtre.entries.forEachIndexed { rang, choix ->
+            SegmentedButton(
+                selected = filtre == choix,
+                onClick = { onFiltre(choix) },
+                shape = SegmentedButtonDefaults.itemShape(index = rang, count = Filtre.entries.size),
+                icon = {},
+            ) {
+                Text(
+                    text = when (choix) {
+                        Filtre.TOUS -> stringResource(Res.string.filter_all)
+                        Filtre.ACTIFS -> stringResource(Res.string.filter_enabled, actifs)
+                        Filtre.DESACTIVES -> stringResource(Res.string.filter_disabled, desactives)
+                    },
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
 /**
  * Les profils, en liste déroulante. En choisir un coche tout ce qu'il couvre, sans rien décocher ;
  * sa description, sous son nom, dit ce qu'on perd en l'appliquant. Le champ rappelle le dernier
@@ -212,7 +247,7 @@ private fun ListeProfils(profils: List<Profil>, selectionVide: Boolean, onProfil
     var ouverte by remember { mutableStateOf(false) }
     var dernier by remember { mutableStateOf<Profil?>(null) }
 
-    Box(modifier = Modifier.width(360.dp)) {
+    Box(modifier = Modifier.width(300.dp)) {
         OutlinedTextField(
             value = if (selectionVide) "" else dernier?.nom.orEmpty(),
             onValueChange = {},

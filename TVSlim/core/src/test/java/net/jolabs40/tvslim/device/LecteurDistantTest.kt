@@ -42,7 +42,7 @@ class LecteurDistantTest {
 
     @Test
     fun `chaque section est annoncee par son marqueur`() {
-        val marqueurs = listOf("_D", "_E", "_P", "_B", "_M", "_H", "_L")
+        val marqueurs = listOf("_D", "_E", "_P", "_B", "_M", "_H", "_L", "_U", "_T")
             .map { LecteurDistant.PREFIXE_MARQUEUR + it.removePrefix("_") }
         marqueurs.forEach { marqueur ->
             assertTrue(
@@ -150,6 +150,122 @@ class LecteurDistantTest {
             "Aucun launcher tiers ici : ${photo.infos.launchersTiers.map { it.paquet }}",
             photo.infos.launchersTiers.isEmpty(),
         )
+    }
+
+    @Test
+    fun `l'accueil d'usine coupe se retrouve, sans assistants ni ecrans de repli`() = runTest {
+        // Relevé sur la TCL le 2026-09-13 : Google TV désactivé n'apparaît qu'avec --query-flags 512,
+        // entouré d'un provisionnement, d'un assistant de configuration et de deux écrans de repli.
+        val sortie = """
+            @@TVSLIM_D
+            package:com.google.android.apps.tv.launcherx
+            package:com.google.android.tungsten.setupwraith
+            @@TVSLIM_E
+            package:com.spocky.projengmenu
+            package:net.jolabs40.startlight.debug
+            @@TVSLIM_H
+            priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+            net.jolabs40.startlight.debug/net.jolabs40.startlight.HomeActivity
+            @@TVSLIM_L
+            com.spocky.projengmenu/.ui.home.MainActivity
+            net.jolabs40.startlight.debug/net.jolabs40.startlight.HomeActivity
+            com.android.tv.settings/.system.FallbackHome
+            @@TVSLIM_U
+            10 activities found:
+              Activity #0:
+                priority=10 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.android.managedprovisioning/.preprovisioning.PostEncryptionActivity
+              Activity #1:
+                priority=4 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.google.android.tungsten.setupwraith/.MainActivity
+              Activity #2:
+                priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.google.android.apps.tv.launcherx/.home.HomeActivity
+              Activity #3:
+                priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.google.android.apps.tv.launcherx/.home.VanillaModeHomeActivity
+              Activity #4:
+                priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.spocky.projengmenu/.ui.home.MainActivity
+              Activity #5:
+                priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                net.jolabs40.startlight.debug/net.jolabs40.startlight.HomeActivity
+              Activity #6:
+                priority=-100 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+                android/com.android.internal.app.SystemUserHomeActivity
+              Activity #7:
+                priority=-1000 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.android.tv.settings/.system.FallbackHome
+            @@TVSLIM_T
+            package:flar2.homebutton
+            package:com.spocky.projengmenu
+            package:net.jolabs40.startlight.debug
+        """.trimIndent()
+
+        val infos = LecteurDistant(ExecuteurFixe(sortie)).photographie(
+            paquetsSurveilles = emptyList(),
+            paquetsDAccueil = setOf(
+                "com.google.android.tungsten.setupwraith",
+                "com.google.android.apps.tv.launcherx",
+                "com.google.android.tvlauncher",
+            ),
+        ).infos
+
+        assertEquals(
+            listOf(
+                AccueilUsine(
+                    paquet = "com.google.android.apps.tv.launcherx",
+                    composant = "com.google.android.apps.tv.launcherx/.home.HomeActivity",
+                    actif = false,
+                ),
+            ),
+            infos.accueilsUsine,
+        )
+        assertEquals("net.jolabs40.startlight.debug/net.jolabs40.startlight.HomeActivity", infos.composantAccueil)
+        // Le garde-fou n'a pas bougé : les launchers tiers sont ceux d'avant.
+        assertEquals(
+            listOf("com.spocky.projengmenu", "net.jolabs40.startlight.debug"),
+            infos.launchersTiers.map { it.paquet },
+        )
+    }
+
+    @Test
+    fun `sans la liste des applications tierces, seuls les accueils du catalogue passent pour d'usine`() = runTest {
+        val sortie = """
+            @@TVSLIM_D
+            package:com.google.android.tvlauncher
+            @@TVSLIM_U
+            priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+            com.google.android.tvlauncher/.MainActivity
+            priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+            com.spocky.projengmenu/.ui.home.MainActivity
+        """.trimIndent()
+
+        val infos = LecteurDistant(ExecuteurFixe(sortie))
+            .photographie(emptyList(), setOf("com.google.android.tvlauncher"))
+            .infos
+
+        assertEquals(listOf("com.google.android.tvlauncher"), infos.accueilsUsine.map { it.paquet })
+        assertFalse(infos.accueilsUsine.single().actif)
+    }
+
+    @Test
+    fun `un Android qui ignore le drapeau ne fabrique aucun accueil avec son message d'aide`() = runTest {
+        val sortie = """
+            @@TVSLIM_E
+            package:com.google.android.tvlauncher
+            @@TVSLIM_U
+            Error: Unknown option: --query-flags
+              -a <ACTION>/-d <DATA_URI> [-t <MIME_TYPE>]
+            @@TVSLIM_T
+            package:com.spocky.projengmenu
+        """.trimIndent()
+
+        val infos = LecteurDistant(ExecuteurFixe(sortie))
+            .photographie(emptyList(), setOf("com.google.android.tvlauncher"))
+            .infos
+
+        assertEquals(listOf(AccueilUsine("com.google.android.tvlauncher", "", actif = true)), infos.accueilsUsine)
     }
 
     @Test

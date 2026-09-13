@@ -33,6 +33,8 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         val actifs = paquets(sections[MARQUEUR_ACTIFS])
         val proprietes = sections[MARQUEUR_PROPRIETES].orEmpty().map { it.trim() }
         val memoire = memoire(sections[MARQUEUR_MEMOIRE])
+        // Null quand la section manque, et non vide : « aucune application tierce » serait faux.
+        val tiers = sections[MARQUEUR_TIERS]?.let(::paquets)
 
         return Photographie(
             infos = InfosAppareil(
@@ -46,7 +48,15 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
                 paquetsInstalles = actifs.size,
                 paquetsDesactives = desactives.size,
                 accueilActuel = accueil(sections[MARQUEUR_ACCUEIL]),
+                composantAccueil = composantAccueil(sections[MARQUEUR_ACCUEIL]),
                 launchersTiers = launchers(sections[MARQUEUR_LAUNCHERS], paquetsDAccueil),
+                accueilsUsine = accueilsUsine(
+                    lignes = sections[MARQUEUR_ACCUEILS_TOUS],
+                    tiers = tiers,
+                    paquetsDAccueil = paquetsDAccueil,
+                    desactives = desactives,
+                    actifs = actifs,
+                ),
             ),
             etats = paquetsSurveilles.associateWith { paquet ->
                 when (paquet) {
@@ -107,6 +117,15 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             zramKo = zram,
             processus = processus.sortedByDescending { it.kilooctets },
         )
+    }
+
+    /**
+     * Occupation du stockage interne, et poids de chaque application. À la demande, comme la
+     * mémoire : seul l'onglet qui l'affiche en a besoin.
+     */
+    suspend fun stockage(): RepartitionStockage {
+        val sortie = executeur.executer(COMMANDE_STOCKAGE)
+        return if (sortie.reussi) LectureStockage.interpreter(sortie.sortie) else RepartitionStockage()
     }
 
     private fun nombre(brut: String): Long = brut.replace(",", "").trim().toLongOrNull() ?: 0L
@@ -241,6 +260,10 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     private fun accueil(lignes: List<String>?): String =
         lignes.orEmpty().lastOrNull { it.contains('/') }?.substringBefore('/').orEmpty()
 
+    /** Le composant entier de l'accueil en place : ce que `set-home-activity` saurait rétablir. */
+    private fun composantAccueil(lignes: List<String>?): String =
+        lignes.orEmpty().lastOrNull { COMPOSANT.matches(it) }.orEmpty()
+
     /**
      * Applications capables de servir d'écran d'accueil, hors accueils d'usine du catalogue.
      * Sert au garde-fou : sans launcher tiers, l'accueil d'origine ne doit pas être désactivé.
@@ -248,8 +271,50 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     private fun launchers(
         lignes: List<String>?,
         paquetsDAccueil: Set<String>,
-    ): List<LauncherInstalle> {
-        val trouves = mutableListOf<LauncherInstalle>()
+    ): List<LauncherInstalle> =
+        activitesAccueil(lignes)
+            .filterNot { it.paquet.isBlank() || it.paquet in paquetsDAccueil }
+            .filterNot { estUnRepliSysteme(it.priorite, it.composant) }
+            .map { LauncherInstalle(paquet = it.paquet, nom = it.paquet, composant = it.composant) }
+            .distinctBy { it.paquet }
+
+    /**
+     * Les écrans d'accueil livrés avec l'appareil, **désactivés compris** — uniquement pour les
+     * montrer : le garde-fou, lui, ne regarde que [launchers].
+     *
+     * `query-activities` ne rend un paquet désactivé qu'avec `MATCH_DISABLED_COMPONENTS` : relevé sur
+     * la TCL, Google TV coupé n'apparaît qu'ainsi. Est « d'usine » ce que la personne n'a pas installé
+     * (`pm list packages -3`), hors écrans de repli, assistants de configuration et provisionnement,
+     * qui répondent aussi à HOME sans servir d'accueil. Sans la liste des applications tierces, on
+     * s'en tient aux accueils que le catalogue connaît.
+     */
+    private fun accueilsUsine(
+        lignes: List<String>?,
+        tiers: Set<String>?,
+        paquetsDAccueil: Set<String>,
+        desactives: Set<String>,
+        actifs: Set<String>,
+    ): List<AccueilUsine> {
+        val trouves = activitesAccueil(lignes)
+            // Un Android qui ignore le drapeau répond par son aide, où traînent des « a/b ».
+            .filter { COMPOSANT.matches(it.composant) }
+            .filterNot { estUnRepliSysteme(it.priorite, it.composant) || estUnAssistant(it.paquet) }
+            .filter { activite -> if (tiers == null) activite.paquet in paquetsDAccueil else activite.paquet !in tiers }
+            .distinctBy { it.paquet }
+            .map { AccueilUsine(it.paquet, it.composant, actif = it.paquet !in desactives) }
+
+        // Faute de réponse, les accueils du catalogue présents sur l'appareil restent au moins nommés.
+        val duCatalogue = paquetsDAccueil
+            .filter { (it in desactives || it in actifs) && !estUnAssistant(it) }
+            .filter { paquet -> trouves.none { it.paquet == paquet } }
+            .map { AccueilUsine(it, composant = "", actif = it !in desactives) }
+
+        return trouves + duCatalogue
+    }
+
+    /** Chaque composant d'une sortie de `query-activities --brief`, avec la priorité annoncée avant lui. */
+    private fun activitesAccueil(lignes: List<String>?): List<ActiviteAccueil> {
+        val trouvees = mutableListOf<ActiviteAccueil>()
         var priorite = 0
 
         lignes.orEmpty().forEach { ligne ->
@@ -258,16 +323,14 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
                 return@forEach
             }
             if (!ligne.contains('/') || ligne.startsWith("Activity Resolver")) return@forEach
-
-            val composant = ligne.substringAfter(' ', ligne).trim()
-            val paquet = composant.substringBefore('/')
-            if (paquet.isBlank() || paquet in paquetsDAccueil) return@forEach
-            if (estUnRepliSysteme(priorite, composant)) return@forEach
-
-            trouves += LauncherInstalle(paquet = paquet, nom = paquet, composant = composant)
+            trouvees += ActiviteAccueil(priorite, ligne.substringAfter(' ', ligne).trim())
         }
-        return trouves.distinctBy { it.paquet }
+        return trouvees
     }
+
+    /** Assistants de configuration, provisionnement, sélecteur du système : HOME sans être un accueil. */
+    private fun estUnAssistant(paquet: String): Boolean =
+        paquet == "android" || ASSISTANT.containsMatchIn(paquet)
 
     /**
      * `FallbackHome` répond aussi à `category.HOME`, mais n'affiche qu'un écran vide le temps
@@ -280,8 +343,21 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     /** Où l'on se trouve dans la sortie de `dumpsys package`. */
     private enum class SectionPermissions { AUCUNE, DEMANDEES, ACCORDEES }
 
+    /** Une activité qui répond à `category.HOME`, et la priorité qu'elle y déclare. */
+    private data class ActiviteAccueil(val priorite: Int, val composant: String) {
+        val paquet: String get() = composant.substringBefore('/')
+    }
+
     internal companion object {
         private val PRIORITE = Regex("""priority=(-?\d+)""")
+
+        /** « paquet/.Activité » : un composant, et rien d'autre — surtout pas une ligne d'aide. */
+        private val COMPOSANT = Regex("""[A-Za-z0-9_.]+/[A-Za-z0-9_.]+""")
+
+        private val ASSISTANT = Regex("setup|provision", RegexOption.IGNORE_CASE)
+
+        /** `MATCH_DISABLED_COMPONENTS` : sans lui, un accueil désactivé n'existe plus pour Android. */
+        private const val AVEC_DESACTIVES = 0x200
 
         /** « android.permission.DUMP » seul, ou suivi de « : granted=true ». */
         private val LIGNE_PERMISSION =
@@ -312,6 +388,15 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
          */
         const val MARQUEUR_MARQUE = "@@TVSLIM_B"
 
+        /** Les activités d'accueil, désactivées comprises : de quoi retrouver l'accueil d'usine coupé. */
+        const val MARQUEUR_ACCUEILS_TOUS = "@@TVSLIM_U"
+
+        /** Les applications installées par la personne : tout le reste est venu avec l'appareil. */
+        const val MARQUEUR_TIERS = "@@TVSLIM_T"
+
+        /** `df` après `diskstats` : certains appareils ne donnent pas la ligne « Data-Free ». */
+        const val COMMANDE_STOCKAGE = "dumpsys diskstats; echo ${LectureStockage.MARQUEUR_DF}; df -k /data"
+
         val COMMANDE = listOf(
             "echo $MARQUEUR_DESACTIVES",
             "pm list packages -d",
@@ -332,6 +417,11 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             "echo $MARQUEUR_LAUNCHERS",
             "cmd package query-activities --brief -a android.intent.action.MAIN " +
                 "-c android.intent.category.HOME",
+            "echo $MARQUEUR_ACCUEILS_TOUS",
+            "cmd package query-activities --brief --query-flags $AVEC_DESACTIVES " +
+                "-a android.intent.action.MAIN -c android.intent.category.HOME",
+            "echo $MARQUEUR_TIERS",
+            "pm list packages -3",
         ).joinToString("; ")
     }
 }

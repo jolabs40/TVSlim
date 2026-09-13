@@ -4,9 +4,11 @@ import androidx.compose.runtime.Immutable
 import net.jolabs40.tvslim.catalog.Catalogue
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
+import net.jolabs40.tvslim.configuration.PlanReinjection
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.RepartitionMemoire
+import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.mesure.HistoriqueMesures
 import net.jolabs40.tvslim.remote.adb.AppareilDecouvert
@@ -36,6 +38,9 @@ sealed interface Confirmation {
     data class Application(val entrees: List<EntreePaquet>) : Confirmation
 
     data class Restauration(val paquets: List<String>) : Confirmation
+
+    /** Réinjection d'une configuration sauvegardée : on montre ce qu'elle changera, et seulement cela. */
+    data class Reinjection(val plan: PlanReinjection) : Confirmation
 }
 
 @Immutable
@@ -63,6 +68,7 @@ data class EtatRemote(
     val recherche: String = "",
     val filtre: Filtre = Filtre.TOUS,
     val memoire: RepartitionMemoire = RepartitionMemoire(),
+    val stockage: RepartitionStockage = RepartitionStockage(),
     val permissions: EtatPermissions = EtatPermissions(),
     val confirmation: Confirmation? = null,
     val message: String? = null,

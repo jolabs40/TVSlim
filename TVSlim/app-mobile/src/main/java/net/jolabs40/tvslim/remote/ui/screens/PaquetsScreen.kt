@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,11 +18,14 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.catalog.Risque
@@ -50,6 +55,8 @@ fun PaquetsScreen(
     onReactiver: (String) -> Unit,
     onRecherche: (String) -> Unit,
     onFiltre: (Filtre) -> Unit,
+    onSauvegarder: () -> Unit,
+    onReinjecter: () -> Unit,
 ) {
     if (!etat.connecte) {
         Box(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
@@ -93,32 +100,31 @@ fun PaquetsScreen(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         )
 
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // Tous, actifs ou désactivés : un seul interrupteur à trois positions plutôt que trois puces.
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp),
         ) {
-            item {
-                FilterChip(
-                    selected = etat.filtre == Filtre.TOUS,
-                    onClick = { onFiltre(Filtre.TOUS) },
-                    label = { Text(stringResource(R.string.filter_all)) },
-                )
-            }
-            item {
-                FilterChip(
-                    selected = etat.filtre == Filtre.ACTIFS,
-                    onClick = { onFiltre(Filtre.ACTIFS) },
-                    label = { Text(stringResource(R.string.filter_enabled, etat.nombreActifs)) },
-                )
-            }
-            item {
-                FilterChip(
-                    selected = etat.filtre == Filtre.DESACTIVES,
-                    onClick = { onFiltre(Filtre.DESACTIVES) },
-                    label = {
-                        Text(stringResource(R.string.filter_disabled, etat.nombreDesactives))
-                    },
-                )
+            Filtre.entries.forEachIndexed { rang, choix ->
+                SegmentedButton(
+                    selected = etat.filtre == choix,
+                    onClick = { onFiltre(choix) },
+                    shape = SegmentedButtonDefaults.itemShape(index = rang, count = Filtre.entries.size),
+                    // Sans coche : trois libellés et leurs compteurs tiennent à peine sur un téléphone.
+                    icon = {},
+                ) {
+                    Text(
+                        text = when (choix) {
+                            Filtre.TOUS -> stringResource(R.string.filter_all)
+                            Filtre.ACTIFS -> stringResource(R.string.filter_enabled, etat.nombreActifs)
+                            Filtre.DESACTIVES -> stringResource(R.string.filter_disabled, etat.nombreDesactives)
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
 
@@ -143,6 +149,32 @@ fun PaquetsScreen(
             }
             TextButton(onClick = onToutDecocher) {
                 Text(stringResource(R.string.packages_clear))
+            }
+        }
+
+        // La configuration — launcher et paquets — se sauvegarde et se réinjecte à côté des profils :
+        // une sauvegarde est un profil qu'on s'est fait soi-même.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = onSauvegarder,
+                enabled = !etat.travailEnCours,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 8.dp),
+            ) {
+                Text(stringResource(R.string.config_save), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            OutlinedButton(
+                onClick = onReinjecter,
+                enabled = !etat.travailEnCours,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 8.dp),
+            ) {
+                Text(stringResource(R.string.config_reinject), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
 

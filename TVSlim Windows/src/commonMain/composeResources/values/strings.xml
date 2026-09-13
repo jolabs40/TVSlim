@@ -51,7 +51,8 @@
     <string name="device_type_box">TV box</string>
 
     <string name="home_title">Home screen and launcher</string>
-    <string name="home_current">Currently: %1$s</string>
+    <string name="home_current_title">Current home screen</string>
+    <string name="home_factory_badge">Factory launcher</string>
     <string name="home_none">No third-party launcher on this device: the factory home screen cannot be replaced yet.</string>
     <string name="home_available">Installed launchers</string>
     <string name="home_install">Open on the television</string>
@@ -68,6 +69,10 @@
     <string name="packages_none_matching">Nothing matches this search.</string>
     <string name="packages_progress">%1$d of %2$d</string>
     <string name="packages_profiles">Profiles</string>
+    <string name="config_save">Save config</string>
+    <string name="config_reinject">Reinject a config</string>
+    <string name="config_save_dialog">Save the configuration</string>
+    <string name="config_open_dialog">Choose a configuration to reinject</string>
     <string name="packages_detail_hint">Select a package to read its details.</string>
     <string name="packages_detail_package">Package</string>
     <string name="packages_detail_category">Category</string>
@@ -94,6 +99,13 @@
     <string name="confirm_restore_body">%1$d package(s) disabled from this computer will be re-enabled.</string>
     <string name="confirm_go">Go ahead</string>
     <string name="confirm_cancel">Cancel</string>
+    <string name="confirm_reinject_title">Reinject this configuration?</string>
+    <string name="confirm_reinject_source">Saved on %1$s from %2$s.</string>
+    <string name="confirm_reinject_enable">To re-enable (%1$d)</string>
+    <string name="confirm_reinject_disable">To disable (%1$d)</string>
+    <string name="confirm_reinject_home">Home screen: %1$s</string>
+    <string name="confirm_reinject_home_missing">%1$s is not installed on this television: the home screen will stay as it is.</string>
+    <string name="confirm_reinject_ignored">%1$d package(s) of the configuration are not on this television and will be ignored.</string>
 
     <!-- Memory tab -->
     <string name="memory_title">Memory usage</string>
@@ -108,6 +120,22 @@
     <string name="memory_mb">%1$d MB</string>
     <string name="memory_stop">Stop</string>
     <string name="memory_not_connected">Connect to a television to see its memory.</string>
+    <string name="memory_view_ram">RAM</string>
+    <string name="memory_view_storage">Storage</string>
+    <string name="storage_title">Internal storage</string>
+    <string name="storage_breakdown">Breakdown</string>
+    <string name="storage_apps">Applications</string>
+    <string name="storage_app_data">Application data</string>
+    <string name="storage_cache">Cache</string>
+    <string name="storage_photos">Photos</string>
+    <string name="storage_videos">Videos</string>
+    <string name="storage_audio">Audio</string>
+    <string name="storage_downloads">Downloads</string>
+    <string name="storage_other">Other</string>
+    <string name="storage_largest">Largest applications (%1$d)</string>
+    <string name="storage_estimate">Per-application sizes come from Android's latest estimate, refreshed about once a day.</string>
+    <string name="storage_app_detail">App %1$s · data %2$s · cache %3$s</string>
+    <string name="size_gb">%1$s GB</string>
     <string name="action_refresh">Refresh</string>
 
     <string name="gain_title">Before / after</string>
@@ -171,6 +199,12 @@
     <string name="msg_appop_failed">App-op %1$s not set: %2$s</string>
     <string name="msg_undone">Undone.</string>
     <string name="msg_wireless_unsupported">This television only offers wireless debugging, which TV Slim cannot use yet. Enable network debugging on port 5555.</string>
+    <string name="msg_config_saved">Configuration saved: %1$s</string>
+    <string name="msg_config_save_failed">Could not save the configuration: %1$s</string>
+    <string name="msg_config_read_failed">Could not read the file: %1$s</string>
+    <string name="msg_config_invalid">This file is not a TV Slim configuration.</string>
+    <string name="msg_config_up_to_date">This television already matches this configuration.</string>
+    <string name="msg_config_home_missing">The packages already match; %1$s is not installed on this television, so the home screen stays as it is.</string>
     <string name="result_summary">%1$d of %2$d succeeded.</string>
 
     <!-- About -->
