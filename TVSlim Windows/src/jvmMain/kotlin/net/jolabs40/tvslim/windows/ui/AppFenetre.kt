@@ -247,8 +247,7 @@ fun AppFenetre(
 @Composable
 private fun PastilleConnexion(etat: EtatApp) {
     val connexion = etat.connexion
-    val nom = "${etat.infos.marque} ${etat.infos.modele}".trim()
-        .ifBlank { etat.nomsConnus[connexion.hote] ?: connexion.hote }
+    val nom = etat.infos.nomAffiche.ifBlank { etat.nomsConnus[connexion.hote] ?: connexion.hote }
     val (texte, couleur) = when (connexion.etat) {
         EtatConnexion.CONNECTE ->
             stringResource(Res.string.status_connected, nom) to MaterialTheme.colorScheme.primary

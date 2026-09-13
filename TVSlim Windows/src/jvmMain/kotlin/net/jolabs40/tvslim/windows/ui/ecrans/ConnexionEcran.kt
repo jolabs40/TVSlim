@@ -28,6 +28,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
+import net.jolabs40.tvslim.device.Fabricant
 import net.jolabs40.tvslim.windows.adb.ConnexionUi
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.adb.ProblemeConnexion
@@ -62,6 +63,7 @@ import net.jolabs40.tvslim.windows.ui.ActionsPermissions
 import net.jolabs40.tvslim.windows.ui.EtatApp
 import net.jolabs40.tvslim.windows.ui.composants.CarteSection
 import net.jolabs40.tvslim.windows.ui.composants.DeuxColonnes
+import net.jolabs40.tvslim.windows.ui.composants.PlaqueMarque
 import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -161,7 +163,13 @@ private fun CarteDecouverte(etat: EtatApp, onConnecterA: (AppareilDecouvert) -> 
             else -> {
                 TexteSecondaire(stringResource(Res.string.discovery_hint), petit = true)
                 appareils.forEach { appareil ->
-                    BoutonAppareil(appareil = appareil, actif = !enCours, onClick = { onConnecterA(appareil) })
+                    BoutonAppareil(
+                        appareil = appareil,
+                        // La marque d'un appareil déjà joint : le nom qu'on en a retenu commence par elle.
+                        fabricant = etat.nomsConnus[appareil.hote]?.let { Fabricant.depuisNom(it) },
+                        actif = !enCours,
+                        onClick = { onConnecterA(appareil) },
+                    )
                 }
             }
         }
@@ -169,14 +177,18 @@ private fun CarteDecouverte(etat: EtatApp, onConnecterA: (AppareilDecouvert) -> 
 }
 
 @Composable
-private fun BoutonAppareil(appareil: AppareilDecouvert, actif: Boolean, onClick: () -> Unit) {
+private fun BoutonAppareil(appareil: AppareilDecouvert, fabricant: Fabricant?, actif: Boolean, onClick: () -> Unit) {
     OutlinedButton(
         onClick = onClick,
         enabled = actif,
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
     ) {
-        Icon(painter = painterResource(Res.drawable.baseline_connected_tv_24), contentDescription = null)
+        if (fabricant != null) {
+            PlaqueMarque(fabricant = fabricant, hauteur = 30.dp)
+        } else {
+            Icon(painter = painterResource(Res.drawable.baseline_connected_tv_24), contentDescription = null)
+        }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             // Sans nom connu, l'adresse suffit : l'écrire deux fois n'apprend rien.

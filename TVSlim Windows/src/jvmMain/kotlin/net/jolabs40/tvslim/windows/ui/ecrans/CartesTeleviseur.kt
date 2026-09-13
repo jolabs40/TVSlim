@@ -1,24 +1,34 @@
 package net.jolabs40.tvslim.windows.ui.ecrans
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import net.jolabs40.tvslim.catalog.Catalogue
+import net.jolabs40.tvslim.catalog.LauncherRecommande
+import net.jolabs40.tvslim.device.TypeAppareil
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.action_refresh
+import net.jolabs40.tvslim.windows.ressources.baseline_check_24
 import net.jolabs40.tvslim.windows.ressources.baseline_refresh_24
 import net.jolabs40.tvslim.windows.ressources.connection_disconnect
 import net.jolabs40.tvslim.windows.ressources.device_android
@@ -29,16 +39,20 @@ import net.jolabs40.tvslim.windows.ressources.device_model
 import net.jolabs40.tvslim.windows.ressources.device_packages_active
 import net.jolabs40.tvslim.windows.ressources.device_packages_disabled
 import net.jolabs40.tvslim.windows.ressources.device_title
+import net.jolabs40.tvslim.windows.ressources.device_type_box
 import net.jolabs40.tvslim.windows.ressources.home_available
+import net.jolabs40.tvslim.windows.ressources.home_coming_soon
 import net.jolabs40.tvslim.windows.ressources.home_current
 import net.jolabs40.tvslim.windows.ressources.home_install
 import net.jolabs40.tvslim.windows.ressources.home_none
-import net.jolabs40.tvslim.windows.ressources.home_others
+import net.jolabs40.tvslim.windows.ressources.home_recommended
+import net.jolabs40.tvslim.windows.ressources.home_recommended_badge
 import net.jolabs40.tvslim.windows.ressources.home_title
-import net.jolabs40.tvslim.windows.ressources.home_to_install
 import net.jolabs40.tvslim.windows.ui.EtatApp
 import net.jolabs40.tvslim.windows.ui.composants.CarteSection
 import net.jolabs40.tvslim.windows.ui.composants.LigneValeur
+import net.jolabs40.tvslim.windows.ui.composants.LogoLauncher
+import net.jolabs40.tvslim.windows.ui.composants.PlaqueMarque
 import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -69,8 +83,12 @@ fun CarteAppareil(
         if (etat.chargement) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
     }
 
-    CarteSection(titre = stringResource(Res.string.device_title), espacement = 6.dp) {
-        LigneValeur(stringResource(Res.string.device_model), "${etat.infos.marque} ${etat.infos.modele}".trim())
+    val infos = etat.infos
+    val titre = if (infos.typeAppareil == TypeAppareil.BOX) Res.string.device_type_box else Res.string.device_title
+    CarteSection(titre = stringResource(titre), espacement = 6.dp) {
+        // La marque en tête, reconnue sur ce que l'appareil déclare : voir Fabricant.
+        infos.fabricant?.let { PlaqueMarque(fabricant = it, hauteur = 40.dp, modifier = Modifier.padding(bottom = 6.dp)) }
+        LigneValeur(stringResource(Res.string.device_model), infos.nomAffiche)
         LigneValeur(stringResource(Res.string.device_android), etat.infos.versionAndroid)
         LigneValeur(
             stringResource(Res.string.device_memory),
@@ -85,54 +103,140 @@ fun CarteAppareil(
 /**
  * Écran d'accueil du téléviseur.
  *
- * Sans launcher tiers, le moteur refuse — à raison — de désactiver l'accueil d'usine : l'appareil
- * démarrerait sur du vide. Plutôt que de laisser ce refus sans issue, on propose d'installer un
- * remplaçant. L'application n'installe rien elle-même : elle ouvre la fiche dans la boutique **du
- * téléviseur**, et l'installation se valide à la télécommande.
+ * Sans launcher tiers, le moteur refuse — à raison — de désactiver l'accueil d'usine. La carte montre
+ * donc ce qui est installé, reconnu à son logo, et ne propose qu'un remplaçant : celui du catalogue,
+ * tant qu'aucune de ses versions n'est là. Elle n'installe rien elle-même : tant qu'il n'est pas sur
+ * le Play Store, le bouton le dit ; ensuite, il ouvrira sa fiche dans la boutique du téléviseur.
  */
 @Composable
 fun CarteAccueil(etat: EtatApp, onInstaller: (String) -> Unit) {
-    val launchersTiers = etat.infos.launchersTiers
+    val catalogue = etat.catalogue
+    val installes = etat.infos.launchersTiers
 
-    CarteSection(titre = stringResource(Res.string.home_title)) {
-        TexteSecondaire(
-            stringResource(Res.string.home_current, etat.infos.accueilActuel.ifBlank { "—" }),
-            petit = true,
-        )
-        if (launchersTiers.isEmpty()) {
+    CarteSection(titre = stringResource(Res.string.home_title), espacement = 10.dp) {
+        AccueilActuel(catalogue = catalogue, paquet = etat.infos.accueilActuel)
+
+        if (installes.isEmpty()) {
             Text(
                 text = stringResource(Res.string.home_none),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
         } else {
-            TexteSecondaire(stringResource(Res.string.home_available))
-            launchersTiers.forEach { launcher ->
-                // Le nom commercial d'abord quand le catalogue le connaît.
-                etat.catalogue.launchers.firstOrNull { it.paquet == launcher.paquet }?.nom?.let { nom ->
-                    Text(text = nom, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                }
-                TexteSecondaire(launcher.paquet, petit = true)
-            }
-        }
-
-        // Ceux du catalogue qui ne sont pas encore là, proposés même quand un launcher tiers existe
-        // déjà : en avoir un n'empêche pas d'en vouloir essayer un autre.
-        val aProposer = etat.catalogue.launchers
-            .filterNot { propose -> launchersTiers.any { it.paquet == propose.paquet } }
-
-        if (aProposer.isNotEmpty()) {
             Text(
-                text = stringResource(if (launchersTiers.isEmpty()) Res.string.home_to_install else Res.string.home_others),
-                modifier = Modifier.padding(top = 8.dp),
+                text = stringResource(Res.string.home_available),
+                modifier = Modifier.padding(top = 4.dp),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
-            aProposer.forEach { launcher ->
-                Text(text = launcher.nom, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                TexteSecondaire(launcher.description, petit = true)
-                OutlinedButton(onClick = { onInstaller(launcher.paquet) }) {
+            installes.forEach { launcher ->
+                LigneLauncher(
+                    id = catalogue.idLauncher(launcher.paquet),
+                    nom = catalogue.nomLauncher(launcher.paquet),
+                    paquet = launcher.paquet,
+                    recommande = catalogue.launcherRecommande(launcher.paquet) != null,
+                )
+            }
+        }
+
+        catalogue.launchersAProposer(installes.map { it.paquet }).forEach { launcher ->
+            CarteRecommandation(launcher = launcher, onInstaller = onInstaller)
+        }
+    }
+}
+
+/** « Actuellement : » et, quand on sait le nommer, le logo et le nom de l'accueil en place. */
+@Composable
+private fun AccueilActuel(catalogue: Catalogue, paquet: String) {
+    val nom = paquet.takeIf { it.isNotBlank() }?.let { actuel ->
+        catalogue.nomLauncher(actuel) ?: catalogue.entrees.firstOrNull { it.paquet == actuel }?.nom
+    }
+    val id = paquet.takeIf { it.isNotBlank() }?.let(catalogue::idLauncher)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (id != null) LogoLauncher(id = id, taille = 20.dp)
+        TexteSecondaire(stringResource(Res.string.home_current, nom ?: paquet.ifBlank { "—" }), petit = true)
+    }
+}
+
+@Composable
+private fun LigneLauncher(id: String?, nom: String?, paquet: String, recommande: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        LogoLauncher(id = id, taille = 40.dp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = nom ?: paquet, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            if (nom != null) TexteSecondaire(paquet, petit = true)
+        }
+        if (recommande) {
+            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(50)) {
+                Text(
+                    text = stringResource(Res.string.home_recommended_badge),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
+    }
+}
+
+/** Le launcher que TV Slim recommande : son logo, ses points forts, et ce qu'on peut en faire. */
+@Composable
+private fun CarteRecommandation(launcher: LauncherRecommande, onInstaller: (String) -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                LogoLauncher(id = launcher.id, taille = 56.dp)
+                Column {
+                    Text(text = launcher.nom, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = stringResource(Res.string.home_recommended),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            Text(text = launcher.description, style = MaterialTheme.typography.bodyMedium)
+            launcher.pointsForts.forEach { point ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(
+                        painter = painterResource(Res.drawable.baseline_check_24),
+                        contentDescription = null,
+                        modifier = Modifier.padding(top = 2.dp).size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(text = point, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            // Pas encore sur le Play Store : aucune fiche à ouvrir, et le bouton le dit.
+            if (launcher.disponible) {
+                Button(onClick = { onInstaller(launcher.paquet) }) {
                     Text(stringResource(Res.string.home_install))
+                }
+            } else {
+                // Grisé mais lisible : les couleurs désactivées par défaut s'effacent presque sur le
+                // fond de la carte.
+                OutlinedButton(
+                    onClick = {},
+                    enabled = false,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.35f)),
+                ) {
+                    Text(stringResource(Res.string.home_coming_soon))
                 }
             }
         }

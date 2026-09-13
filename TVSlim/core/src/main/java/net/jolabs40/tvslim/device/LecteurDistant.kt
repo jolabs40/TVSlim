@@ -37,6 +37,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         return Photographie(
             infos = InfosAppareil(
                 marque = proprietes.getOrElse(0) { "" },
+                marqueCommerciale = sections[MARQUEUR_MARQUE].orEmpty().firstOrNull()?.trim().orEmpty(),
                 modele = proprietes.getOrElse(1) { "" },
                 versionAndroid = proprietes.getOrElse(2) { "" },
                 build = proprietes.getOrElse(3) { "" },
@@ -304,6 +305,13 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         const val MARQUEUR_ACCUEIL = "@@TVSLIM_H"
         const val MARQUEUR_LAUNCHERS = "@@TVSLIM_L"
 
+        /**
+         * La marque a sa section à elle : une propriété vide n'y laisse qu'une section vide, là où
+         * elle décalerait les quatre lignes de [MARQUEUR_PROPRIETES], les lignes blanches étant
+         * écartées au découpage.
+         */
+        const val MARQUEUR_MARQUE = "@@TVSLIM_B"
+
         val COMMANDE = listOf(
             "echo $MARQUEUR_DESACTIVES",
             "pm list packages -d",
@@ -314,6 +322,8 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             "getprop ro.product.model",
             "getprop ro.build.version.release",
             "getprop ro.build.display.id",
+            "echo $MARQUEUR_MARQUE",
+            "getprop ro.product.brand",
             "echo $MARQUEUR_MEMOIRE",
             "grep -E 'MemTotal|MemAvailable' /proc/meminfo",
             "echo $MARQUEUR_ACCUEIL",

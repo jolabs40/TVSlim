@@ -203,9 +203,34 @@
     { "paquet": "mitv.service", "raison": "Xiaomi platform service." }
   ],
   "launchers": [
-    { "paquet": "com.spocky.projengmenu", "nom": "Projectivy Launcher", "description": "Free, ad-free, actively maintained. Rich customisation and the widest choice of wallpapers." },
-    { "paquet": "me.efesser.flauncher", "nom": "FLauncher", "description": "Open source and deliberately plain: a grid of applications, nothing else." },
-    { "paquet": "ca.dstudio.atvlauncher.pro", "nom": "ATV Launcher Pro", "description": "Paid, very configurable: rows, folders and sidebar all rearrangeable." }
+    {
+      "paquet": "net.jolabs40.startlight",
+      "id": "startlight",
+      "variantes": ["net.jolabs40.startlight.debug"],
+      "nom": "Startlight Launcher",
+      "description": "A home screen for Android TV, by the author of TV Slim. It replaces the television's own.",
+      "pointsForts": [
+        "A menu and rows you compose yourself: apps, “Up next”, TV inputs, Home Assistant",
+        "Live wallpapers — photo, GIF, video, online feeds — and shareable themes",
+        "Parental control per app and per time slot",
+        "Rescue mode: press BACK five times and the default look comes back",
+        "Smooth on entry-level televisions, with Projectivy and Nova icon packs"
+      ],
+      "disponible": false
+    }
+  ],
+  "launchersConnus": [
+    { "id": "projectivy", "nom": "Projectivy Launcher", "paquets": ["com.spocky.projengmenu"] },
+    { "id": "flauncher", "nom": "FLauncher", "paquets": ["me.efesser.flauncher"] },
+    { "id": "atvlauncher", "nom": "ATV Launcher", "paquets": ["ca.dstudio.atvlauncher.free"] },
+    { "id": "atvlauncher_pro", "nom": "ATV Launcher Pro", "paquets": ["ca.dstudio.atvlauncher.pro"] },
+    { "id": "at4k", "nom": "AT4K Launcher", "paquets": ["com.overdevs.at4k"] },
+    { "id": "wolf", "nom": "Wolf Launcher", "paquets": ["com.wolf.firelauncher"] },
+    { "id": "supertvlauncher", "nom": "TV Launcher - Smart TV BOX", "paquets": ["com.github.supertvlauncher"] },
+    { "id": "halauncher", "nom": "HALauncher", "paquets": ["net.i.akihiro.halauncher"] },
+    { "id": "dispatch", "nom": "Dispatch", "paquets": ["com.spauldhaliwal.dispatch"] },
+    { "id": "emotn", "nom": "Emotn UI", "paquets": ["com.oversea.aslauncher"] },
+    { "id": "arc", "nom": "Arc Launcher", "paquets": ["com.omeda.arc"] }
   ],
   "reglages": [
     {

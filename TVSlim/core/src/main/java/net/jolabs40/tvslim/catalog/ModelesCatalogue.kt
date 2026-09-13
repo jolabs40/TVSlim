@@ -67,14 +67,38 @@ data class ReglageSysteme(
 )
 
 /**
- * Un écran d'accueil de remplacement, proposé quand l'appareil n'en a aucun : sans lui, le
- * garde-fou refuse de désactiver l'accueil d'usine — et il a raison.
+ * L'écran d'accueil de remplacement que TV Slim propose. Sans launcher tiers, le garde-fou refuse
+ * de désactiver l'accueil d'usine — et il a raison : cette fiche est l'issue qu'on lui donne.
  */
 @Serializable
 data class LauncherRecommande(
     val paquet: String,
     val nom: String,
     val description: String,
+    /** Identifiant stable, que chaque application associe à son logo. */
+    val id: String = "",
+    /** Les autres paquets du même launcher, sa version de développement par exemple. */
+    val variantes: List<String> = emptyList(),
+    val pointsForts: List<String> = emptyList(),
+    /**
+     * Faux tant que le launcher n'est pas sur le Play Store : il n'y a alors aucune fiche à ouvrir
+     * sur le téléviseur, et le bouton le dit plutôt que d'échouer.
+     */
+    val disponible: Boolean = true,
+) {
+    fun correspond(paquetInstalle: String): Boolean =
+        paquetInstalle == paquet || paquetInstalle in variantes
+}
+
+/**
+ * Un launcher tiers répandu : on sait le nommer et le montrer à son logo quand il est installé.
+ * Il n'est jamais proposé, seulement reconnu.
+ */
+@Serializable
+data class LauncherConnu(
+    val id: String,
+    val nom: String,
+    val paquets: List<String>,
 )
 
 @Serializable
@@ -87,6 +111,7 @@ data class Catalogue(
     val proteges: List<PaquetProtege> = emptyList(),
     val reglages: List<ReglageSysteme> = emptyList(),
     val launchers: List<LauncherRecommande> = emptyList(),
+    val launchersConnus: List<LauncherConnu> = emptyList(),
 ) {
     private val protegesParPaquet: Map<String, PaquetProtege> by lazy {
         proteges.associateBy { it.paquet }
@@ -100,4 +125,24 @@ data class Catalogue(
 
     fun entreesDuProfil(profil: Profil): List<EntreePaquet> =
         entrees.filter { it.categorie in profil.categories }
+
+    /** Le launcher recommandé dont [paquet] est une version, s'il y en a un. */
+    fun launcherRecommande(paquet: String): LauncherRecommande? =
+        launchers.firstOrNull { it.correspond(paquet) }
+
+    /** Nom commercial d'un launcher installé, quand on le connaît. */
+    fun nomLauncher(paquet: String): String? =
+        launcherRecommande(paquet)?.nom ?: launchersConnus.firstOrNull { paquet in it.paquets }?.nom
+
+    /** Identifiant du logo d'un launcher installé, quand on en a un. */
+    fun idLauncher(paquet: String): String? =
+        launcherRecommande(paquet)?.id?.takeIf { it.isNotBlank() }
+            ?: launchersConnus.firstOrNull { paquet in it.paquets }?.id
+
+    /**
+     * Ce qu'il reste à proposer : un launcher recommandé ne l'est plus dès que l'une de ses
+     * versions est installée — la version de développement compte.
+     */
+    fun launchersAProposer(installes: Collection<String>): List<LauncherRecommande> =
+        launchers.filterNot { recommande -> installes.any(recommande::correspond) }
 }

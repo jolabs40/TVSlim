@@ -6,6 +6,11 @@ enum class EtatPaquet { ABSENT, ACTIF, DESACTIVE }
 /** Photographie d'un téléviseur, affichée avant et après une intervention. */
 data class InfosAppareil(
     val marque: String = "",
+    /**
+     * La marque vendue (`ro.product.brand`), quand elle diffère du fabricant : un même assembleur
+     * fabrique pour plusieurs enseignes.
+     */
+    val marqueCommerciale: String = "",
     val modele: String = "",
     val versionAndroid: String = "",
     val build: String = "",
@@ -16,6 +21,15 @@ data class InfosAppareil(
     val accueilActuel: String = "",
     val launchersTiers: List<LauncherInstalle> = emptyList(),
 ) {
+    /** Le fabricant reconnu, marque vendue d'abord : voir [Fabricant]. */
+    val fabricant: Fabricant? get() = Fabricant.identifier(marqueCommerciale, marque)
+
+    /** Téléviseur ou box. Un appareil inconnu est présumé téléviseur : c'est le cas courant. */
+    val typeAppareil: TypeAppareil get() = fabricant?.typePour(modele) ?: TypeAppareil.TELEVISEUR
+
+    /** Le nom à montrer et à retenir : la marque vendue plutôt que le sous-traitant (« TPV »). */
+    val nomAffiche: String get() = "${fabricant?.nom ?: marque} $modele".trim()
+
     companion object {
         val VIDE = InfosAppareil()
     }

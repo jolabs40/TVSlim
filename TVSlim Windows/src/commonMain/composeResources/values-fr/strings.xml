@@ -48,14 +48,16 @@
     <string name="device_packages_active">Paquets actifs</string>
     <string name="device_packages_disabled">Paquets désactivés</string>
     <string name="device_home">Écran d'accueil</string>
+    <string name="device_type_box">Box TV</string>
 
     <string name="home_title">Écran d'accueil et launcher</string>
     <string name="home_current">Actuellement : %1$s</string>
     <string name="home_none">Aucun launcher tiers sur cet appareil : l'accueil d'usine ne peut pas encore être remplacé.</string>
-    <string name="home_available">Launcher tiers disponible :</string>
+    <string name="home_available">Launchers installés</string>
     <string name="home_install">Ouvrir sur le téléviseur</string>
-    <string name="home_to_install">En installer un</string>
-    <string name="home_others">Autres launchers à essayer</string>
+    <string name="home_recommended">Recommandé par TV Slim</string>
+    <string name="home_recommended_badge">Recommandé</string>
+    <string name="home_coming_soon">Bientôt sur le Play Store</string>
 
     <!-- Onglet Paquets -->
     <string name="packages_not_connected">Connectez-vous à un téléviseur pour voir ses paquets.</string>

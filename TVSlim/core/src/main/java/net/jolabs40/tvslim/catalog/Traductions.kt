@@ -24,6 +24,14 @@ data class TexteNomme(
     val description: String? = null,
 )
 
+/** Le texte d'un launcher recommandé. Ses points forts ne se remplacent qu'en entier. */
+@Serializable
+data class TexteLauncher(
+    val nom: String? = null,
+    val description: String? = null,
+    val pointsForts: List<String>? = null,
+)
+
 @Serializable
 data class Traductions(
     val langue: String = "",
@@ -33,7 +41,7 @@ data class Traductions(
     val entrees: Map<String, TexteEntree> = emptyMap(),
     val proteges: Map<String, String> = emptyMap(),
     val reglages: Map<String, TexteNomme> = emptyMap(),
-    val launchers: Map<String, TexteNomme> = emptyMap(),
+    val launchers: Map<String, TexteLauncher> = emptyMap(),
 )
 
 /** Applique une surcharge de langue, champ par champ. Ce qui manque garde sa valeur d'origine. */
@@ -67,6 +75,10 @@ fun Catalogue.traduit(traductions: Traductions): Catalogue = copy(
             launcher.copy(
                 nom = texte.nom ?: launcher.nom,
                 description = texte.description ?: launcher.description,
+                // Une liste d'une autre longueur mêlerait deux langues dans la même carte.
+                pointsForts = texte.pointsForts
+                    ?.takeIf { it.size == launcher.pointsForts.size }
+                    ?: launcher.pointsForts,
             )
         } ?: launcher
     },

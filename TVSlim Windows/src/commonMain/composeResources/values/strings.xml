@@ -48,14 +48,16 @@
     <string name="device_packages_active">Enabled packages</string>
     <string name="device_packages_disabled">Disabled packages</string>
     <string name="device_home">Home screen</string>
+    <string name="device_type_box">TV box</string>
 
     <string name="home_title">Home screen and launcher</string>
     <string name="home_current">Currently: %1$s</string>
     <string name="home_none">No third-party launcher on this device: the factory home screen cannot be replaced yet.</string>
-    <string name="home_available">Third-party launcher available:</string>
+    <string name="home_available">Installed launchers</string>
     <string name="home_install">Open on the television</string>
-    <string name="home_to_install">Install one</string>
-    <string name="home_others">Other launchers to try</string>
+    <string name="home_recommended">Recommended by TV Slim</string>
+    <string name="home_recommended_badge">Recommended</string>
+    <string name="home_coming_soon">Coming soon to the Play Store</string>
 
     <!-- Packages tab -->
     <string name="packages_not_connected">Connect to a television to see its packages.</string>

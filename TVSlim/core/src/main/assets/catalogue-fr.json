@@ -193,9 +193,17 @@
     "mitv.service": "Service plateforme Xiaomi."
   },
   "launchers": {
-    "com.spocky.projengmenu": { "nom": "Projectivy Launcher", "description": "Gratuit, sans publicité, toujours maintenu. Personnalisation poussée et le plus large choix de fonds d'écran." },
-    "me.efesser.flauncher": { "nom": "FLauncher", "description": "Open source et volontairement sobre : une grille d'applications, rien de plus." },
-    "ca.dstudio.atvlauncher.pro": { "nom": "ATV Launcher Pro", "description": "Payant, très configurable : rangées, dossiers et barre latérale réorganisables." }
+    "net.jolabs40.startlight": {
+      "nom": "Startlight Launcher",
+      "description": "Un écran d'accueil pour Android TV, par l'auteur de TV Slim. Il remplace celui du téléviseur.",
+      "pointsForts": [
+        "Un menu et des rangées que l'on compose : applications, « À suivre », entrées du téléviseur, Home Assistant",
+        "Fonds vivants — photo, GIF, vidéo, flux en ligne — et thèmes partageables",
+        "Contrôle parental par application et par plage horaire",
+        "Mode secours : cinq appuis sur RETOUR et l'habillage d'usine revient",
+        "Fluide sur un téléviseur d'entrée de gamme, avec les packs d'icônes Projectivy et Nova"
+      ]
+    }
   },
   "reglages": {
     "low_power_standby_enabled": {

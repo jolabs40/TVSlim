@@ -3,8 +3,10 @@ package net.jolabs40.tvslim.remote.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -36,6 +38,8 @@ import com.google.android.gms.common.moduleinstall.ModuleInstallRequest
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import net.jolabs40.tvslim.device.Fabricant
+import net.jolabs40.tvslim.device.TypeAppareil
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.adb.EtatConnexion
 import net.jolabs40.tvslim.remote.ui.ActionsPermissions
@@ -108,7 +112,7 @@ fun ConnexionScreen(
         if (etat.connecte) {
             // L'action d'abord, les mesures ensuite : un écran qu'il faut faire défiler pour
             // trouver le seul bouton utile est un écran raté.
-            EcranAccueil(etat = etat, onInstaller = onInstallerLauncher)
+            CarteAccueil(etat = etat, onInstaller = onInstallerLauncher)
             AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
             // En dernier : accorder une permission privilégiée est rare, et sans rapport avec
             // le débloat. Elle n'a de sens que téléviseur joint, d'où sa place ici.
@@ -144,11 +148,17 @@ fun ConnexionScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     etat.detectes.forEach { appareil ->
+                        // La marque d'un appareil déjà joint : le nom qu'on en a retenu commence par elle.
+                        val fabricant = etat.nomsConnus[appareil.hote]?.let { Fabricant.depuisNom(it) }
                         OutlinedButton(
                             onClick = { onConnecterA(appareil) },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
+                            if (fabricant != null) {
+                                PlaqueMarque(fabricant = fabricant, hauteur = 26.dp)
+                                Spacer(Modifier.width(12.dp))
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = appareil.libelle,
                                     style = MaterialTheme.typography.bodyLarge,
@@ -317,13 +327,19 @@ private fun AppareilConnecte(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = stringResource(R.string.device_title),
+                text = stringResource(
+                    if (etat.infos.typeAppareil == TypeAppareil.BOX) R.string.device_type_box else R.string.device_title,
+                ),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
+            // La marque en tête, reconnue sur ce que l'appareil déclare : voir Fabricant.
+            etat.infos.fabricant?.let {
+                PlaqueMarque(fabricant = it, hauteur = 34.dp, modifier = Modifier.padding(vertical = 4.dp))
+            }
             Mesure(
                 stringResource(R.string.device_model),
-                "${etat.infos.marque} ${etat.infos.modele}",
+                etat.infos.nomAffiche,
             )
             Mesure(stringResource(R.string.device_android), etat.infos.versionAndroid)
             Mesure(
@@ -346,104 +362,6 @@ private fun AppareilConnecte(
                 stringResource(R.string.device_home),
                 etat.infos.accueilActuel.ifBlank { "—" },
             )
-        }
-    }
-}
-
-/**
- * Écran d'accueil du téléviseur.
- *
- * Sans launcher tiers installé, le moteur refuse — à raison — de désactiver l'accueil d'usine :
- * l'appareil démarrerait sur du vide. Plutôt que de laisser ce refus sans issue, on propose ici
- * d'installer un remplaçant. L'application n'installe rien elle-même : elle ouvre la fiche dans
- * la boutique **du téléviseur**, et l'installation se valide à la télécommande.
- */
-@Composable
-private fun EcranAccueil(etat: EtatRemote, onInstaller: (String) -> Unit) {
-    val launchersTiers = etat.infos.launchersTiers
-
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.home_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = stringResource(R.string.home_current, etat.infos.accueilActuel.ifBlank { "—" }),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (launchersTiers.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.home_none),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.home_available),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                launchersTiers.forEach { launcher ->
-                    // Le nom commercial d'abord quand le catalogue le connaît : « Projectivy
-                    // Launcher » parle, « com.spocky.projengmenu » beaucoup moins.
-                    val nomConnu = etat.catalogue.launchers
-                        .firstOrNull { it.paquet == launcher.paquet }
-                        ?.nom
-                    if (nomConnu != null) {
-                        Text(
-                            text = nomConnu,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
-                    Text(
-                        text = launcher.paquet,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            // Ceux du catalogue qui ne sont pas encore là. Proposés même quand un launcher tiers
-            // existe déjà : en avoir un n'empêche pas d'en vouloir essayer un autre.
-            val aProposer = etat.catalogue.launchers
-                .filterNot { propose -> launchersTiers.any { it.paquet == propose.paquet } }
-
-            if (aProposer.isNotEmpty()) {
-                Text(
-                    text = stringResource(
-                        if (launchersTiers.isEmpty()) {
-                            R.string.home_to_install
-                        } else {
-                            R.string.home_others
-                        },
-                    ),
-                    modifier = Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                aProposer.forEach { launcher ->
-                    Text(
-                        text = launcher.nom,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = launcher.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedButton(onClick = { onInstaller(launcher.paquet) }) {
-                        Text(stringResource(R.string.home_install))
-                    }
-                }
-            }
         }
     }
 }

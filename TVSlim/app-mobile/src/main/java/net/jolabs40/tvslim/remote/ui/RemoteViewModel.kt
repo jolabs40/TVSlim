@@ -246,7 +246,7 @@ class RemoteViewModel @Inject constructor(
             val selection = _etat.value.selection.map { it.entree.paquet }.toSet()
 
             // Le modèle vient d'être lu : on le retient pour nommer l'appareil la prochaine fois.
-            val nom = "${photo.infos.marque} ${photo.infos.modele}".trim()
+            val nom = photo.infos.nomAffiche
             val hote = _etat.value.connexion.hote
             if (nom.isNotBlank()) preferences.retenirNom(hote, nom)
 

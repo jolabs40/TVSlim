@@ -42,7 +42,7 @@ class LecteurDistantTest {
 
     @Test
     fun `chaque section est annoncee par son marqueur`() {
-        val marqueurs = listOf("_D", "_E", "_P", "_M", "_H", "_L")
+        val marqueurs = listOf("_D", "_E", "_P", "_B", "_M", "_H", "_L")
             .map { LecteurDistant.PREFIXE_MARQUEUR + it.removePrefix("_") }
         marqueurs.forEach { marqueur ->
             assertTrue(
@@ -66,6 +66,8 @@ class LecteurDistantTest {
             65C89K
             14
             tcl9618-user
+            @@TVSLIM_B
+            TCL
             @@TVSLIM_M
             MemTotal:        2513404 kB
             MemAvailable:     628112 kB
@@ -91,6 +93,7 @@ class LecteurDistantTest {
         assertEquals(EtatPaquet.ABSENT, photo.etats["absent.ici"])
 
         assertEquals("TCL", photo.infos.marque)
+        assertEquals("TCL", photo.infos.marqueCommerciale)
         assertEquals("65C89K", photo.infos.modele)
         assertEquals("14", photo.infos.versionAndroid)
         assertEquals(2, photo.infos.paquetsDesactives)
@@ -100,6 +103,26 @@ class LecteurDistantTest {
 
         // L'accueil d'usine ne compte pas comme un launcher de remplacement.
         assertEquals(listOf("com.spocky.projengmenu"), photo.infos.launchersTiers.map { it.paquet })
+    }
+
+    @Test
+    fun `une marque commerciale vide ne decale aucune propriete`() = runTest {
+        val sortie = """
+            @@TVSLIM_P
+            NVIDIA
+            SHIELD Android TV
+            11
+            RQ1A.210105.003
+            @@TVSLIM_B
+            @@TVSLIM_M
+            MemTotal:        3016092 kB
+        """.trimIndent()
+
+        val infos = LecteurDistant(ExecuteurFixe(sortie)).photographie(emptyList(), emptySet()).infos
+
+        assertEquals("", infos.marqueCommerciale)
+        assertEquals("NVIDIA", infos.marque)
+        assertEquals("RQ1A.210105.003", infos.build)
     }
 
     @Test

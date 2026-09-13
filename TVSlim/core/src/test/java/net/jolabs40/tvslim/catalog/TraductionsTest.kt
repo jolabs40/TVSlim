@@ -62,6 +62,16 @@ class TraductionsTest {
     }
 
     @Test
+    fun `les points forts d'un launcher recommande sont traduits un pour un`() {
+        base.launchers.forEach { launcher ->
+            val traduits = francais.launchers[launcher.paquet]?.pointsForts.orEmpty()
+            assertEquals("Points forts de ${launcher.nom}", launcher.pointsForts.size, traduits.size)
+        }
+        val startlight = base.traduit(francais).launchers.first { it.id == "startlight" }
+        assertTrue(startlight.pointsForts.all { it.isNotBlank() })
+    }
+
+    @Test
     fun `la traduction ne traduit pas ce qui ne doit pas l'etre`() {
         val traduit = base.traduit(francais)
 

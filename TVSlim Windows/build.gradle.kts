@@ -104,6 +104,8 @@ tasks.named<Test>("jvmTest") {
     systemProperty("tvslim.projet", layout.projectDirectory.asFile.absolutePath)
     // Captures sur un vrai téléviseur, seulement sur demande : -Pmateriel=192.168.2.135
     providers.gradleProperty("materiel").orNull?.let { systemProperty("tvslim.materiel", it) }
+    // Planche des logos et des cartes, sans téléviseur, seulement sur demande : -Pplanche=1
+    providers.gradleProperty("planche").orNull?.let { systemProperty("tvslim.planche", it) }
     // Relais de mise à jour éprouvé pour de vrai, seulement sur demande : -PrelaisMsi=… -PrelaisExe=…
     providers.gradleProperty("relaisMsi").orNull?.let { systemProperty("tvslim.relais.msi", it) }
     providers.gradleProperty("relaisExe").orNull?.let { systemProperty("tvslim.relais.exe", it) }
