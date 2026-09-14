@@ -60,8 +60,11 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
   tard, sur le même téléviseur ou sur un autre du même modèle. Chaque paquet porte une icône
   d'origine : Android, constructeur ou autre. Ceux que TV Slim ne connaît pas encore sont listés à
   part, sans rien proposer d'en faire ; leur inventaire s'exporte — emplacement, droits du système,
-  services sensibles déclarés, mémoire et stockage — pour enrichir le catalogue : envoyez-le par
-  [ce formulaire](https://github.com/jolabs40/TVSlim/issues/new?template=nouvel-appareil.yml).
+  services sensibles déclarés, mémoire et stockage — pour enrichir le catalogue. Quand certains
+  viennent du constructeur, *Proposer au catalogue* l'exporte, puis ouvre
+  [un formulaire GitHub](https://github.com/jolabs40/TVSlim/issues/new?template=nouvel-appareil.yml)
+  pour l'envoyer. Un paquet décrit d'après un tel envoi est marqué *non éprouvé* : aucun profil ne
+  le coche.
 - **Mémoire** — mémoire vive : ce que coûte réellement chaque processus, et la comparaison
   avant/après depuis la première visite. Stockage : l'espace libre et occupé, et les applications
   les plus lourdes.
