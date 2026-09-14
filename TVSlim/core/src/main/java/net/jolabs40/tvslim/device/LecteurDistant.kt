@@ -146,6 +146,12 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     suspend fun indices(): Map<String, IndicesPaquet> =
         LectureIndices.interpreter(executeur.executer(LectureIndices.COMMANDE).sortie)
 
+    /** Empreinte, produit et langue d'usine du firmware, pour l'inventaire des inconnus : à la demande aussi. */
+    suspend fun firmware(): Firmware {
+        val sortie = executeur.executer(LectureFirmware.COMMANDE)
+        return if (sortie.reussi) LectureFirmware.interpreter(sortie.sortie) else Firmware()
+    }
+
     private fun nombre(brut: String): Long = brut.replace(",", "").trim().toLongOrNull() ?: 0L
 
     private fun premierNombre(ligne: String): Long =

@@ -217,12 +217,15 @@ class CapturesMaterielTest {
         val termine = attendre(60_000) { (pilote.etat.value.message as? MessageUi.Texte)?.ressource in fins }
         val rapport = inventaire.takeIf { it.isFile }?.readText().orEmpty()
         releves += "inconnus: ${lu.inconnus.size}, termine=$termine, message=${pilote.etat.value.message}"
-        releves += rapport.lineSequence().filter { it.startsWith("- Lu sur") || it.startsWith("- Avec les droits") }.joinToString(" / ")
+        releves += rapport.lineSequence()
+            .filter { it.startsWith("- Lu sur") || it.startsWith("- Avec les droits") || it.startsWith("- Firmware") || it.startsWith("- Déjà au") }
+            .joinToString(" / ")
         assertTrue("L'inventaire doit s'écrire : ${pilote.etat.value.message}", rapport.isNotEmpty())
         assertTrue(
-            "Les trois lectures doivent aboutir : ${rapport.take(800)}",
-            rapport.contains("- Lu sur l'appareil : indices ADB, mémoire vive, stockage\n"),
+            "Les quatre lectures doivent aboutir : ${rapport.take(800)}",
+            rapport.contains("- Lu sur l'appareil : indices ADB, mémoire vive, stockage, firmware\n"),
         )
+        assertTrue("Le catalogue connaît des paquets de la TCL : ${rapport.take(800)}", rapport.contains("## Déjà au catalogue ("))
 
         // La section des inconnus, amenée en tête de liste par le nom de la première famille.
         lu.inconnus.firstOrNull()?.let { premier ->

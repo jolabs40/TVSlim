@@ -1,5 +1,6 @@
 package net.jolabs40.tvslim.device
 
+import net.jolabs40.tvslim.catalog.EntreePaquet
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -13,13 +14,15 @@ data class ReleveInconnus(
     val indices: Map<String, IndicesPaquet> = emptyMap(),
     val memoire: RepartitionMemoire = RepartitionMemoire(),
     val stockage: RepartitionStockage = RepartitionStockage(),
+    val firmware: Firmware = Firmware(),
 )
 
 /**
  * L'inventaire des paquets inconnus, en Markdown : de quoi compléter le catalogue, joint à un message ou
- * collé dans un ticket. Chaque paquet y porte ce qu'ADB en dit — d'où il vient, sous quelle identité il
- * tourne, ce qu'il déclare au système, ce qu'il occupe —, de quoi juger s'il est prudent d'y toucher avant
- * de le décrire. Rien de personnel n'y figure : l'appareil, son système, des noms de paquets.
+ * à une issue. Chaque paquet y porte ce qu'ADB en dit — d'où il vient, sous quelle identité il tourne, ce
+ * qu'il déclare au système, ce qu'il occupe —, de quoi juger s'il est prudent d'y toucher avant de le
+ * décrire. Suivent les entrées du catalogue que l'appareil porte déjà : ce qui, décrit ailleurs, vaut aussi
+ * chez ce constructeur. Rien de personnel n'y figure : l'appareil, son firmware, des noms de paquets.
  */
 object RapportInconnus {
 
@@ -31,6 +34,8 @@ object RapportInconnus {
         inconnus: List<PaquetInconnu>,
         application: String,
         releve: ReleveInconnus = ReleveInconnus(),
+        /** Chaque entrée du catalogue et son état sur l'appareil ; les absentes sont écartées. */
+        duCatalogue: Map<EntreePaquet, EtatPaquet> = emptyMap(),
         horodatage: Long = System.currentTimeMillis(),
     ): String = buildString {
         val date = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -39,12 +44,14 @@ object RapportInconnus {
         val indices = inconnus.mapNotNull { releve.indices[it.paquet] }
         val memoire = releve.memoire.kilooctetsParPaquet
         val stockage = releve.stockage.applications.associate { it.paquet to it.totalOctets }
+        val presents = duCatalogue.filterValues { it != EtatPaquet.ABSENT }.toList().sortedBy { it.first.paquet }
 
         appendLine("# Paquets inconnus du catalogue TV Slim")
         appendLine()
         appendLine("- Appareil : ${infos.nomAffiche.ifBlank { "inconnu" }}")
         appendLine("- Fabricant déclaré : ${infos.marque.ifBlank { "—" }} ; marque : ${infos.marqueCommerciale.ifBlank { "—" }}")
         appendLine("- Android : ${infos.versionAndroid.ifBlank { "—" }} (${infos.build.ifBlank { "—" }})")
+        if (releve.firmware.renseigne) appendLine("- Firmware : ${firmware(releve.firmware)}")
         appendLine("- Relevé le : $date, avec $application")
         appendLine(
             "- Paquets inconnus : ${inconnus.size} — constructeur ${parOrigine[OriginePaquet.CONSTRUCTEUR].orEmpty().size}, " +
@@ -55,6 +62,12 @@ object RapportInconnus {
             appendLine(
                 "- Avec les droits du système : ${indices.count { it.droitsSysteme }} ; " +
                     "avec une déclaration sensible : ${indices.count { it.declarations.isNotEmpty() }}",
+            )
+        }
+        if (presents.isNotEmpty()) {
+            appendLine(
+                "- Déjà au catalogue : ${presents.size} présents — actifs ${presents.count { it.second == EtatPaquet.ACTIF }}, " +
+                    "désactivés ${presents.count { it.second == EtatPaquet.DESACTIVE }}",
             )
         }
         appendLine("- Lu sur l'appareil : ${lectures(releve)}")
@@ -76,7 +89,7 @@ object RapportInconnus {
                     val indice = releve.indices[inconnu.paquet]
                     val cases = listOf(
                         "`${inconnu.paquet}`",
-                        if (inconnu.etat == EtatPaquet.DESACTIVE) "désactivé" else "actif",
+                        etat(inconnu.etat),
                         indice?.let(::emplacement) ?: "—",
                         indice?.let(::droits) ?: "—",
                         indice?.let(::declarations) ?: "—",
@@ -88,6 +101,19 @@ object RapportInconnus {
                 }
             }
         }
+
+        if (presents.isNotEmpty()) {
+            appendLine()
+            appendLine("## Déjà au catalogue (${presents.size})")
+            appendLine()
+            appendLine(INTRO_CATALOGUE)
+            appendLine()
+            appendLine("| Paquet | Marque au catalogue | État |")
+            appendLine("|---|---|---|")
+            presents.forEach { (entree, etat) ->
+                appendLine("| `${entree.paquet}` | ${entree.marque.ifBlank { "—" }} | ${etat(etat)} |")
+            }
+        }
     }
 
     /** Ce qui a pu être lu, et ce qui ne l'a pas été : une case « — » ne dit pas la même chose dans les deux cas. */
@@ -96,11 +122,21 @@ object RapportInconnus {
             "indices ADB" to releve.indices.isNotEmpty(),
             "mémoire vive" to releve.memoire.renseignee,
             "stockage" to releve.stockage.applications.isNotEmpty(),
+            "firmware" to releve.firmware.renseigne,
         )
         val lues = parties.filter { it.second }.joinToString(", ") { it.first }
         val manquees = parties.filterNot { it.second }.joinToString(", ") { it.first }
         return lues.ifEmpty { "la seule liste des paquets" } + if (manquees.isEmpty()) "" else " ; illisible : $manquees"
     }
+
+    /** « produit `G08_4K_GB`, langue d'usine en-GB, empreinte `TCL/…` » : seulement ce qui a pu être lu. */
+    private fun firmware(firmware: Firmware): String = listOfNotNull(
+        firmware.produit.takeIf { it.isNotEmpty() }?.let { "produit `$it`" },
+        firmware.langueUsine.takeIf { it.isNotEmpty() }?.let { "langue d'usine $it" },
+        firmware.empreinte.takeIf { it.isNotEmpty() }?.let { "empreinte `$it`" },
+    ).joinToString(", ")
+
+    private fun etat(etat: EtatPaquet): String = if (etat == EtatPaquet.DESACTIVE) "désactivé" else "actif"
 
     private fun emplacement(indice: IndicesPaquet): String =
         indice.emplacement.ifBlank { "—" } + if (indice.misAJour) ", mise à jour" else ""
@@ -147,4 +183,9 @@ object RapportInconnus {
         |- **RAM** : mémoire réellement occupée (PSS) par les processus à son nom au moment du relevé ; `—` quand aucun ne tourne.
         |- **Stockage** : application, données et cache sur le stockage interne, selon la dernière estimation d'Android.
     """.trimMargin()
+
+    private const val INTRO_CATALOGUE =
+        "Les entrées du catalogue que porte cet appareil, avec la marque que le catalogue leur donne : ce qui, " +
+            "décrit sur un autre appareil, se retrouve ici. Un paquet désactivé l'a été sur cet appareil — par " +
+            "la personne, ou dès l'usine."
 }

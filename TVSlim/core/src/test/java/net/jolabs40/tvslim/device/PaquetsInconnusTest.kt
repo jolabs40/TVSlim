@@ -6,6 +6,7 @@ import net.jolabs40.tvslim.catalog.LauncherConnu
 import net.jolabs40.tvslim.catalog.LauncherRecommande
 import net.jolabs40.tvslim.catalog.PaquetProtege
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -106,6 +107,8 @@ class PaquetsInconnusTest {
             PaquetInconnu("org.droidtv.welcome", EtatPaquet.DESACTIVE, OriginePaquet.CONSTRUCTEUR),
             PaquetInconnu("com.google.android.katniss", EtatPaquet.ACTIF, OriginePaquet.ANDROID),
         )
+        fun entree(paquet: String, marque: String) =
+            EntreePaquet(paquet = paquet, nom = "", description = "", categorie = "", marque = marque)
 
         val mo = 1024L * 1024
         val rapport = RapportInconnus.markdown(
@@ -136,14 +139,32 @@ class PaquetsInconnusTest {
                 stockage = RepartitionStockage(
                     applications = listOf(StockageApplication("org.droidtv.playtv", 50 * mo, 2 * mo, 0)),
                 ),
+                firmware = Firmware(
+                    empreinte = "Philips/PH8M_EU/PH8M:11/RTT2.211108.001/TPM211E:user/release-keys",
+                    produit = "PH8M_EU",
+                    langueUsine = "fr-FR",
+                ),
+            ),
+            duCatalogue = mapOf(
+                entree("com.netflix.ninja", "Third party") to EtatPaquet.ACTIF,
+                entree("com.google.android.tvrecommendations", "Google") to EtatPaquet.DESACTIVE,
+                entree("com.tcl.pub", "TCL") to EtatPaquet.ABSENT,
             ),
         )
 
         assertTrue(rapport, rapport.contains("- Appareil : Philips 55PUS8807/12"))
         assertTrue(rapport, rapport.contains("- Android : 11 (TPM211E)"))
+        assertTrue(
+            rapport,
+            rapport.contains(
+                "- Firmware : produit `PH8M_EU`, langue d'usine fr-FR, " +
+                    "empreinte `Philips/PH8M_EU/PH8M:11/RTT2.211108.001/TPM211E:user/release-keys`\n",
+            ),
+        )
         assertTrue(rapport, rapport.contains("constructeur 2, Android 1, autres 0"))
         assertTrue(rapport, rapport.contains("- Avec les droits du système : 1 ; avec une déclaration sensible : 1"))
-        assertTrue(rapport, rapport.contains("- Lu sur l'appareil : indices ADB, mémoire vive, stockage\n"))
+        assertTrue(rapport, rapport.contains("- Déjà au catalogue : 2 présents — actifs 1, désactivés 1\n"))
+        assertTrue(rapport, rapport.contains("- Lu sur l'appareil : indices ADB, mémoire vive, stockage, firmware\n"))
         assertTrue(rapport, rapport.indexOf("## Constructeur") < rapport.indexOf("## Android"))
         assertTrue(rapport, rapport.contains("### org.droidtv (2)"))
         // La mémoire réunit les processus du paquet ; les déclarations vont de la plus grave à la moins grave.
@@ -157,11 +178,47 @@ class PaquetsInconnusTest {
             rapport.contains("| `com.google.android.katniss` | actif | product/priv-app, mise à jour | appli | — | non | — | — |"),
         )
 
+        // Les entrées du catalogue présentes viennent après les inconnus, rangées par nom ; les absentes n'y sont pas.
+        assertTrue(rapport, rapport.indexOf("## Déjà au catalogue (2)") > rapport.indexOf("## Android"))
+        assertTrue(
+            rapport,
+            rapport.contains(
+                "| `com.google.android.tvrecommendations` | Google | désactivé |\n| `com.netflix.ninja` | Third party | actif |\n",
+            ),
+        )
+        assertFalse(rapport, rapport.contains("com.tcl.pub"))
+
         // Rien de relu : l'inventaire se fait quand même, et dit ce qui manque.
         val nu = RapportInconnus.markdown(philips, inconnus, "TV Slim Remote 1.2.0")
-        assertTrue(nu, nu.contains("- Lu sur l'appareil : la seule liste des paquets ; illisible : indices ADB, mémoire vive, stockage"))
-        assertTrue(nu, !nu.contains("droits du système :"))
+        assertTrue(
+            nu,
+            nu.contains("- Lu sur l'appareil : la seule liste des paquets ; illisible : indices ADB, mémoire vive, stockage, firmware"),
+        )
+        assertFalse(nu, nu.contains("droits du système :"))
+        assertFalse(nu, nu.contains("- Firmware"))
+        assertFalse(nu, nu.contains("Déjà au catalogue"))
         assertEquals("TVSlim-inconnus-Philips-55PUS8807-12-2026-09-13.md",
             RapportInconnus.nomPropose(philips, java.time.LocalDate.of(2026, 9, 13)))
+    }
+
+    @Test
+    fun `le firmware se lit propriete par propriete, et une valeur vide ne decale rien`() {
+        // Sortie réelle de l'émulateur Android TV 16 (2026-09-14), le produit vidé pour l'occasion.
+        val firmware = LectureFirmware.interpreter(
+            """
+            @@TVSLIM_EMPREINTE
+            google/sdk_google_atv_x86/emulator_x86_arm:16/BT2A.251018.001.A1/14340881:user/dev-keys
+            @@TVSLIM_PRODUIT
+
+            @@TVSLIM_LANGUE
+            en-US
+            """.trimIndent(),
+        )
+
+        assertEquals("google/sdk_google_atv_x86/emulator_x86_arm:16/BT2A.251018.001.A1/14340881:user/dev-keys", firmware.empreinte)
+        assertEquals("", firmware.produit)
+        assertEquals("en-US", firmware.langueUsine)
+        assertTrue(firmware.renseigne)
+        assertFalse(LectureFirmware.interpreter("").renseigne)
     }
 }

@@ -204,8 +204,9 @@ class PiloteConfiguration(
 
     /**
      * Écrit l'inventaire des paquets que le catalogue ignore, avec ce qu'ADB dit de chacun : emplacement,
-     * droits, déclarations sensibles, icône, mémoire vive et stockage. Tout est relu au moment de l'export,
-     * par trois lectures ; rien n'est écrit sur le téléviseur.
+     * droits, déclarations sensibles, icône, mémoire vive et stockage ; puis le firmware de l'appareil et les
+     * entrées du catalogue qu'il porte déjà. Tout est relu au moment de l'export, par quatre lectures ; rien
+     * n'est écrit sur le téléviseur.
      */
     fun exporterInconnus(cible: Uri) {
         if (!etat().connecte) {
@@ -219,6 +220,7 @@ class PiloteConfiguration(
                     indices = lecteur.indices(),
                     memoire = lecteur.memoire(),
                     stockage = lecteur.stockage(),
+                    firmware = lecteur.firmware(),
                 )
                 val courant = etat()
                 val rapport = RapportInconnus.markdown(
@@ -226,6 +228,7 @@ class PiloteConfiguration(
                     inconnus = courant.inconnus,
                     application = "${contexte.getString(R.string.app_name)} ${BuildConfig.VERSION_NAME}",
                     releve = releve,
+                    duCatalogue = courant.lignes.associate { it.entree to it.etat },
                 )
                 ecrire(cible, rapport)
             }
