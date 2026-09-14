@@ -44,7 +44,10 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 - **Television** — model and maker, Android version, memory, enabled and disabled packages; the
   home screen and the launchers installed, recognised by their logo, the factory home screen
   included even once disabled; the recommended replacement, Startlight Launcher (coming soon to the
-  Play Store); grant the privileged permissions some apps need (`WRITE_SECURE_SETTINGS`, `DUMP`…).
+  Play Store); grant the privileged permissions some apps need (`WRITE_SECURE_SETTINGS`, `DUMP`…);
+  install an APK on the TV — dropped into the window or chosen from your files — after a confirmation
+  that shows the package, its version and what it replaces; send an ADB shell command of your own and
+  read its output.
 - **Packages** — the known packages actually present on *your* TV, with risk level, size,
   description and known side effects; ready-made profiles (ads and telemetry, voice assistants,
   preinstalled streaming services…); applied in one go, after a confirmation that lists the side
@@ -64,6 +67,10 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 - A protected list is refused whatever the selection — packages whose absence causes a boot loop or
   breaks the remote control, for instance.
 - The factory home screen cannot be disabled while no third-party launcher is installed.
+- An APK is installed only after a confirmation, and never by uninstalling what is already there: an
+  application signed with another key is left alone.
+- The one exception is the **ADB command** card: what you type there bypasses these safeguards and
+  cannot be undone from TV Slim. The card says so, and every command is recorded in the log.
 
 ## Updates
 

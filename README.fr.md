@@ -49,7 +49,9 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
   l'écran d'accueil et les launchers installés, reconnus à leur logo, l'accueil d'usine compris même
   désactivé ; le remplaçant recommandé, Startlight Launcher (bientôt sur le Play Store) ; accorder
   les permissions privilégiées dont certaines applications ont besoin (`WRITE_SECURE_SETTINGS`,
-  `DUMP`…).
+  `DUMP`…) ; installer un APK sur le téléviseur — glissé dans la fenêtre ou choisi dans vos fichiers —
+  après une confirmation qui montre le paquet, sa version et ce qu'il remplace ; envoyer une commande
+  ADB de votre cru et lire sa sortie.
 - **Paquets** — les paquets connus réellement présents sur *votre* téléviseur, avec leur niveau de
   risque, leur taille, leur description et leurs effets de bord connus ; des profils prêts à
   l'emploi (publicité et télémétrie, assistants vocaux, services de streaming préinstallés…) ;
@@ -71,6 +73,10 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
 - Une liste de paquets protégés est refusée quelle que soit la sélection — ceux dont l'absence
   provoque une boucle de redémarrage ou casse la télécommande, par exemple.
 - L'écran d'accueil d'usine ne se désactive pas tant qu'aucun launcher tiers n'est installé.
+- Un APK ne s'installe qu'après confirmation, et jamais en désinstallant ce qui est en place : une
+  application signée d'une autre clé n'est pas touchée.
+- Seule exception, la carte **Commande ADB** : ce qu'on y tape échappe à ces garde-fous et ne s'annule
+  pas depuis TV Slim. La carte le dit, et chaque commande est consignée au journal.
 
 ## Mises à jour
 
