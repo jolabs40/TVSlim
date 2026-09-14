@@ -55,7 +55,8 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
   later, on the same TV or on another one of the same model. Each package shows an origin icon:
   Android, maker or other. Those TV Slim does not know yet are listed separately, with nothing
   offered to do about them; their inventory can be exported — location, system rights, sensitive
-  declared services, memory and storage — to help grow the catalogue.
+  declared services, memory and storage — to help grow the catalogue: send it through
+  [this form](https://github.com/jolabs40/TVSlim/issues/new?template=nouvel-appareil.yml).
 - **Memory** — RAM: what each running process really costs, and the before/after comparison since
   your first visit. Storage: free and used space, and the largest applications.
 - **Log** — every action with the command that undoes it; undo a single line or restore everything;

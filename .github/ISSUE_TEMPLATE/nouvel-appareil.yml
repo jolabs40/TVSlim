@@ -1,0 +1,60 @@
+name: Unknown packages on my TV or box
+description: Send the inventory TV Slim exports from a device it does not fully know yet, so the catalogue can describe it.
+title: "Catalogue: "
+labels: ["catalogue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping the catalogue grow. TV Slim only describes packages someone has studied; everything else shipped with your device is listed under **Not in the catalogue**, and a report like this one is how it gets described.
+
+        **Exporting the inventory** — connect TV Slim to the device, open the **Packages** tab, scroll down to **Not in the catalogue** and choose **Export the list**. The file is named `TVSlim-inconnus-<device>-<date>.md`.
+
+        **What it contains** — the model, its Android version and firmware identifiers, the catalogue entries already found on the device, and for each unknown package: where it is installed, the identity it runs under, what it declares to the system, its memory and storage. Apps you installed yourself are left out. No serial number, no account, no network address.
+
+        Before sending, search the issues for your model: the same firmware twice adds little, a different firmware version does.
+
+  - type: input
+    id: device
+    attributes:
+      label: Brand and model
+      description: As TV Slim shows it, or as printed on the device.
+      placeholder: Philips 55PUS8807/12
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of device
+      options:
+        - TV
+        - Streaming box or stick
+        - Projector
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: country
+    attributes:
+      label: Country where it was bought
+      description: Preinstalled apps differ from one region to another.
+      placeholder: France
+
+  - type: textarea
+    id: inventory
+    attributes:
+      label: Inventory
+      description: Drag the exported `.md` file here, or paste its content.
+    validations:
+      required: true
+
+  - type: textarea
+    id: experience
+    attributes:
+      label: What you already know
+      description: Packages you disabled, with any tool, and what happened — nothing, a missing feature, a lost input. This is what turns a described package into a tested one.
+      placeholder: |
+        org.droidtv.welcome — disabled for two weeks, nothing noticed.
+        org.droidtv.playtv — disabled, HDMI inputs disappeared; re-enabled.
