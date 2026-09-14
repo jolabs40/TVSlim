@@ -74,8 +74,9 @@
     <string name="config_save_dialog">Save the configuration</string>
     <string name="config_open_dialog">Choose a configuration to reinject</string>
     <string name="unknown_title">Not in the catalogue (%1$d)</string>
-    <string name="unknown_hint">Preinstalled packages TV Slim does not describe yet, with their guessed origin. Shown for information only: nothing to disable from here. Export the list to help describe them: it adds what ADB tells about each one — location, system rights, sensitive declarations, icon, RAM and storage.</string>
+    <string name="unknown_hint">Preinstalled packages TV Slim does not describe yet, with their guessed origin. Shown for information only: nothing to disable from here. Export the list to help describe them: it adds what ADB tells about each one — location, system rights, sensitive declarations, icon, RAM and storage. When some come from the maker, proposing them to the catalogue exports the list, then opens a GitHub form to send it.</string>
     <string name="unknown_export">Export the list</string>
+    <string name="unknown_propose">Propose to the catalogue</string>
     <string name="unknown_export_dialog">Export the unknown packages</string>
     <string name="packages_detail_hint">Select a package to read its details.</string>
     <string name="packages_detail_package">Package</string>
@@ -89,6 +90,8 @@
     <string name="origin_other">Other</string>
     <string name="packages_detail_selected">Selected for disabling</string>
     <string name="packages_requires_launcher">Requires a third-party launcher to be installed first.</string>
+    <string name="packages_untested">Not tested</string>
+    <string name="packages_untested_detail">Not tested: described from an inventory someone sent, without anyone having seen what disabling it does. No profile selects it.</string>
     <string name="state_enabled">Enabled</string>
     <string name="state_disabled">Disabled</string>
     <string name="risk_none">None</string>
@@ -260,6 +263,7 @@
     <string name="msg_config_home_missing">The packages already match; %1$s is not installed on this television, so the home screen stays as it is.</string>
     <string name="msg_unknown_reading">Reading what the television says about its unknown packages…</string>
     <string name="msg_unknown_exported">List exported: %1$s</string>
+    <string name="msg_unknown_proposed">List exported: %1$s. Attach it to the form that opened in your browser.</string>
     <string name="msg_unknown_export_failed">Could not export the list: %1$s</string>
     <string name="msg_apk_busy">An installation is already in progress.</string>
     <string name="msg_apk_not_apk">This file is not an Android application (APK).</string>

@@ -17,6 +17,7 @@ import net.jolabs40.tvslim.configuration.Reinjecteur
 import net.jolabs40.tvslim.configuration.configurationDe
 import net.jolabs40.tvslim.configuration.planifier
 import net.jolabs40.tvslim.device.LecteurDistant
+import net.jolabs40.tvslim.device.PropositionCatalogue
 import net.jolabs40.tvslim.device.RapportInconnus
 import net.jolabs40.tvslim.device.ReleveInconnus
 import net.jolabs40.tvslim.installation.ApkChoisi
@@ -51,6 +52,7 @@ import net.jolabs40.tvslim.windows.ressources.msg_store_failed
 import net.jolabs40.tvslim.windows.ressources.msg_store_opened
 import net.jolabs40.tvslim.windows.ressources.msg_unknown_export_failed
 import net.jolabs40.tvslim.windows.ressources.msg_unknown_exported
+import net.jolabs40.tvslim.windows.ressources.msg_unknown_proposed
 import net.jolabs40.tvslim.windows.ressources.msg_unknown_reading
 import java.io.File
 
@@ -201,8 +203,11 @@ class PiloteConfiguration(
      * droits, déclarations sensibles, icône, mémoire vive et stockage ; puis le firmware de l'appareil et les
      * entrées du catalogue qu'il porte déjà. Tout est relu au moment de l'export, par quatre lectures ; rien
      * n'est écrit sur le téléviseur.
+     *
+     * Avec [puisOuvrir], le formulaire du catalogue s'ouvre ensuite dans le navigateur : la personne y joint
+     * le fichier et l'envoie elle-même.
      */
-    fun exporterInconnus(cible: File) {
+    fun exporterInconnus(cible: File, puisOuvrir: ((String) -> Unit)? = null) {
         if (!etat().connecte) return afficher(texte(Res.string.msg_connect_first))
         portee.launch {
             afficher(texte(Res.string.msg_unknown_reading))
@@ -223,7 +228,14 @@ class PiloteConfiguration(
                 )
                 withContext(Dispatchers.IO) { cible.writeText(rapport) }
             }
-                .onSuccess { afficher(texte(Res.string.msg_unknown_exported, cible.path)) }
+                .onSuccess {
+                    if (puisOuvrir == null) {
+                        afficher(texte(Res.string.msg_unknown_exported, cible.path))
+                    } else {
+                        puisOuvrir(PropositionCatalogue.lien(etat().infos, InfosApp.DEPOT_GITHUB))
+                        afficher(texte(Res.string.msg_unknown_proposed, cible.path))
+                    }
+                }
                 .onFailure { afficher(texte(Res.string.msg_unknown_export_failed, it.message.orEmpty())) }
         }
     }

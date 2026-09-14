@@ -159,10 +159,14 @@ fun EtatApp.avecBascule(paquet: String): EtatApp = copy(
     },
 )
 
-/** Coche tout ce qu'un profil couvre, sans jamais décocher ce qui l'était déjà. */
+/**
+ * Coche tout ce qu'un profil couvre, sans jamais décocher ce qui l'était déjà. Une entrée non éprouvée n'est
+ * jamais couverte : elle se coche à la main, une à une.
+ */
 fun EtatApp.avecProfil(profil: Profil): EtatApp = copy(
     lignes = lignes.map { ligne ->
-        if (ligne.entree.categorie in profil.categories && ligne.etat == EtatPaquet.ACTIF) {
+        val couverte = ligne.entree.categorie in profil.categories && ligne.entree.eprouve
+        if (couverte && ligne.etat == EtatPaquet.ACTIF) {
             ligne.copy(selectionne = true)
         } else {
             ligne

@@ -166,7 +166,11 @@ fun RemoteApp() {
                 ) { uri -> uri?.let(modele.configuration::charger) }
                 val inventaire = rememberLauncherForActivityResult(
                     ActivityResultContracts.CreateDocument("text/markdown"),
-                ) { uri -> uri?.let(modele.configuration::exporterInconnus) }
+                ) { uri -> uri?.let { modele.configuration.exporterInconnus(it) } }
+                // Le même export, puis le formulaire du catalogue dans le navigateur.
+                val proposition = rememberLauncherForActivityResult(
+                    ActivityResultContracts.CreateDocument("text/markdown"),
+                ) { uri -> uri?.let { modele.configuration.exporterInconnus(it, proposer = true) } }
                 PaquetsScreen(
                     etat = etat,
                     onBasculer = modele::basculerSelection,
@@ -182,6 +186,7 @@ fun RemoteApp() {
                         reinjection.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
                     },
                     onExporterInconnus = { inventaire.launch(modele.configuration.nomExportInconnus()) },
+                    onProposerInconnus = { proposition.launch(modele.configuration.nomExportInconnus()) },
                 )
             }
             composable("memoire") {

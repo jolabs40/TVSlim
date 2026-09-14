@@ -66,8 +66,10 @@
     <string name="origin_maker">Constructeur</string>
     <string name="origin_other">Autre</string>
     <string name="unknown_title">Inconnus du catalogue (%1$d)</string>
-    <string name="unknown_hint">Paquets livrés avec le téléviseur que TV Slim ne décrit pas encore, avec leur origine devinée. Montrés pour information : rien à désactiver d\'ici. Exportez la liste pour aider à les décrire : elle ajoute ce qu\'ADB dit de chacun — emplacement, droits du système, déclarations sensibles, icône, mémoire vive et stockage.</string>
+    <string name="unknown_hint">Paquets livrés avec le téléviseur que TV Slim ne décrit pas encore, avec leur origine devinée. Montrés pour information : rien à désactiver d\'ici. Exportez la liste pour aider à les décrire : elle ajoute ce qu\'ADB dit de chacun — emplacement, droits du système, déclarations sensibles, icône, mémoire vive et stockage. Quand certains viennent du constructeur, les proposer au catalogue exporte la liste, puis ouvre un formulaire GitHub pour l\'envoyer.</string>
     <string name="unknown_export">Exporter la liste</string>
+    <string name="unknown_propose">Proposer au catalogue</string>
+    <string name="packages_untested">Non éprouvé — aucun profil ne le coche</string>
     <string name="filter_all">Tous</string>
     <string name="filter_enabled">Actifs (%1$d)</string>
     <string name="filter_disabled">Désactivés (%1$d)</string>
@@ -197,6 +199,8 @@
     <string name="msg_config_home_missing">Les paquets correspondent déjà ; %1$s n\'est pas installé sur ce téléviseur, l\'écran d\'accueil reste tel quel.</string>
     <string name="msg_unknown_reading">Relevé des paquets inconnus sur le téléviseur…</string>
     <string name="msg_unknown_exported">Liste exportée.</string>
+    <string name="msg_unknown_proposed">Liste exportée. Joignez-la au formulaire ouvert dans le navigateur.</string>
+    <string name="msg_unknown_no_browser">Liste exportée, mais aucun navigateur n\'a pu ouvrir le formulaire : %1$s</string>
     <string name="msg_unknown_export_failed">Impossible d\'exporter la liste : %1$s</string>
     <string name="msg_apk_busy">Une installation est déjà en cours.</string>
     <string name="msg_apk_not_apk">Ce fichier n\'est pas une application Android (APK).</string>

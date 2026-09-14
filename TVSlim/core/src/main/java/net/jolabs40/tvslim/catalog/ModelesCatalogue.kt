@@ -33,6 +33,11 @@ data class EntreePaquet(
     val ordre: Int = 100,
     /** Vrai pour les paquets d'accueil, qui exigent qu'un launcher tiers soit installé. */
     val requiertLauncherTiers: Boolean = false,
+    /**
+     * Faux pour une entrée décrite d'après un inventaire envoyé, sans qu'on ait vu sur un appareil ce que
+     * coûte sa désactivation : montrée et désactivable une à une, jamais cochée par un profil.
+     */
+    val eprouve: Boolean = true,
 )
 
 @Serializable
@@ -123,8 +128,9 @@ data class Catalogue(
 
     fun nomCategorie(id: String): String = categories.firstOrNull { it.id == id }?.nom ?: id
 
+    /** Ce qu'un profil couvre : ses catégories, et seulement ce qu'on a éprouvé. */
     fun entreesDuProfil(profil: Profil): List<EntreePaquet> =
-        entrees.filter { it.categorie in profil.categories }
+        entrees.filter { it.categorie in profil.categories && it.eprouve }
 
     /** Le launcher recommandé dont [paquet] est une version, s'il y en a un. */
     fun launcherRecommande(paquet: String): LauncherRecommande? =

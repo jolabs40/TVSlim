@@ -2,6 +2,7 @@ package net.jolabs40.tvslim.remote.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Factory
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.device.EtatPaquet
@@ -67,11 +70,18 @@ private fun libelleOrigine(origine: OriginePaquet): String = stringResource(
 /**
  * Sous le catalogue, les paquets livrés avec le téléviseur qu'il ne décrit pas : regroupés par éditeur
  * (« org.droidtv »), chacun avec son origine devinée. En lecture seule — un paquet système inconnu peut
- * porter le tuner ou la télécommande —, mais la liste s'exporte, pour compléter le catalogue.
+ * porter le tuner ou la télécommande —, mais la liste s'exporte, pour compléter le catalogue, et se propose
+ * à lui par le formulaire GitHub quand un paquet du constructeur y figure.
  */
-fun LazyListScope.sectionInconnus(affiches: List<PaquetInconnu>, total: Int, onExporter: () -> Unit) {
+fun LazyListScope.sectionInconnus(
+    affiches: List<PaquetInconnu>,
+    total: Int,
+    onExporter: () -> Unit,
+    /** Null quand aucun paquet du constructeur n'échappe au catalogue : rien qui vaille une proposition. */
+    onProposer: (() -> Unit)?,
+) {
     item(key = "inconnus-entete") {
-        EnteteInconnus(affiches = affiches.size, total = total, onExporter = onExporter)
+        EnteteInconnus(affiches = affiches.size, total = total, onExporter = onExporter, onProposer = onProposer)
     }
     affiches.groupBy { it.famille }.forEach { (famille, membres) ->
         item(key = "inconnus-famille-$famille") {
@@ -87,7 +97,7 @@ fun LazyListScope.sectionInconnus(affiches: List<PaquetInconnu>, total: Int, onE
 }
 
 @Composable
-private fun EnteteInconnus(affiches: Int, total: Int, onExporter: () -> Unit) {
+private fun EnteteInconnus(affiches: Int, total: Int, onExporter: () -> Unit, onProposer: (() -> Unit)?) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 16.dp, bottom = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -115,8 +125,22 @@ private fun EnteteInconnus(affiches: Int, total: Int, onExporter: () -> Unit) {
                 }
             }
         }
-        OutlinedButton(onClick = onExporter, enabled = total > 0) {
-            Text(stringResource(R.string.unknown_export))
+        // Deux boutons côte à côte se partagent la largeur du téléphone ; seul, l'export garde la sienne.
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val partage = if (onProposer != null) Modifier.weight(1f) else Modifier
+            OutlinedButton(
+                onClick = onExporter,
+                enabled = total > 0,
+                modifier = partage,
+                contentPadding = PaddingValues(horizontal = 8.dp),
+            ) {
+                Text(stringResource(R.string.unknown_export), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            onProposer?.let { proposer ->
+                Button(onClick = proposer, modifier = partage, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    Text(stringResource(R.string.unknown_propose), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
         }
     }
 }

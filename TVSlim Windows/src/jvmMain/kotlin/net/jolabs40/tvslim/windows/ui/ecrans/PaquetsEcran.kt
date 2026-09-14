@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.device.EtatPaquet
+import net.jolabs40.tvslim.device.PropositionCatalogue
 import net.jolabs40.tvslim.device.origine
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.baseline_arrow_drop_down_24
@@ -68,6 +69,7 @@ import net.jolabs40.tvslim.windows.ressources.packages_profiles
 import net.jolabs40.tvslim.windows.ressources.packages_progress
 import net.jolabs40.tvslim.windows.ressources.packages_reactivate
 import net.jolabs40.tvslim.windows.ressources.packages_search
+import net.jolabs40.tvslim.windows.ressources.packages_untested
 import net.jolabs40.tvslim.windows.ressources.side_effect_prefix
 import net.jolabs40.tvslim.windows.ressources.size_mb
 import net.jolabs40.tvslim.windows.ui.EtatApp
@@ -100,6 +102,7 @@ fun PaquetsEcran(
     onSauvegarder: () -> Unit,
     onReinjecter: () -> Unit,
     onExporterInconnus: () -> Unit,
+    onProposerInconnus: () -> Unit,
 ) {
     if (!etat.connecte) {
         EcranVide(stringResource(Res.string.packages_not_connected))
@@ -195,9 +198,14 @@ fun PaquetsEcran(
                                 onReactiver = { onReactiver(ligne.entree.paquet) },
                             )
                         }
-                        // Après le catalogue, ce qu'il ne connaît pas : montré, jamais proposé.
+                        // Après le catalogue, ce qu'il ne connaît pas : montré, jamais proposé à la désactivation.
                         if (etat.inconnus.isNotEmpty()) {
-                            sectionInconnus(affiches = inconnus, total = etat.inconnus.size, onExporter = onExporterInconnus)
+                            sectionInconnus(
+                                affiches = inconnus,
+                                total = etat.inconnus.size,
+                                onExporter = onExporterInconnus,
+                                onProposer = onProposerInconnus.takeIf { PropositionCatalogue.aProposer(etat.inconnus) },
+                            )
                         }
                     }
                     VerticalScrollbar(
@@ -347,6 +355,15 @@ private fun VuePaquet(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                // Décrit d'après un inventaire envoyé : aucun profil ne le coche, le volet dit pourquoi.
+                if (!ligne.entree.eprouve) {
+                    Text(
+                        text = stringResource(Res.string.packages_untested),
+                        modifier = Modifier.padding(start = 8.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
                 ligne.entree.tailleMo?.let { taille ->
                     TexteSecondaire(
                         stringResource(Res.string.size_mb, taille),

@@ -286,7 +286,12 @@ fun AppFenetre(
                             },
                             onExporterInconnus = {
                                 choisirFichierExport(pilote.configuration.nomExportInconnus(), titreInconnus)
-                                    ?.let(pilote.configuration::exporterInconnus)
+                                    ?.let { pilote.configuration.exporterInconnus(it) }
+                            },
+                            // Le même export, puis le formulaire du catalogue dans le navigateur.
+                            onProposerInconnus = {
+                                choisirFichierExport(pilote.configuration.nomExportInconnus(), titreInconnus)
+                                    ?.let { pilote.configuration.exporterInconnus(it, puisOuvrir = ouvrirLien) }
                             },
                         )
 

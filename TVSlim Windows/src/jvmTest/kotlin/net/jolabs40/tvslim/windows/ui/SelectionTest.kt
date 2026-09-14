@@ -77,6 +77,24 @@ class SelectionTest {
     }
 
     @Test
+    fun `un profil ne coche jamais une entree non eprouvee, qui reste cochable a la main`() {
+        val depart = EtatApp(
+            lignes = listOf(
+                LignePaquet(entree("com.a"), EtatPaquet.ACTIF),
+                LignePaquet(entree("org.droidtv.welcome").copy(eprouve = false), EtatPaquet.ACTIF),
+            ),
+        )
+
+        val apres = depart.avecProfil(profil("bloatware_tcl"))
+
+        assertEquals(listOf("com.a"), apres.selection.map { it.entree.paquet })
+        assertEquals(
+            listOf("com.a", "org.droidtv.welcome"),
+            apres.avecBascule("org.droidtv.welcome").selection.map { it.entree.paquet },
+        )
+    }
+
+    @Test
     fun `tout decocher ne laisse rien`() {
         val depart = etat("com.a" to EtatPaquet.ACTIF, "com.b" to EtatPaquet.ACTIF)
             .avecBascule("com.a")

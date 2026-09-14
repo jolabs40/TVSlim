@@ -266,7 +266,7 @@ class PlancheLogosTest {
             lignes = lignes,
         )
         rendre("14-paquets-profils-ouverts", 1280, 860, cadre = false, clic = Offset(1080f, 110f)) {
-            PaquetsEcran(paquets, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+            PaquetsEcran(paquets, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         }
 
         // Une ligne du catalogue par origine, puis ce qu'il ignore, rangé par éditeur.
@@ -289,7 +289,7 @@ class PlancheLogosTest {
             ),
         )
         rendre("24-paquets-inconnus", 1280, 860, cadre = false) {
-            PaquetsEcran(inconnus, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+            PaquetsEcran(inconnus, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         }
 
         // L'installation d'un APK : l'onglet Téléviseur joint, un envoi en cours, les deux bilans, la

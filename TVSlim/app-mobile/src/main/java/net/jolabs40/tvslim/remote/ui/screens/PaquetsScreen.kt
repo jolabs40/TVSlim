@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.catalog.Risque
 import net.jolabs40.tvslim.device.EtatPaquet
+import net.jolabs40.tvslim.device.PropositionCatalogue
 import net.jolabs40.tvslim.device.origine
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.EtatRemote
@@ -59,6 +60,7 @@ fun PaquetsScreen(
     onSauvegarder: () -> Unit,
     onReinjecter: () -> Unit,
     onExporterInconnus: () -> Unit,
+    onProposerInconnus: () -> Unit,
 ) {
     if (!etat.connecte) {
         Box(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
@@ -206,9 +208,14 @@ fun PaquetsScreen(
                     },
                 )
             }
-            // Après le catalogue, ce qu'il ne connaît pas : montré, jamais proposé.
+            // Après le catalogue, ce qu'il ne connaît pas : montré, jamais proposé à la désactivation.
             if (etat.inconnus.isNotEmpty()) {
-                sectionInconnus(affiches = inconnus, total = etat.inconnus.size, onExporter = onExporterInconnus)
+                sectionInconnus(
+                    affiches = inconnus,
+                    total = etat.inconnus.size,
+                    onExporter = onExporterInconnus,
+                    onProposer = onProposerInconnus.takeIf { PropositionCatalogue.aProposer(etat.inconnus) },
+                )
             }
         }
     }
@@ -257,6 +264,14 @@ private fun VuePaquet(ligne: LignePaquet, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            // Décrit d'après un inventaire envoyé : il se coche à la main, jamais par un profil.
+            if (!ligne.entree.eprouve) {
+                Text(
+                    text = stringResource(R.string.packages_untested),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
             ligne.entree.effetDeBord?.let { effet ->
                 Text(
                     text = stringResource(R.string.side_effect_prefix, effet),

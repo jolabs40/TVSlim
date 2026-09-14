@@ -74,8 +74,9 @@
     <string name="config_save_dialog">Sauvegarder la configuration</string>
     <string name="config_open_dialog">Choisir une configuration à réinjecter</string>
     <string name="unknown_title">Inconnus du catalogue (%1$d)</string>
-    <string name="unknown_hint">Paquets livrés avec le téléviseur que TV Slim ne décrit pas encore, avec leur origine devinée. Montrés pour information : rien à désactiver d'ici. Exportez la liste pour aider à les décrire : elle ajoute ce qu'ADB dit de chacun — emplacement, droits du système, déclarations sensibles, icône, mémoire vive et stockage.</string>
+    <string name="unknown_hint">Paquets livrés avec le téléviseur que TV Slim ne décrit pas encore, avec leur origine devinée. Montrés pour information : rien à désactiver d'ici. Exportez la liste pour aider à les décrire : elle ajoute ce qu'ADB dit de chacun — emplacement, droits du système, déclarations sensibles, icône, mémoire vive et stockage. Quand certains viennent du constructeur, les proposer au catalogue exporte la liste, puis ouvre un formulaire GitHub pour l'envoyer.</string>
     <string name="unknown_export">Exporter la liste</string>
+    <string name="unknown_propose">Proposer au catalogue</string>
     <string name="unknown_export_dialog">Exporter les paquets inconnus</string>
     <string name="packages_detail_hint">Sélectionnez un paquet pour lire son détail.</string>
     <string name="packages_detail_package">Paquet</string>
@@ -89,6 +90,8 @@
     <string name="origin_other">Autre</string>
     <string name="packages_detail_selected">Sélectionné pour la désactivation</string>
     <string name="packages_requires_launcher">Exige qu'un launcher tiers soit installé d'abord.</string>
+    <string name="packages_untested">Non éprouvé</string>
+    <string name="packages_untested_detail">Non éprouvé : décrit d'après un inventaire envoyé, sans qu'on ait vu ce que coûte sa désactivation. Aucun profil ne le coche.</string>
     <string name="state_enabled">Actif</string>
     <string name="state_disabled">Désactivé</string>
     <string name="risk_none">Aucun</string>
@@ -260,6 +263,7 @@
     <string name="msg_config_home_missing">Les paquets correspondent déjà ; %1$s n'est pas installé sur ce téléviseur, l'écran d'accueil reste tel quel.</string>
     <string name="msg_unknown_reading">Relevé des paquets inconnus sur le téléviseur…</string>
     <string name="msg_unknown_exported">Liste exportée : %1$s</string>
+    <string name="msg_unknown_proposed">Liste exportée : %1$s. Joignez-la au formulaire ouvert dans le navigateur.</string>
     <string name="msg_unknown_export_failed">Impossible d'exporter la liste : %1$s</string>
     <string name="msg_apk_busy">Une installation est déjà en cours.</string>
     <string name="msg_apk_not_apk">Ce fichier n'est pas une application Android (APK).</string>

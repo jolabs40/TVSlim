@@ -1,6 +1,7 @@
 package net.jolabs40.tvslim.remote.ui
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,7 @@ import net.jolabs40.tvslim.configuration.Reinjecteur
 import net.jolabs40.tvslim.configuration.configurationDe
 import net.jolabs40.tvslim.configuration.planifier
 import net.jolabs40.tvslim.device.LecteurDistant
+import net.jolabs40.tvslim.device.PropositionCatalogue
 import net.jolabs40.tvslim.device.RapportInconnus
 import net.jolabs40.tvslim.device.ReleveInconnus
 import net.jolabs40.tvslim.installation.ApkChoisi
@@ -207,8 +209,11 @@ class PiloteConfiguration(
      * droits, déclarations sensibles, icône, mémoire vive et stockage ; puis le firmware de l'appareil et les
      * entrées du catalogue qu'il porte déjà. Tout est relu au moment de l'export, par quatre lectures ; rien
      * n'est écrit sur le téléviseur.
+     *
+     * Avec [proposer], le formulaire du catalogue s'ouvre ensuite dans le navigateur du téléphone : la
+     * personne y joint le fichier et l'envoie elle-même.
      */
-    fun exporterInconnus(cible: Uri) {
+    fun exporterInconnus(cible: Uri, proposer: Boolean = false) {
         if (!etat().connecte) {
             afficher(contexte.getString(R.string.msg_connect_first))
             return
@@ -232,8 +237,21 @@ class PiloteConfiguration(
                 )
                 ecrire(cible, rapport)
             }
-                .onSuccess { afficher(contexte.getString(R.string.msg_unknown_exported)) }
+                .onSuccess {
+                    afficher(if (proposer) ouvrirProposition() else contexte.getString(R.string.msg_unknown_exported))
+                }
                 .onFailure { afficher(contexte.getString(R.string.msg_unknown_export_failed, it.message.orEmpty())) }
+        }
+    }
+
+    /** Ouvre le formulaire du catalogue, titre et appareil remplis, et dit quoi faire du fichier. */
+    private fun ouvrirProposition(): String {
+        val lien = PropositionCatalogue.lien(etat().infos)
+        val vue = Intent(Intent.ACTION_VIEW, Uri.parse(lien)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return if (runCatching { contexte.startActivity(vue) }.isSuccess) {
+            contexte.getString(R.string.msg_unknown_proposed)
+        } else {
+            contexte.getString(R.string.msg_unknown_no_browser, lien)
         }
     }
 

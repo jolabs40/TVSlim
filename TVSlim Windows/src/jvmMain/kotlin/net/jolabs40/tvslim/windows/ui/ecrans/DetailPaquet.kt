@@ -40,6 +40,7 @@ import net.jolabs40.tvslim.windows.ressources.packages_detail_size
 import net.jolabs40.tvslim.windows.ressources.packages_detail_state
 import net.jolabs40.tvslim.windows.ressources.packages_reactivate
 import net.jolabs40.tvslim.windows.ressources.packages_requires_launcher
+import net.jolabs40.tvslim.windows.ressources.packages_untested_detail
 import net.jolabs40.tvslim.windows.ressources.side_effect_prefix
 import net.jolabs40.tvslim.windows.ressources.size_mb
 import net.jolabs40.tvslim.windows.ressources.state_disabled
@@ -142,6 +143,22 @@ fun DetailPaquet(
                         text = stringResource(Res.string.side_effect_prefix, effet),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+
+            if (!entree.eprouve) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(
+                        painter = painterResource(Res.drawable.baseline_info_24),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.tertiary,
+                    )
+                    Text(
+                        text = stringResource(Res.string.packages_untested_detail),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
             }
