@@ -127,9 +127,13 @@ private fun VueAction(
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(text = "${action.libelle} — ${action.cible}", style = MaterialTheme.typography.bodyMedium)
-            // La commande d'annulation se copie : elle se rejoue aussi bien depuis un terminal.
+            // La commande d'annulation se copie : elle se rejoue aussi bien depuis un terminal. Une
+            // installation n'en a pas.
             SelectionContainer {
-                TexteSecondaire("$horodatage · ${action.commandeAnnulation}", petit = true)
+                TexteSecondaire(
+                    listOf(horodatage, action.commandeAnnulation).filter { it.isNotBlank() }.joinToString(" · "),
+                    petit = true,
+                )
             }
         }
         Text(

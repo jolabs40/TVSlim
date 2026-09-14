@@ -106,6 +106,8 @@ tasks.named<Test>("jvmTest") {
     providers.gradleProperty("materiel").orNull?.let { systemProperty("tvslim.materiel", it) }
     // Planche des logos et des cartes, sans téléviseur, seulement sur demande : -Pplanche=1
     providers.gradleProperty("planche").orNull?.let { systemProperty("tvslim.planche", it) }
+    // Installation d'un vrai APK, avec -Pmateriel, seulement sur demande : -Papk=chemin.apk
+    providers.gradleProperty("apk").orNull?.let { systemProperty("tvslim.apk", it) }
     // Relais de mise à jour éprouvé pour de vrai, seulement sur demande : -PrelaisMsi=… -PrelaisExe=…
     providers.gradleProperty("relaisMsi").orNull?.let { systemProperty("tvslim.relais.msi", it) }
     providers.gradleProperty("relaisExe").orNull?.let { systemProperty("tvslim.relais.exe", it) }

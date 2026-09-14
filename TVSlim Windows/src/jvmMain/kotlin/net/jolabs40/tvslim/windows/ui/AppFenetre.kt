@@ -1,6 +1,8 @@
 package net.jolabs40.tvslim.windows.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,7 +36,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.DragData
+import androidx.compose.ui.draganddrop.dragData
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -53,6 +60,7 @@ import net.jolabs40.tvslim.windows.ressources.baseline_inventory_2_24
 import net.jolabs40.tvslim.windows.ressources.baseline_memory_24
 import net.jolabs40.tvslim.windows.ressources.config_open_dialog
 import net.jolabs40.tvslim.windows.ressources.config_save_dialog
+import net.jolabs40.tvslim.windows.ressources.install_dialog
 import net.jolabs40.tvslim.windows.ressources.journal_export_dialog
 import net.jolabs40.tvslim.windows.ressources.status_connected
 import net.jolabs40.tvslim.windows.ressources.status_connecting
@@ -70,11 +78,13 @@ import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.JournalEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.MemoireEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.PaquetsEcran
+import net.jolabs40.tvslim.windows.ui.ecrans.VoileDepot
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import java.io.File
+import java.net.URI
 
 /** Les quatre onglets du compagnon, dans le même ordre et avec les mêmes icônes. */
 enum class Onglet(val titre: StringResource, val icone: DrawableResource) {
@@ -88,7 +98,7 @@ enum class Onglet(val titre: StringResource, val icone: DrawableResource) {
  * La fenêtre : un rail d'onglets à gauche — la barre du bas d'un téléphone, couchée sur le côté —
  * le bandeau de mise à jour en haut, et chaque retour d'action dans la même bannière en bas.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun AppFenetre(
     pilote: PiloteApp,
@@ -99,6 +109,7 @@ fun AppFenetre(
     ouvrirDossierDonnees: () -> Unit,
     choisirFichierExport: (nomPropose: String, titre: String) -> File?,
     choisirFichierImport: (titre: String) -> File?,
+    choisirApk: (titre: String) -> File?,
 ) {
     val etat by pilote.etat.collectAsStateWithLifecycle()
     val etatMaj by misesAJour.etat.collectAsStateWithLifecycle()
@@ -108,6 +119,34 @@ fun AppFenetre(
     val titreSauvegarde = stringResource(Res.string.config_save_dialog)
     val titreReinjection = stringResource(Res.string.config_open_dialog)
     val titreInconnus = stringResource(Res.string.unknown_export_dialog)
+    val titreApk = stringResource(Res.string.install_dialog)
+
+    // Un APK glissé depuis l'Explorateur, n'importe où dans la fenêtre : la carte d'installation n'est pas
+    // forcément à l'écran quand on a le fichier sous la main. Le voile dit où il va partir.
+    var survol by remember { mutableStateOf(false) }
+    val depot = remember(pilote) {
+        object : DragAndDropTarget {
+            override fun onEntered(event: DragAndDropEvent) {
+                survol = true
+            }
+
+            override fun onExited(event: DragAndDropEvent) {
+                survol = false
+            }
+
+            override fun onEnded(event: DragAndDropEvent) {
+                survol = false
+            }
+
+            override fun onDrop(event: DragAndDropEvent): Boolean {
+                survol = false
+                val lien = (event.dragData() as? DragData.FilesList)?.readFiles()?.firstOrNull() ?: return false
+                val fichier = runCatching { File(URI(lien)) }.getOrNull() ?: return false
+                pilote.configuration.choisirApk(fichier)
+                return true
+            }
+        }
+    }
 
     // Une session ADB ne survit pas à la veille du téléviseur. Au retour sur la fenêtre — sortie de
     // la barre des tâches — on retente le dernier téléviseur sans rien demander.
@@ -161,8 +200,19 @@ fun AppFenetre(
             onRetirer = pilote.permissions::retirer,
         )
     }
+    val actionsCommande = remember(pilote) {
+        ActionsCommande(
+            onSaisie = pilote.configuration::saisirCommande,
+            onEnvoyer = pilote.configuration::envoyerCommande,
+            onRappel = pilote.configuration::rappelerCommande,
+        )
+    }
 
     Scaffold(
+        modifier = Modifier.dragAndDropTarget(
+            shouldStartDragAndDrop = { it.dragData() is DragData.FilesList },
+            target = depot,
+        ),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.app_name)) },
@@ -213,6 +263,8 @@ fun AppFenetre(
                             onArreterRecherche = pilote::arreterRecherche,
                             onConnecterA = pilote::connecterA,
                             actionsPermissions = actionsPermissions,
+                            onChoisirApk = { choisirApk(titreApk)?.let(pilote.configuration::choisirApk) },
+                            actionsCommande = actionsCommande,
                         )
 
                         Onglet.PAQUETS -> PaquetsEcran(
@@ -254,6 +306,12 @@ fun AppFenetre(
                                     ?.let(pilote::exporterJournal)
                             },
                             onAnnulerAction = pilote::annulerAction,
+                        )
+                    }
+                    if (survol) {
+                        VoileDepot(
+                            connecte = etat.connecte,
+                            nomTeleviseur = etat.infos.nomAffiche.ifBlank { etat.connexion.hote },
                         )
                     }
                 }

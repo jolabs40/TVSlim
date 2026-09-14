@@ -122,8 +122,9 @@ private fun VueAction(
                 },
             )
         }
+        // Une installation n'a pas de commande d'annulation : l'horodatage reste seul.
         Text(
-            text = "$horodatage · ${action.commandeAnnulation}",
+            text = listOf(horodatage, action.commandeAnnulation).filter { it.isNotBlank() }.joinToString(" · "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

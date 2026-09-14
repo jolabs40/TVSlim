@@ -10,6 +10,7 @@ import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.PaquetInconnu
 import net.jolabs40.tvslim.device.RepartitionMemoire
 import net.jolabs40.tvslim.device.RepartitionStockage
+import net.jolabs40.tvslim.installation.ApkChoisi
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.mesure.HistoriqueMesures
 import net.jolabs40.tvslim.windows.adb.ConnexionUi
@@ -42,6 +43,9 @@ sealed interface Confirmation {
 
     /** Réinjection d'une configuration sauvegardée : on montre ce qu'elle changera, et seulement cela. */
     data class Reinjection(val plan: PlanReinjection) : Confirmation
+
+    /** Installation d'un APK : l'application qui arrive, sa version, et ce qu'elle remplace. */
+    data class Installation(val apk: ApkChoisi) : Confirmation
 }
 
 @Immutable
@@ -80,6 +84,8 @@ data class EtatApp(
     /** Comme pour la mémoire : un échec de lecture se dit, au lieu d'un « lecture en cours » sans fin. */
     val lectureStockageTentee: Boolean = false,
     val permissions: EtatPermissions = EtatPermissions(),
+    val installation: EtatInstallation = EtatInstallation(),
+    val commande: EtatCommande = EtatCommande(),
     val confirmation: Confirmation? = null,
     val message: MessageUi? = null,
 ) {

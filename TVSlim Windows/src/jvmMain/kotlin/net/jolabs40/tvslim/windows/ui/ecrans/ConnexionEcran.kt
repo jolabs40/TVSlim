@@ -59,6 +59,7 @@ import net.jolabs40.tvslim.windows.ressources.discovery_none
 import net.jolabs40.tvslim.windows.ressources.discovery_searching
 import net.jolabs40.tvslim.windows.ressources.discovery_title
 import net.jolabs40.tvslim.windows.ressources.discovery_wireless
+import net.jolabs40.tvslim.windows.ui.ActionsCommande
 import net.jolabs40.tvslim.windows.ui.ActionsPermissions
 import net.jolabs40.tvslim.windows.ui.EtatApp
 import net.jolabs40.tvslim.windows.ui.composants.CarteSection
@@ -70,7 +71,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * L'onglet Téléviseur : trouver l'appareil et s'y connecter, puis — une fois joint — son état, son
- * écran d'accueil et les permissions privilégiées. Le contenu du compagnon, en deux colonnes.
+ * écran d'accueil, les permissions privilégiées et l'installation d'un APK. Le contenu du compagnon, en
+ * deux colonnes.
  *
  * Pas de scanner de code ici : rien n'oblige à installer l'application sur le téléviseur. La
  * recherche sur le réseau et la saisie de l'adresse suffisent.
@@ -88,6 +90,8 @@ fun ConnexionEcran(
     onArreterRecherche: () -> Unit,
     onConnecterA: (AppareilDecouvert) -> Unit,
     actionsPermissions: ActionsPermissions,
+    onChoisirApk: () -> Unit,
+    actionsCommande: ActionsCommande,
 ) {
     if (etat.connecte) {
         DeuxColonnes(
@@ -100,6 +104,8 @@ fun ConnexionEcran(
             },
             droite = {
                 CartePermissions(etat = etat.permissions, actions = actionsPermissions)
+                CarteInstallation(etat = etat.installation, onChoisir = onChoisirApk)
+                CarteCommande(etat = etat.commande, actions = actionsCommande)
             },
         )
         return

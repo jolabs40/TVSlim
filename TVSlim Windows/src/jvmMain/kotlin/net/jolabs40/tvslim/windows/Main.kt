@@ -127,6 +127,9 @@ fun main() {
                     ouvrirDossierDonnees = { ouvrirDossier(emplacements.donnees) },
                     choisirFichierExport = { nom, titre -> choisirFichier(window, titre, nom) },
                     choisirFichierImport = { titre -> choisirFichierAOuvrir(window, titre) },
+                    choisirApk = { titre ->
+                        choisirFichierAOuvrir(window, titre, filtre = "*.apk", dossier = dossierTelechargements())
+                    },
                 )
             }
         }
@@ -167,12 +170,20 @@ private fun choisirFichier(parent: Frame, titre: String, nomPropose: String): Fi
     )
 }
 
-/** La fenêtre « Ouvrir » de Windows, sur le dossier Documents, limitée aux configurations JSON. */
-private fun choisirFichierAOuvrir(parent: Frame, titre: String): File? {
+/**
+ * La fenêtre « Ouvrir » de Windows, limitée à un type de fichier : les configurations JSON, depuis
+ * Documents ; les APK, depuis Téléchargements, où arrive ce qu'on vient de récupérer.
+ */
+private fun choisirFichierAOuvrir(
+    parent: Frame,
+    titre: String,
+    filtre: String = "*.json",
+    dossier: File = dossierDocuments(),
+): File? {
     val dialogue = FileDialog(parent, titre, FileDialog.LOAD).apply {
-        directory = dossierDocuments().path
+        directory = dossier.path
         // Le filtre que respecte la fenêtre de Windows ; setFilenameFilter y est ignoré.
-        file = "*.json"
+        file = filtre
         isVisible = true // bloquant jusqu'au choix
     }
     val nom = dialogue.file ?: return null
@@ -185,3 +196,10 @@ private fun dossierDocuments(): File =
         .getOrNull()
         ?.takeIf { it.isDirectory }
         ?: File(System.getProperty("user.home"))
+
+/** Le vrai dossier Téléchargements, qui se déplace aussi ; Documents à défaut. */
+private fun dossierTelechargements(): File =
+    runCatching { File(Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Downloads)) }
+        .getOrNull()
+        ?.takeIf { it.isDirectory }
+        ?: dossierDocuments()

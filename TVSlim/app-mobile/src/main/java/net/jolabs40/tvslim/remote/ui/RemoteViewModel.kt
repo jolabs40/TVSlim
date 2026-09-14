@@ -14,11 +14,13 @@ import kotlinx.coroutines.launch
 import net.jolabs40.tvslim.catalog.CatalogueRepository
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
+import net.jolabs40.tvslim.commande.ConsoleAdb
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LecteurDistant
 import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.device.paquetsInconnus
+import net.jolabs40.tvslim.installation.InstallationApk
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.journal.TypeAction
@@ -57,6 +59,7 @@ class RemoteViewModel @Inject constructor(
     private var journal: JournalRepository? = null
     private var mesures: MesuresRepository? = null
     private var moteur: MoteurDebloat? = null
+    private var installationApk: InstallationApk? = null
 
     /**
      * Les permissions privilégiées ont leur propre pilote : leur état — un paquet, une
@@ -77,6 +80,8 @@ class RemoteViewModel @Inject constructor(
         contexte = contexte,
         lecteur = lecteur,
         moteur = { moteur },
+        installation = { installationApk },
+        console = ConsoleAdb(client) { journal },
         etat = { _etat.value },
         majEtat = { transformation -> _etat.update { transformation(it) } },
         portee = viewModelScope,
@@ -230,6 +235,7 @@ class RemoteViewModel @Inject constructor(
         journal = null
         mesures = null
         moteur = null
+        installationApk = null
         permissions.oublier()
         _etat.update {
             it.copy(
@@ -334,6 +340,7 @@ class RemoteViewModel @Inject constructor(
             is Confirmation.Application -> appliquer(demande.entrees)
             is Confirmation.Restauration -> reactiver(demande.paquets)
             is Confirmation.Reinjection -> configuration.reinjecter(demande.plan)
+            is Confirmation.Installation -> configuration.installerApk(demande.apk)
             null -> Unit
         }
         annulerConfirmation()
@@ -467,6 +474,7 @@ class RemoteViewModel @Inject constructor(
         ouvert.charger()
         journal = ouvert
         moteur = MoteurDebloat(client, ouvert)
+        installationApk = InstallationApk(client, client, ouvert)
 
         val relevees = MesuresRepository(File(File(contexte.filesDir, "mesures"), "$cle.json"))
         relevees.charger()

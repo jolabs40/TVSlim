@@ -42,6 +42,7 @@ import net.jolabs40.tvslim.device.Fabricant
 import net.jolabs40.tvslim.device.TypeAppareil
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.adb.EtatConnexion
+import net.jolabs40.tvslim.remote.ui.ActionsCommande
 import net.jolabs40.tvslim.remote.ui.ActionsPermissions
 import net.jolabs40.tvslim.remote.ui.EtatRemote
 
@@ -64,6 +65,8 @@ fun ConnexionScreen(
     onArreterRecherche: () -> Unit,
     onConnecterA: (net.jolabs40.tvslim.remote.adb.AppareilDecouvert) -> Unit,
     actionsPermissions: ActionsPermissions,
+    onChoisirApk: () -> Unit,
+    actionsCommande: ActionsCommande,
 ) {
     val contexte = LocalContext.current
     val options = remember {
@@ -117,6 +120,8 @@ fun ConnexionScreen(
             // En dernier : accorder une permission privilégiée est rare, et sans rapport avec
             // le débloat. Elle n'a de sens que téléviseur joint, d'où sa place ici.
             CartePermissions(etat = etat.permissions, actions = actionsPermissions)
+            CarteInstallation(etat = etat.installation, onChoisir = onChoisirApk)
+            CarteCommande(etat = etat.commande, actions = actionsCommande)
             return@Column
         }
 

@@ -114,6 +114,14 @@
     <string name="confirm_reinject_home">Home screen: %1$s</string>
     <string name="confirm_reinject_home_missing">%1$s is not installed on this television: the home screen will stay as it is.</string>
     <string name="confirm_reinject_ignored">%1$d package(s) of the configuration are not on this television and will be ignored.</string>
+    <string name="confirm_install_title">Install this application?</string>
+    <string name="confirm_install_file">%1$s — %2$s MB</string>
+    <string name="confirm_install_package">Package %1$s, version %2$s</string>
+    <string name="confirm_install_new">New on this television.</string>
+    <string name="confirm_install_update">Version %1$s is installed: it will be updated, and keep its data.</string>
+    <string name="confirm_install_same">This version is already installed: it will be reinstalled, and keep its data.</string>
+    <string name="confirm_install_downgrade">A more recent version, %1$s, is installed: Android will most likely refuse to go back.</string>
+    <string name="confirm_install_note">The installation is recorded in the log, but cannot be undone from TV Slim, which uninstalls nothing.</string>
 
     <!-- Memory tab -->
     <string name="memory_title">Memory usage</string>
@@ -182,6 +190,43 @@
     <string name="permissions_state_undeclared">This application does not request that permission: nothing to grant.</string>
     <string name="permissions_state_unknown">Package not found on this television.</string>
     <string name="permissions_state_appop">App-op %1$s: %2$s</string>
+    <string name="permissions_permission_hint">For example android.permission.WRITE_SECURE_SETTINGS</string>
+
+    <string name="install_title">Install an application</string>
+    <string name="install_hint">Send an APK file to the television and install it, as adb install would. Drag it into this window, or choose it. An application already installed is updated and keeps its data.</string>
+    <string name="install_choose">Choose an APK…</string>
+    <string name="install_dialog">Choose an APK to install</string>
+    <string name="install_examining">Reading the APK and the television…</string>
+    <string name="install_sending">Sending: %1$s of %2$s MB</string>
+    <string name="install_installing">Installing on the television… If it shows a warning, answer it with the remote.</string>
+    <string name="install_last_success">%1$s installed.</string>
+    <string name="install_last_failure">%1$s not installed.</string>
+    <string name="install_drop">Drop the APK to install it on %1$s</string>
+    <string name="install_drop_disconnected">Connect to a television first to install an APK on it.</string>
+    <string name="apk_cause_signature">An application with the same package is already installed, signed with another key. Android refuses to replace it: it would have to be uninstalled first, which TV Slim never does.</string>
+    <string name="apk_cause_downgrade">A more recent version is installed: Android refuses to go back to an older one.</string>
+    <string name="apk_cause_sdk">This application requires a more recent Android than the television's.</string>
+    <string name="apk_cause_abi">This APK has no native code for the television's processor. Look for its armeabi-v7a or arm64-v8a build.</string>
+    <string name="apk_cause_storage">Not enough storage space left on the television.</string>
+    <string name="apk_cause_unsigned">This APK is not signed: Android refuses to install it.</string>
+    <string name="apk_cause_split">This APK is only one part of an application split into several files: the other parts are missing.</string>
+    <string name="apk_cause_refused">The television refused the installation: security check, or declined with the remote.</string>
+    <string name="apk_cause_invalid">Android could not read this APK: the file is damaged, or not meant for this device.</string>
+    <string name="apk_cause_connection">The connection with the television was lost during the installation.</string>
+    <string name="apk_cause_other">Android refused the installation.</string>
+
+    <string name="command_title">ADB command</string>
+    <string name="command_warning">For what the other cards do not do. These commands bypass TV Slim's safeguards and cannot be undone — pm uninstall really uninstalls. Each one is recorded in the log.</string>
+    <string name="command_label">adb shell</string>
+    <string name="command_placeholder">pm list packages -d</string>
+    <string name="command_keys">Enter sends · ↑ ↓ recall the previous ones</string>
+    <string name="command_send">Send</string>
+    <string name="command_running">Running… A command that does not end on its own is cut after %1$d s.</string>
+    <string name="command_exit">Exit code %1$d</string>
+    <string name="command_cut_delay">Cut after %1$d s</string>
+    <string name="command_cut_connection">Connection lost</string>
+    <string name="command_no_output">(no output)</string>
+    <string name="command_truncated">Output truncated: the first %1$d of %2$d characters are shown.</string>
 
     <!-- Messages -->
     <string name="msg_enter_address">Enter the television's address.</string>
@@ -216,11 +261,22 @@
     <string name="msg_unknown_reading">Reading what the television says about its unknown packages…</string>
     <string name="msg_unknown_exported">List exported: %1$s</string>
     <string name="msg_unknown_export_failed">Could not export the list: %1$s</string>
+    <string name="msg_apk_busy">An installation is already in progress.</string>
+    <string name="msg_apk_not_apk">This file is not an Android application (APK).</string>
+    <string name="msg_apk_bundle">This file bundles several APKs (.apks, .xapk): TV Slim installs a single APK.</string>
+    <string name="msg_apk_invalid_package">This APK declares an invalid package name: it was not sent.</string>
+    <string name="msg_apk_sdk">This application requires Android API level %1$d or later; the television is at level %2$d.</string>
+    <string name="msg_apk_unreachable">The television did not answer. Check that it is on, then try again.</string>
+    <string name="msg_apk_installed">%1$s installed on the television.</string>
+    <string name="msg_apk_failed">Installation failed: %1$s</string>
+    <string name="msg_command_empty">Type a command.</string>
+    <string name="msg_command_not_shell">Only shell commands go through here: adb shell …, or the command alone. To install an APK, use the card above.</string>
+    <string name="msg_command_too_long">This command is too long.</string>
     <string name="result_summary">%1$d of %2$d succeeded.</string>
 
     <!-- About -->
     <string name="about_version">Version %1$s</string>
-    <string name="about_description">Reversible debloat for Android TV, over ADB from this computer. Nothing is uninstalled and nothing is installed on the television: every change is recorded in the log with the command that undoes it.</string>
+    <string name="about_description">Reversible debloat for Android TV, over ADB from this computer. Nothing is uninstalled or installed on the television unless you ask for it — an APK you send, a command you type. Every change is recorded in the log, with the command that undoes it whenever there is one.</string>
     <string name="about_open_source">Open source: anyone can read the code, rebuild the application and check what it does.</string>
     <string name="about_source">View the source code</string>
     <string name="about_license">Licence: %1$s</string>

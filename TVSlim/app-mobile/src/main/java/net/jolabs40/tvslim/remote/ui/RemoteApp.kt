@@ -51,6 +51,9 @@ private val onglets = listOf(
     Onglet("journal", R.string.tab_log, Icons.Filled.History),
 )
 
+/** Selon le gestionnaire de fichiers, un APK se présente en paquet Android ou en simple binaire. */
+private val TYPES_APK = arrayOf("application/vnd.android.package-archive", "application/octet-stream")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RemoteApp() {
@@ -84,7 +87,11 @@ fun RemoteApp() {
         ConfirmationDialogue(
             confirmation = demande,
             onConfirmer = modele::confirmer,
-            onAnnuler = modele::annulerConfirmation,
+            onAnnuler = {
+                // Une installation refusée laisse une copie de l'APK dans le cache : elle part avec.
+                (demande as? Confirmation.Installation)?.let { modele.configuration.abandonnerApk(it.apk) }
+                modele.annulerConfirmation()
+            },
         )
     }
 
@@ -118,6 +125,10 @@ fun RemoteApp() {
             modifier = Modifier.padding(marges),
         ) {
             composable("connexion") {
+                // L'APK se désigne dans le sélecteur d'Android : aucune permission de stockage à demander.
+                val apk = rememberLauncherForActivityResult(
+                    ActivityResultContracts.OpenDocument(),
+                ) { uri -> uri?.let(modele.configuration::choisirApk) }
                 ConnexionScreen(
                     etat = etat,
                     onHote = modele::majHote,
@@ -137,6 +148,11 @@ fun RemoteApp() {
                         onLire = modele.permissions::lire,
                         onAccorder = modele.permissions::accorder,
                         onRetirer = modele.permissions::retirer,
+                    ),
+                    onChoisirApk = { apk.launch(TYPES_APK) },
+                    actionsCommande = ActionsCommande(
+                        onSaisie = modele.configuration::saisirCommande,
+                        onEnvoyer = modele.configuration::envoyerCommande,
                     ),
                 )
             }

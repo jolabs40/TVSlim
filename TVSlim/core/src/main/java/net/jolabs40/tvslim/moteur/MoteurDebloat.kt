@@ -147,8 +147,9 @@ class MoteurDebloat(
      * Ouvre la fiche d'une application dans la boutique **du téléviseur**, à charge pour la
      * personne devant l'écran de valider l'installation à la télécommande.
      *
-     * C'est volontairement tout ce que fait l'application : elle ne télécharge aucun APK et
-     * n'installe rien d'elle-même. Le seul chemin passe par la boutique officielle.
+     * Pour un launcher recommandé, c'est le chemin retenu : rien n'est téléchargé, l'installation
+     * vient de la boutique officielle. Un APK que la personne a sous la main passe, lui, par
+     * `InstallationApk`, et seulement à sa demande.
      */
     suspend fun ouvrirFicheBoutique(paquet: String): ResultatAction {
         if (!IDENTIFIANT.matches(paquet)) {

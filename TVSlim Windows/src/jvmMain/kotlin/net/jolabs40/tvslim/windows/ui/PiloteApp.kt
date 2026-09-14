@@ -11,12 +11,14 @@ import kotlinx.coroutines.launch
 import net.jolabs40.tvslim.catalog.CatalogueRepository
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
+import net.jolabs40.tvslim.commande.ConsoleAdb
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LecteurDistant
 import net.jolabs40.tvslim.device.RepartitionMemoire
 import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.device.paquetsInconnus
+import net.jolabs40.tvslim.installation.InstallationApk
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.journal.TypeAction
@@ -70,6 +72,7 @@ class PiloteApp(
     private var journal: JournalRepository? = null
     private var mesures: MesuresRepository? = null
     private var moteur: MoteurDebloat? = null
+    private var installationApk: InstallationApk? = null
 
     /** Les permissions privilégiées ont leur propre pilote : leur état n'a rien à voir avec le débloat. */
     val permissions = PilotePermissions(
@@ -86,6 +89,8 @@ class PiloteApp(
     val configuration = PiloteConfiguration(
         lecteur = lecteur,
         moteur = { moteur },
+        installation = { installationApk },
+        console = ConsoleAdb(client) { journal },
         etat = { _etat.value },
         majEtat = { transformation -> _etat.update { transformation(it) } },
         portee = viewModelScope,
@@ -210,6 +215,7 @@ class PiloteApp(
         journal = null
         mesures = null
         moteur = null
+        installationApk = null
         permissions.oublier()
         _etat.update {
             it.copy(
@@ -323,6 +329,7 @@ class PiloteApp(
             is Confirmation.Application -> appliquer(demande.entrees)
             is Confirmation.Restauration -> reactiver(demande.paquets)
             is Confirmation.Reinjection -> configuration.reinjecter(demande.plan)
+            is Confirmation.Installation -> configuration.installerApk(demande.apk)
             null -> Unit
         }
         annulerConfirmation()
@@ -460,6 +467,7 @@ class PiloteApp(
         ouvert.charger()
         journal = ouvert
         moteur = MoteurDebloat(client, ouvert)
+        installationApk = InstallationApk(client, client, ouvert)
 
         val relevees = MesuresRepository(File(emplacements.mesures, "$cle.json"))
         relevees.charger()

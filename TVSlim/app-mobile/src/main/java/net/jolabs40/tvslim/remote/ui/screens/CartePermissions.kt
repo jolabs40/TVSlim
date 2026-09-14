@@ -1,16 +1,13 @@
 package net.jolabs40.tvslim.remote.ui.screens
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -24,13 +21,15 @@ import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.ActionsPermissions
 import net.jolabs40.tvslim.remote.ui.EtatPermissions
-import net.jolabs40.tvslim.remote.ui.PERMISSIONS_COURANTES
 
 /**
  * Accorde à une application du téléviseur une permission qu'Android réserve à une session ADB.
  *
  * L'état lu est affiché avant toute action : savoir qu'une permission est déjà accordée, ou
  * qu'elle n'est même pas demandée au manifeste, évite d'envoyer une commande pour rien.
+ *
+ * Deux champs à saisir, sans raccourcis ni préremplissage, comme sous Windows (demande du
+ * 2026-09-14) : un exemple en filigrane dit ce qu'on attend.
  */
 @Composable
 fun CartePermissions(etat: EtatPermissions, actions: ActionsPermissions) {
@@ -58,25 +57,11 @@ fun CartePermissions(etat: EtatPermissions, actions: ActionsPermissions) {
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            // Raccourcis : les permissions qu'on vient réellement chercher ici. Le champ reste
-            // libre en dessous — c'est le téléviseur qui tranche pour tout le reste.
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                PERMISSIONS_COURANTES.forEach { permission ->
-                    FilterChip(
-                        selected = etat.permission == permission,
-                        onClick = { actions.onPermission(permission) },
-                        label = { Text(permission.substringAfterLast('.')) },
-                    )
-                }
-            }
-
             OutlinedTextField(
                 value = etat.permission,
                 onValueChange = actions.onPermission,
                 label = { Text(stringResource(R.string.permissions_permission)) },
+                placeholder = { Text(stringResource(R.string.permissions_permission_hint)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )

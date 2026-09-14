@@ -8,10 +8,13 @@ import net.jolabs40.tvslim.device.PermissionsPaquet
  * [lues] vaut `null` tant qu'on n'a rien demandé au téléviseur, et [paquetLu] retient à quel
  * paquet la lecture se rapportait : changer de paquet sans relire ne doit pas laisser croire
  * qu'on connaît l'état du nouveau.
+ *
+ * Les deux champs partent vides, sans raccourcis, comme sur le compagnon : un exemple en filigrane dit
+ * ce qu'on attend (demande du 2026-09-14).
  */
 data class EtatPermissions(
     val paquet: String = "",
-    val permission: String = PERMISSIONS_COURANTES.first(),
+    val permission: String = "",
     val lecture: Boolean = false,
     val lues: PermissionsPaquet? = null,
     val paquetLu: String = "",
@@ -51,17 +54,4 @@ val APP_OPS_ASSOCIES = mapOf(
     "android.permission.PACKAGE_USAGE_STATS" to "GET_USAGE_STATS",
     "android.permission.SYSTEM_ALERT_WINDOW" to "SYSTEM_ALERT_WINDOW",
     "android.permission.WRITE_SETTINGS" to "WRITE_SETTINGS",
-)
-
-/**
- * Les permissions qu'on vient réellement chercher ici : celles de niveau `development`, qu'une
- * application déclare mais qu'Android n'accorde que depuis une session ADB. Un raccourci de
- * saisie — le champ reste libre, et c'est le téléviseur qui tranche pour tout le reste.
- */
-val PERMISSIONS_COURANTES = listOf(
-    "android.permission.DUMP",
-    "android.permission.WRITE_SECURE_SETTINGS",
-    "android.permission.READ_LOGS",
-    "android.permission.PACKAGE_USAGE_STATS",
-    "android.permission.BATTERY_STATS",
 )

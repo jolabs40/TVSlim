@@ -16,7 +16,7 @@ import java.util.Date
 import java.util.Locale
 
 @Serializable
-enum class TypeAction { DESACTIVATION, REACTIVATION, REGLAGE, ACCUEIL, PERMISSION, APP_OP }
+enum class TypeAction { DESACTIVATION, REACTIVATION, REGLAGE, ACCUEIL, PERMISSION, APP_OP, INSTALLATION, COMMANDE }
 
 @Serializable
 data class ActionJournal(
@@ -127,9 +127,11 @@ class JournalRepository(
             appendLine("|---|---|---|---|---|")
             _actions.value.forEach { action ->
                 val resultat = if (action.reussi) "OK" else "ÉCHEC : ${action.message}"
+                // Une installation n'a pas de commande d'annulation : ce serait un `pm uninstall`.
+                val annulation = action.commandeAnnulation.takeIf { it.isNotBlank() }?.let { "`$it`" } ?: "—"
                 appendLine(
                     "| ${format.format(Date(action.horodatage))} | ${action.type} | " +
-                        "`${action.cible}` | $resultat | `${action.commandeAnnulation}` |",
+                        "`${action.cible}` | $resultat | $annulation |",
                 )
             }
             appendLine()

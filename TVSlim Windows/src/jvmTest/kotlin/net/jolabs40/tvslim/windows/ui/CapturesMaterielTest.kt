@@ -109,6 +109,7 @@ class CapturesMaterielTest {
                                 ouvrirDossierDonnees = {},
                                 choisirFichierExport = { _, _ -> null },
                                 choisirFichierImport = { null },
+                                choisirApk = { null },
                             )
                         }
                     }

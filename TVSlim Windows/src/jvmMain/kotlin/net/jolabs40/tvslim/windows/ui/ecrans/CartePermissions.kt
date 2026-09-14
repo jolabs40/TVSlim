@@ -1,14 +1,11 @@
 package net.jolabs40.tvslim.windows.ui.ecrans
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -23,6 +20,7 @@ import net.jolabs40.tvslim.windows.ressources.permissions_grant
 import net.jolabs40.tvslim.windows.ressources.permissions_hint
 import net.jolabs40.tvslim.windows.ressources.permissions_package
 import net.jolabs40.tvslim.windows.ressources.permissions_permission
+import net.jolabs40.tvslim.windows.ressources.permissions_permission_hint
 import net.jolabs40.tvslim.windows.ressources.permissions_revoke
 import net.jolabs40.tvslim.windows.ressources.permissions_state_appop
 import net.jolabs40.tvslim.windows.ressources.permissions_state_granted
@@ -32,7 +30,6 @@ import net.jolabs40.tvslim.windows.ressources.permissions_state_unknown
 import net.jolabs40.tvslim.windows.ressources.permissions_title
 import net.jolabs40.tvslim.windows.ui.ActionsPermissions
 import net.jolabs40.tvslim.windows.ui.EtatPermissions
-import net.jolabs40.tvslim.windows.ui.PERMISSIONS_COURANTES
 import net.jolabs40.tvslim.windows.ui.composants.CarteSection
 import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import org.jetbrains.compose.resources.stringResource
@@ -42,8 +39,11 @@ import org.jetbrains.compose.resources.stringResource
  *
  * L'état lu est affiché avant toute action : savoir qu'une permission est déjà accordée, ou qu'elle
  * n'est même pas demandée au manifeste, évite d'envoyer une commande pour rien.
+ *
+ * Deux champs à saisir, sans raccourcis : sur un ordinateur, un nom de permission se tape ou se colle. Deux
+ * champs plutôt qu'une ligne de commande libre, parce que le moteur vérifie chacun — un identifiant, et une
+ * permission que l'application déclare — avant que rien ne parte.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CartePermissions(etat: EtatPermissions, actions: ActionsPermissions) {
     CarteSection(titre = stringResource(Res.string.permissions_title), espacement = 12.dp) {
@@ -57,25 +57,11 @@ fun CartePermissions(etat: EtatPermissions, actions: ActionsPermissions) {
             modifier = Modifier.fillMaxWidth(),
         )
 
-        // Raccourcis : les permissions qu'on vient réellement chercher ici. Le champ reste libre en
-        // dessous — c'est le téléviseur qui tranche pour tout le reste.
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            PERMISSIONS_COURANTES.forEach { permission ->
-                FilterChip(
-                    selected = etat.permission == permission,
-                    onClick = { actions.onPermission(permission) },
-                    label = { Text(permission.substringAfterLast('.')) },
-                )
-            }
-        }
-
         OutlinedTextField(
             value = etat.permission,
             onValueChange = actions.onPermission,
             label = { Text(stringResource(Res.string.permissions_permission)) },
+            placeholder = { Text(stringResource(Res.string.permissions_permission_hint)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )

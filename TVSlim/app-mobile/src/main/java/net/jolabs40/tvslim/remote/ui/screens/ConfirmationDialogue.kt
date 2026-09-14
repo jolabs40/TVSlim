@@ -16,8 +16,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.configuration.PlanReinjection
+import net.jolabs40.tvslim.installation.ApkChoisi
+import net.jolabs40.tvslim.installation.NatureInstallation
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.Confirmation
+import net.jolabs40.tvslim.remote.ui.megaoctets
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -46,6 +49,7 @@ fun ConfirmationDialogue(
                         is Confirmation.Application -> R.string.confirm_apply_title
                         is Confirmation.Restauration -> R.string.confirm_restore_title
                         is Confirmation.Reinjection -> R.string.confirm_reinject_title
+                        is Confirmation.Installation -> R.string.confirm_install_title
                     },
                 ),
             )
@@ -100,6 +104,7 @@ fun ConfirmationDialogue(
                     }
 
                     is Confirmation.Reinjection -> Reinjection(confirmation.plan)
+                    is Confirmation.Installation -> ApercuInstallation(confirmation.apk)
                 }
             }
         },
@@ -169,6 +174,47 @@ private fun Reinjection(plan: PlanReinjection) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * L'application qui arrive, et ce qu'elle remplace : une mise à jour ne se confond pas avec un retour en
+ * arrière, qu'Android refusera.
+ */
+@Composable
+private fun ApercuInstallation(apk: ApkChoisi) {
+    val manifeste = apk.manifeste
+    Text(
+        text = stringResource(R.string.confirm_install_file, apk.nom, megaoctets(apk.taille)),
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.Medium,
+    )
+    Text(
+        text = stringResource(R.string.confirm_install_package, manifeste.paquet, manifeste.versionName.ifBlank { "—" }),
+        style = MaterialTheme.typography.bodyMedium,
+    )
+
+    val enPlace = apk.installee?.let { it.versionName.ifBlank { it.versionCode.toString() } }.orEmpty()
+    val (texte, couleur) = when (apk.nature) {
+        NatureInstallation.NOUVELLE ->
+            stringResource(R.string.confirm_install_new) to MaterialTheme.colorScheme.onSurfaceVariant
+
+        NatureInstallation.MISE_A_JOUR ->
+            stringResource(R.string.confirm_install_update, enPlace) to MaterialTheme.colorScheme.onSurfaceVariant
+
+        NatureInstallation.REINSTALLATION ->
+            stringResource(R.string.confirm_install_same) to MaterialTheme.colorScheme.onSurfaceVariant
+
+        NatureInstallation.RETROGRADATION ->
+            stringResource(R.string.confirm_install_downgrade, enPlace) to MaterialTheme.colorScheme.error
+    }
+    Text(text = texte, modifier = Modifier.padding(top = 12.dp), style = MaterialTheme.typography.bodyMedium, color = couleur)
+
+    Text(
+        text = stringResource(R.string.confirm_install_note),
+        modifier = Modifier.padding(top = 12.dp),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

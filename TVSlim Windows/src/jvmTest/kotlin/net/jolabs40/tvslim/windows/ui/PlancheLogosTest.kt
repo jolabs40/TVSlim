@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +27,7 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.runBlocking
 import net.jolabs40.tvslim.catalog.CatalogueRepository
+import net.jolabs40.tvslim.commande.EchangeCommande
 import net.jolabs40.tvslim.configuration.AppareilSauvegarde
 import net.jolabs40.tvslim.configuration.ChangementAccueil
 import net.jolabs40.tvslim.configuration.ConfigurationTv
@@ -39,6 +42,12 @@ import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.device.StockageApplication
 import net.jolabs40.tvslim.device.origine
 import net.jolabs40.tvslim.device.paquetsInconnus
+import net.jolabs40.tvslim.installation.ApkChoisi
+import net.jolabs40.tvslim.installation.CauseEchec
+import net.jolabs40.tvslim.installation.ManifesteApk
+import net.jolabs40.tvslim.installation.ResultatInstallation
+import net.jolabs40.tvslim.installation.VersionInstallee
+import net.jolabs40.tvslim.shell.Interruption
 import net.jolabs40.tvslim.windows.adb.ConnexionUi
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.reseau.AppareilDecouvert
@@ -48,10 +57,13 @@ import net.jolabs40.tvslim.windows.ui.composants.LogoLauncher
 import net.jolabs40.tvslim.windows.ui.composants.PlaqueMarque
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAccueil
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAppareil
+import net.jolabs40.tvslim.windows.ui.ecrans.CarteCommande
+import net.jolabs40.tvslim.windows.ui.ecrans.CarteInstallation
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.MemoireEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.PaquetsEcran
+import net.jolabs40.tvslim.windows.ui.ecrans.VoileDepot
 import net.jolabs40.tvslim.windows.ui.theme.TvSlimTheme
 import org.jetbrains.skia.EncodedImageFormat
 import org.junit.Assume.assumeTrue
@@ -169,7 +181,10 @@ class PlancheLogosTest {
             nomsConnus = mapOf("192.168.2.135" to "TCL Smart TV Pro", "192.168.2.193" to "NVIDIA SHIELD Android TV"),
         )
         rendre("19-decouverte-marques", 1280, 640, cadre = false) {
-            ConnexionEcran(decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}))
+            ConnexionEcran(
+                decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
+                ActionsCommande({}, {}, {}),
+            )
         }
 
         // L'accueil d'usine coupé reste listé, et l'accueil en place se lit en grand.
@@ -275,6 +290,78 @@ class PlancheLogosTest {
         )
         rendre("24-paquets-inconnus", 1280, 860, cadre = false) {
             PaquetsEcran(inconnus, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+        }
+
+        // L'installation d'un APK : l'onglet Téléviseur joint, un envoi en cours, les deux bilans, la
+        // confirmation d'un retour en arrière et le voile d'un fichier qu'on glisse dans la fenêtre.
+        val hippie = ApkChoisi(
+            fichier = File("HippieTV-2.4.0.apk"),
+            nom = "HippieTV-2.4.0.apk",
+            taille = 48_300_000,
+            manifeste = ManifesteApk("net.jolabs40.hippietv", versionCode = 240, versionName = "2.4.0", minSdk = 26),
+            installee = VersionInstallee(251, "2.5.1"),
+        )
+        val joint = EtatApp(
+            catalogue = catalogue,
+            connexion = ConnexionUi(etat = EtatConnexion.CONNECTE, hote = "192.168.2.135"),
+            infos = InfosAppareil(marque = "TCL", modele = "Smart TV Pro", versionAndroid = "14"),
+            installation = EtatInstallation(phase = PhaseInstallation.Envoi(21_700_000, 48_300_000)),
+        )
+        rendre("25-televiseur-installation", 1280, 1100, cadre = false) {
+            ConnexionEcran(
+                joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
+                ActionsCommande({}, {}, {}),
+            )
+        }
+        rendre("26-installation-bilans", 720, 620) {
+            CarteInstallation(EtatInstallation(derniere = ResultatInstallation.Reussie(hippie))) {}
+            Spacer(Modifier.height(16.dp))
+            CarteInstallation(
+                EtatInstallation(
+                    derniere = ResultatInstallation.Echouee(
+                        apk = hippie,
+                        cause = CauseEchec.SIGNATURE_DIFFERENTE,
+                        detail = "Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package net.jolabs40.hippietv " +
+                            "signatures do not match newer version; ignoring!]",
+                    ),
+                ),
+            ) {}
+        }
+        rendre("27-confirmation-installation", 900, 520, cadre = false) {
+            ConfirmationDialogue(Confirmation.Installation(hippie), {}, {})
+        }
+        rendre("28-depot-apk", 900, 520, cadre = false) {
+            VoileDepot(connecte = true, nomTeleviseur = "TCL Smart TV Pro")
+        }
+
+        // La commande libre : une sortie ordinaire, puis une commande qui ne finit pas et que le délai coupe.
+        rendre("29-commande-adb", 720, 1040) {
+            CarteCommande(
+                EtatCommande(
+                    saisie = "pm list packages -d",
+                    derniere = EchangeCommande(
+                        commande = "pm list packages -d",
+                        code = 0,
+                        sortie = listOf("com.tcl.gallery", "com.tcl.esticker", "com.google.android.apps.tv.launcherx")
+                            .joinToString("\n") { "package:$it" },
+                    ),
+                ),
+                ActionsCommande({}, {}, {}),
+            )
+            Spacer(Modifier.height(16.dp))
+            CarteCommande(
+                EtatCommande(
+                    saisie = "logcat",
+                    derniere = EchangeCommande(
+                        commande = "logcat",
+                        code = null,
+                        sortie = "09-14 08:31:02.114  1532  1532 I ActivityManager: Start proc 4121:com.tcl.tvweishi",
+                        interruption = Interruption.DELAI,
+                        motif = "délai dépassé",
+                    ),
+                ),
+                ActionsCommande({}, {}, {}),
+            )
         }
     }
 
