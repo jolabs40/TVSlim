@@ -185,6 +185,11 @@
     <string name="command_cut_delay">Coupée au bout de %1$d s</string>
     <string name="command_cut_connection">Connexion perdue</string>
     <string name="command_no_output">(aucune sortie)</string>
+    <string name="shizuku_title">Shizuku</string>
+    <string name="shizuku_hint">Shizuku prête les privilèges du shell aux autres applications du téléviseur, et son service meurt à chaque extinction — seul ADB le ranime. TV Slim ne s’en sert pas : c’est un service rendu à celles qui en dépendent, comme le gestionnaire des tâches de StartLight.</string>
+    <string name="shizuku_restart">Relancer Shizuku</string>
+    <string name="shizuku_started">Service démarré.</string>
+    <string name="shizuku_failed">Le service n’a pas démarré.</string>
     <string name="command_truncated">Sortie tronquée : %1$d premiers caractères affichés sur %2$d.</string>
 
     <string name="msg_connect_first">Connectez-vous d\'abord à un téléviseur.</string>

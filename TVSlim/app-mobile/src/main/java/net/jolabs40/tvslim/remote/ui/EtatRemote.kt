@@ -79,6 +79,7 @@ data class EtatRemote(
     val permissions: EtatPermissions = EtatPermissions(),
     val installation: EtatInstallation = EtatInstallation(),
     val commande: EtatCommande = EtatCommande(),
+    val shizuku: EtatShizuku = EtatShizuku(),
     val confirmation: Confirmation? = null,
     val message: String? = null,
 ) {

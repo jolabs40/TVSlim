@@ -44,6 +44,7 @@ import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.adb.EtatConnexion
 import net.jolabs40.tvslim.remote.ui.ActionsCommande
 import net.jolabs40.tvslim.remote.ui.ActionsPermissions
+import net.jolabs40.tvslim.remote.ui.ActionsShizuku
 import net.jolabs40.tvslim.remote.ui.EtatRemote
 
 /** Le module d'interface du scanner n'est pas dans l'APK : Play services le télécharge. */
@@ -67,6 +68,7 @@ fun ConnexionScreen(
     actionsPermissions: ActionsPermissions,
     onChoisirApk: () -> Unit,
     actionsCommande: ActionsCommande,
+    actionsShizuku: ActionsShizuku,
 ) {
     val contexte = LocalContext.current
     val options = remember {
@@ -122,6 +124,7 @@ fun ConnexionScreen(
             CartePermissions(etat = etat.permissions, actions = actionsPermissions)
             CarteInstallation(etat = etat.installation, onChoisir = onChoisirApk)
             CarteCommande(etat = etat.commande, actions = actionsCommande)
+            CarteShizuku(etat = etat.shizuku, actions = actionsShizuku)
             return@Column
         }
 

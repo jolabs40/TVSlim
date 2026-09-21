@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import net.jolabs40.tvslim.commande.ConsoleAdb
 import net.jolabs40.tvslim.commande.RefusCommande
+import net.jolabs40.tvslim.commande.RelanceShizuku
 import net.jolabs40.tvslim.commande.SaisieCommande
 import net.jolabs40.tvslim.configuration.FichierConfiguration
 import net.jolabs40.tvslim.configuration.PlanReinjection
@@ -386,6 +387,33 @@ class PiloteConfiguration(
 
     private fun majCommande(transformation: (EtatCommande) -> EtatCommande) =
         majEtat { it.copy(commande = transformation(it.commande)) }
+
+    // --- Relance de Shizuku ----------------------------------------------------------------
+
+    /**
+     * Relance le service Shizuku du téléviseur — cf. [RelanceShizuku].
+     *
+     * ⚠️ **Rien n'est saisi ici, et c'est la différence avec la commande libre.** La chaîne est
+     * une constante du noyau, jamais un texte de l'utilisateur : la carte ne peut envoyer que
+     * celle-là. Elle passe malgré tout par la même console, donc par le même journal et le même
+     * envoi unique — une relance ne se rejoue pas après une rupture.
+     *
+     * Pas de rafraîchissement des autres onglets : démarrer un service ne change ni les paquets,
+     * ni l'accueil, ni la mémoire mesurée.
+     */
+    fun relancerShizuku() {
+        val courant = etat()
+        if (!courant.connecte) return afficher(contexte.getString(R.string.msg_connect_first))
+        if (courant.shizuku.enCours) return
+        portee.launch {
+            majShizuku { it.copy(enCours = true) }
+            val echange = console.envoyer(RelanceShizuku.COMMANDE)
+            majShizuku { EtatShizuku(enCours = false, derniere = echange) }
+        }
+    }
+
+    private fun majShizuku(transformation: (EtatShizuku) -> EtatShizuku) =
+        majEtat { it.copy(shizuku = transformation(it.shizuku)) }
 
     /** « wt » : un fichier réécrit se tronque, sans quoi un contenu plus court laisserait une queue. */
     private suspend fun ecrire(cible: Uri, texte: String) = withContext(Dispatchers.IO) {

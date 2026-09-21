@@ -154,6 +154,9 @@ fun RemoteApp() {
                         onSaisie = modele.configuration::saisirCommande,
                         onEnvoyer = modele.configuration::envoyerCommande,
                     ),
+                    actionsShizuku = ActionsShizuku(
+                        onRelancer = modele.configuration::relancerShizuku,
+                    ),
                 )
             }
             composable("paquets") {
