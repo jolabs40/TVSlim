@@ -62,6 +62,7 @@ fun ConnexionScreen(
     onScan: (String) -> Unit,
     onEchecScan: (String) -> Unit,
     onInstallerLauncher: (String) -> Unit,
+    onReprendreDerive: () -> Unit,
     onChercher: () -> Unit,
     onArreterRecherche: () -> Unit,
     onConnecterA: (net.jolabs40.tvslim.remote.adb.AppareilDecouvert) -> Unit,
@@ -116,7 +117,9 @@ fun ConnexionScreen(
 
         if (etat.connecte) {
             // L'action d'abord, les mesures ensuite : un écran qu'il faut faire défiler pour
-            // trouver le seul bouton utile est un écran raté.
+            // trouver le seul bouton utile est un écran raté. La dérive passe devant tout : le
+            // téléviseur a défait seul ce qu'on avait réglé.
+            etat.derive?.let { plan -> CarteDerive(plan = plan, onReprendre = onReprendreDerive) }
             CarteAccueil(etat = etat, onInstaller = onInstallerLauncher)
             AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
             // En dernier : accorder une permission privilégiée est rare, et sans rapport avec

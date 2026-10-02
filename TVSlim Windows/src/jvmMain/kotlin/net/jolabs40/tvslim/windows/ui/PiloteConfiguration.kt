@@ -176,6 +176,15 @@ class PiloteConfiguration(
         }
     }
 
+    /**
+     * Propose de remettre ce qui a dérivé. La suite est celle d'une réinjection : même confirmation, même
+     * [Reinjecteur], mêmes garde-fous — seule l'origine du plan change.
+     */
+    fun proposerDerive() {
+        val plan = etat().derive ?: return
+        majEtat { it.copy(confirmation = Confirmation.Reinjection(plan, derive = true)) }
+    }
+
     /** Réinjecte après confirmation, avec la progression et le bilan d'une application en lot. */
     fun reinjecter(plan: PlanReinjection) {
         val courant = etat()

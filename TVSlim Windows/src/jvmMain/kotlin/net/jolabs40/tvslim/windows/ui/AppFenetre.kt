@@ -259,6 +259,7 @@ fun AppFenetre(
                             onDeconnecter = pilote::deconnecter,
                             onActualiser = pilote::rafraichir,
                             onInstallerLauncher = pilote.configuration::installerLauncher,
+                            onReprendreDerive = pilote.configuration::proposerDerive,
                             onChercher = pilote::chercherAppareils,
                             onArreterRecherche = pilote::arreterRecherche,
                             onConnecterA = pilote::connecterA,

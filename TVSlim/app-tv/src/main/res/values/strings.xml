@@ -16,6 +16,14 @@
     <string name="companion_desc">Packages are enabled and disabled from the companion app on your phone, which talks to this television over ADB. This app keeps what a phone cannot do: the settings that must be reapplied at boot.</string>
     <string name="watchdog_on">Boot watchdog running</string>
     <string name="watchdog_off">Boot watchdog off</string>
+    <string name="drift_title">A system update undid part of the debloat</string>
+    <plurals name="drift_packages">
+        <item quantity="one">%1$d package enabled again.</item>
+        <item quantity="other">%1$d packages enabled again.</item>
+    </plurals>
+    <string name="drift_home">The home screen is no longer %1$s.</string>
+    <string name="drift_fix">Open TV Slim on your phone or PC: it will offer to put everything back.</string>
+    <string name="drift_channel">Changes undone by an update</string>
 
     <string name="action_packages">Packages</string>
     <string name="action_settings">Settings</string>

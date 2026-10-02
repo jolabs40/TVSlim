@@ -86,6 +86,7 @@ fun ConnexionEcran(
     onDeconnecter: () -> Unit,
     onActualiser: () -> Unit,
     onInstallerLauncher: (String) -> Unit,
+    onReprendreDerive: () -> Unit,
     onChercher: () -> Unit,
     onArreterRecherche: () -> Unit,
     onConnecterA: (AppareilDecouvert) -> Unit,
@@ -99,6 +100,8 @@ fun ConnexionEcran(
                 // Le téléphone met l'action en tête pour éviter de défiler. Sur un bureau, tout
                 // tient à l'écran : l'appareil joint d'abord, son écran d'accueil ensuite. Le titre
                 // « Se connecter » n'a plus lieu d'être, la barre du haut dit à qui l'on parle.
+                // La dérive passe devant tout : le téléviseur a défait seul ce qu'on avait réglé.
+                etat.derive?.let { plan -> CarteDerive(plan = plan, onReprendre = onReprendreDerive) }
                 CarteAppareil(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
                 CarteAccueil(etat = etat, onInstaller = onInstallerLauncher)
             },

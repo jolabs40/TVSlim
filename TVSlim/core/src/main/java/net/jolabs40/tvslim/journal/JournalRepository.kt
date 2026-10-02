@@ -29,6 +29,23 @@ data class ActionJournal(
     val message: String = "",
 )
 
+/** Paquets que ces actions laissent désactivés, dans l'ordre inverse d'application. */
+fun List<ActionJournal>.paquetsDesactives(): List<String> {
+    val etat = LinkedHashMap<String, Boolean>()
+    filter { it.reussi }.forEach { action ->
+        when (action.type) {
+            TypeAction.DESACTIVATION -> etat[action.cible] = true
+            TypeAction.REACTIVATION -> etat.remove(action.cible)
+            else -> Unit
+        }
+    }
+    return etat.keys.toList().reversed()
+}
+
+/** Le composant du dernier écran d'accueil que ces actions ont posé, s'il y en a un. */
+fun List<ActionJournal>.dernierAccueil(): String? =
+    lastOrNull { it.reussi && it.type == TypeAction.ACCUEIL }?.cible
+
 /**
  * Journal des interventions : c'est lui qui rend l'opération réversible. Chaque action y est
  * consignée avec la commande exacte qui l'annule, à l'image du journal Markdown tenu à la main
@@ -70,17 +87,7 @@ class JournalRepository(
     }
 
     /** Paquets actuellement désactivés d'après le journal, dans l'ordre inverse d'application. */
-    fun paquetsADesactivationActive(): List<String> {
-        val etat = LinkedHashMap<String, Boolean>()
-        _actions.value.filter { it.reussi }.forEach { action ->
-            when (action.type) {
-                TypeAction.DESACTIVATION -> etat[action.cible] = true
-                TypeAction.REACTIVATION -> etat.remove(action.cible)
-                else -> Unit
-            }
-        }
-        return etat.keys.toList().reversed()
-    }
+    fun paquetsADesactivationActive(): List<String> = _actions.value.paquetsDesactives()
 
     /** Commandes d'annulation des réglages modifiés, la plus récente l'emportant. */
     fun annulationsDesReglages(): Map<String, String> {

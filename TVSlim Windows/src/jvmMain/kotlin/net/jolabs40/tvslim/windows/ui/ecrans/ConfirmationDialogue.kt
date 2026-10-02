@@ -22,6 +22,8 @@ import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.confirm_apply_body
 import net.jolabs40.tvslim.windows.ressources.confirm_apply_title
 import net.jolabs40.tvslim.windows.ressources.confirm_cancel
+import net.jolabs40.tvslim.windows.ressources.confirm_drift_source
+import net.jolabs40.tvslim.windows.ressources.confirm_drift_title
 import net.jolabs40.tvslim.windows.ressources.confirm_go
 import net.jolabs40.tvslim.windows.ressources.confirm_install_downgrade
 import net.jolabs40.tvslim.windows.ressources.confirm_install_file
@@ -69,7 +71,8 @@ fun ConfirmationDialogue(
                     when (confirmation) {
                         is Confirmation.Application -> Res.string.confirm_apply_title
                         is Confirmation.Restauration -> Res.string.confirm_restore_title
-                        is Confirmation.Reinjection -> Res.string.confirm_reinject_title
+                        is Confirmation.Reinjection ->
+                            if (confirmation.derive) Res.string.confirm_drift_title else Res.string.confirm_reinject_title
                         is Confirmation.Installation -> Res.string.confirm_install_title
                     },
                 ),
@@ -119,7 +122,7 @@ fun ConfirmationDialogue(
                         }
                     }
 
-                    is Confirmation.Reinjection -> Reinjection(confirmation.plan)
+                    is Confirmation.Reinjection -> Reinjection(confirmation.plan, confirmation.derive)
                     is Confirmation.Installation -> ApercuInstallation(confirmation.apk)
                 }
             }
@@ -138,7 +141,7 @@ fun ConfirmationDialogue(
  * compris —, l'écran d'accueil, et ce que ce téléviseur n'a pas.
  */
 @Composable
-private fun Reinjection(plan: PlanReinjection) {
+private fun Reinjection(plan: PlanReinjection, derive: Boolean) {
     val sauvegarde = plan.configuration
     val date = remember(sauvegarde.sauvegardeLe) {
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
@@ -146,7 +149,12 @@ private fun Reinjection(plan: PlanReinjection) {
             .format(Instant.ofEpochMilli(sauvegarde.sauvegardeLe).atZone(ZoneId.systemDefault()))
     }
     Text(
-        text = stringResource(Res.string.confirm_reinject_source, date, sauvegarde.appareil.nom.ifBlank { "—" }),
+        // Une dérive n'a ni date ni appareil d'origine : son plan vient du journal de ce téléviseur.
+        text = if (derive) {
+            stringResource(Res.string.confirm_drift_source)
+        } else {
+            stringResource(Res.string.confirm_reinject_source, date, sauvegarde.appareil.nom.ifBlank { "—" })
+        },
         style = MaterialTheme.typography.bodyMedium,
     )
 

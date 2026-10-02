@@ -1,5 +1,6 @@
 package net.jolabs40.tvslim.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -14,12 +16,14 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import net.jolabs40.tvslim.R
+import net.jolabs40.tvslim.ui.DeriveAffichee
 import net.jolabs40.tvslim.ui.EtatUi
 import net.jolabs40.tvslim.ui.components.Bandeau
 import net.jolabs40.tvslim.ui.components.Bloc
@@ -114,6 +118,12 @@ fun AccueilScreen(
             }
         }
 
+        // Une mise à jour système a défait une partie du débloat : c'est la première chose à savoir.
+        etat.derive?.let { derive ->
+            Spacer(Modifier.height(16.dp))
+            BlocDerive(derive)
+        }
+
         Spacer(Modifier.height(20.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -138,5 +148,50 @@ fun AccueilScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/**
+ * Ce que la dernière mise à jour système a défait — cf. `GardienDerive`. Rien à cocher : la réparation se
+ * fait depuis le téléphone ou le PC, qui ont le journal et la session ADB.
+ */
+@Composable
+private fun BlocDerive(derive: DeriveAffichee) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.drift_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+        )
+        if (derive.rallumes.isNotEmpty()) {
+            Text(
+                text = pluralStringResource(R.plurals.drift_packages, derive.rallumes.size, derive.rallumes.size),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+            Text(
+                text = derive.rallumes.joinToString(", "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+        }
+        derive.accueilPerdu?.let { perdu ->
+            Text(
+                text = stringResource(R.string.drift_home, perdu),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+        }
+        Text(
+            text = stringResource(R.string.drift_fix),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+        )
     }
 }

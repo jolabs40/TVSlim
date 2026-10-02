@@ -32,6 +32,10 @@
     <!-- Gardien de démarrage : réapplique les réglages que le téléviseur remet à zéro au boot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Gardien de démarrage : prévenir qu'une mise à jour système a défait le débloat. Demandée en
+         activant le gardien ; refusée, le rapport reste sur l'écran d'accueil de l'application. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Lecture de l'adresse IP locale, pour l'afficher en QR code à destination du compagnon. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 

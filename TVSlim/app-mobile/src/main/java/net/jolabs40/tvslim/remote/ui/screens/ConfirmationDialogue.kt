@@ -48,7 +48,8 @@ fun ConfirmationDialogue(
                     when (confirmation) {
                         is Confirmation.Application -> R.string.confirm_apply_title
                         is Confirmation.Restauration -> R.string.confirm_restore_title
-                        is Confirmation.Reinjection -> R.string.confirm_reinject_title
+                        is Confirmation.Reinjection ->
+                            if (confirmation.derive) R.string.confirm_drift_title else R.string.confirm_reinject_title
                         is Confirmation.Installation -> R.string.confirm_install_title
                     },
                 ),
@@ -103,7 +104,7 @@ fun ConfirmationDialogue(
                         }
                     }
 
-                    is Confirmation.Reinjection -> Reinjection(confirmation.plan)
+                    is Confirmation.Reinjection -> Reinjection(confirmation.plan, confirmation.derive)
                     is Confirmation.Installation -> ApercuInstallation(confirmation.apk)
                 }
             }
@@ -126,7 +127,7 @@ fun ConfirmationDialogue(
  * compris —, l'écran d'accueil, et ce que ce téléviseur n'a pas.
  */
 @Composable
-private fun Reinjection(plan: PlanReinjection) {
+private fun Reinjection(plan: PlanReinjection, derive: Boolean) {
     val sauvegarde = plan.configuration
     val date = remember(sauvegarde.sauvegardeLe) {
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
@@ -134,7 +135,12 @@ private fun Reinjection(plan: PlanReinjection) {
             .format(Instant.ofEpochMilli(sauvegarde.sauvegardeLe).atZone(ZoneId.systemDefault()))
     }
     Text(
-        text = stringResource(R.string.confirm_reinject_source, date, sauvegarde.appareil.nom.ifBlank { "—" }),
+        // Une dérive n'a ni date ni appareil d'origine : son plan vient du journal de ce téléviseur.
+        text = if (derive) {
+            stringResource(R.string.confirm_drift_source)
+        } else {
+            stringResource(R.string.confirm_reinject_source, date, sauvegarde.appareil.nom.ifBlank { "—" })
+        },
         style = MaterialTheme.typography.bodyMedium,
     )
 

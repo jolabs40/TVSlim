@@ -22,6 +22,9 @@ import javax.inject.Inject
  *
  * Il repose sur `WRITE_SECURE_SETTINGS`, accordée une seule fois par ADB, qui survit aux
  * redémarrages.
+ *
+ * Il guette aussi la **dérive** : ce qu'une mise à jour système a défait depuis l'allumage précédent
+ * — cf. [GardienDerive].
  */
 @AndroidEntryPoint
 class DemarrageReceiver : BroadcastReceiver() {
@@ -32,12 +35,19 @@ class DemarrageReceiver : BroadcastReceiver() {
 
     @Inject lateinit var catalogue: CatalogueRepository
 
+    @Inject lateinit var derive: GardienDerive
+
     override fun onReceive(contexte: Context, intention: Intent) {
         if (intention.action != Intent.ACTION_BOOT_COMPLETED) return
         val relais = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 if (!preferences.gardienActifMaintenant()) return@launch
+                // D'abord constater, ensuite réappliquer : la photo de l'allumage ne doit pas dépendre
+                // d'une permission d'écriture qu'elle n'utilise pas.
+                runCatching { derive.verifier() }
+                    .onSuccess { constat -> constat?.let { Log.i(TAG, "Dérive après mise à jour : $it") } }
+                    .onFailure { Log.w(TAG, "Dérive non vérifiée", it) }
                 if (!reglages.ecritureDirectePossible()) {
                     Log.w(TAG, "WRITE_SECURE_SETTINGS absente : réglages non réappliqués.")
                     return@launch

@@ -5,6 +5,7 @@ import net.jolabs40.tvslim.catalog.Catalogue
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
 import net.jolabs40.tvslim.configuration.PlanReinjection
+import net.jolabs40.tvslim.configuration.planDeDerive
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.PaquetInconnu
@@ -41,8 +42,11 @@ sealed interface Confirmation {
 
     data class Restauration(val paquets: List<String>) : Confirmation
 
-    /** Réinjection d'une configuration sauvegardée : on montre ce qu'elle changera, et seulement cela. */
-    data class Reinjection(val plan: PlanReinjection) : Confirmation
+    /**
+     * Réinjection d'une configuration sauvegardée : on montre ce qu'elle changera, et seulement cela.
+     * Avec [derive], le plan ne vient pas d'un fichier mais du journal — cf. `planDeDerive`.
+     */
+    data class Reinjection(val plan: PlanReinjection, val derive: Boolean = false) : Confirmation
 
     /** Installation d'un APK : l'application qui arrive, sa version, et ce qu'elle remplace. */
     data class Installation(val apk: ApkChoisi) : Confirmation
@@ -140,6 +144,16 @@ data class EtatApp(
     /** Les appareils trouvés, nommés : le nom du cast d'abord, celui d'une visite précédente ensuite. */
     val detectes: List<AppareilDecouvert> by lazy {
         decouverte.appareils.map { it.copy(nomConvivial = it.nomConvivial ?: nomsConnus[it.hote]) }
+    }
+
+    /**
+     * Ce que TV Slim avait coupé et que le téléviseur a rallumé seul, après une mise à jour système le
+     * plus souvent — cf. `planDeDerive`. Rien pendant une lecture ni pendant un travail : un état à
+     * moitié appliqué passerait pour une dérive.
+     */
+    val derive: PlanReinjection? by lazy {
+        if (!connecte || chargement || travailEnCours || lignes.isEmpty()) return@lazy null
+        catalogue.planDeDerive(journal, lignes.associate { it.entree.paquet to it.etat }, infos)
     }
 }
 

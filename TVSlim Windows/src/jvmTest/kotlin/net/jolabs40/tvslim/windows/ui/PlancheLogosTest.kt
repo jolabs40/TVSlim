@@ -182,7 +182,7 @@ class PlancheLogosTest {
         )
         rendre("19-decouverte-marques", 1280, 640, cadre = false) {
             ConnexionEcran(
-                decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
+                decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
                 ActionsCommande({}, {}, {}),
             )
         }
@@ -309,7 +309,7 @@ class PlancheLogosTest {
         )
         rendre("25-televiseur-installation", 1280, 1100, cadre = false) {
             ConnexionEcran(
-                joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
+                joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
                 ActionsCommande({}, {}, {}),
             )
         }

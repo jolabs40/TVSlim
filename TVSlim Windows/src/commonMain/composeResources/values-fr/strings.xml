@@ -117,6 +117,13 @@
     <string name="confirm_reinject_home">Écran d'accueil : %1$s</string>
     <string name="confirm_reinject_home_missing">%1$s n'est pas installé sur ce téléviseur : l'écran d'accueil restera tel quel.</string>
     <string name="confirm_reinject_ignored">%1$d paquet(s) de la configuration sont absents de ce téléviseur et seront ignorés.</string>
+    <string name="confirm_drift_title">Remettre ce que le téléviseur a défait ?</string>
+    <string name="confirm_drift_source">Ce que TV Slim avait réglé sur ce téléviseur, d'après son journal, et que le téléviseur a défait de lui-même depuis.</string>
+    <string name="drift_title">Le téléviseur a défait une partie de vos réglages</string>
+    <string name="drift_body">Le plus souvent après une mise à jour système. TV Slim peut les remettre comme avant.</string>
+    <string name="drift_packages">De nouveau actifs (%1$d) : %2$s</string>
+    <string name="drift_home">L'écran d'accueil n'est plus %1$s.</string>
+    <string name="drift_action">Tout remettre</string>
     <string name="confirm_install_title">Installer cette application ?</string>
     <string name="confirm_install_file">%1$s — %2$s Mo</string>
     <string name="confirm_install_package">Paquet %1$s, version %2$s</string>

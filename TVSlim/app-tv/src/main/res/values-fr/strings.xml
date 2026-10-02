@@ -15,6 +15,15 @@
     <string name="companion_desc">L\'activation et la désactivation des paquets se pilotent depuis l\'application compagnon, sur téléphone, qui parle à ce téléviseur en ADB. Cette application garde ce qu\'un téléphone ne peut pas faire : les réglages à réappliquer au démarrage.</string>
     <string name="watchdog_on">Gardien de démarrage actif</string>
     <string name="watchdog_off">Gardien de démarrage inactif</string>
+    <string name="drift_title">Une mise à jour système a défait une partie du débloat</string>
+    <plurals name="drift_packages">
+        <item quantity="one">%1$d paquet de nouveau actif.</item>
+        <item quantity="other">%1$d paquets de nouveau actifs.</item>
+        <item quantity="many">%1$d paquets de nouveau actifs.</item>
+    </plurals>
+    <string name="drift_home">L\'écran d\'accueil n\'est plus %1$s.</string>
+    <string name="drift_fix">Ouvrez TV Slim sur votre téléphone ou votre PC : il proposera de tout remettre.</string>
+    <string name="drift_channel">Réglages défaits par une mise à jour</string>
 
     <string name="action_packages">Paquets</string>
     <string name="action_settings">Réglages</string>

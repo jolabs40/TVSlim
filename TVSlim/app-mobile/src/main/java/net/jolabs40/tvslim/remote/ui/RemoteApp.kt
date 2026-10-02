@@ -139,6 +139,7 @@ fun RemoteApp() {
                     onScan = modele::appliquerScan,
                     onEchecScan = modele::signalerEchecScan,
                     onInstallerLauncher = modele.configuration::installerLauncher,
+                    onReprendreDerive = modele.configuration::proposerDerive,
                     onChercher = modele::chercherAppareils,
                     onArreterRecherche = modele::arreterRecherche,
                     onConnecterA = modele::connecterA,

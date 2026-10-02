@@ -1,5 +1,9 @@
 package net.jolabs40.tvslim.ui
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +38,18 @@ fun TvSlimApp() {
     val etat by modele.etat.collectAsStateWithLifecycle()
     val navigation = rememberNavController()
 
+    // Le gardien prévient d'une dérive par une notification : la permission se demande en l'activant,
+    // c'est là qu'on comprend pourquoi. Refusée, il garde le rapport pour l'écran d'accueil.
+    val demandeNotifications = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { }
+    val activerGardien: (Boolean) -> Unit = { actif ->
+        modele.definirGardien(actif)
+        if (actif && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            demandeNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -61,7 +77,7 @@ fun TvSlimApp() {
                 ReglagesScreen(
                     etat = etat,
                     onBasculerReglage = modele::basculerReglage,
-                    onGardien = modele::definirGardien,
+                    onGardien = activerGardien,
                     onFermerMessage = modele::effacerMessage,
                 )
             }

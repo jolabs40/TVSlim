@@ -89,6 +89,16 @@
     <string name="confirm_reinject_home">Home screen: %1$s</string>
     <string name="confirm_reinject_home_missing">%1$s is not installed on this television: the home screen will stay as it is.</string>
     <string name="confirm_reinject_ignored">%1$d package(s) of the configuration are not on this television and will be ignored.</string>
+    <string name="confirm_drift_title">Put back what the TV undid?</string>
+    <string name="confirm_drift_source">What TV Slim had set on this TV, according to its log, and the TV has since undone on its own.</string>
+    <string name="drift_title">The TV undid some of your changes</string>
+    <string name="drift_body">Usually after a system update. TV Slim can put them back as they were.</string>
+    <plurals name="drift_packages">
+        <item quantity="one">%1$d package enabled again: %2$s</item>
+        <item quantity="other">%1$d packages enabled again: %2$s</item>
+    </plurals>
+    <string name="drift_home">The home screen is no longer %1$s.</string>
+    <string name="drift_action">Put them back</string>
     <string name="confirm_install_title">Install this application?</string>
     <string name="confirm_install_file">%1$s — %2$s MB</string>
     <string name="confirm_install_package">Package %1$s, version %2$s</string>
