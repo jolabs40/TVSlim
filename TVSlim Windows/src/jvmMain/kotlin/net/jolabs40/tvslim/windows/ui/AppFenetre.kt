@@ -34,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -54,12 +55,15 @@ import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.about_title
 import net.jolabs40.tvslim.windows.ressources.app_name
 import net.jolabs40.tvslim.windows.ressources.baseline_cast_24
+import net.jolabs40.tvslim.windows.ressources.baseline_folder_24
 import net.jolabs40.tvslim.windows.ressources.baseline_history_24
 import net.jolabs40.tvslim.windows.ressources.baseline_info_24
 import net.jolabs40.tvslim.windows.ressources.baseline_inventory_2_24
 import net.jolabs40.tvslim.windows.ressources.baseline_memory_24
 import net.jolabs40.tvslim.windows.ressources.config_open_dialog
 import net.jolabs40.tvslim.windows.ressources.config_save_dialog
+import net.jolabs40.tvslim.windows.ressources.files_pick_files
+import net.jolabs40.tvslim.windows.ressources.files_pick_folder
 import net.jolabs40.tvslim.windows.ressources.install_dialog
 import net.jolabs40.tvslim.windows.ressources.journal_export_dialog
 import net.jolabs40.tvslim.windows.ressources.status_connected
@@ -67,14 +71,17 @@ import net.jolabs40.tvslim.windows.ressources.status_connecting
 import net.jolabs40.tvslim.windows.ressources.status_disconnected
 import net.jolabs40.tvslim.windows.ressources.status_error
 import net.jolabs40.tvslim.windows.ressources.tab_connection
+import net.jolabs40.tvslim.windows.ressources.tab_files
 import net.jolabs40.tvslim.windows.ressources.tab_log
 import net.jolabs40.tvslim.windows.ressources.tab_memory
 import net.jolabs40.tvslim.windows.ressources.tab_packages
 import net.jolabs40.tvslim.windows.ressources.unknown_export_dialog
 import net.jolabs40.tvslim.windows.ui.ecrans.AProposDialogue
+import net.jolabs40.tvslim.windows.ui.ecrans.ActionsFichiers
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereMiseAJour
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
+import net.jolabs40.tvslim.windows.ui.ecrans.FichiersEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.JournalEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.MemoireEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.PaquetsEcran
@@ -86,11 +93,12 @@ import org.jetbrains.compose.resources.stringResource
 import java.io.File
 import java.net.URI
 
-/** Les quatre onglets du compagnon, dans le même ordre et avec les mêmes icônes. */
+/** Les cinq onglets du compagnon, dans le même ordre et avec les mêmes icônes. */
 enum class Onglet(val titre: StringResource, val icone: DrawableResource) {
     TELEVISEUR(Res.string.tab_connection, Res.drawable.baseline_cast_24),
     PAQUETS(Res.string.tab_packages, Res.drawable.baseline_inventory_2_24),
     MEMOIRE(Res.string.tab_memory, Res.drawable.baseline_memory_24),
+    FICHIERS(Res.string.tab_files, Res.drawable.baseline_folder_24),
     JOURNAL(Res.string.tab_log, Res.drawable.baseline_history_24),
 }
 
@@ -110,8 +118,11 @@ fun AppFenetre(
     choisirFichierExport: (nomPropose: String, titre: String) -> File?,
     choisirFichierImport: (titre: String) -> File?,
     choisirApk: (titre: String) -> File?,
+    choisirFichiers: (titre: String) -> List<File>,
+    choisirDossier: (titre: String) -> File?,
 ) {
     val etat by pilote.etat.collectAsStateWithLifecycle()
+    val etatFichiers by pilote.fichiers.explorateur.etat.collectAsStateWithLifecycle()
     val etatMaj by misesAJour.etat.collectAsStateWithLifecycle()
     val messages = remember { SnackbarHostState() }
     var aPropos by remember { mutableStateOf(false) }
@@ -120,10 +131,14 @@ fun AppFenetre(
     val titreReinjection = stringResource(Res.string.config_open_dialog)
     val titreInconnus = stringResource(Res.string.unknown_export_dialog)
     val titreApk = stringResource(Res.string.install_dialog)
+    val titreFichiers = stringResource(Res.string.files_pick_files)
+    val titreDossier = stringResource(Res.string.files_pick_folder)
 
     // Un APK glissé depuis l'Explorateur, n'importe où dans la fenêtre : la carte d'installation n'est pas
-    // forcément à l'écran quand on a le fichier sous la main. Le voile dit où il va partir.
+    // forcément à l'écran quand on a le fichier sous la main. Le voile dit où il va partir. Sur l'onglet
+    // Fichiers, tout ce qu'on glisse — fichiers et dossiers, APK compris — part dans le dossier affiché.
     var survol by remember { mutableStateOf(false) }
+    val ongletCourant by rememberUpdatedState(onglet)
     val depot = remember(pilote) {
         object : DragAndDropTarget {
             override fun onEntered(event: DragAndDropEvent) {
@@ -140,9 +155,15 @@ fun AppFenetre(
 
             override fun onDrop(event: DragAndDropEvent): Boolean {
                 survol = false
-                val lien = (event.dragData() as? DragData.FilesList)?.readFiles()?.firstOrNull() ?: return false
-                val fichier = runCatching { File(URI(lien)) }.getOrNull() ?: return false
-                pilote.configuration.choisirApk(fichier)
+                val liens = (event.dragData() as? DragData.FilesList)?.readFiles().orEmpty()
+                val fichiers = liens.mapNotNull { lien -> runCatching { File(URI(lien)) }.getOrNull() }
+                if (fichiers.isEmpty()) return false
+                if (ongletCourant == Onglet.FICHIERS) {
+                    if (!pilote.etat.value.connecte) return false
+                    pilote.fichiers.deposer(fichiers)
+                } else {
+                    pilote.configuration.choisirApk(fichiers.first())
+                }
                 return true
             }
         }
@@ -304,6 +325,21 @@ fun AppFenetre(
                             onRedefinirReference = pilote::redefinirReference,
                         )
 
+                        Onglet.FICHIERS -> FichiersEcran(
+                            connecte = etat.connecte,
+                            etat = etatFichiers,
+                            actions = actionsFichiers(
+                                pilote = pilote.fichiers,
+                                onEnvoyerFichiers = {
+                                    choisirFichiers(titreFichiers).takeIf { it.isNotEmpty() }
+                                        ?.let(pilote.fichiers::deposer)
+                                },
+                                onEnvoyerDossier = {
+                                    choisirDossier(titreDossier)?.let { pilote.fichiers.deposer(listOf(it)) }
+                                },
+                            ),
+                        )
+
                         Onglet.JOURNAL -> JournalEcran(
                             etat = etat,
                             onToutRestaurer = pilote::demanderRestauration,
@@ -318,11 +354,35 @@ fun AppFenetre(
                         VoileDepot(
                             connecte = etat.connecte,
                             nomTeleviseur = etat.infos.nomAffiche.ifBlank { etat.connexion.hote },
+                            destination = etatFichiers.chemin.takeIf { onglet == Onglet.FICHIERS },
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun actionsFichiers(
+    pilote: PiloteFichiers,
+    onEnvoyerFichiers: () -> Unit,
+    onEnvoyerDossier: () -> Unit,
+): ActionsFichiers {
+    val explorateur = pilote.explorateur
+    return remember(pilote) {
+        ActionsFichiers(
+            onDemarrer = explorateur::demarrer,
+            onOuvrir = explorateur::ouvrir,
+            onRemonter = explorateur::remonter,
+            onActualiser = explorateur::actualiser,
+            onEnvoyerFichiers = onEnvoyerFichiers,
+            onEnvoyerDossier = onEnvoyerDossier,
+            onCreerDossier = explorateur::creerDossier,
+            onConfirmer = explorateur::confirmer,
+            onAnnulerConfirmation = explorateur::annulerConfirmation,
+            onArreter = explorateur::annulerEnvoi,
+        )
     }
 }
 

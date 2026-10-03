@@ -44,6 +44,8 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 import java.net.URI
+import javax.swing.JFileChooser
+import javax.swing.UIManager
 import kotlin.concurrent.thread
 
 private const val TAG = "App"
@@ -104,11 +106,14 @@ fun main() {
             onKeyEvent = { evenement ->
                 // F5 relit le téléviseur, comme on rafraîchit une page.
                 if (evenement.type == KeyEventType.KeyDown && evenement.key == Key.F5) {
-                    if (onglet == Onglet.MEMOIRE) {
-                        pilote.rafraichirMemoire()
-                        pilote.rafraichirStockage()
-                    } else {
-                        pilote.rafraichir()
+                    when (onglet) {
+                        Onglet.MEMOIRE -> {
+                            pilote.rafraichirMemoire()
+                            pilote.rafraichirStockage()
+                        }
+
+                        Onglet.FICHIERS -> pilote.fichiers.explorateur.actualiser()
+                        else -> pilote.rafraichir()
                     }
                     true
                 } else {
@@ -130,6 +135,8 @@ fun main() {
                     choisirApk = { titre ->
                         choisirFichierAOuvrir(window, titre, filtre = "*.apk", dossier = dossierTelechargements())
                     },
+                    choisirFichiers = { titre -> choisirPlusieurs(window, titre) },
+                    choisirDossier = { titre -> choisirDossier(window, titre) },
                 )
             }
         }
@@ -188,6 +195,32 @@ private fun choisirFichierAOuvrir(
     }
     val nom = dialogue.file ?: return null
     return File(dialogue.directory, nom)
+}
+
+/** La fenêtre « Ouvrir » de Windows, plusieurs fichiers à la fois, depuis Téléchargements. */
+private fun choisirPlusieurs(parent: Frame, titre: String): List<File> {
+    val dialogue = FileDialog(parent, titre, FileDialog.LOAD).apply {
+        directory = dossierTelechargements().path
+        isMultipleMode = true
+        isVisible = true // bloquant jusqu'au choix
+    }
+    return dialogue.files.toList()
+}
+
+/**
+ * Le choix d'un dossier. Celle d'AWT ne sait pas en désigner un sous Windows : c'est donc la fenêtre de Swing,
+ * à l'allure de Windows. Changer l'apparence de Swing ne touche à rien d'autre : la fenêtre de l'application
+ * est dessinée par Compose, et n'a aucun composant Swing.
+ */
+private fun choisirDossier(parent: Frame, titre: String): File? {
+    runCatching { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) }
+        .onFailure { Traces.avertir(TAG, "Apparence de Windows indisponible", it) }
+    val choix = JFileChooser(dossierDocuments()).apply {
+        dialogTitle = titre
+        fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+        isAcceptAllFileFilterUsed = false
+    }
+    return if (choix.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) choix.selectedFile else null
 }
 
 /** Le vrai dossier Documents — souvent redirigé vers OneDrive — et non `~/Documents` supposé. */

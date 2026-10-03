@@ -110,6 +110,8 @@ class CapturesMaterielTest {
                                 choisirFichierExport = { _, _ -> null },
                                 choisirFichierImport = { null },
                                 choisirApk = { null },
+                                choisirFichiers = { emptyList() },
+                                choisirDossier = { null },
                             )
                         }
                     }

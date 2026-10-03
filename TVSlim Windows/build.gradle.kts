@@ -108,6 +108,8 @@ tasks.named<Test>("jvmTest") {
     providers.gradleProperty("planche").orNull?.let { systemProperty("tvslim.planche", it) }
     // Installation d'un vrai APK, avec -Pmateriel, seulement sur demande : -Papk=chemin.apk
     providers.gradleProperty("apk").orNull?.let { systemProperty("tvslim.apk", it) }
+    // Dépôt de fichiers sur le vrai téléviseur, avec -Pmateriel, seulement sur demande : -Pdepot=1
+    providers.gradleProperty("depot").orNull?.let { systemProperty("tvslim.depot", it) }
     // Relais de mise à jour éprouvé pour de vrai, seulement sur demande : -PrelaisMsi=… -PrelaisExe=…
     providers.gradleProperty("relaisMsi").orNull?.let { systemProperty("tvslim.relais.msi", it) }
     providers.gradleProperty("relaisExe").orNull?.let { systemProperty("tvslim.relais.exe", it) }

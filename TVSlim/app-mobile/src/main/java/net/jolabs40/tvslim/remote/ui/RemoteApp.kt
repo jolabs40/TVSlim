@@ -5,9 +5,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cast
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -36,8 +37,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import net.jolabs40.tvslim.remote.R
+import net.jolabs40.tvslim.remote.ui.screens.ActionsFichiers
 import net.jolabs40.tvslim.remote.ui.screens.ConfirmationDialogue
 import net.jolabs40.tvslim.remote.ui.screens.ConnexionScreen
+import net.jolabs40.tvslim.remote.ui.screens.FichiersScreen
 import net.jolabs40.tvslim.remote.ui.screens.JournalScreen
 import net.jolabs40.tvslim.remote.ui.screens.MemoireScreen
 import net.jolabs40.tvslim.remote.ui.screens.PaquetsScreen
@@ -48,6 +51,7 @@ private val onglets = listOf(
     Onglet("connexion", R.string.tab_connection, Icons.Filled.Cast),
     Onglet("paquets", R.string.tab_packages, Icons.Filled.Inventory2),
     Onglet("memoire", R.string.tab_memory, Icons.Filled.Memory),
+    Onglet("fichiers", R.string.tab_files, Icons.Filled.Folder),
     Onglet("journal", R.string.tab_log, Icons.Filled.History),
 )
 
@@ -200,6 +204,34 @@ fun RemoteApp() {
                     onActualiserStockage = modele::rafraichirStockage,
                     onForcerArret = modele::forcerArret,
                     onRedefinirReference = modele::redefinirReference,
+                )
+            }
+            composable("fichiers") {
+                val etatFichiers by modele.fichiers.explorateur.etat.collectAsStateWithLifecycle()
+                val explorateur = modele.fichiers.explorateur
+                // Les documents se désignent dans le sélecteur d'Android : aucune permission de stockage à demander,
+                // et chacun n'est lu qu'au moment de partir.
+                val documents = rememberLauncherForActivityResult(
+                    ActivityResultContracts.OpenMultipleDocuments(),
+                ) { uris -> modele.fichiers.deposerDocuments(uris) }
+                val dossier = rememberLauncherForActivityResult(
+                    ActivityResultContracts.OpenDocumentTree(),
+                ) { uri -> uri?.let(modele.fichiers::deposerDossier) }
+                FichiersScreen(
+                    connecte = etat.connecte,
+                    etat = etatFichiers,
+                    actions = ActionsFichiers(
+                        onDemarrer = explorateur::demarrer,
+                        onOuvrir = explorateur::ouvrir,
+                        onRemonter = explorateur::remonter,
+                        onActualiser = explorateur::actualiser,
+                        onEnvoyerFichiers = { documents.launch(arrayOf("*/*")) },
+                        onEnvoyerDossier = { dossier.launch(null) },
+                        onCreerDossier = explorateur::creerDossier,
+                        onConfirmer = explorateur::confirmer,
+                        onAnnulerConfirmation = explorateur::annulerConfirmation,
+                        onArreter = explorateur::annulerEnvoi,
+                    ),
                 )
             }
             composable("journal") {

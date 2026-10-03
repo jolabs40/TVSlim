@@ -4,6 +4,7 @@ import android.util.Log
 import dadb.AdbShellPacket
 import dadb.Dadb
 import dadb.InstallResult
+import dadb.SyncResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -16,6 +17,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import net.jolabs40.tvslim.commande.ConsoleAdb
+import net.jolabs40.tvslim.shell.EnvoyeurFichiers
 import net.jolabs40.tvslim.shell.ExecuteurCommande
 import net.jolabs40.tvslim.shell.ExecuteurDirect
 import net.jolabs40.tvslim.shell.InstallateurApk
@@ -29,7 +31,9 @@ import okio.source
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,7 +62,7 @@ const val PORT_ADB_PAR_DEFAUT = 5555
 @Singleton
 class ClientAdb @Inject constructor(
     private val depotCles: DepotCles,
-) : ExecuteurCommande, InstallateurApk, ExecuteurDirect {
+) : ExecuteurCommande, InstallateurApk, ExecuteurDirect, EnvoyeurFichiers {
 
     private val _connexion = MutableStateFlow(ConnexionUi())
     val connexion: StateFlow<ConnexionUi> = _connexion.asStateFlow()
@@ -187,6 +191,54 @@ class ClientAdb @Inject constructor(
                 )
             }
         }
+
+    /**
+     * Écrit un fichier sur le téléviseur, comme `adb push`. Hors du chemin d'[executer], comme l'installation :
+     * un envoi ne se rejoue pas. Le délai ne porte pas sur la durée — un film prend son temps — mais sur le
+     * silence : rien de parti pendant [DELAI_SILENCE_MS], et la session est fermée.
+     *
+     * Annuler n'interrompt que ce fichier : dadb ferme son flux, la session reste ouverte pour la suite.
+     */
+    override suspend fun envoyer(
+        source: InputStream,
+        taille: Long,
+        chemin: String,
+        date: Long,
+        annule: () -> Boolean,
+        surEnvoi: (envoye: Long) -> Unit,
+    ): ResultatShell = withContext(Dispatchers.IO) {
+        source.use { flux ->
+            verrou.withLock {
+                if (session == null) reprendre()
+                val active = session ?: return@withLock ResultatShell.indisponible("Aucun téléviseur connecté.")
+                val activite = AtomicLong(System.currentTimeMillis())
+
+                sousVeille(active, activite, DELAI_SILENCE_MS) {
+                    SourceEnvoi(flux.source(), taille, annule, activite, surEnvoi).use { lue ->
+                        active.push(lue, chemin, MODE_FICHIER, date.takeIf { it > 0 } ?: System.currentTimeMillis())
+                    }
+                }.fold(
+                    onSuccess = { reponse ->
+                        when (reponse) {
+                            is SyncResult.Success -> ResultatShell(code = 0, sortie = "")
+                            is SyncResult.Failure -> ResultatShell(code = 1, sortie = reponse.reason.trim())
+                        }
+                    },
+                    onFailure = { erreur ->
+                        if (erreur is EnvoiAnnule) {
+                            ResultatShell.indisponible(MESSAGE_ANNULE)
+                        } else {
+                            Log.w(TAG, "Envoi interrompu" + detail(chemin), erreur)
+                            fermerSession()
+                            val message = if (erreur is SilenceProlonge) MESSAGE_DELAI else diagnostic(erreur)
+                            signalerRupture(message)
+                            ResultatShell.indisponible(message)
+                        }
+                    },
+                )
+            }
+        }
+    }
 
     /**
      * Exécute une commande tapée à la main, **une seule fois** : contrairement à [executer], rien ne la
@@ -382,8 +434,16 @@ class ClientAdb @Inject constructor(
         const val DELAI_PAR_MO_MS = 2_000L
         const val OCTETS_PAR_MO = 1_000_000L
 
+        /** Une minute sans qu'un octet parte : la liaison ne fait plus rien passer. */
+        const val DELAI_SILENCE_MS = 60_000L
+
+        /** `rw-r--r--` : ce que pose `adb push` ; le stockage partagé n'en tient de toute façon pas compte. */
+        const val MODE_FICHIER = 0b110_100_100
+
         /** `-r` remplace une version en place en gardant ses données ; `-t` admet une build de test. */
         val OPTIONS_INSTALLATION = arrayOf("-r", "-t")
+
+        const val MESSAGE_ANNULE = "Envoi annulé."
 
         const val MESSAGE_DELAI =
             "Le téléviseur n'a pas répondu à temps. Vérifiez qu'il est allumé et réessayez."

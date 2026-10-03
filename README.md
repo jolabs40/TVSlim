@@ -61,6 +61,10 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
   send it. A package described from such a report is marked *not tested*: no profile selects it.
 - **Memory** — RAM: what each running process really costs, and the before/after comparison since
   your first visit. Storage: free and used space, and the largest applications.
+- **Files** — browse the TV's folders as in File Explorer: internal storage, Downloads, Movies, a USB
+  drive or SD card plugged in… and drop files or a whole folder into them, subfolders included,
+  dragged into the window or picked from your files. The rights are those of ADB: shared storage is
+  writable, `Android/data` included; system folders are not.
 - **Log** — every action with the command that undoes it; undo a single line or restore everything;
   export as Markdown.
 
@@ -72,6 +76,8 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 - The factory home screen cannot be disabled while no third-party launcher is installed.
 - An APK is installed only after a confirmation, and never by uninstalling what is already there: an
   application signed with another key is left alone.
+- Nothing is dropped on the TV before a confirmation that says what will be replaced, and TV Slim
+  deletes no file there.
 - The one exception is the **ADB command** card: what you type there bypasses these safeguards and
   cannot be undone from TV Slim. The card says so, and every command is recorded in the log.
 

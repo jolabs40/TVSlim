@@ -42,6 +42,17 @@ import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.device.StockageApplication
 import net.jolabs40.tvslim.device.origine
 import net.jolabs40.tvslim.device.paquetsInconnus
+import net.jolabs40.tvslim.fichiers.AvanceeDepot
+import net.jolabs40.tvslim.fichiers.EchecDepot
+import net.jolabs40.tvslim.fichiers.EntreeDistante
+import net.jolabs40.tvslim.fichiers.EtatExplorateur
+import net.jolabs40.tvslim.fichiers.FichierLocal
+import net.jolabs40.tvslim.fichiers.LectureDossier
+import net.jolabs40.tvslim.fichiers.LotLocal
+import net.jolabs40.tvslim.fichiers.NatureEntree
+import net.jolabs40.tvslim.fichiers.PlanDepot
+import net.jolabs40.tvslim.fichiers.Raccourci
+import net.jolabs40.tvslim.fichiers.ResultatDepot
 import net.jolabs40.tvslim.installation.ApkChoisi
 import net.jolabs40.tvslim.installation.CauseEchec
 import net.jolabs40.tvslim.installation.ManifesteApk
@@ -55,12 +66,15 @@ import net.jolabs40.tvslim.windows.reseau.ResultatDecouverte
 import net.jolabs40.tvslim.windows.ui.composants.LOGOS_LAUNCHERS
 import net.jolabs40.tvslim.windows.ui.composants.LogoLauncher
 import net.jolabs40.tvslim.windows.ui.composants.PlaqueMarque
+import net.jolabs40.tvslim.windows.ui.ecrans.ActionsFichiers
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAccueil
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAppareil
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteCommande
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteInstallation
+import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDepot
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
+import net.jolabs40.tvslim.windows.ui.ecrans.FichiersEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.MemoireEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.PaquetsEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.VoileDepot
@@ -68,6 +82,7 @@ import net.jolabs40.tvslim.windows.ui.theme.TvSlimTheme
 import org.jetbrains.skia.EncodedImageFormat
 import org.junit.Assume.assumeTrue
 import org.junit.Test
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.Locale
 
@@ -362,6 +377,79 @@ class PlancheLogosTest {
                 ),
                 ActionsCommande({}, {}, {}),
             )
+        }
+
+        // L'onglet Fichiers : un dossier lu, un envoi en cours, sa confirmation, un dossier refusé.
+        val jour = 1_790_000_000_000L
+        val films = EtatExplorateur(
+            chemin = "/sdcard/Movies",
+            lecture = LectureDossier.Lue(
+                "/sdcard/Movies",
+                listOf(
+                    EntreeDistante("Séries", NatureEntree.DOSSIER, 4096, jour),
+                    EntreeDistante("Vacances 2024", NatureEntree.DOSSIER, 4096, jour - 86_400_000L),
+                    EntreeDistante(".thumbnails", NatureEntree.DOSSIER, 4096, jour),
+                    EntreeDistante("Le Grand Bleu (1988).mkv", NatureEntree.FICHIER, 4_381_220_112, jour),
+                    EntreeDistante("bande-annonce.mp4", NatureEntree.FICHIER, 48_300_000, jour),
+                    EntreeDistante("sous-titres.srt", NatureEntree.FICHIER, 91_204, jour),
+                    EntreeDistante("dernier", NatureEntree.FICHIER, 17, jour, lien = true),
+                ),
+            ),
+            raccourcis = Raccourci.avecVolumes(listOf("1A2B-3C4D")),
+        )
+        val actions = ActionsFichiers({}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+        rendre("30-fichiers", 1280, 760, cadre = false) {
+            FichiersEcran(connecte = true, etat = films, actions = actions)
+        }
+        rendre("31-fichiers-envoi-sombre", 1280, 520, sombre = true, cadre = false) {
+            FichiersEcran(
+                connecte = true,
+                etat = films.copy(
+                    avancee = AvanceeDepot("Vacances 2024/plage.jpg", 37, 212, 1_204_000_000, 2_910_000_000),
+                ),
+                actions = actions,
+            )
+        }
+        val lot = LotLocal(
+            fichiers = listOf("Vacances 2024/plage.jpg", "Vacances 2024/dune.jpg", "Le Grand Bleu (1988).mkv")
+                .map { chemin ->
+                    object : FichierLocal {
+                        override val chemin = chemin
+                        override val taille = 2_000_000_000L
+                        override val date = 0L
+                        override fun ouvrir() = ByteArrayInputStream(ByteArray(0))
+                    }
+                },
+            dossiers = listOf("Vacances 2024", "Vacances 2024/vide"),
+        )
+        rendre("32-fichiers-confirmation", 900, 520, cadre = false) {
+            ConfirmationDepot(
+                PlanDepot("/sdcard/Movies", lot, existants = listOf("Le Grand Bleu (1988).mkv", "Vacances 2024")),
+                {},
+                {},
+            )
+        }
+        rendre("33-fichiers-refus", 1280, 560, cadre = false) {
+            FichiersEcran(
+                connecte = true,
+                etat = EtatExplorateur(
+                    chemin = "/data",
+                    lecture = LectureDossier.Refusee("/data"),
+                    dernier = ResultatDepot(
+                        destination = "/system",
+                        envoyes = 0,
+                        nombre = 2,
+                        echecs = listOf(
+                            EchecDepot("a.txt", "couldn't create file: Read-only file system"),
+                            EchecDepot("b.txt", "couldn't create file: Read-only file system"),
+                        ),
+                    ),
+                ),
+                actions = actions,
+            )
+        }
+        rendre("34-depot-fichiers", 900, 520, cadre = false) {
+            VoileDepot(connecte = true, nomTeleviseur = "TCL Smart TV Pro", destination = "/sdcard/Movies")
         }
     }
 

@@ -30,6 +30,9 @@ import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.baseline_check_circle_24
 import net.jolabs40.tvslim.windows.ressources.baseline_error_24
 import net.jolabs40.tvslim.windows.ressources.baseline_get_app_24
+import net.jolabs40.tvslim.windows.ressources.baseline_upload_file_24
+import net.jolabs40.tvslim.windows.ressources.files_drop
+import net.jolabs40.tvslim.windows.ressources.files_not_connected
 import net.jolabs40.tvslim.windows.ressources.install_choose
 import net.jolabs40.tvslim.windows.ressources.install_drop
 import net.jolabs40.tvslim.windows.ressources.install_drop_disconnected
@@ -129,10 +132,11 @@ private fun identite(apk: ApkChoisi): String =
 
 /**
  * Ce que montre la fenêtre pendant qu'on y fait glisser un fichier : où il va partir, ou qu'il faut d'abord
- * se connecter.
+ * se connecter. Avec une [destination] — l'onglet Fichiers —, il s'agit d'un dépôt dans ce dossier et non
+ * d'une installation.
  */
 @Composable
-fun VoileDepot(connecte: Boolean, nomTeleviseur: String) {
+fun VoileDepot(connecte: Boolean, nomTeleviseur: String, destination: String? = null) {
     val forme = MaterialTheme.shapes.large
     Box(
         modifier = Modifier
@@ -147,16 +151,19 @@ fun VoileDepot(connecte: Boolean, nomTeleviseur: String) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(
-                painter = painterResource(Res.drawable.baseline_get_app_24),
+                painter = painterResource(
+                    if (destination != null) Res.drawable.baseline_upload_file_24 else Res.drawable.baseline_get_app_24,
+                ),
                 contentDescription = null,
                 modifier = Modifier.size(56.dp),
                 tint = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = if (connecte) {
-                    stringResource(Res.string.install_drop, nomTeleviseur)
-                } else {
-                    stringResource(Res.string.install_drop_disconnected)
+                text = when {
+                    !connecte && destination != null -> stringResource(Res.string.files_not_connected)
+                    !connecte -> stringResource(Res.string.install_drop_disconnected)
+                    destination != null -> stringResource(Res.string.files_drop, destination, nomTeleviseur)
+                    else -> stringResource(Res.string.install_drop, nomTeleviseur)
                 },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
