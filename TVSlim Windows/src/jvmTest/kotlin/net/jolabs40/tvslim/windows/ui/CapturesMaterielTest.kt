@@ -12,6 +12,7 @@ import net.jolabs40.tvslim.configuration.FichierConfiguration
 import net.jolabs40.tvslim.configuration.configurationDe
 import net.jolabs40.tvslim.configuration.planifier
 import net.jolabs40.tvslim.device.EtatPaquet
+import net.jolabs40.tvslim.fichiers.LectureDossier
 import net.jolabs40.tvslim.windows.Emplacements
 import net.jolabs40.tvslim.windows.adb.ClientAdb
 import net.jolabs40.tvslim.windows.adb.DepotCles
@@ -192,6 +193,15 @@ class CapturesMaterielTest {
             capturer("05b-memoire-explicite", Onglet.MEMOIRE)
         }
         capturer("06-journal", Onglet.JOURNAL)
+
+        // L'onglet Fichiers : le stockage interne, lu comme à la première visite, et les volumes branchés.
+        pilote.fichiers.explorateur.demarrer()
+        capturer("09-fichiers", Onglet.FICHIERS, attenteMs = 20_000) {
+            pilote.fichiers.explorateur.etat.value.lecture is LectureDossier.Lue
+        }
+        releves += "fichiers: ${pilote.fichiers.explorateur.etat.value.lecture?.javaClass?.simpleName}, " +
+            "entrees=${pilote.fichiers.explorateur.etat.value.entrees.size}, " +
+            "raccourcis=${pilote.fichiers.explorateur.etat.value.raccourcis.map { it.chemin }}"
 
         // La sauvegarde, relue contre le téléviseur qu'elle décrit, ne doit rien demander à
         // réinjecter. Tout se calcule en mémoire : aucune commande ne part vers le téléviseur.
