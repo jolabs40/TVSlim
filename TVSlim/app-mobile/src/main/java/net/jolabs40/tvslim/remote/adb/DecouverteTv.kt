@@ -8,6 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import java.net.NetworkInterface
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -92,7 +93,11 @@ class DecouverteTv @Inject constructor(
 
                     override fun onServiceResolved(info: NsdServiceInfo) {
                         val adresse = info.host?.hostAddress
-                        if (adresse != null) {
+                        if (adresse != null && adresse.substringBefore('%') in adressesDuTelephone()) {
+                            // Le débogage sans fil du téléphone s'annonce lui aussi : le choisir ne mène à
+                            // aucun téléviseur, et sa connexion chiffrée bloquait le compagnon (2026-10-04).
+                            Log.d(TAG, "Le téléphone lui-même, écarté" + detail("$adresse:${info.port}"))
+                        } else if (adresse != null) {
                             if (info.serviceType.contains(TYPE_CAST.trim('.'))) {
                                 nomConvivial(info)?.let { nomsParHote[adresse] = it }
                             } else {
@@ -132,7 +137,10 @@ class DecouverteTv @Inject constructor(
             }
         }
 
-        val ecoutes = listOf(TYPE_ADB, TYPE_ADB_TLS, TYPE_CAST).mapNotNull { type ->
+        // Pas `_adb-tls-connect._tcp` : le débogage sans fil d'Android 11+ passe par une connexion chiffrée que
+        // dadb ne sait pas ouvrir. L'appareil était listé sans être joignable, et s'y connecter bloquait le
+        // compagnon — le téléphone lui-même s'annonçait ainsi (retiré à la demande de l'utilisateur, 2026-10-04).
+        val ecoutes = listOf(TYPE_ADB, TYPE_CAST).mapNotNull { type ->
             val ecoute = ecouteur()
             runCatching {
                 gestionnaire.discoverServices(type, NsdManager.PROTOCOL_DNS_SD, ecoute)
@@ -148,14 +156,22 @@ class DecouverteTv @Inject constructor(
     private companion object {
         const val TAG = "TVSlim/Decouverte"
 
-        /** Débogage réseau classique, celui des téléviseurs sur le port 5555. */
+        /** Débogage réseau classique, celui des téléviseurs sur le port 5555 : le seul que dadb sache joindre. */
         const val TYPE_ADB = "_adb._tcp"
-
-        /** Débogage sans fil d'Android 11+, une fois l'appareil appairé. */
-        const val TYPE_ADB_TLS = "_adb-tls-connect._tcp"
 
         /** Chromecast intégré : c'est lui qui porte le nom donné à l'appareil. */
         const val TYPE_CAST = "_googlecast._tcp"
+
+        /**
+         * Les adresses du téléphone, toutes cartes confondues, relues à chaque résolution : le bail DHCP
+         * peut changer pendant qu'on regarde l'écran. Sans le suffixe de zone des adresses IPv6 (`%wlan0`).
+         */
+        fun adressesDuTelephone(): Set<String> = runCatching {
+            NetworkInterface.getNetworkInterfaces().asSequence()
+                .flatMap { carte -> carte.inetAddresses.asSequence() }
+                .mapNotNull { it.hostAddress?.substringBefore('%') }
+                .toSet()
+        }.getOrDefault(emptySet())
 
         /** `fn` (friendly name) dans les attributs du service cast, `md` à défaut (modèle). */
         fun nomConvivial(info: NsdServiceInfo): String? {
