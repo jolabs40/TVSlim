@@ -348,7 +348,11 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         return trouvees
     }
 
-    /** Assistants de configuration, provisionnement, sélecteur du système : HOME sans être un accueil. */
+    /**
+     * Assistants de configuration, provisionnement, sélecteur du système, aiguilleurs du constructeur : HOME
+     * sans être un accueil. Chez Philips, `org.droidtv.homeintentresolver` reçoit HOME en priorité 100 et
+     * choisit où envoyer la touche (relevé le 2026-10-04) : le proposer comme écran d'accueil n'aurait aucun sens.
+     */
     private fun estUnAssistant(paquet: String): Boolean =
         paquet == "android" || ASSISTANT.containsMatchIn(paquet)
 
@@ -374,7 +378,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         /** « paquet/.Activité » : un composant, et rien d'autre — surtout pas une ligne d'aide. */
         private val COMPOSANT = Regex("""[A-Za-z0-9_.]+/[A-Za-z0-9_.]+""")
 
-        private val ASSISTANT = Regex("setup|provision", RegexOption.IGNORE_CASE)
+        private val ASSISTANT = Regex("setup|provision|intentresolver", RegexOption.IGNORE_CASE)
 
         /** `MATCH_DISABLED_COMPONENTS` : sans lui, un accueil désactivé n'existe plus pour Android. */
         private const val AVEC_DESACTIVES = 0x200

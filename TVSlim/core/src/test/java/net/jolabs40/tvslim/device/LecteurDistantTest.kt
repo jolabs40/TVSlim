@@ -299,6 +299,50 @@ class LecteurDistantTest {
     }
 
     @Test
+    fun `l'aiguilleur HOME de Philips n'est pas un ecran d'accueil`() = runTest {
+        // Relevé sur une Philips Google TV TA1 (Android 14) le 2026-10-04 : org.droidtv.homeintentresolver
+        // reçoit HOME en priorité 100, au-dessus de Google TV, et choisit où envoyer la touche.
+        val sortie = """
+            @@TVSLIM_D
+            @@TVSLIM_E
+            package:com.google.android.apps.tv.launcherx
+            package:org.droidtv.homeintentresolver
+            @@TVSLIM_H
+            priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+            com.google.android.apps.tv.launcherx/.home.HomeActivity
+            @@TVSLIM_L
+            com.google.android.apps.tv.launcherx/.home.HomeActivity
+            @@TVSLIM_U
+            8 activities found:
+              Activity #0:
+                priority=100 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                org.droidtv.homeintentresolver/.HomeActivity
+              Activity #1:
+                priority=10 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.android.managedprovisioning/.preprovisioning.PostEncryptionActivity
+              Activity #2:
+                priority=4 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.google.android.tungsten.setupwraith/.MainActivity
+              Activity #3:
+                priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.google.android.apps.tv.launcherx/.home.HomeActivity
+              Activity #7:
+                priority=-1000 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+                com.android.tv.settings/.system.FallbackHome
+            @@TVSLIM_T
+            package:com.netflix.ninja
+        """.trimIndent()
+
+        val infos = LecteurDistant(ExecuteurFixe(sortie)).photographie(
+            paquetsSurveilles = emptyList(),
+            paquetsDAccueil = setOf("com.google.android.tungsten.setupwraith", "com.google.android.apps.tv.launcherx"),
+        ).infos
+
+        assertEquals(listOf("com.google.android.apps.tv.launcherx"), infos.accueilsUsine.map { it.paquet })
+        assertTrue(infos.launchersTiers.isEmpty())
+    }
+
+    @Test
     fun `l'accueil en place se relit seul, et une lecture en echec ne dit rien`() = runTest {
         val sortie = "priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false\n" +
             "com.spocky.projengmenu/.ui.home.HomeActivity"

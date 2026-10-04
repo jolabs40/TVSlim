@@ -34,8 +34,17 @@ data class InfosAppareil(
     /** Téléviseur ou box. Un appareil inconnu est présumé téléviseur : c'est le cas courant. */
     val typeAppareil: TypeAppareil get() = fabricant?.typePour(modele) ?: TypeAppareil.TELEVISEUR
 
-    /** Le nom à montrer et à retenir : la marque vendue plutôt que le sous-traitant (« TPV »). */
-    val nomAffiche: String get() = "${fabricant?.nom ?: marque} $modele".trim()
+    /**
+     * Le nom à montrer et à retenir : la marque vendue plutôt que le sous-traitant (« TPV »), puis le modèle
+     * — sans la marque quand le modèle la porte déjà : la Philips relevée le 2026-10-04 déclare « Philips
+     * Google TV TA1 », qui s'affichait « Philips Philips Google TV TA1 ».
+     */
+    val nomAffiche: String
+        get() {
+            val nomMarque = fabricant?.nom ?: marque
+            val sansDoublon = nomMarque.isNotBlank() && modele.trim().startsWith("$nomMarque ", ignoreCase = true)
+            return if (sansDoublon) modele.trim() else "$nomMarque $modele".trim()
+        }
 
     /** Le même nom, prêt à entrer dans un nom de fichier : « Philips-55PUS8807-12 ». */
     val nomPourFichier: String

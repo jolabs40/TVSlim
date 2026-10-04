@@ -57,4 +57,14 @@ class FabricantsTest {
         assertNull(Fabricant.depuisNom("192.168.2.135"))
         assertEquals("Formuler Z10", InfosAppareil(marque = "Formuler", modele = "Z10").nomAffiche)
     }
+
+    @Test
+    fun `un modele qui porte deja la marque ne la repete pas`() {
+        // La Philips relevée le 2026-10-04 : ro.product.manufacturer TPV, ro.product.model « Philips Google TV TA1 ».
+        val philips = InfosAppareil(marque = "TPV", marqueCommerciale = "Philips", modele = "Philips Google TV TA1")
+        assertEquals("Philips Google TV TA1", philips.nomAffiche)
+        assertEquals(Fabricant.PHILIPS, Fabricant.depuisNom(philips.nomAffiche))
+        // Un mot qui commence seulement comme la marque n'est pas la marque.
+        assertEquals("TCL TCLink 4K", InfosAppareil(marque = "TCL", modele = "TCLink 4K").nomAffiche)
+    }
 }
