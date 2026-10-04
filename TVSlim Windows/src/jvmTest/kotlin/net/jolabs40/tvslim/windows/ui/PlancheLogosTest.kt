@@ -131,13 +131,13 @@ class PlancheLogosTest {
         )
 
         rendre("10-accueil-recommandation", 720, 980) {
-            CarteAccueil(etat("com.spocky.projengmenu", "com.spocky.projengmenu", "com.exemple.launcher.inconnu")) {}
+            CarteAccueil(etat("com.spocky.projengmenu", "com.spocky.projengmenu", "com.exemple.launcher.inconnu"), {}, {}, {})
         }
         rendre("11-accueil-startlight-installe", 720, 520) {
-            CarteAccueil(etat("net.jolabs40.startlight.debug", "net.jolabs40.startlight.debug", "me.efesser.flauncher")) {}
+            CarteAccueil(etat("net.jolabs40.startlight.debug", "net.jolabs40.startlight.debug", "me.efesser.flauncher"), {}, {}, {})
         }
         rendre("12-accueil-aucun-sombre", 720, 900, sombre = true) {
-            CarteAccueil(etat("com.google.android.apps.tv.launcherx")) {}
+            CarteAccueil(etat("com.google.android.apps.tv.launcherx"), {}, {}, {})
         }
         rendre("13-logos-launchers", 960, 330) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -207,7 +207,7 @@ class PlancheLogosTest {
         )
         rendre("19-decouverte-marques", 1280, 640, cadre = false) {
             ConnexionEcran(
-                decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
+                decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
                 ActionsCommande({}, {}, {}),
             )
         }
@@ -225,7 +225,7 @@ class PlancheLogosTest {
                 accueilsUsine = listOf(AccueilUsine(launcherx, "$launcherx/.home.HomeActivity", actif = false)),
             ),
         )
-        rendre("20-accueil-usine-desactive", 720, 560) { CarteAccueil(usineCoupee) {} }
+        rendre("20-accueil-usine-desactive", 720, 560) { CarteAccueil(usineCoupee, {}, {}, {}) }
 
         val usineSeule = EtatApp(
             catalogue = catalogue,
@@ -236,7 +236,7 @@ class PlancheLogosTest {
                 accueilsUsine = listOf(AccueilUsine(launcherx, "$launcherx/.home.HomeActivity", actif = true)),
             ),
         )
-        rendre("21-accueil-usine-seul", 720, 900) { CarteAccueil(usineSeule) {} }
+        rendre("21-accueil-usine-seul", 720, 900) { CarteAccueil(usineSeule, {}, {}, {}) }
 
         // Ce qu'une configuration réinjectée changerait, avant d'y toucher.
         val plan = PlanReinjection(
@@ -334,7 +334,7 @@ class PlancheLogosTest {
         )
         rendre("25-televiseur-installation", 1280, 1100, cadre = false) {
             ConnexionEcran(
-                joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
+                joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
                 ActionsCommande({}, {}, {}),
             )
         }

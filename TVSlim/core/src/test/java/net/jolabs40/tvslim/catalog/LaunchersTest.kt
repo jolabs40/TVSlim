@@ -40,6 +40,25 @@ class LaunchersTest {
     }
 
     @Test
+    fun `le launcher recommande passe en tete, sa version publiee avant celle de developpement`() {
+        val installes = listOf("com.spocky.projengmenu", "net.jolabs40.startlight.debug", "ca.dstudio.atvlauncher.pro", "net.jolabs40.startlight")
+
+        assertEquals(
+            listOf("net.jolabs40.startlight", "net.jolabs40.startlight.debug", "com.spocky.projengmenu", "ca.dstudio.atvlauncher.pro"),
+            catalogue.recommandesDAbord(installes) { it },
+        )
+        assertEquals(listOf("b", "a"), Catalogue().recommandesDAbord(listOf("b", "a")) { it })
+    }
+
+    @Test
+    fun `le site du launcher recommande s'ecrit sans protocole`() {
+        assertEquals("startlightlauncher.com", startlight.copy(site = "https://startlightlauncher.com/").siteAffiche)
+        val embarque = File("src/main/assets/catalogue.json").readText()
+        val lu = Json { ignoreUnknownKeys = true }.decodeFromString(Catalogue.serializer(), embarque)
+        assertEquals("https://startlightlauncher.com", lu.launcherRecommande("net.jolabs40.startlight")?.site)
+    }
+
+    @Test
     fun `un launcher installe se nomme et se reconnait a son logo`() {
         assertEquals("Startlight Launcher", catalogue.nomLauncher("net.jolabs40.startlight.debug"))
         assertEquals("startlight", catalogue.idLauncher("net.jolabs40.startlight.debug"))

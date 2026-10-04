@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.catalog.Catalogue
@@ -31,6 +32,7 @@ import net.jolabs40.tvslim.device.TypeAppareil
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.action_refresh
 import net.jolabs40.tvslim.windows.ressources.baseline_check_24
+import net.jolabs40.tvslim.windows.ressources.baseline_open_in_new_24
 import net.jolabs40.tvslim.windows.ressources.baseline_refresh_24
 import net.jolabs40.tvslim.windows.ressources.connection_disconnect
 import net.jolabs40.tvslim.windows.ressources.device_android
@@ -44,6 +46,7 @@ import net.jolabs40.tvslim.windows.ressources.device_title
 import net.jolabs40.tvslim.windows.ressources.device_type_box
 import net.jolabs40.tvslim.windows.ressources.home_available
 import net.jolabs40.tvslim.windows.ressources.home_coming_soon
+import net.jolabs40.tvslim.windows.ressources.home_current_badge
 import net.jolabs40.tvslim.windows.ressources.home_current_title
 import net.jolabs40.tvslim.windows.ressources.home_factory_badge
 import net.jolabs40.tvslim.windows.ressources.home_install
@@ -51,6 +54,7 @@ import net.jolabs40.tvslim.windows.ressources.home_none
 import net.jolabs40.tvslim.windows.ressources.home_recommended
 import net.jolabs40.tvslim.windows.ressources.home_recommended_badge
 import net.jolabs40.tvslim.windows.ressources.home_title
+import net.jolabs40.tvslim.windows.ressources.home_use
 import net.jolabs40.tvslim.windows.ressources.state_disabled
 import net.jolabs40.tvslim.windows.ui.EtatApp
 import net.jolabs40.tvslim.windows.ui.composants.CarteSection
@@ -108,17 +112,28 @@ fun CarteAppareil(
  * Écran d'accueil du téléviseur.
  *
  * Sans launcher tiers, le moteur refuse — à raison — de désactiver l'accueil d'usine. La carte montre
- * donc ce qui est installé, reconnu à son logo, et ne propose qu'un remplaçant : celui du catalogue,
- * tant qu'aucune de ses versions n'est là. Elle n'installe rien elle-même : tant qu'il n'est pas sur
- * le Play Store, le bouton le dit ; ensuite, il ouvrira sa fiche dans la boutique du téléviseur.
+ * donc ce qui est installé, reconnu à son logo — le launcher recommandé en tête, marqué en vert —, et
+ * chaque launcher qui n'est pas en place se choisit d'un bouton. Elle ne propose qu'un remplaçant :
+ * celui du catalogue, tant qu'aucune de ses versions n'est là, avec le lien de son site. Elle n'installe
+ * rien elle-même : tant qu'il n'est pas sur le Play Store, le bouton le dit ; ensuite, il ouvrira sa fiche
+ * dans la boutique du téléviseur.
  */
 @Composable
-fun CarteAccueil(etat: EtatApp, onInstaller: (String) -> Unit) {
+fun CarteAccueil(
+    etat: EtatApp,
+    onInstaller: (String) -> Unit,
+    onDefinirAccueil: (String) -> Unit,
+    onOuvrirLien: (String) -> Unit,
+) {
     val catalogue = etat.catalogue
     val infos = etat.infos
     val usines = infos.accueilsUsine
     // Un accueil d'usine ne se montre qu'à sa place, pas une seconde fois parmi les launchers tiers.
-    val installes = infos.launchersTiers.filterNot { launcher -> usines.any { it.paquet == launcher.paquet } }
+    val installes = catalogue.recommandesDAbord(
+        infos.launchersTiers.filterNot { launcher -> usines.any { it.paquet == launcher.paquet } },
+    ) { it.paquet }
+    // Rien à choisir pendant un chargement ou une passe de paquets : l'accueil lu pourrait être périmé.
+    val libre = !etat.chargement && etat.progression == null
 
     CarteSection(titre = stringResource(Res.string.home_title), espacement = 10.dp) {
         AccueilActuel(catalogue = catalogue, infos = infos)
@@ -138,16 +153,23 @@ fun CarteAccueil(etat: EtatApp, onInstaller: (String) -> Unit) {
                 color = MaterialTheme.colorScheme.primary,
             )
             installes.forEach { launcher ->
+                val actuel = launcher.paquet == infos.accueilActuel
                 LigneLauncher(
                     id = catalogue.idLauncher(launcher.paquet),
                     nom = catalogue.nomLauncher(launcher.paquet),
                     paquet = launcher.paquet,
                     recommande = catalogue.launcherRecommande(launcher.paquet) != null,
+                    actuel = actuel,
+                    onUtiliser = { onDefinirAccueil(launcher.composant) }
+                        .takeIf { !actuel && launcher.composant.isNotBlank() },
+                    libre = libre,
                 )
             }
             // Google TV, l'accueil Android TV, celui du constructeur : listés même désactivés, sans quoi
-            // l'accueil d'origine semblerait avoir disparu du téléviseur.
+            // l'accueil d'origine semblerait avoir disparu du téléviseur. Actif, il se rechoisit ; désactivé,
+            // Android ne le servirait pas.
             usines.forEach { usine ->
+                val actuel = usine.paquet == infos.accueilActuel
                 LigneLauncher(
                     id = null,
                     nom = catalogue.entrees.firstOrNull { it.paquet == usine.paquet }?.nom,
@@ -155,12 +177,16 @@ fun CarteAccueil(etat: EtatApp, onInstaller: (String) -> Unit) {
                     recommande = false,
                     usine = true,
                     desactive = !usine.actif,
+                    actuel = actuel,
+                    onUtiliser = { onDefinirAccueil(usine.composant) }
+                        .takeIf { !actuel && usine.actif && usine.composant.isNotBlank() },
+                    libre = libre,
                 )
             }
         }
 
         catalogue.launchersAProposer(installes.map { it.paquet }).forEach { launcher ->
-            CarteRecommandation(launcher = launcher, onInstaller = onInstaller)
+            CarteRecommandation(launcher = launcher, onInstaller = onInstaller, onOuvrirLien = onOuvrirLien)
         }
     }
 }
@@ -194,6 +220,7 @@ private fun AccueilActuel(catalogue: Catalogue, infos: InfosAppareil) {
     }
 }
 
+/** Un launcher : son logo, son nom, ses étiquettes, et en bout de ligne « Actuel », ou de quoi le choisir. */
 @Composable
 private fun LigneLauncher(
     id: String?,
@@ -202,6 +229,9 @@ private fun LigneLauncher(
     recommande: Boolean,
     usine: Boolean = false,
     desactive: Boolean = false,
+    actuel: Boolean = false,
+    onUtiliser: (() -> Unit)? = null,
+    libre: Boolean = true,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -221,26 +251,47 @@ private fun LigneLauncher(
         if (usine) Etiquette(stringResource(Res.string.home_factory_badge), MaterialTheme.colorScheme.tertiaryContainer)
         if (desactive) Etiquette(stringResource(Res.string.state_disabled), MaterialTheme.colorScheme.errorContainer)
         if (recommande) {
-            Etiquette(stringResource(Res.string.home_recommended_badge), MaterialTheme.colorScheme.primaryContainer)
+            val (fond, encre) = couleursRecommande()
+            Etiquette(stringResource(Res.string.home_recommended_badge), fond, encre)
+        }
+        when {
+            actuel -> Etiquette(stringResource(Res.string.home_current_badge), MaterialTheme.colorScheme.secondaryContainer)
+            onUtiliser != null -> OutlinedButton(onClick = onUtiliser, enabled = libre) {
+                Text(stringResource(Res.string.home_use))
+            }
         }
     }
 }
 
-/** Une étiquette arrondie : « Recommandé », « Launcher d'usine », « Désactivé ». */
+/** Une étiquette arrondie : « Recommandé », « Launcher d'usine », « Désactivé », « Actuel ». */
 @Composable
-private fun Etiquette(texte: String, fond: Color) {
+private fun Etiquette(texte: String, fond: Color, encre: Color = Color.Unspecified) {
     Surface(color = fond, shape = RoundedCornerShape(50)) {
         Text(
             text = texte,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelMedium,
+            color = encre,
         )
     }
 }
 
+/** Le vert de « Recommandé », fond et encre, lisible sur les deux thèmes, comme sur le téléphone. */
+@Composable
+private fun couleursRecommande(): Pair<Color, Color> =
+    if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) {
+        Color(0xFF1E5631) to Color(0xFFC8F2D4)
+    } else {
+        Color(0xFFCDEFD6) to Color(0xFF0F5223)
+    }
+
 /** Le launcher que TV Slim recommande : son logo, ses points forts, et ce qu'on peut en faire. */
 @Composable
-private fun CarteRecommandation(launcher: LauncherRecommande, onInstaller: (String) -> Unit) {
+private fun CarteRecommandation(
+    launcher: LauncherRecommande,
+    onInstaller: (String) -> Unit,
+    onOuvrirLien: (String) -> Unit,
+) {
     Surface(
         color = MaterialTheme.colorScheme.secondaryContainer,
         shape = MaterialTheme.shapes.large,
@@ -273,23 +324,37 @@ private fun CarteRecommandation(launcher: LauncherRecommande, onInstaller: (Stri
                     Text(text = point, style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            // Pas encore sur le Play Store : aucune fiche à ouvrir, et le bouton le dit.
-            if (launcher.disponible) {
-                Button(onClick = { onInstaller(launcher.paquet) }) {
-                    Text(stringResource(Res.string.home_install))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Le site d'abord : on peut le découvrir là, bien avant que la boutique le propose.
+                if (launcher.site.isNotBlank()) {
+                    Button(onClick = { onOuvrirLien(launcher.site) }) {
+                        Icon(
+                            painter = painterResource(Res.drawable.baseline_open_in_new_24),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(launcher.siteAffiche)
+                    }
                 }
-            } else {
-                // Grisé mais lisible : les couleurs désactivées par défaut s'effacent presque sur le
-                // fond de la carte.
-                OutlinedButton(
-                    onClick = {},
-                    enabled = false,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.35f)),
-                ) {
-                    Text(stringResource(Res.string.home_coming_soon))
+                // Pas encore sur le Play Store : aucune fiche à ouvrir, et le bouton le dit.
+                if (launcher.disponible) {
+                    Button(onClick = { onInstaller(launcher.paquet) }) {
+                        Text(stringResource(Res.string.home_install))
+                    }
+                } else {
+                    // Grisé mais lisible : les couleurs désactivées par défaut s'effacent presque sur le
+                    // fond de la carte.
+                    OutlinedButton(
+                        onClick = {},
+                        enabled = false,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.35f)),
+                    ) {
+                        Text(stringResource(Res.string.home_coming_soon))
+                    }
                 }
             }
         }

@@ -62,6 +62,7 @@ fun ConnexionScreen(
     onScan: (String) -> Unit,
     onEchecScan: (String) -> Unit,
     onInstallerLauncher: (String) -> Unit,
+    onDefinirAccueil: (String) -> Unit,
     onReprendreDerive: () -> Unit,
     onChercher: () -> Unit,
     onArreterRecherche: () -> Unit,
@@ -120,7 +121,7 @@ fun ConnexionScreen(
             // trouver le seul bouton utile est un écran raté. La dérive passe devant tout : le
             // téléviseur a défait seul ce qu'on avait réglé.
             etat.derive?.let { plan -> CarteDerive(plan = plan, onReprendre = onReprendreDerive) }
-            CarteAccueil(etat = etat, onInstaller = onInstallerLauncher)
+            CarteAccueil(etat = etat, onInstaller = onInstallerLauncher, onDefinirAccueil = onDefinirAccueil)
             AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
             // En dernier : accorder une permission privilégiée est rare, et sans rapport avec
             // le débloat. Elle n'a de sens que téléviseur joint, d'où sa place ici.

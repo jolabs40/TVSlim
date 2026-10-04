@@ -158,6 +158,16 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         NOMBRE.find(ligne)?.let { nombre(it.groupValues[1]) } ?: 0L
 
     /** Une seule question, très courte : ce paquet est-il installé ? Sert à guetter une pose. */
+    /**
+     * Le paquet de l'accueil en place, relu seul : après un `set-home-activity`, pour savoir s'il a pris —
+     * tant que l'accueil d'usine est actif, Android répond `Success` sans rien changer. Vide si la lecture
+     * échoue.
+     */
+    suspend fun accueilActuel(): String {
+        val sortie = executeur.executer(COMMANDE_ACCUEIL)
+        return if (sortie.reussi) accueil(sortie.sortie.lines()) else ""
+    }
+
     suspend fun estInstalle(paquet: String): Boolean {
         val sortie = executeur.executer("pm list packages $paquet")
         return sortie.reussi &&
@@ -420,6 +430,9 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         const val MARQUEUR_TIERS = "@@TVSLIM_T"
 
         /** `df` après `diskstats` : certains appareils ne donnent pas la ligne « Data-Free ». */
+        const val COMMANDE_ACCUEIL =
+            "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
+
         const val COMMANDE_STOCKAGE = "dumpsys diskstats; echo ${LectureStockage.MARQUEUR_DF}; df -k /data"
 
         val COMMANDE = listOf(
@@ -437,8 +450,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             "echo $MARQUEUR_MEMOIRE",
             "grep -E 'MemTotal|MemAvailable' /proc/meminfo",
             "echo $MARQUEUR_ACCUEIL",
-            "cmd package resolve-activity --brief -a android.intent.action.MAIN " +
-                "-c android.intent.category.HOME",
+            COMMANDE_ACCUEIL,
             "echo $MARQUEUR_LAUNCHERS",
             "cmd package query-activities --brief -a android.intent.action.MAIN " +
                 "-c android.intent.category.HOME",

@@ -299,6 +299,14 @@ class LecteurDistantTest {
     }
 
     @Test
+    fun `l'accueil en place se relit seul, et une lecture en echec ne dit rien`() = runTest {
+        val sortie = "priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false\n" +
+            "com.spocky.projengmenu/.ui.home.HomeActivity"
+        assertEquals("com.spocky.projengmenu", LecteurDistant(ExecuteurFixe(sortie)).accueilActuel())
+        assertEquals("", LecteurDistant(ExecuteurFixe("", code = -1)).accueilActuel())
+    }
+
+    @Test
     fun `une commande en echec ne fabrique pas de fausses donnees`() = runTest {
         val photo = LecteurDistant(ExecuteurFixe("", code = 1)).photographie(
             paquetsSurveilles = listOf("com.tcl.gallery"),

@@ -119,6 +119,8 @@
     <string name="home_recommended">Recommandé par TV Slim</string>
     <string name="home_recommended_badge">Recommandé</string>
     <string name="home_coming_soon">Bientôt sur le Play Store</string>
+    <string name="home_use">Utiliser</string>
+    <string name="home_current_badge">Actuel</string>
     <string name="side_effect_prefix">Effet de bord : %1$s</string>
     <string name="size_mb">%1$d Mo</string>
 
@@ -208,6 +210,9 @@
     <string name="msg_store_failed">Impossible d\'ouvrir la boutique : %1$s</string>
     <string name="msg_store_opened">Fiche ouverte sur le téléviseur : validez l\'installation à la télécommande.</string>
     <string name="msg_launcher_installed">Installé. L\'accueil d\'usine peut maintenant être remplacé.</string>
+    <string name="msg_home_set">Écran d\'accueil du téléviseur : %1$s.</string>
+    <string name="msg_home_kept">Android garde %1$s : un accueil d\'usine encore actif reprend la main. Désactivez-le d\'abord, depuis l\'onglet Paquets.</string>
+    <string name="msg_home_failed">L\'écran d\'accueil n\'a pas changé : %1$s</string>
     <string name="msg_config_saved">Configuration sauvegardée.</string>
     <string name="msg_config_save_failed">Impossible de sauvegarder la configuration : %1$s</string>
     <string name="msg_config_read_failed">Impossible de lire le fichier : %1$s</string>

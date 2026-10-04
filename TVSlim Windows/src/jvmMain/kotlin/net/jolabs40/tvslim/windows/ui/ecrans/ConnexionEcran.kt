@@ -86,6 +86,8 @@ fun ConnexionEcran(
     onDeconnecter: () -> Unit,
     onActualiser: () -> Unit,
     onInstallerLauncher: (String) -> Unit,
+    onDefinirAccueil: (String) -> Unit,
+    onOuvrirLien: (String) -> Unit,
     onReprendreDerive: () -> Unit,
     onChercher: () -> Unit,
     onArreterRecherche: () -> Unit,
@@ -103,7 +105,12 @@ fun ConnexionEcran(
                 // La dérive passe devant tout : le téléviseur a défait seul ce qu'on avait réglé.
                 etat.derive?.let { plan -> CarteDerive(plan = plan, onReprendre = onReprendreDerive) }
                 CarteAppareil(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
-                CarteAccueil(etat = etat, onInstaller = onInstallerLauncher)
+                CarteAccueil(
+                    etat = etat,
+                    onInstaller = onInstallerLauncher,
+                    onDefinirAccueil = onDefinirAccueil,
+                    onOuvrirLien = onOuvrirLien,
+                )
             },
             droite = {
                 CartePermissions(etat = etat.permissions, actions = actionsPermissions)

@@ -60,6 +60,8 @@
     <string name="home_recommended">Recommended by TV Slim</string>
     <string name="home_recommended_badge">Recommended</string>
     <string name="home_coming_soon">Coming soon to the Play Store</string>
+    <string name="home_use">Use</string>
+    <string name="home_current_badge">Current</string>
 
     <!-- Packages tab -->
     <string name="packages_not_connected">Connect to a television to see its packages.</string>
@@ -248,6 +250,9 @@
     <string name="msg_store_failed">Could not open the store: %1$s</string>
     <string name="msg_store_opened">Listing opened on the television: confirm the installation with the remote.</string>
     <string name="msg_launcher_installed">Installed. The factory home screen can now be replaced.</string>
+    <string name="msg_home_set">Television home screen: %1$s.</string>
+    <string name="msg_home_kept">Android keeps %1$s: a factory home screen that is still enabled takes over. Disable it first, from the Packages tab.</string>
+    <string name="msg_home_failed">The home screen did not change: %1$s</string>
     <string name="msg_stopped">%1$s stopped.</string>
     <string name="msg_failure">Failed: %1$s</string>
     <string name="msg_journal_exported">Log exported: %1$s</string>

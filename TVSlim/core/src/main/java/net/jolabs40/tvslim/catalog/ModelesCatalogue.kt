@@ -90,9 +90,14 @@ data class LauncherRecommande(
      * sur le téléviseur, et le bouton le dit plutôt que d'échouer.
      */
     val disponible: Boolean = true,
+    /** Son site, proposé tant qu'il n'est pas installé : de quoi le découvrir avant même la boutique. */
+    val site: String = "",
 ) {
     fun correspond(paquetInstalle: String): Boolean =
         paquetInstalle == paquet || paquetInstalle in variantes
+
+    /** Le site sans son protocole, tel qu'on l'écrit : « startlightlauncher.com ». */
+    val siteAffiche: String get() = site.substringAfter("://").trimEnd('/')
 }
 
 /**
@@ -151,4 +156,18 @@ data class Catalogue(
      */
     fun launchersAProposer(installes: Collection<String>): List<LauncherRecommande> =
         launchers.filterNot { recommande -> installes.any(recommande::correspond) }
+
+    /**
+     * Les launchers installés, ceux que TV Slim recommande en tête — sa version publiée avant celle de
+     * développement —, les autres ensuite, dans l'ordre où ils sont venus.
+     */
+    fun <T> recommandesDAbord(installes: List<T>, paquet: (T) -> String): List<T> =
+        installes.sortedBy { element ->
+            val recommande = launcherRecommande(paquet(element))
+            when {
+                recommande == null -> 2
+                recommande.paquet == paquet(element) -> 0
+                else -> 1
+            }
+        }
 }

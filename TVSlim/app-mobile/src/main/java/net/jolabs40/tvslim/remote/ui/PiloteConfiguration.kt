@@ -97,6 +97,38 @@ class PiloteConfiguration(
     }
 
     /**
+     * Fait d'un launcher installé l'écran d'accueil du téléviseur. Consigné au journal, donc annulable
+     * depuis l'onglet Journal ; puis relu, parce qu'Android répond `Success` sans rien changer tant qu'un
+     * accueil d'usine prioritaire est encore actif — Google TV sur la TCL.
+     */
+    fun definirAccueil(composant: String) {
+        val moteurActif = moteur()
+        if (moteurActif == null) {
+            afficher(contexte.getString(R.string.msg_connect_first))
+            return
+        }
+        val infos = etat().infos
+        val paquet = composant.substringBefore('/')
+        val nom = etat().catalogue.nomLauncher(paquet) ?: paquet
+        portee.launch {
+            val resultat = moteurActif.definirAccueil(composant, infos.composantAccueil.ifBlank { composant })
+            if (!resultat.reussi) {
+                afficher(contexte.getString(R.string.msg_home_failed, resultat.message.ifBlank { "—" }))
+                return@launch
+            }
+            val enPlace = lecteur.accueilActuel()
+            rafraichir()
+            afficher(
+                if (enPlace == paquet) {
+                    contexte.getString(R.string.msg_home_set, nom)
+                } else {
+                    contexte.getString(R.string.msg_home_kept, etat().catalogue.nomLauncher(enPlace) ?: enPlace)
+                },
+            )
+        }
+    }
+
+    /**
      * Guette l'arrivée du launcher après avoir ouvert sa fiche, plutôt que d'exiger un
      * « Actualiser » manuel : la personne est devant son téléviseur, pas devant le téléphone.
      * Une question courte toutes les cinq secondes, abandonnée au bout de trois minutes.

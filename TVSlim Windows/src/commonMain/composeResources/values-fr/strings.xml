@@ -60,6 +60,8 @@
     <string name="home_recommended">Recommandé par TV Slim</string>
     <string name="home_recommended_badge">Recommandé</string>
     <string name="home_coming_soon">Bientôt sur le Play Store</string>
+    <string name="home_use">Utiliser</string>
+    <string name="home_current_badge">Actuel</string>
 
     <!-- Onglet Paquets -->
     <string name="packages_not_connected">Connectez-vous à un téléviseur pour voir ses paquets.</string>
@@ -248,6 +250,9 @@
     <string name="msg_store_failed">Impossible d'ouvrir la boutique : %1$s</string>
     <string name="msg_store_opened">Fiche ouverte sur le téléviseur : validez l'installation à la télécommande.</string>
     <string name="msg_launcher_installed">Installé. L'accueil d'usine peut maintenant être remplacé.</string>
+    <string name="msg_home_set">Écran d'accueil du téléviseur : %1$s.</string>
+    <string name="msg_home_kept">Android garde %1$s : un accueil d'usine encore actif reprend la main. Désactivez-le d'abord, depuis l'onglet Paquets.</string>
+    <string name="msg_home_failed">L'écran d'accueil n'a pas changé : %1$s</string>
     <string name="msg_stopped">%1$s arrêté.</string>
     <string name="msg_failure">Échec : %1$s</string>
     <string name="msg_journal_exported">Journal exporté : %1$s</string>

@@ -47,6 +47,9 @@ import net.jolabs40.tvslim.windows.ressources.msg_config_save_failed
 import net.jolabs40.tvslim.windows.ressources.msg_config_saved
 import net.jolabs40.tvslim.windows.ressources.msg_config_up_to_date
 import net.jolabs40.tvslim.windows.ressources.msg_connect_first
+import net.jolabs40.tvslim.windows.ressources.msg_home_failed
+import net.jolabs40.tvslim.windows.ressources.msg_home_kept
+import net.jolabs40.tvslim.windows.ressources.msg_home_set
 import net.jolabs40.tvslim.windows.ressources.msg_launcher_installed
 import net.jolabs40.tvslim.windows.ressources.msg_store_failed
 import net.jolabs40.tvslim.windows.ressources.msg_store_opened
@@ -106,6 +109,34 @@ class PiloteConfiguration(
             }
             afficher(texte(Res.string.msg_store_opened))
             guetterInstallation(paquet)
+        }
+    }
+
+    /**
+     * Fait d'un launcher installé l'écran d'accueil du téléviseur. Consigné au journal, donc annulable
+     * depuis l'onglet Journal ; puis relu, parce qu'Android répond `Success` sans rien changer tant qu'un
+     * accueil d'usine prioritaire est encore actif — Google TV sur la TCL.
+     */
+    fun definirAccueil(composant: String) {
+        val moteurActif = moteur() ?: return afficher(texte(Res.string.msg_connect_first))
+        val infos = etat().infos
+        val paquet = composant.substringBefore('/')
+        val nom = etat().catalogue.nomLauncher(paquet) ?: paquet
+        portee.launch {
+            val resultat = moteurActif.definirAccueil(composant, infos.composantAccueil.ifBlank { composant })
+            if (!resultat.reussi) {
+                afficher(texte(Res.string.msg_home_failed, MessageUi.Brut(resultat.message.ifBlank { "—" })))
+                return@launch
+            }
+            val enPlace = lecteur.accueilActuel()
+            rafraichir()
+            afficher(
+                if (enPlace == paquet) {
+                    texte(Res.string.msg_home_set, nom)
+                } else {
+                    texte(Res.string.msg_home_kept, etat().catalogue.nomLauncher(enPlace) ?: enPlace)
+                },
+            )
         }
     }
 
