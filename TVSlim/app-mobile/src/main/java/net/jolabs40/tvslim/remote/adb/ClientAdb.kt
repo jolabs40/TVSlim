@@ -129,25 +129,42 @@ class ClientAdb @Inject constructor(
      * ne le serait pas ne devrait pas passer par ce chemin.
      */
     override suspend fun executer(commande: String): ResultatShell = withContext(Dispatchers.IO) {
+        val demande = System.currentTimeMillis()
         verrou.withLock {
-            when (val premiere = tenter(commande)) {
-                is Issue.Repondu -> premiere.resultat
-                is Issue.Rompue ->
-                    if (!reprendre()) {
-                        signalerRupture(premiere.motif)
-                        ResultatShell.indisponible(premiere.motif)
-                    } else {
-                        when (val seconde = tenter(commande)) {
-                            is Issue.Repondu -> seconde.resultat
-                            is Issue.Rompue -> {
-                                signalerRupture(seconde.motif)
-                                ResultatShell.indisponible(seconde.motif)
-                            }
-                        }
-                    }
+            val obtenu = System.currentTimeMillis()
+            val resultat = executerSousVerrou(commande)
+            // Une lecture de dossier de plus de dix secondes, vue le 2026-10-04, n'a pas pu être reproduite :
+            // la prochaine dira si elle attendait le verrou, la réponse, ou une reprise.
+            val fin = System.currentTimeMillis()
+            if (fin - demande > SEUIL_LENTEUR_MS) {
+                Log.w(
+                    TAG,
+                    "Commande lente : ${fin - demande} ms, dont ${obtenu - demande} ms d'attente du verrou, " +
+                        "code ${resultat.code}" + detail(commande.take(80)),
+                )
             }
+            resultat
         }
     }
+
+    /** Une tentative ; si la session était tombée, une seule reprise et un rejeu. */
+    private suspend fun executerSousVerrou(commande: String): ResultatShell =
+        when (val premiere = tenter(commande)) {
+            is Issue.Repondu -> premiere.resultat
+            is Issue.Rompue ->
+                if (!reprendre()) {
+                    signalerRupture(premiere.motif)
+                    ResultatShell.indisponible(premiere.motif)
+                } else {
+                    when (val seconde = tenter(commande)) {
+                        is Issue.Repondu -> seconde.resultat
+                        is Issue.Rompue -> {
+                            signalerRupture(seconde.motif)
+                            ResultatShell.indisponible(seconde.motif)
+                        }
+                    }
+                }
+        }
 
     /**
      * Envoie un APK et l'installe, en flux vers `cmd package install` : rien n'est d'abord copié sur le
@@ -426,6 +443,9 @@ class ClientAdb @Inject constructor(
 
         /** Après un échec de reprise, on laisse le téléviseur tranquille un moment. */
         const val REPOS_APRES_ECHEC_MS = 20_000L
+
+        /** Une lecture répond en quelques centaines de millisecondes ; au-delà de deux secondes, on le note. */
+        const val SEUIL_LENTEUR_MS = 2_000L
 
         /** La part fixe du délai d'une installation : Android vérifie l'application avant de répondre. */
         const val DELAI_INSTALLATION_MS = 120_000L
