@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -33,7 +34,10 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import net.jolabs40.tvslim.fichiers.NatureSuppression
 import net.jolabs40.tvslim.fichiers.PlanDepot
+import net.jolabs40.tvslim.fichiers.PlanRapatriement
+import net.jolabs40.tvslim.fichiers.PlanSuppression
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.baseline_folder_24
 import net.jolabs40.tvslim.windows.ressources.baseline_insert_drive_file_24
@@ -48,6 +52,17 @@ import net.jolabs40.tvslim.windows.ressources.files_confirm_existing
 import net.jolabs40.tvslim.windows.ressources.files_confirm_more
 import net.jolabs40.tvslim.windows.ressources.files_confirm_send
 import net.jolabs40.tvslim.windows.ressources.files_confirm_title
+import net.jolabs40.tvslim.windows.ressources.files_copy_confirm_copy
+import net.jolabs40.tvslim.windows.ressources.files_copy_confirm_destination
+import net.jolabs40.tvslim.windows.ressources.files_copy_confirm_existing
+import net.jolabs40.tvslim.windows.ressources.files_copy_confirm_source
+import net.jolabs40.tvslim.windows.ressources.files_copy_confirm_title
+import net.jolabs40.tvslim.windows.ressources.files_delete
+import net.jolabs40.tvslim.windows.ressources.files_delete_confirm_file
+import net.jolabs40.tvslim.windows.ressources.files_delete_confirm_folder
+import net.jolabs40.tvslim.windows.ressources.files_delete_confirm_link
+import net.jolabs40.tvslim.windows.ressources.files_delete_confirm_title
+import net.jolabs40.tvslim.windows.ressources.files_delete_confirm_warning
 import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -112,6 +127,96 @@ fun ConfirmationDepot(plan: PlanDepot, onConfirmer: () -> Unit, onAnnuler: () ->
         },
         confirmButton = {
             TextButton(onClick = onConfirmer) { Text(stringResource(Res.string.files_confirm_send)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnuler) { Text(stringResource(Res.string.confirm_cancel)) }
+        },
+    )
+}
+
+/**
+ * La copie d'un dossier vers le PC : d'où, vers où, combien. Un dossier de films pèse vite des dizaines de
+ * gigaoctets ; celle d'un fichier n'a pas besoin de ceci, « Enregistrer sous » en a tenu lieu.
+ */
+@Composable
+fun ConfirmationRapatriement(plan: PlanRapatriement, onConfirmer: () -> Unit, onAnnuler: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text(stringResource(Res.string.files_copy_confirm_title)) },
+        text = {
+            Column(modifier = Modifier.widthIn(max = 560.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(Res.string.files_copy_confirm_source, plan.source), style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    stringResource(Res.string.files_copy_confirm_destination, plan.destination),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = stringResource(Res.string.files_confirm_count, plan.fichiers.size, tailleLisible(plan.taille)),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                if (plan.existant) {
+                    Text(
+                        text = stringResource(Res.string.files_copy_confirm_existing),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirmer) { Text(stringResource(Res.string.files_copy_confirm_copy)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnuler) { Text(stringResource(Res.string.confirm_cancel)) }
+        },
+    )
+}
+
+/**
+ * Ce qu'une suppression emporte, dit avant qu'elle parte : pour un dossier, tout ce qu'il contient. Le téléviseur
+ * n'a pas de corbeille, et la confirmation le rappelle — sauf pour un lien, qui n'emporte que lui-même.
+ */
+@Composable
+fun ConfirmationSuppression(plan: PlanSuppression, onConfirmer: () -> Unit, onAnnuler: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text(stringResource(Res.string.files_delete_confirm_title)) },
+        text = {
+            Column(modifier = Modifier.widthIn(max = 560.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = when (plan.nature) {
+                        NatureSuppression.FICHIER ->
+                            stringResource(Res.string.files_delete_confirm_file, plan.nom, tailleLisible(plan.taille))
+
+                        NatureSuppression.DOSSIER -> stringResource(
+                            Res.string.files_delete_confirm_folder,
+                            plan.nom,
+                            plan.fichiers,
+                            plan.dossiers,
+                            tailleLisible(plan.taille),
+                        )
+
+                        NatureSuppression.LIEN -> stringResource(Res.string.files_delete_confirm_link, plan.nom)
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                TexteSecondaire(plan.chemin, petit = true)
+                if (plan.nature != NatureSuppression.LIEN) {
+                    Text(
+                        text = stringResource(Res.string.files_delete_confirm_warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirmer,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            ) {
+                Text(stringResource(Res.string.files_delete))
+            }
         },
         dismissButton = {
             TextButton(onClick = onAnnuler) { Text(stringResource(Res.string.confirm_cancel)) }

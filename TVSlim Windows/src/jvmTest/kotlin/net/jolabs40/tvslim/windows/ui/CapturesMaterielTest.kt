@@ -112,6 +112,9 @@ class CapturesMaterielTest {
                                 choisirApk = { null },
                                 choisirFichiers = { emptyList() },
                                 choisirDossier = { null },
+                                choisirDestinationFichier = { _, _ -> null },
+                                choisirDestinationDossier = { null },
+                                ouvrirDossier = {},
                             )
                         }
                     }

@@ -20,6 +20,7 @@ import net.jolabs40.tvslim.shell.ExecuteurCommande
 import net.jolabs40.tvslim.shell.ExecuteurDirect
 import net.jolabs40.tvslim.shell.InstallateurApk
 import net.jolabs40.tvslim.shell.Interruption
+import net.jolabs40.tvslim.shell.RecepteurFichiers
 import net.jolabs40.tvslim.shell.ReponseDirecte
 import net.jolabs40.tvslim.shell.ResultatShell
 import net.jolabs40.tvslim.windows.outils.Traces
@@ -27,11 +28,13 @@ import net.jolabs40.tvslim.windows.outils.detail
 import okio.Buffer
 import okio.ForwardingSource
 import okio.Source
+import okio.sink
 import okio.source
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -67,7 +70,7 @@ const val PORT_ADB_PAR_DEFAUT = 5555
  */
 class ClientAdb(
     private val depotCles: DepotCles,
-) : ExecuteurCommande, InstallateurApk, ExecuteurDirect, EnvoyeurFichiers {
+) : ExecuteurCommande, InstallateurApk, ExecuteurDirect, EnvoyeurFichiers, RecepteurFichiers {
 
     private val _connexion = MutableStateFlow(ConnexionUi())
     val connexion: StateFlow<ConnexionUi> = _connexion.asStateFlow()
@@ -262,6 +265,60 @@ class ClientAdb(
                     },
                 )
             }
+        }
+    }
+
+    /**
+     * Lit un fichier du téléviseur, comme `adb pull`. Hors du chemin d'[executer], comme l'envoi : une copie ne se
+     * rejoue pas. Même délai de silence, et un arrêt n'interrompt que ce fichier.
+     *
+     * Un disque qui refuse d'écrire n'est pas une connexion perdue : la session reste ouverte, et le refus revient
+     * comme celui du téléviseur, en code 1.
+     */
+    override suspend fun recevoir(
+        chemin: String,
+        destination: OutputStream,
+        taille: Long,
+        annule: () -> Boolean,
+        surRecu: (recu: Long) -> Unit,
+    ): ResultatShell = withContext(Dispatchers.IO) {
+        verrou.withLock {
+            if (session == null) reprendre()
+            val active = session ?: return@withLock ResultatShell.indisponible(MOTIF_AUCUNE_SESSION)
+            val activite = AtomicLong(System.currentTimeMillis())
+
+            sousVeille(active, activite, DELAI_SILENCE_MS) {
+                // Le puits ne referme pas le flux : c'est l'écriture locale qui le referme, puis le valide.
+                val puits = PuitsReception(destination.sink(), taille, annule, activite, surRecu)
+                active.pull(puits, chemin).also { puits.flush() }
+            }.fold(
+                onSuccess = { reponse ->
+                    when (reponse) {
+                        is SyncResult.Success -> ResultatShell(code = 0, sortie = "")
+                        is SyncResult.Failure -> ResultatShell(code = 1, sortie = reponse.reason.trim())
+                    }
+                },
+                onFailure = { erreur ->
+                    when (erreur) {
+                        is ReceptionAnnulee -> ResultatShell.indisponible(MOTIF_COPIE_ANNULEE)
+                        is EcritureLocaleEchouee -> ResultatShell(code = 1, sortie = erreur.message.orEmpty())
+                        else -> {
+                            Traces.avertir(TAG, "Copie interrompue" + detail(chemin), erreur)
+                            fermerSession()
+                            val rupture = Issue.Rompue(
+                                motif = if (erreur is SilenceProlonge) {
+                                    MOTIF_DELAI
+                                } else {
+                                    erreur.message?.takeIf { it.isNotBlank() } ?: erreur.javaClass.simpleName
+                                },
+                                probleme = diagnostic(erreur),
+                            )
+                            signalerRupture(rupture)
+                            ResultatShell.indisponible(rupture.motif)
+                        }
+                    }
+                },
+            )
         }
     }
 
@@ -492,6 +549,7 @@ class ClientAdb(
         // noyau partagé — qui sont en français.
         const val MOTIF_AUCUNE_SESSION = "Aucun téléviseur connecté."
         const val MOTIF_ANNULE = "Envoi annulé."
+        const val MOTIF_COPIE_ANNULEE = "Copie annulée."
         const val MOTIF_DELAI =
             "Le téléviseur n'a pas répondu à temps. Vérifiez qu'il est allumé et réessayez."
     }

@@ -70,8 +70,10 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
   les plus lourdes.
 - **Fichiers** — parcourir les dossiers du téléviseur comme dans l'Explorateur : stockage interne,
   Téléchargements, Films, clé USB ou carte SD branchée… et y déposer des fichiers ou un dossier
-  entier, sous-dossiers compris, glissés dans la fenêtre ou choisis dans vos fichiers. Les droits sont
-  ceux d'ADB : le stockage partagé s'écrit, `Android/data` compris ; les dossiers du système, non.
+  entier, sous-dossiers compris, glissés dans la fenêtre ou choisis dans vos fichiers. Sous Windows,
+  copier un fichier ou un dossier vers le PC, et supprimer ce qui encombre le téléviseur — au survol
+  d'une ligne ou par un clic droit. Les droits sont ceux d'ADB : le stockage partagé s'écrit,
+  `Android/data` compris ; les dossiers du système, non.
 - **Journal** — chaque action, avec la commande qui l'annule ; annuler une seule ligne ou tout
   restaurer ; export en Markdown.
 
@@ -83,8 +85,10 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
 - L'écran d'accueil d'usine ne se désactive pas tant qu'aucun launcher tiers n'est installé.
 - Un APK ne s'installe qu'après confirmation, et jamais en désinstallant ce qui est en place : une
   application signée d'une autre clé n'est pas touchée.
-- Rien n'est déposé sur le téléviseur avant une confirmation qui dit ce qui sera remplacé, et TV Slim
-  n'y efface aucun fichier.
+- Rien n'est déposé sur le téléviseur avant une confirmation qui dit ce qui sera remplacé. Rien n'y
+  est effacé avant une confirmation qui dit ce qui disparaît — pour un dossier, combien de fichiers et
+  combien de gigaoctets —, et un stockage entier (stockage interne, clé USB, dossier `Android`) ne
+  s'efface jamais d'un bloc. Une copie vers le PC arrêtée en route ne laisse aucun fichier tronqué.
 - Seule exception, la carte **Commande ADB** : ce qu'on y tape échappe à ces garde-fous et ne s'annule
   pas depuis TV Slim. La carte le dit, et chaque commande est consignée au journal.
 

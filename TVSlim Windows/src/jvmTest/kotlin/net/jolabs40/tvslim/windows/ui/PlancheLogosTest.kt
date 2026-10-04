@@ -18,6 +18,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -43,16 +45,22 @@ import net.jolabs40.tvslim.device.StockageApplication
 import net.jolabs40.tvslim.device.origine
 import net.jolabs40.tvslim.device.paquetsInconnus
 import net.jolabs40.tvslim.fichiers.AvanceeDepot
+import net.jolabs40.tvslim.fichiers.CibleLocale
 import net.jolabs40.tvslim.fichiers.EchecDepot
 import net.jolabs40.tvslim.fichiers.EntreeDistante
 import net.jolabs40.tvslim.fichiers.EtatExplorateur
+import net.jolabs40.tvslim.fichiers.FichierDistant
 import net.jolabs40.tvslim.fichiers.FichierLocal
 import net.jolabs40.tvslim.fichiers.LectureDossier
 import net.jolabs40.tvslim.fichiers.LotLocal
 import net.jolabs40.tvslim.fichiers.NatureEntree
+import net.jolabs40.tvslim.fichiers.NatureSuppression
 import net.jolabs40.tvslim.fichiers.PlanDepot
+import net.jolabs40.tvslim.fichiers.PlanRapatriement
+import net.jolabs40.tvslim.fichiers.PlanSuppression
 import net.jolabs40.tvslim.fichiers.Raccourci
 import net.jolabs40.tvslim.fichiers.ResultatDepot
+import net.jolabs40.tvslim.fichiers.SensTransfert
 import net.jolabs40.tvslim.installation.ApkChoisi
 import net.jolabs40.tvslim.installation.CauseEchec
 import net.jolabs40.tvslim.installation.ManifesteApk
@@ -73,6 +81,8 @@ import net.jolabs40.tvslim.windows.ui.ecrans.CarteCommande
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteInstallation
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDepot
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
+import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationRapatriement
+import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationSuppression
 import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.FichiersEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.MemoireEcran
@@ -397,7 +407,7 @@ class PlancheLogosTest {
             ),
             raccourcis = Raccourci.avecVolumes(listOf("1A2B-3C4D")),
         )
-        val actions = ActionsFichiers({}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+        val actions = ActionsFichiers({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         rendre("30-fichiers", 1280, 760, cadre = false) {
             FichiersEcran(connecte = true, etat = films, actions = actions)
         }
@@ -451,6 +461,67 @@ class PlancheLogosTest {
         rendre("34-depot-fichiers", 900, 520, cadre = false) {
             VoileDepot(connecte = true, nomTeleviseur = "TCL Smart TV Pro", destination = "/sdcard/Movies")
         }
+
+        // Copier vers le PC et supprimer : au survol, au clic droit, leurs confirmations, la copie en cours.
+        rendre("35-fichiers-survol", 1280, 520, cadre = false, survol = Offset(600f, 330f)) {
+            FichiersEcran(connecte = true, etat = films, actions = actions)
+        }
+        rendre("36-fichiers-clic-droit", 1280, 520, cadre = false, clicDroit = Offset(600f, 344f)) {
+            FichiersEcran(connecte = true, etat = films, actions = actions)
+        }
+        rendre("37-fichiers-copie-sombre", 1280, 520, sombre = true, cadre = false) {
+            FichiersEcran(
+                connecte = true,
+                etat = films.copy(
+                    avancee = AvanceeDepot("Vacances 2024/plage.jpg", 12, 212, 404_000_000, 2_910_000_000, SensTransfert.RECEPTION),
+                ),
+                actions = actions,
+            )
+        }
+        val telechargements = object : CibleLocale {
+            override fun decrire(chemin: String) =
+                "C:\\Users\\Camille\\Downloads" + chemin.split('/').filter { it.isNotEmpty() }.joinToString("") { "\\$it" }
+            override fun existe(chemin: String) = true
+            override fun creerDossier(chemin: String) = Unit
+            override fun ecrire(chemin: String) = error("rien ne s'écrit")
+        }
+        rendre("38-fichiers-copie-confirmation", 900, 520, cadre = false) {
+            ConfirmationRapatriement(
+                PlanRapatriement(
+                    source = "/sdcard/Movies/Vacances 2024",
+                    cible = telechargements,
+                    nom = "Vacances 2024",
+                    dossier = true,
+                    fichiers = List(212) { FichierDistant("/sdcard/Movies/Vacances 2024/$it.jpg", "Vacances 2024/$it.jpg", 13_726_000, 0L) },
+                    dossiers = listOf("Vacances 2024", "Vacances 2024/vide"),
+                    existant = true,
+                ),
+                {},
+                {},
+            )
+        }
+        rendre("39-fichiers-suppression-confirmation", 900, 520, cadre = false) {
+            ConfirmationSuppression(
+                PlanSuppression("/sdcard/Movies/Vacances 2024", NatureSuppression.DOSSIER, 212, 4, 2_910_000_000),
+                {},
+                {},
+            )
+        }
+        rendre("40-fichiers-derniere-copie", 1280, 600, cadre = false) {
+            FichiersEcran(
+                connecte = true,
+                etat = films.copy(
+                    dernier = ResultatDepot(
+                        destination = "C:\\Users\\Camille\\Downloads\\Vacances 2024",
+                        envoyes = 211,
+                        nombre = 212,
+                        echecs = listOf(EchecDepot("Vacances 2024/dune.jpg", "open failed: Permission denied")),
+                        sens = SensTransfert.RECEPTION,
+                    ),
+                ),
+                actions = actions,
+            )
+        }
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
@@ -461,6 +532,8 @@ class PlancheLogosTest {
         sombre: Boolean = false,
         cadre: Boolean = true,
         clic: Offset? = null,
+        survol: Offset? = null,
+        clicDroit: Offset? = null,
         contenu: @Composable () -> Unit,
     ) {
         val scene = ImageComposeScene(width = largeur, height = hauteur, density = Density(1f)) {
@@ -484,6 +557,24 @@ class PlancheLogosTest {
             if (clic != null) {
                 scene.sendPointerEvent(PointerEventType.Press, clic)
                 scene.sendPointerEvent(PointerEventType.Release, clic)
+                repeat(4) { i ->
+                    scene.render(1_000_000_000L + i * 100_000_000L)
+                    Thread.sleep(150)
+                }
+            }
+            if (survol != null) {
+                scene.sendPointerEvent(PointerEventType.Enter, survol)
+                scene.sendPointerEvent(PointerEventType.Move, survol)
+                repeat(4) { i ->
+                    scene.render(1_000_000_000L + i * 100_000_000L)
+                    Thread.sleep(150)
+                }
+            }
+            if (clicDroit != null) {
+                val droit = PointerButtons(isSecondaryPressed = true)
+                scene.sendPointerEvent(PointerEventType.Move, clicDroit)
+                scene.sendPointerEvent(PointerEventType.Press, clicDroit, buttons = droit, button = PointerButton.Secondary)
+                scene.sendPointerEvent(PointerEventType.Release, clicDroit, button = PointerButton.Secondary)
                 repeat(4) { i ->
                     scene.render(1_000_000_000L + i * 100_000_000L)
                     Thread.sleep(150)

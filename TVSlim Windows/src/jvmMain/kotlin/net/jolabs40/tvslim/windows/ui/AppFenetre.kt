@@ -48,6 +48,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.jolabs40.tvslim.fichiers.EntreeDistante
 import net.jolabs40.tvslim.windows.InfosApp
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.maj.PiloteMisesAJour
@@ -62,6 +63,8 @@ import net.jolabs40.tvslim.windows.ressources.baseline_inventory_2_24
 import net.jolabs40.tvslim.windows.ressources.baseline_memory_24
 import net.jolabs40.tvslim.windows.ressources.config_open_dialog
 import net.jolabs40.tvslim.windows.ressources.config_save_dialog
+import net.jolabs40.tvslim.windows.ressources.files_pick_destination_file
+import net.jolabs40.tvslim.windows.ressources.files_pick_destination_folder
 import net.jolabs40.tvslim.windows.ressources.files_pick_files
 import net.jolabs40.tvslim.windows.ressources.files_pick_folder
 import net.jolabs40.tvslim.windows.ressources.install_dialog
@@ -120,6 +123,11 @@ fun AppFenetre(
     choisirApk: (titre: String) -> File?,
     choisirFichiers: (titre: String) -> List<File>,
     choisirDossier: (titre: String) -> File?,
+    /** « Enregistrer sous », ouvert sur Téléchargements, pour un fichier copié du téléviseur. */
+    choisirDestinationFichier: (nomPropose: String, titre: String) -> File?,
+    /** Le dossier qui recevra un dossier copié du téléviseur, choisi depuis Téléchargements. */
+    choisirDestinationDossier: (titre: String) -> File?,
+    ouvrirDossier: (File) -> Unit,
 ) {
     val etat by pilote.etat.collectAsStateWithLifecycle()
     val etatFichiers by pilote.fichiers.explorateur.etat.collectAsStateWithLifecycle()
@@ -133,6 +141,8 @@ fun AppFenetre(
     val titreApk = stringResource(Res.string.install_dialog)
     val titreFichiers = stringResource(Res.string.files_pick_files)
     val titreDossier = stringResource(Res.string.files_pick_folder)
+    val titreDestinationFichier = stringResource(Res.string.files_pick_destination_file)
+    val titreDestinationDossier = stringResource(Res.string.files_pick_destination_folder)
 
     // Un APK glissé depuis l'Explorateur, n'importe où dans la fenêtre : la carte d'installation n'est pas
     // forcément à l'écran quand on a le fichier sous la main. Le voile dit où il va partir. Sur l'onglet
@@ -337,6 +347,15 @@ fun AppFenetre(
                                 onEnvoyerDossier = {
                                     choisirDossier(titreDossier)?.let { pilote.fichiers.deposer(listOf(it)) }
                                 },
+                                onCopier = { entree ->
+                                    val choix = if (entree.dossier) {
+                                        choisirDestinationDossier(titreDestinationDossier)
+                                    } else {
+                                        choisirDestinationFichier(entree.nom, titreDestinationFichier)
+                                    }
+                                    choix?.let { pilote.fichiers.copier(entree, it) }
+                                },
+                                onOuvrirDossierLocal = { chemin -> ouvrirDossier(File(chemin)) },
                             ),
                         )
 
@@ -368,6 +387,8 @@ private fun actionsFichiers(
     pilote: PiloteFichiers,
     onEnvoyerFichiers: () -> Unit,
     onEnvoyerDossier: () -> Unit,
+    onCopier: (EntreeDistante) -> Unit,
+    onOuvrirDossierLocal: (String) -> Unit,
 ): ActionsFichiers {
     val explorateur = pilote.explorateur
     return remember(pilote) {
@@ -382,6 +403,13 @@ private fun actionsFichiers(
             onConfirmer = explorateur::confirmer,
             onAnnulerConfirmation = explorateur::annulerConfirmation,
             onArreter = explorateur::annulerEnvoi,
+            onCopier = onCopier,
+            onConfirmerCopie = explorateur::confirmerRapatriement,
+            onAnnulerCopie = explorateur::annulerRapatriement,
+            onSupprimer = explorateur::demanderSuppression,
+            onConfirmerSuppression = explorateur::confirmerSuppression,
+            onAnnulerSuppression = explorateur::annulerSuppression,
+            onOuvrirDossierLocal = onOuvrirDossierLocal,
         )
     }
 }

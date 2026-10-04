@@ -137,6 +137,13 @@ fun main() {
                     },
                     choisirFichiers = { titre -> choisirPlusieurs(window, titre) },
                     choisirDossier = { titre -> choisirDossier(window, titre) },
+                    choisirDestinationFichier = { nom, titre ->
+                        choisirFichier(window, titre, nom, dossier = dossierTelechargements())
+                    },
+                    choisirDestinationDossier = { titre ->
+                        choisirDossier(window, titre, dossier = dossierTelechargements())
+                    },
+                    ouvrirDossier = ::ouvrirDossier,
                 )
             }
         }
@@ -161,10 +168,13 @@ private fun ouvrirDossier(dossier: File) {
     }
 }
 
-/** La fenêtre « Enregistrer sous » de Windows, ouverte sur le dossier Documents. */
-private fun choisirFichier(parent: Frame, titre: String, nomPropose: String): File? {
+/**
+ * La fenêtre « Enregistrer sous » de Windows, ouverte sur Documents — sur Téléchargements pour un fichier copié du
+ * téléviseur. Elle demande d'elle-même s'il faut remplacer un fichier existant.
+ */
+private fun choisirFichier(parent: Frame, titre: String, nomPropose: String, dossier: File = dossierDocuments()): File? {
     val dialogue = FileDialog(parent, titre, FileDialog.SAVE).apply {
-        directory = dossierDocuments().path
+        directory = dossier.path
         file = nomPropose
         isVisible = true // bloquant jusqu'au choix
     }
@@ -212,10 +222,10 @@ private fun choisirPlusieurs(parent: Frame, titre: String): List<File> {
  * à l'allure de Windows. Changer l'apparence de Swing ne touche à rien d'autre : la fenêtre de l'application
  * est dessinée par Compose, et n'a aucun composant Swing.
  */
-private fun choisirDossier(parent: Frame, titre: String): File? {
+private fun choisirDossier(parent: Frame, titre: String, dossier: File = dossierDocuments()): File? {
     runCatching { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) }
         .onFailure { Traces.avertir(TAG, "Apparence de Windows indisponible", it) }
-    val choix = JFileChooser(dossierDocuments()).apply {
+    val choix = JFileChooser(dossier).apply {
         dialogTitle = titre
         fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
         isAcceptAllFileFilterUsed = false

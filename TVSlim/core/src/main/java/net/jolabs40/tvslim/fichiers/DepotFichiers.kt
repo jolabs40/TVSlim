@@ -90,13 +90,17 @@ sealed interface ExamenDepot {
     data class Refuse(val refus: RefusDepot, val noms: List<String> = emptyList()) : ExamenDepot
 }
 
-/** Où en est un envoi : le fichier en cours et son rang, les octets partis sur l'ensemble. */
+/** Vers le téléviseur, ou depuis lui vers l'ordinateur : un envoi et une copie se suivent de la même façon. */
+enum class SensTransfert { ENVOI, RECEPTION }
+
+/** Où en est un envoi : le fichier en cours et son rang, les octets partis — ou arrivés — sur l'ensemble. */
 data class AvanceeDepot(
     val fichier: String,
     val rang: Int,
     val nombre: Int,
     val envoye: Long,
     val total: Long,
+    val sens: SensTransfert = SensTransfert.ENVOI,
 )
 
 data class EchecDepot(val chemin: String, val motif: String)
@@ -110,6 +114,8 @@ data class ResultatDepot(
     val annule: Boolean = false,
     /** Arrêté par la connexion : ce qui suivait n'est pas parti. */
     val interrompu: Boolean = false,
+    /** Une copie vers l'ordinateur : [destination] est alors un dossier du disque, [envoyes] les fichiers copiés. */
+    val sens: SensTransfert = SensTransfert.ENVOI,
 ) {
     val complet: Boolean get() = envoyes == nombre && echecs.isEmpty() && !annule && !interrompu
 }

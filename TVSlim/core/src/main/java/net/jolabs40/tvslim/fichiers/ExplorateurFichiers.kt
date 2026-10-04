@@ -18,17 +18,29 @@ data class EtatExplorateur(
     /** Ce qu'on a choisi se lit, puis le dossier se relit : la confirmation vient après. */
     val examen: Boolean = false,
     val confirmation: PlanDepot? = null,
+    /** Un envoi, ou une copie vers l'ordinateur : [AvanceeDepot.sens] le dit. */
     val avancee: AvanceeDepot? = null,
-    /** Le bilan du dernier envoi, qui reste lisible une fois la bannière passée. */
+    /** Le bilan du dernier envoi ou de la dernière copie, qui reste lisible une fois la bannière passée. */
     val dernier: ResultatDepot? = null,
+    /** Un dossier du téléviseur se lit en entier avant d'être copié ou effacé : la confirmation dit ce qu'il contient. */
+    val inventaire: Boolean = false,
+    /** La copie d'un dossier, en attente de confirmation ; celle d'un fichier part aussitôt choisie. */
+    val rapatriement: PlanRapatriement? = null,
+    val suppression: PlanSuppression? = null,
+    val effacement: Boolean = false,
 ) {
     val entrees: List<EntreeDistante> get() = (lecture as? LectureDossier.Lue)?.entrees.orEmpty()
     val parent: String? get() = CheminDistant.parent(chemin)
     val etapes: List<EtapeChemin> get() = CheminDistant.etapes(chemin)
     val envoiEnCours: Boolean get() = avancee != null
 
-    /** Un envoi à la fois : examen, confirmation et envoi se suivent sans se chevaucher. */
-    val occupe: Boolean get() = examen || confirmation != null || envoiEnCours
+    /**
+     * Une opération à la fois : examen, confirmation, envoi, copie et suppression se suivent sans se chevaucher —
+     * effacer le dossier où arrive un envoi, par exemple.
+     */
+    val occupe: Boolean
+        get() = examen || inventaire || confirmation != null || rapatriement != null || suppression != null ||
+            effacement || envoiEnCours
 }
 
 /** Ce que chaque application dit à la personne, dans sa langue. */
@@ -42,12 +54,19 @@ sealed interface SignalFichiers {
 
     data class Creation(val creation: CreationDossier) : SignalFichiers
 
+    /** Un envoi, ou une copie vers l'ordinateur ([ResultatDepot.sens]). */
     data class Depot(val resultat: ResultatDepot) : SignalFichiers
+
+    /** Le contenu du dossier [nom] ne s'est pas lu : rien n'a été copié ni effacé. */
+    data class ContenuIllisible(val nom: String, val refus: RefusLecture, val motif: String) : SignalFichiers
+
+    data class Suppression(val suppression: SuppressionEntree) : SignalFichiers
 }
 
 /**
- * L'onglet Fichiers, sans son écran : où l'on est, ce qu'on y lit, l'envoi en cours. Partagé par le compagnon et
- * par Windows, qui n'y ajoutent que la façon de choisir des fichiers et les mots pour le dire.
+ * L'onglet Fichiers, sans son écran : où l'on est, ce qu'on y lit, l'envoi ou la copie en cours, ce qu'on va
+ * effacer. Partagé par le compagnon et par Windows, qui n'y ajoutent que la façon de choisir des fichiers — et
+ * leur destination sur le disque — et les mots pour le dire.
  *
  * Une lecture qui revient après qu'on est passé ailleurs est ignorée ; un envoi suit son cours pendant qu'on
  * parcourt d'autres dossiers — ses commandes et les lectures se partagent la même connexion, chacune son tour.
@@ -148,8 +167,93 @@ class ExplorateurFichiers(
         }
     }
 
-    /** Arrête l'envoi au prochain bloc ; le fichier entamé n'est pas gardé. */
+    /** Arrête l'envoi ou la copie au prochain bloc ; le fichier entamé n'est gardé ni d'un côté ni de l'autre. */
     fun annulerEnvoi() = annulation.set(true)
+
+    /**
+     * Copie [entree], prise dans le dossier courant, vers [cible] sous le nom [nom]. Un fichier part aussitôt :
+     * la fenêtre « Enregistrer sous » a tenu lieu de confirmation, et demandé s'il fallait en remplacer un. Un
+     * dossier se lit d'abord, puis attend [confirmerRapatriement] : il peut peser des gigaoctets.
+     */
+    fun rapatrier(entree: EntreeDistante, cible: CibleLocale, nom: String) {
+        if (_etat.value.occupe) return signaler(SignalFichiers.Occupe)
+        val dossier = _etat.value.chemin
+        val tour = generation
+        _etat.update { it.copy(inventaire = entree.dossier) }
+        portee.launch {
+            val examen = navigateur.preparerRapatriement(dossier, entree, cible, nom)
+            if (tour != generation) return@launch
+            _etat.update { it.copy(inventaire = false) }
+            when (examen) {
+                is ExamenRapatriement.Pret ->
+                    if (examen.plan.dossier) _etat.update { it.copy(rapatriement = examen.plan) } else copier(examen.plan)
+
+                is ExamenRapatriement.Illisible -> signaler(SignalFichiers.ContenuIllisible(entree.nom, examen.refus, examen.motif))
+            }
+        }
+    }
+
+    fun confirmerRapatriement() {
+        _etat.value.rapatriement?.let(::copier)
+    }
+
+    fun annulerRapatriement() = _etat.update { it.copy(rapatriement = null) }
+
+    private fun copier(plan: PlanRapatriement) {
+        val tour = generation
+        annulation.set(false)
+        _etat.update {
+            it.copy(
+                rapatriement = null,
+                avancee = AvanceeDepot("", 0, plan.fichiers.size, 0L, plan.taille, SensTransfert.RECEPTION),
+            )
+        }
+        portee.launch {
+            val resultat = navigateur.rapatrier(plan, annule = annulation::get) { avancee ->
+                if (tour == generation) _etat.update { it.copy(avancee = avancee) }
+            }
+            if (tour != generation) return@launch
+            _etat.update { it.copy(avancee = null, dernier = resultat) }
+            signaler(SignalFichiers.Depot(resultat))
+        }
+    }
+
+    /** Prépare l'effacement de [entree], prise dans le dossier courant : rien ne s'efface sans [confirmerSuppression]. */
+    fun demanderSuppression(entree: EntreeDistante) {
+        if (_etat.value.occupe) return signaler(SignalFichiers.Occupe)
+        val dossier = _etat.value.chemin
+        val tour = generation
+        _etat.update { it.copy(inventaire = entree.dossier && !entree.lien) }
+        portee.launch {
+            val examen = navigateur.preparerSuppression(dossier, entree)
+            if (tour != generation) return@launch
+            _etat.update { it.copy(inventaire = false) }
+            when (examen) {
+                is ExamenSuppression.Pret -> _etat.update { it.copy(suppression = examen.plan) }
+                ExamenSuppression.Protege ->
+                    signaler(SignalFichiers.Suppression(SuppressionEntree(IssueSuppression.PROTEGE, entree.nom)))
+
+                is ExamenSuppression.Illisible -> signaler(SignalFichiers.ContenuIllisible(entree.nom, examen.refus, examen.motif))
+            }
+        }
+    }
+
+    fun confirmerSuppression() {
+        val plan = _etat.value.suppression ?: return
+        val tour = generation
+        _etat.update { it.copy(suppression = null, effacement = true) }
+        portee.launch {
+            val issue = navigateur.supprimer(plan)
+            if (tour != generation) return@launch
+            _etat.update { it.copy(effacement = false) }
+            signaler(SignalFichiers.Suppression(issue))
+            // Relu même après un échec : un dossier à moitié effacé montre ce qui reste.
+            val parent = CheminDistant.parent(plan.chemin)
+            if (parent != null && _etat.value.chemin == parent) ouvrir(parent)
+        }
+    }
+
+    fun annulerSuppression() = _etat.update { it.copy(suppression = null) }
 
     fun creerDossier(nom: String) {
         val parent = _etat.value.chemin

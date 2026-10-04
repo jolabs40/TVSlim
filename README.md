@@ -63,8 +63,9 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
   your first visit. Storage: free and used space, and the largest applications.
 - **Files** — browse the TV's folders as in File Explorer: internal storage, Downloads, Movies, a USB
   drive or SD card plugged in… and drop files or a whole folder into them, subfolders included,
-  dragged into the window or picked from your files. The rights are those of ADB: shared storage is
-  writable, `Android/data` included; system folders are not.
+  dragged into the window or picked from your files. On Windows, copy a file or a folder to the PC,
+  and delete what clutters the TV — by hovering over a line or with a right-click. The rights are
+  those of ADB: shared storage is writable, `Android/data` included; system folders are not.
 - **Log** — every action with the command that undoes it; undo a single line or restore everything;
   export as Markdown.
 
@@ -76,8 +77,10 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 - The factory home screen cannot be disabled while no third-party launcher is installed.
 - An APK is installed only after a confirmation, and never by uninstalling what is already there: an
   application signed with another key is left alone.
-- Nothing is dropped on the TV before a confirmation that says what will be replaced, and TV Slim
-  deletes no file there.
+- Nothing is dropped on the TV before a confirmation that says what will be replaced. Nothing is
+  erased there before a confirmation that says what goes — for a folder, how many files and how many
+  gigabytes —, and a whole storage volume (internal storage, USB drive, the `Android` folder) is never
+  erased in one go. A copy to the PC stopped halfway leaves no truncated file.
 - The one exception is the **ADB command** card: what you type there bypasses these safeguards and
   cannot be undone from TV Slim. The card says so, and every command is recorded in the log.
 

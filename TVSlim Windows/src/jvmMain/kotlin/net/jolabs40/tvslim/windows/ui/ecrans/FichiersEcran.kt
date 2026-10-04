@@ -1,14 +1,23 @@
 package net.jolabs40.tvslim.windows.ui.ecrans
 
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,7 +43,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,23 +65,32 @@ import net.jolabs40.tvslim.fichiers.CheminDistant
 import net.jolabs40.tvslim.fichiers.EntreeDistante
 import net.jolabs40.tvslim.fichiers.EtatExplorateur
 import net.jolabs40.tvslim.fichiers.LectureDossier
+import net.jolabs40.tvslim.fichiers.NatureEntree
 import net.jolabs40.tvslim.fichiers.NatureRaccourci
 import net.jolabs40.tvslim.fichiers.Raccourci
 import net.jolabs40.tvslim.fichiers.ResultatDepot
+import net.jolabs40.tvslim.fichiers.SensTransfert
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.action_refresh
 import net.jolabs40.tvslim.windows.ressources.baseline_arrow_upward_24
 import net.jolabs40.tvslim.windows.ressources.baseline_create_new_folder_24
+import net.jolabs40.tvslim.windows.ressources.baseline_delete_24
+import net.jolabs40.tvslim.windows.ressources.baseline_download_24
 import net.jolabs40.tvslim.windows.ressources.baseline_drive_folder_upload_24
 import net.jolabs40.tvslim.windows.ressources.baseline_edit_24
 import net.jolabs40.tvslim.windows.ressources.baseline_folder_24
+import net.jolabs40.tvslim.windows.ressources.baseline_folder_open_24
 import net.jolabs40.tvslim.windows.ressources.baseline_home_24
 import net.jolabs40.tvslim.windows.ressources.baseline_insert_drive_file_24
 import net.jolabs40.tvslim.windows.ressources.baseline_link_24
 import net.jolabs40.tvslim.windows.ressources.baseline_refresh_24
 import net.jolabs40.tvslim.windows.ressources.baseline_upload_file_24
 import net.jolabs40.tvslim.windows.ressources.baseline_usb_24
+import net.jolabs40.tvslim.windows.ressources.files_copy
+import net.jolabs40.tvslim.windows.ressources.files_copying
 import net.jolabs40.tvslim.windows.ressources.files_create
+import net.jolabs40.tvslim.windows.ressources.files_delete
+import net.jolabs40.tvslim.windows.ressources.files_deleting
 import net.jolabs40.tvslim.windows.ressources.files_denied
 import net.jolabs40.tvslim.windows.ressources.files_empty
 import net.jolabs40.tvslim.windows.ressources.files_examining
@@ -77,13 +99,17 @@ import net.jolabs40.tvslim.windows.ressources.files_go
 import net.jolabs40.tvslim.windows.ressources.files_go_to
 import net.jolabs40.tvslim.windows.ressources.files_go_to_label
 import net.jolabs40.tvslim.windows.ressources.files_hint
+import net.jolabs40.tvslim.windows.ressources.files_last_copy
 import net.jolabs40.tvslim.windows.ressources.files_last_failures
+import net.jolabs40.tvslim.windows.ressources.files_last_failures_copy
 import net.jolabs40.tvslim.windows.ressources.files_link
 import net.jolabs40.tvslim.windows.ressources.files_loading
 import net.jolabs40.tvslim.windows.ressources.files_new_folder
 import net.jolabs40.tvslim.windows.ressources.files_new_folder_label
 import net.jolabs40.tvslim.windows.ressources.files_not_connected
 import net.jolabs40.tvslim.windows.ressources.files_not_found
+import net.jolabs40.tvslim.windows.ressources.files_open_folder
+import net.jolabs40.tvslim.windows.ressources.files_reading_content
 import net.jolabs40.tvslim.windows.ressources.files_send_files
 import net.jolabs40.tvslim.windows.ressources.files_send_folder
 import net.jolabs40.tvslim.windows.ressources.files_sending
@@ -121,13 +147,23 @@ data class ActionsFichiers(
     val onConfirmer: () -> Unit,
     val onAnnulerConfirmation: () -> Unit,
     val onArreter: () -> Unit,
+    /** Ouvre « Enregistrer sous » pour un fichier, le choix d'un dossier pour un dossier, puis copie. */
+    val onCopier: (EntreeDistante) -> Unit,
+    val onConfirmerCopie: () -> Unit,
+    val onAnnulerCopie: () -> Unit,
+    val onSupprimer: (EntreeDistante) -> Unit,
+    val onConfirmerSuppression: () -> Unit,
+    val onAnnulerSuppression: () -> Unit,
+    /** Montre dans l'Explorateur le dossier où est arrivée la dernière copie. */
+    val onOuvrirDossierLocal: (String) -> Unit,
 )
 
 /**
  * Les dossiers du téléviseur, comme dans l'Explorateur : des raccourcis, le fil du chemin, la liste. Ce qu'on
  * glisse dans la fenêtre, ou qu'on choisit par les deux boutons, part dans le dossier affiché.
  *
- * Un clic sur un dossier y entre. Un fichier ne s'ouvre pas : le téléviseur n'a rien pour le montrer ici.
+ * Un clic sur un dossier y entre. Un fichier ne s'ouvre pas : le téléviseur n'a rien pour le montrer ici. Copier
+ * vers le PC et supprimer se trouvent au survol d'une ligne, et au clic droit.
  */
 @Composable
 fun FichiersEcran(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFichiers) {
@@ -143,6 +179,16 @@ fun FichiersEcran(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFich
 
     etat.confirmation?.let { plan ->
         ConfirmationDepot(plan = plan, onConfirmer = actions.onConfirmer, onAnnuler = actions.onAnnulerConfirmation)
+    }
+    etat.rapatriement?.let { plan ->
+        ConfirmationRapatriement(plan = plan, onConfirmer = actions.onConfirmerCopie, onAnnuler = actions.onAnnulerCopie)
+    }
+    etat.suppression?.let { plan ->
+        ConfirmationSuppression(
+            plan = plan,
+            onConfirmer = actions.onConfirmerSuppression,
+            onAnnuler = actions.onAnnulerSuppression,
+        )
     }
     if (nouveauDossier) {
         DialogueSaisie(
@@ -198,14 +244,23 @@ fun FichiersEcran(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFich
                 TexteSecondaire(stringResource(Res.string.files_hint), modifier = Modifier.weight(1f), petit = true)
             }
             val avancee = etat.avancee
+            val dernier = etat.dernier
             when {
                 etat.examen -> Avancement(texte = stringResource(Res.string.files_examining), fraction = null)
+                etat.inventaire -> Avancement(texte = stringResource(Res.string.files_reading_content), fraction = null)
+                etat.effacement -> Avancement(texte = stringResource(Res.string.files_deleting), fraction = null)
                 avancee != null -> Envoi(avancee, actions.onArreter)
-                else -> etat.dernier?.takeIf { it.echecs.isNotEmpty() }?.let { Echecs(it) }
+                dernier != null -> {
+                    // Rien d'arrivé, rien à montrer : le dossier n'existe peut-être même pas.
+                    if (dernier.sens == SensTransfert.RECEPTION && dernier.envoyes > 0) {
+                        DerniereCopie(dernier, actions.onOuvrirDossierLocal)
+                    }
+                    if (dernier.echecs.isNotEmpty()) Echecs(dernier)
+                }
             }
         }
         HorizontalDivider()
-        Liste(etat, actions.onOuvrir)
+        Liste(etat, actions)
     }
 }
 
@@ -299,7 +354,7 @@ private fun Envoi(avancee: AvanceeDepot, onArreter: () -> Unit) {
         Column(modifier = Modifier.weight(1f)) {
             Avancement(
                 texte = stringResource(
-                    Res.string.files_sending,
+                    if (avancee.sens == SensTransfert.RECEPTION) Res.string.files_copying else Res.string.files_sending,
                     avancee.fichier.ifBlank { "…" },
                     avancee.rang.coerceAtLeast(1),
                     avancee.nombre,
@@ -332,6 +387,22 @@ private fun Avancement(texte: String, fraction: Float?) {
     }
 }
 
+/** Où est arrivée la dernière copie, et de quoi l'ouvrir : on ne cherche pas ce qu'on vient de copier. */
+@Composable
+private fun DerniereCopie(resultat: ResultatDepot, onOuvrirDossierLocal: (String) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        TexteSecondaire(
+            stringResource(Res.string.files_last_copy, resultat.envoyes, resultat.destination),
+            modifier = Modifier.weight(1f, fill = false),
+            petit = true,
+        )
+        TextButton(onClick = { onOuvrirDossierLocal(resultat.destination) }) {
+            IconeBouton(Res.drawable.baseline_folder_open_24)
+            Text(stringResource(Res.string.files_open_folder))
+        }
+    }
+}
+
 /** Ce que le dernier envoi n'a pas déposé, et pourquoi : la bannière passe, la liste reste jusqu'au suivant. */
 @Composable
 private fun Echecs(resultat: ResultatDepot) {
@@ -341,7 +412,13 @@ private fun Echecs(resultat: ResultatDepot) {
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = stringResource(Res.string.files_last_failures),
+                text = stringResource(
+                    if (resultat.sens == SensTransfert.RECEPTION) {
+                        Res.string.files_last_failures_copy
+                    } else {
+                        Res.string.files_last_failures
+                    },
+                ),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onErrorContainer,
             )
@@ -357,7 +434,7 @@ private fun Echecs(resultat: ResultatDepot) {
 }
 
 @Composable
-private fun Liste(etat: EtatExplorateur, onOuvrir: (String) -> Unit) {
+private fun Liste(etat: EtatExplorateur, actions: ActionsFichiers) {
     Box(modifier = Modifier.fillMaxSize()) {
         when (val lecture = etat.lecture) {
             null -> Attente()
@@ -376,7 +453,11 @@ private fun Liste(etat: EtatExplorateur, onOuvrir: (String) -> Unit) {
                         LigneEntree(
                             entree = entree,
                             date = format.format(Instant.ofEpochMilli(entree.date).atZone(ZoneId.systemDefault())),
-                            onOuvrir = { onOuvrir(CheminDistant.joindre(lecture.chemin, entree.nom)) },
+                            // Une opération à la fois : pendant un envoi, une copie ou une suppression, rien ne s'offre.
+                            actif = !etat.occupe,
+                            onOuvrir = { actions.onOuvrir(CheminDistant.joindre(lecture.chemin, entree.nom)) },
+                            onCopier = { actions.onCopier(entree) },
+                            onSupprimer = { actions.onSupprimer(entree) },
                         )
                     }
                 }
@@ -393,58 +474,147 @@ private fun Liste(etat: EtatExplorateur, onOuvrir: (String) -> Unit) {
     }
 }
 
+/**
+ * Une entrée du dossier. Copier vers le PC et supprimer apparaissent au survol — cent lignes n'ont pas à porter
+ * deux cents boutons — et au clic droit, comme dans l'Explorateur.
+ */
 @Composable
-private fun LigneEntree(entree: EntreeDistante, date: String, onOuvrir: () -> Unit) {
+private fun LigneEntree(
+    entree: EntreeDistante,
+    date: String,
+    actif: Boolean,
+    onOuvrir: () -> Unit,
+    onCopier: () -> Unit,
+    onSupprimer: () -> Unit,
+) {
     // Un nom qui commence par un point est caché sur Android aussi : il reste là, en retrait.
     val couleur = if (entree.nom.startsWith('.')) {
         MaterialTheme.colorScheme.onSurfaceVariant
     } else {
         MaterialTheme.colorScheme.onSurface
     }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (entree.dossier) Modifier.clickable(onClick = onOuvrir) else Modifier)
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    // Un tube ou un périphérique ne se copie pas : sa lecture ne finirait jamais.
+    val copiable = entree.nature != NatureEntree.AUTRE
+    val libelleCopier = stringResource(Res.string.files_copy)
+    val libelleSupprimer = stringResource(Res.string.files_delete)
+    val interactions = remember { MutableInteractionSource() }
+    val survolee by interactions.collectIsHoveredAsState()
+
+    ContextMenuArea(
+        items = {
+            listOfNotNull(
+                ContextMenuItem(libelleCopier, onCopier).takeIf { copiable },
+                ContextMenuItem(libelleSupprimer, onSupprimer),
+            )
+        },
+        enabled = actif,
     ) {
-        Icon(
-            painter = painterResource(
-                if (entree.dossier) Res.drawable.baseline_folder_24 else Res.drawable.baseline_insert_drive_file_24,
-            ),
-            contentDescription = null,
-            tint = if (entree.dossier) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = entree.nom,
-            modifier = Modifier.weight(1f),
-            color = couleur,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (entree.lien) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .hoverable(interactions)
+                // Un fichier ne s'ouvre pas, mais sa ligne s'éclaire au survol comme celle d'un dossier : on voit à
+                // quelle ligne appartiennent les boutons.
+                .then(if (entree.dossier) Modifier.clickable(onClick = onOuvrir) else Modifier.indication(interactions, ripple()))
+                .padding(start = 20.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ContenuLigne(entree, date, couleur)
+            // La place reste réservée : la ligne ne bouge pas quand les boutons paraissent.
+            Row(
+                modifier = Modifier.width(72.dp).height(32.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (survolee && actif) {
+                    if (copiable) ActionLigne(Res.drawable.baseline_download_24, libelleCopier, onCopier)
+                    ActionLigne(
+                        Res.drawable.baseline_delete_24,
+                        libelleSupprimer,
+                        onSupprimer,
+                        teinte = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Un bouton d'icône de 32 dp, son nom en infobulle : une icône seule ne dit pas toujours ce qu'elle fait. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ActionLigne(
+    icone: DrawableResource,
+    libelle: String,
+    onClick: () -> Unit,
+    teinte: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
+    TooltipArea(
+        tooltip = {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.inverseSurface,
+                shadowElevation = 4.dp,
+            ) {
+                Text(
+                    text = libelle,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                )
+            }
+        },
+    ) {
+        IconButton(onClick = onClick, modifier = Modifier.size(32.dp)) {
             Icon(
-                painter = painterResource(Res.drawable.baseline_link_24),
-                contentDescription = stringResource(Res.string.files_link),
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                painter = painterResource(icone),
+                contentDescription = libelle,
+                modifier = Modifier.size(20.dp),
+                tint = teinte,
             )
         }
-        Text(
-            text = if (entree.dossier) "" else tailleLisible(entree.taille),
-            modifier = Modifier.width(90.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End,
-        )
-        Text(
-            text = date,
-            modifier = Modifier.width(150.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+    }
+}
+
+/** Icône, nom, lien, taille et date : la ligne telle qu'elle se lit. */
+@Composable
+private fun RowScope.ContenuLigne(entree: EntreeDistante, date: String, couleur: Color) {
+    Icon(
+        painter = painterResource(
+            if (entree.dossier) Res.drawable.baseline_folder_24 else Res.drawable.baseline_insert_drive_file_24,
+        ),
+        contentDescription = null,
+        tint = if (entree.dossier) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Text(
+        text = entree.nom,
+        modifier = Modifier.weight(1f),
+        color = couleur,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
+    if (entree.lien) {
+        Icon(
+            painter = painterResource(Res.drawable.baseline_link_24),
+            contentDescription = stringResource(Res.string.files_link),
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+    Text(
+        text = if (entree.dossier) "" else tailleLisible(entree.taille),
+        modifier = Modifier.width(90.dp),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.End,
+    )
+    Text(
+        text = date,
+        modifier = Modifier.width(150.dp),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

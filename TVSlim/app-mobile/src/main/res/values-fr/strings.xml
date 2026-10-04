@@ -284,4 +284,10 @@
     <string name="files_sent">Fichiers envoyés : %1$d sur %2$d, dans %3$s.</string>
     <string name="files_sent_cancelled">Envoi arrêté — envoyés : %1$d sur %2$d.</string>
     <string name="files_sent_interrupted">Connexion perdue — envoyés : %1$d sur %2$d.</string>
+    <string name="files_content_not_found">%1$s n\'existe plus sur le téléviseur.</string>
+    <string name="files_content_denied">Android ne laisse pas ADB lire le contenu de %1$s.</string>
+    <string name="files_content_failed">Le contenu de %1$s ne se lit pas : %2$s</string>
+    <string name="files_deleted">%1$s supprimé du téléviseur.</string>
+    <string name="files_delete_protected">%1$s est un stockage entier, ou en contient un : TV Slim ne l\'efface pas d\'un bloc.</string>
+    <string name="files_delete_failed">%1$s n\'a pas pu être entièrement supprimé : %2$s</string>
 </resources>

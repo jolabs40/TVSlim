@@ -285,4 +285,10 @@
     <string name="files_sent">Files sent: %1$d of %2$d, into %3$s.</string>
     <string name="files_sent_cancelled">Transfer stopped — sent: %1$d of %2$d.</string>
     <string name="files_sent_interrupted">Connection lost — sent: %1$d of %2$d.</string>
+    <string name="files_content_not_found">%1$s no longer exists on the television.</string>
+    <string name="files_content_denied">Android does not let ADB read the contents of %1$s.</string>
+    <string name="files_content_failed">Could not read the contents of %1$s: %2$s</string>
+    <string name="files_deleted">%1$s deleted from the television.</string>
+    <string name="files_delete_protected">%1$s is a whole storage volume, or contains one: TV Slim does not erase it in one go.</string>
+    <string name="files_delete_failed">%1$s could not be fully deleted: %2$s</string>
 </resources>

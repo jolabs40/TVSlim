@@ -11,8 +11,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.jolabs40.tvslim.fichiers.ExplorateurFichiers
 import net.jolabs40.tvslim.fichiers.IssueCreation
+import net.jolabs40.tvslim.fichiers.IssueSuppression
 import net.jolabs40.tvslim.fichiers.NavigateurFichiers
 import net.jolabs40.tvslim.fichiers.RefusDepot
+import net.jolabs40.tvslim.fichiers.RefusLecture
 import net.jolabs40.tvslim.fichiers.ResultatDepot
 import net.jolabs40.tvslim.fichiers.SignalFichiers
 import net.jolabs40.tvslim.remote.R
@@ -79,6 +81,20 @@ class PiloteFichiers(
 
         // Les échecs en détail restent dans la carte de l'onglet : une bannière de téléphone n'a que deux lignes.
         is SignalFichiers.Depot -> bilan(resultat)
+
+        // Copier et supprimer ne s'offrent encore que sous Windows ; le noyau, partagé, sait déjà les dire.
+        is SignalFichiers.ContenuIllisible -> when (refus) {
+            RefusLecture.INTROUVABLE -> contexte.getString(R.string.files_content_not_found, nom)
+            RefusLecture.REFUSE -> contexte.getString(R.string.files_content_denied, nom)
+            RefusLecture.ECHEC -> contexte.getString(R.string.files_content_failed, nom, motif)
+        }
+
+        is SignalFichiers.Suppression -> when (suppression.issue) {
+            IssueSuppression.SUPPRIME -> contexte.getString(R.string.files_deleted, suppression.nom)
+            IssueSuppression.PROTEGE -> contexte.getString(R.string.files_delete_protected, suppression.nom)
+            IssueSuppression.ECHEC ->
+                contexte.getString(R.string.files_delete_failed, suppression.nom, suppression.detail.lines().first())
+        }
     }
 
     private fun bilan(resultat: ResultatDepot): String = when {

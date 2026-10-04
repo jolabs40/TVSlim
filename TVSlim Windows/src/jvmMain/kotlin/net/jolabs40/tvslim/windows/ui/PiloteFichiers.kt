@@ -7,17 +7,31 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.jolabs40.tvslim.fichiers.EntreeDistante
 import net.jolabs40.tvslim.fichiers.ExplorateurFichiers
 import net.jolabs40.tvslim.fichiers.IssueCreation
+import net.jolabs40.tvslim.fichiers.IssueSuppression
 import net.jolabs40.tvslim.fichiers.NavigateurFichiers
 import net.jolabs40.tvslim.fichiers.RefusDepot
+import net.jolabs40.tvslim.fichiers.RefusLecture
 import net.jolabs40.tvslim.fichiers.ResultatDepot
+import net.jolabs40.tvslim.fichiers.SensTransfert
 import net.jolabs40.tvslim.fichiers.SignalFichiers
 import net.jolabs40.tvslim.windows.adb.ClientAdb
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
+import net.jolabs40.tvslim.windows.fichiers.CibleDisque
 import net.jolabs40.tvslim.windows.fichiers.lotDepuis
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.files_busy
+import net.jolabs40.tvslim.windows.ressources.files_content_denied
+import net.jolabs40.tvslim.windows.ressources.files_content_failed
+import net.jolabs40.tvslim.windows.ressources.files_content_not_found
+import net.jolabs40.tvslim.windows.ressources.files_copied
+import net.jolabs40.tvslim.windows.ressources.files_copied_cancelled
+import net.jolabs40.tvslim.windows.ressources.files_copied_interrupted
+import net.jolabs40.tvslim.windows.ressources.files_delete_failed
+import net.jolabs40.tvslim.windows.ressources.files_delete_protected
+import net.jolabs40.tvslim.windows.ressources.files_deleted
 import net.jolabs40.tvslim.windows.ressources.files_folder_created
 import net.jolabs40.tvslim.windows.ressources.files_folder_exists
 import net.jolabs40.tvslim.windows.ressources.files_folder_failed
@@ -34,7 +48,8 @@ import java.io.File
 
 /**
  * L'onglet Fichiers : l'explorateur du noyau, partagé avec le compagnon, et ce que Windows y ajoute — les
- * fichiers du disque, glissés ou choisis, et les mots pour dire ce qui s'est passé.
+ * fichiers du disque, glissés ou choisis, le dossier où copier ceux du téléviseur, et les mots pour dire ce qui
+ * s'est passé.
  */
 class PiloteFichiers(
     client: ClientAdb,
@@ -42,7 +57,7 @@ class PiloteFichiers(
     private val afficher: (MessageUi) -> Unit,
 ) {
 
-    val explorateur = ExplorateurFichiers(NavigateurFichiers(client, client), portee) { afficher(it.message()) }
+    val explorateur = ExplorateurFichiers(NavigateurFichiers(client, client, client), portee) { afficher(it.message()) }
 
     init {
         // Ce qu'on a lu appartient au téléviseur : se déconnecter, ou en joindre un autre, l'oublie. Une reprise
@@ -60,6 +75,19 @@ class PiloteFichiers(
     fun deposer(elements: List<File>) {
         if (elements.isEmpty()) return
         explorateur.examiner { withContext(Dispatchers.IO) { lotDepuis(elements) } }
+    }
+
+    /**
+     * Copie [entree] vers le disque. [choix] est le fichier désigné dans « Enregistrer sous » pour un fichier — son
+     * nom peut différer —, le dossier qui recevra l'autre pour un dossier.
+     */
+    fun copier(entree: EntreeDistante, choix: File) {
+        val absolu = choix.absoluteFile
+        if (entree.dossier) {
+            explorateur.rapatrier(entree, CibleDisque(absolu), entree.nom)
+        } else {
+            explorateur.rapatrier(entree, CibleDisque(absolu.parentFile ?: return), absolu.name)
+        }
     }
 
     private fun SignalFichiers.message(): MessageUi = when (this) {
@@ -83,12 +111,33 @@ class PiloteFichiers(
             listOf(bilan(resultat)) +
                 resultat.echecs.take(MAX_ECHECS).map { MessageUi.Brut("${it.chemin} : ${it.motif}") },
         )
+
+        is SignalFichiers.ContenuIllisible -> when (refus) {
+            RefusLecture.INTROUVABLE -> texte(Res.string.files_content_not_found, nom)
+            RefusLecture.REFUSE -> texte(Res.string.files_content_denied, nom)
+            RefusLecture.ECHEC -> texte(Res.string.files_content_failed, nom, MessageUi.Brut(motif))
+        }
+
+        is SignalFichiers.Suppression -> when (suppression.issue) {
+            IssueSuppression.SUPPRIME -> texte(Res.string.files_deleted, suppression.nom)
+            IssueSuppression.PROTEGE -> texte(Res.string.files_delete_protected, suppression.nom)
+            IssueSuppression.ECHEC ->
+                texte(Res.string.files_delete_failed, suppression.nom, MessageUi.Brut(suppression.detail.lines().first()))
+        }
     }
 
-    private fun bilan(resultat: ResultatDepot): MessageUi = when {
-        resultat.annule -> texte(Res.string.files_sent_cancelled, resultat.envoyes, resultat.nombre)
-        resultat.interrompu -> texte(Res.string.files_sent_interrupted, resultat.envoyes, resultat.nombre)
-        else -> texte(Res.string.files_sent, resultat.envoyes, resultat.nombre, resultat.destination)
+    private fun bilan(resultat: ResultatDepot): MessageUi = when (resultat.sens) {
+        SensTransfert.ENVOI -> when {
+            resultat.annule -> texte(Res.string.files_sent_cancelled, resultat.envoyes, resultat.nombre)
+            resultat.interrompu -> texte(Res.string.files_sent_interrupted, resultat.envoyes, resultat.nombre)
+            else -> texte(Res.string.files_sent, resultat.envoyes, resultat.nombre, resultat.destination)
+        }
+
+        SensTransfert.RECEPTION -> when {
+            resultat.annule -> texte(Res.string.files_copied_cancelled, resultat.envoyes, resultat.nombre)
+            resultat.interrompu -> texte(Res.string.files_copied_interrupted, resultat.envoyes, resultat.nombre)
+            else -> texte(Res.string.files_copied, resultat.envoyes, resultat.nombre, resultat.destination)
+        }
     }
 
     private companion object {
