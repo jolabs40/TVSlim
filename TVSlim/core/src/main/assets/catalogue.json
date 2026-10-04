@@ -24,7 +24,7 @@
       "id": "constructeur",
       "nom": "Manufacturer apps",
       "description": "Gallery, media player, dashboard and other in-house apps that are rarely used.",
-      "categories": ["bloatware_tcl", "bloatware_nvidia", "bloatware_xiaomi"]
+      "categories": ["bloatware_tcl", "bloatware_nvidia", "bloatware_xiaomi", "bloatware_philips"]
     },
     {
       "id": "accueil",
@@ -44,6 +44,7 @@
     { "id": "accueil", "nom": "Home screen" },
     { "id": "bloatware_nvidia", "nom": "NVIDIA apps" },
     { "id": "bloatware_xiaomi", "nom": "Xiaomi apps" },
+    { "id": "bloatware_philips", "nom": "Philips apps" },
     { "id": "expert", "nom": "Experts only" }
   ],
   "entrees": [
@@ -157,7 +158,34 @@
     { "paquet": "com.google.android.inputmethod.pinyin", "nom": "Pinyin keyboard", "description": "Chinese input method.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Only disable if you never type in this language.", "marque": "Google" },
     { "paquet": "com.google.android.apps.inputmethod.zhuyin", "nom": "Zhuyin keyboard", "description": "Traditional Chinese input method.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Only disable if you never type in this language.", "marque": "Google" },
     { "paquet": "com.google.android.inputmethod.japanese", "nom": "Japanese keyboard", "description": "Japanese input method.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Only disable if you never type in this language.", "marque": "Google" },
-    { "paquet": "com.google.android.apps.inputmethod.hindi", "nom": "Hindi keyboard", "description": "Hindi input method.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Only disable if you never type in this language.", "marque": "Google" }
+    { "paquet": "com.google.android.apps.inputmethod.hindi", "nom": "Hindi keyboard", "description": "Hindi input method.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Only disable if you never type in this language.", "marque": "Google" },
+    { "paquet": "tv.samba.ssm", "nom": "Samba TV", "description": "Samba TV content recognition: identifies what is on screen to target advertising.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Third party", "eprouve": false },
+    { "paquet": "org.droidtv.leanbackcustomizer", "nom": "Philips Collections", "description": "The Philips row of suggested apps and promotions on the home screen.", "categorie": "pub_telemetrie", "risque": "faible", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.customautologservice", "nom": "Automatic log service", "description": "Collects diagnostic logs on behalf of Philips.", "categorie": "pub_telemetrie", "risque": "faible", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.tv.frameworklogger", "nom": "Usage logger", "description": "Records system events for Philips diagnostics.", "categorie": "pub_telemetrie", "risque": "faible", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.demome", "nom": "Store demo", "description": "Shop demonstration mode.", "categorie": "demo_magasin", "risque": "aucun", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.amazonalexa", "nom": "Alexa built-in", "description": "Amazon Alexa integration of the television.", "categorie": "assistants", "risque": "aucun", "effetDeBord": "Alexa can no longer control the television.", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.control4app", "nom": "Control4", "description": "Control4 home-automation app.", "categorie": "inutile_tv", "risque": "aucun", "effetDeBord": "Only useful with a Control4 installation.", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.control4UcService", "nom": "Control4 service", "description": "Background service of the Control4 integration.", "categorie": "inutile_tv", "risque": "aucun", "effetDeBord": "Only useful with a Control4 installation.", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.control4adapterservice", "nom": "Control4 adapter", "description": "Bridges the television to a Control4 controller.", "categorie": "inutile_tv", "risque": "aucun", "effetDeBord": "Only useful with a Control4 installation.", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.control4sddp", "nom": "Control4 discovery", "description": "Announces the television on the network to Control4 (SDDP).", "categorie": "inutile_tv", "risque": "aucun", "effetDeBord": "Only useful with a Control4 installation.", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.matter", "nom": "Matter", "description": "Matter smart-home support.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Matter devices can no longer be controlled from the television.", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.calmancalibrator", "nom": "Calman calibration", "description": "Professional picture calibration with Calman software.", "categorie": "inutile_tv", "risque": "aucun", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.alhuewizard", "nom": "Ambilight + Hue setup", "description": "Pairs Ambilight with Philips Hue lamps.", "categorie": "inutile_tv", "risque": "aucun", "effetDeBord": "Only useful with Hue lamps.", "marque": "Philips", "eprouve": false },
+    { "paquet": "com.phorus.playfi.tv", "nom": "DTS Play-Fi", "description": "Multi-room audio towards DTS Play-Fi speakers.", "categorie": "inutile_tv", "risque": "aucun", "effetDeBord": "Only useful with Play-Fi speakers.", "marque": "Third party", "eprouve": false },
+    { "paquet": "io.mimi.tvapp", "nom": "Mimi hearing test", "description": "Hearing test that personalises the television sound.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "The personalised sound profile may be lost.", "marque": "Third party", "eprouve": false },
+    { "paquet": "com.vewd.core.browser", "nom": "Vewd browser", "description": "Vewd web browser and app engine (formerly Opera TV), over 150 MB.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "Some web apps of the television may rely on it.", "marque": "Third party", "eprouve": false },
+    { "paquet": "org.droidtv.xtv", "nom": "Philips remote app service", "description": "Service behind the Philips TV Remote phone app; reported as heavy.", "categorie": "inutile_tv", "risque": "faible", "effetDeBord": "The Philips TV Remote app stops working.", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.oemtabprovider", "nom": "Philips tab", "description": "Philips tab of the Google TV home screen: tips and help for your country.", "categorie": "bloatware_philips", "risque": "aucun", "marque": "Philips", "eprouve": false },
+    { "paquet": "com.tpv.nftgallery", "nom": "NFT gallery", "description": "Gallery to display NFT artworks.", "categorie": "bloatware_philips", "risque": "aucun", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.aurora", "nom": "Aurora", "description": "Philips ambience app: visuals and Ambilight moods.", "categorie": "bloatware_philips", "risque": "aucun", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.sunrise", "nom": "Sunrise alarm", "description": "Wake-up alarm that brightens the screen gradually.", "categorie": "bloatware_philips", "risque": "aucun", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.eum", "nom": "User manual", "description": "Built-in user manual (Help), 26 MB.", "categorie": "bloatware_philips", "risque": "aucun", "effetDeBord": "The Help menu can no longer open the manual.", "marque": "Philips", "eprouve": false },
+    { "paquet": "tv.wuaki.apptv", "nom": "Rakuten TV", "description": "Preinstalled Rakuten TV video store.", "categorie": "streaming", "risque": "aucun", "effetDeBord": "The Rakuten TV remote key stops working.", "marque": "Third party", "eprouve": false },
+    { "paquet": "ru.ivi.client", "nom": "ivi", "description": "Russian streaming service.", "categorie": "streaming", "risque": "aucun", "marque": "Third party", "eprouve": false },
+    { "paquet": "org.droidtv.astrahdplus", "nom": "HD+", "description": "Operator app of the HD+ satellite package (Germany).", "categorie": "streaming", "risque": "aucun", "effetDeBord": "Keep it if you subscribe to HD+.", "marque": "Philips", "eprouve": false },
+    { "paquet": "org.droidtv.m7opapp", "nom": "M7 operator app", "description": "Operator app of the M7 satellite packages (Canal Digitaal, TV Vlaanderen, Skylink…).", "categorie": "streaming", "risque": "aucun", "effetDeBord": "Keep it if you subscribe to one of them.", "marque": "Philips", "eprouve": false },
+    { "paquet": "com.mediatek.partner.airplay_sys", "nom": "AirPlay (system)", "description": "Factory AirPlay receiver, to stream from an iPhone or a Mac.", "categorie": "airplay", "risque": "faible", "effetDeBord": "AirPlay from Apple devices stops.", "marque": "MediaTek", "eprouve": false }
   ],
   "proteges": [
     { "paquet": "com.tcl.suspension", "raison": "Inputs / Source menu on the remote." },
@@ -200,7 +228,25 @@
     { "paquet": "com.android.networkstack.tethering.nvidia", "raison": "Network stack." },
 { "paquet": "com.xiaomi.android.tvsetup.partnercustomizer", "raison": "Partner keys on the remote." },
     { "paquet": "com.xiaomi.mitv.res", "raison": "Shared system resources." },
-    { "paquet": "mitv.service", "raison": "Xiaomi platform service." }
+    { "paquet": "mitv.service", "raison": "Xiaomi platform service." },
+    { "paquet": "org.droidtv.playtv", "raison": "Watch TV: tuner, channels and inputs." },
+    { "paquet": "org.droidtv.channels", "raison": "Channel list." },
+    { "paquet": "org.droidtv.tvsystemui", "raison": "TV menus and system interface." },
+    { "paquet": "org.droidtv.GlobalKey", "raison": "Remote control keys." },
+    { "paquet": "org.droidtv.homeintentresolver", "raison": "Routes the HOME key." },
+    { "paquet": "org.droidtv.tvpowermanagerservice", "raison": "Power and standby." },
+    { "paquet": "org.droidtv.tv.tptvservice", "raison": "Core television service." },
+    { "paquet": "org.droidtv.euinstallertc", "raison": "Antenna and cable channel installation." },
+    { "paquet": "org.droidtv.euinstallersat", "raison": "Satellite channel installation." },
+    { "paquet": "org.droidtv.hdmiservice", "raison": "HDMI inputs." },
+    { "paquet": "org.droidtv.bluetoothremote", "raison": "Bluetooth remote pairing." },
+    { "paquet": "org.droidtv.tv.tpvaudiomanager", "raison": "Sound." },
+    { "paquet": "org.droidtv.tv.tpvvideomanager", "raison": "Picture." },
+    { "paquet": "org.droidtv.tv.productfeatures", "raison": "Model features read by the system." },
+    { "paquet": "org.droidtv.ui.strings", "raison": "Shared system texts." },
+    { "paquet": "org.droidtv.ui.strings2", "raison": "Shared system texts." },
+    { "paquet": "com.mediatek.tis", "raison": "TV input service." },
+    { "paquet": "com.mediatek.dtv.tvinput.dvbtuner", "raison": "Digital tuner (DVB)." }
   ],
   "launchers": [
     {
