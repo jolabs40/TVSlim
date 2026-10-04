@@ -137,9 +137,9 @@ journaux.
 TV Slim est gratuit et le restera. S'il vous a rendu service, vous pouvez m'offrir un café sur
 **[Ko-fi](https://ko-fi.com/jolabs40)**.
 
-L'application en parle à deux endroits, pas davantage : un lien **Soutenir TV Slim** dans *À propos*,
-et un bandeau après un débloat, un transfert de fichiers ou une installation d'APK réussis — au plus
-une fois par mois. *J'ai déjà fait un don* le fait disparaître pour de bon. L'application ne contacte
+L'application en parle de deux façons, pas davantage : un petit ♥ dans sa barre du haut (et un lien
+dans *À propos*), et un bandeau après un débloat, un transfert de fichiers ou une installation d'APK
+réussis — au plus une fois par mois. *J'ai déjà fait un don* le fait disparaître pour de bon. L'application ne contacte
 jamais Ko-fi elle-même : le bouton ouvre votre navigateur.
 
 ## Désinstaller

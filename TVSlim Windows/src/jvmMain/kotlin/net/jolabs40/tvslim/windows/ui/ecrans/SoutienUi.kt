@@ -1,5 +1,7 @@
 package net.jolabs40.tvslim.windows.ui.ecrans
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -17,9 +20,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.windows.ressources.Res
+import net.jolabs40.tvslim.windows.ressources.about_support
 import net.jolabs40.tvslim.windows.ressources.baseline_favorite_24
 import net.jolabs40.tvslim.windows.ressources.support_already
 import net.jolabs40.tvslim.windows.ressources.support_donate
@@ -28,6 +33,39 @@ import net.jolabs40.tvslim.windows.ressources.support_text
 import net.jolabs40.tvslim.windows.ressources.support_title
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+
+/** Le rouge du cœur, le même en thème clair et sombre : un cœur se reconnaît à sa couleur. */
+private val ROUGE_COEUR = Color(0xFFEF6C7B)
+
+/**
+ * Le ♥ de la barre du haut, visible depuis chaque onglet, qui ouvre la page de soutien. Discret par principe : rien ne
+ * clignote, rien ne revient seul — c'est le bandeau qui remercie après un service rendu.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun BoutonSoutien(onClick: () -> Unit) {
+    val libelle = stringResource(Res.string.about_support)
+    TooltipArea(
+        tooltip = {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.inverseSurface,
+                shadowElevation = 4.dp,
+            ) {
+                Text(
+                    text = libelle,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                )
+            }
+        },
+    ) {
+        IconButton(onClick = onClick) {
+            Icon(painterResource(Res.drawable.baseline_favorite_24), contentDescription = libelle, tint = ROUGE_COEUR)
+        }
+    }
+}
 
 /**
  * Le bandeau de soutien, sous celui des mises à jour : il se montre après un service rendu, et seulement quand

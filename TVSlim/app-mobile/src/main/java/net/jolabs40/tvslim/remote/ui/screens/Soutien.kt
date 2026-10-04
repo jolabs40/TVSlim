@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,6 +20,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -78,16 +80,17 @@ fun BanniereSoutien(
     }
 }
 
-/** Le lien permanent, discret, en bas de l'onglet Téléviseur : le compagnon n'a pas d'écran « À propos ». */
+/** Le rouge du cœur, le même en thème clair et sombre : un cœur se reconnaît à sa couleur. */
+private val ROUGE_COEUR = Color(0xFFEF6C7B)
+
+/**
+ * Le ♥ de la barre du haut, visible depuis chaque onglet, téléviseur joint ou non : le compagnon n'a pas d'écran
+ * « À propos ». Discret par principe — c'est le bandeau qui remercie après un service rendu.
+ */
 @Composable
-fun LienSoutien() {
+fun BoutonSoutien() {
     val liens = LocalUriHandler.current
-    TextButton(
-        onClick = { runCatching { liens.openUri(InvitationSoutien.LIEN) } },
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Icon(Icons.Filled.Favorite, contentDescription = null, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.support_link))
+    IconButton(onClick = { runCatching { liens.openUri(InvitationSoutien.LIEN) } }) {
+        Icon(Icons.Filled.Favorite, contentDescription = stringResource(R.string.support_link), tint = ROUGE_COEUR)
     }
 }

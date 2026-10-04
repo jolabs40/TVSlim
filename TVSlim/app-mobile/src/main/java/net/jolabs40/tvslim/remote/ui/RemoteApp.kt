@@ -46,6 +46,7 @@ import net.jolabs40.tvslim.remote.ui.screens.ApercuCaptureDialogue
 import net.jolabs40.tvslim.remote.ui.screens.ApplicationsScreen
 import net.jolabs40.tvslim.remote.ui.screens.BanniereSoutien
 import net.jolabs40.tvslim.remote.ui.screens.BoutonCapture
+import net.jolabs40.tvslim.remote.ui.screens.BoutonSoutien
 import net.jolabs40.tvslim.remote.ui.screens.ConfirmationDialogue
 import net.jolabs40.tvslim.remote.ui.screens.ConnexionScreen
 import net.jolabs40.tvslim.remote.ui.screens.FichiersScreen
@@ -126,6 +127,7 @@ fun RemoteApp() {
                 actions = {
                     // Seulement téléviseur joint : sans lui, il n'y a rien à capturer.
                     if (etat.connecte) BoutonCapture(enCours = etatCapture.enCours, onCapturer = modele.capture::capturer)
+                    BoutonSoutien()
                 },
             )
         },

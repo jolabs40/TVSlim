@@ -124,9 +124,9 @@ stored encrypted by Windows (DPAPI) in `%APPDATA%\TVSlim`, next to the logs.
 TV Slim is free and will stay that way. If it has been useful to you, you can buy me a coffee on
 **[Ko-fi](https://ko-fi.com/jolabs40)**.
 
-The application mentions it in two places, no more: a **Support TV Slim** link in *About*, and a
-banner after a debloat, a file transfer or an APK installation that went through — at most once a
-month. *I already donated* hides it for good. The application never contacts Ko-fi itself: the
+The application mentions it in two ways, no more: a small ♥ in its top bar (and a link in *About*),
+and a banner after a debloat, a file transfer or an APK installation that went through — at most
+once a month. *I already donated* hides it for good. The application never contacts Ko-fi itself: the
 button opens your browser.
 
 ## Uninstall

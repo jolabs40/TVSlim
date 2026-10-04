@@ -91,6 +91,7 @@ import net.jolabs40.tvslim.windows.ui.ecrans.ApercuCaptureDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ApplicationsEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereMiseAJour
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereSoutien
+import net.jolabs40.tvslim.windows.ui.ecrans.BoutonSoutien
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.FermetureDialogue
@@ -312,6 +313,7 @@ fun AppFenetre(
                         onArreterEnregistrement = ecran::arreterEnregistrement,
                     )
                     PastilleConnexion(etat)
+                    BoutonSoutien(onClick = { ouvrirLien(InvitationSoutien.LIEN) })
                     IconButton(onClick = { aPropos = true }) {
                         Icon(
                             painter = painterResource(Res.drawable.baseline_info_24),
