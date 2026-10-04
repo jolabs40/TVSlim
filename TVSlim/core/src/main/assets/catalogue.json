@@ -45,7 +45,8 @@
     { "id": "bloatware_nvidia", "nom": "NVIDIA apps" },
     { "id": "bloatware_xiaomi", "nom": "Xiaomi apps" },
     { "id": "bloatware_philips", "nom": "Philips apps" },
-    { "id": "expert", "nom": "Experts only" }
+    { "id": "expert", "nom": "Experts only" },
+    { "id": "appareil", "nom": "Apps on this device (not in the catalogue)" }
   ],
   "entrees": [
     { "paquet": "com.tcl.waterfall.overseas", "nom": "TCL recommendations", "description": "TCL recommendation and advertising engine on the home screen.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "TCL" },

@@ -319,6 +319,10 @@ class MoteurDebloat(
         catalogue: Catalogue,
         launchersDisponibles: Boolean,
     ): String? = when {
+        // Le paquet part dans le shell : un nom, et rien d'autre. Ceux du catalogue le sont ; ceux qu'un téléphone
+        // annonce (Catalogue.avecApplicationsDuMenu) viennent de l'appareil.
+        !IDENTIFIANT.matches(entree.paquet) -> "Nom de paquet invalide : ${entree.paquet}"
+
         catalogue.estProtege(entree.paquet) ->
             "Paquet protégé : ${catalogue.motifProtection(entree.paquet)}"
 

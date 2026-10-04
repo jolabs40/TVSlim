@@ -69,6 +69,10 @@ fun CarteAccueil(etat: EtatRemote, onInstaller: (String) -> Unit, onDefinirAccue
                 fontWeight = FontWeight.SemiBold,
             )
             AccueilActuel(catalogue = catalogue, infos = infos)
+            // Un téléphone, une tablette : seul l'accueil en place se montre. Rien n'y est à recommander — Startlight est
+            // un launcher de téléviseur —, et ce que la lecture des composants désactivés y prend pour des accueils d'usine
+            // (restauration, Play Services, gestion du téléphone) n'en sont pas : « Utiliser » en ferait l'écran d'accueil.
+            if (!infos.typeAppareil.pourLeCatalogue) return@Column
 
             if (infos.launchersTiers.isEmpty()) {
                 Text(

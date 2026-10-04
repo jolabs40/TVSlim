@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import net.jolabs40.tvslim.catalog.CatalogueRepository
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
+import net.jolabs40.tvslim.catalog.avecApplicationsDuMenu
 import net.jolabs40.tvslim.commande.ConsoleAdb
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
@@ -274,14 +275,16 @@ class PiloteApp(
                 ),
             )
 
+            // Un téléphone ajoute ses applications du menu au catalogue : voir avecApplicationsDuMenu.
+            val vu = catalogue.avecApplicationsDuMenu(photo.infos, photo.paquetsSysteme, photo.applicationsMenu)
             _etat.update { courant ->
                 courant.copy(
                     chargement = false,
-                    catalogue = catalogue,
+                    catalogue = vu,
                     infos = photo.infos,
                     nomsConnus = if (nom.isBlank()) courant.nomsConnus else courant.nomsConnus + (hote to nom),
-                    lignes = catalogue.entrees.map { entree ->
-                        val etatPaquet = photo.etats[entree.paquet] ?: EtatPaquet.ABSENT
+                    lignes = vu.entrees.map { entree ->
+                        val etatPaquet = photo.etats[entree.paquet] ?: photo.paquetsSysteme[entree.paquet] ?: EtatPaquet.ABSENT
                         LignePaquet(
                             entree = entree,
                             etat = etatPaquet,
@@ -289,7 +292,7 @@ class PiloteApp(
                         )
                     },
                     // Ce que le catalogue ne décrit pas : montré à part, sans rien proposer.
-                    inconnus = catalogue.paquetsInconnus(photo.paquetsSysteme, photo.infos.fabricant),
+                    inconnus = vu.paquetsInconnus(photo.paquetsSysteme, photo.infos.fabricant),
                 )
             }
         }

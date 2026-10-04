@@ -325,4 +325,9 @@
     <string name="capture_failed_refused">Le téléviseur a refusé la capture : %1$s</string>
     <string name="capture_failed_unreadable">Le téléviseur n\'a pas rendu d\'image : %1$s</string>
     <string name="capture_write_failed">La capture n\'a pas pu être enregistrée : %1$s</string>
+
+    <!-- Hors téléviseur -->
+    <string name="device_type_phone">Téléphone</string>
+    <string name="device_type_tablet">Tablette</string>
+    <string name="packages_not_tv">Cet appareil n\'est pas un téléviseur : le catalogue de TV Slim décrit des téléviseurs, les profils sont donc désactivés. Un paquet se désactive encore à la main, et se réactive depuis le journal.</string>
 </resources>

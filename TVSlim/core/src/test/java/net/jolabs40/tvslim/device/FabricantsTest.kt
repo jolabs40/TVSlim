@@ -1,6 +1,7 @@
 package net.jolabs40.tvslim.device
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -41,6 +42,47 @@ class FabricantsTest {
         assertEquals(TypeAppareil.TELEVISEUR, InfosAppareil(marque = "Xiaomi", modele = "MiTV-MOOQ0").typeAppareil)
         assertEquals(TypeAppareil.BOX, InfosAppareil(marque = "NVIDIA", modele = "SHIELD Android TV").typeAppareil)
         assertEquals(TypeAppareil.TELEVISEUR, InfosAppareil(marque = "Inconnue", modele = "X1").typeAppareil)
+    }
+
+    @Test
+    fun `ce que l'appareil declare l'emporte sur sa marque`() {
+        val tactile = setOf(InfosAppareil.FONCTION_TACTILE)
+        val leanback = setOf(InfosAppareil.FONCTION_LEANBACK, InfosAppareil.FONCTION_TELEVISION)
+
+        // Relevé le 2026-10-04 : le Pixel 9a déclare « nosdcard » et un écran tactile, sans leanback.
+        val pixel = InfosAppareil(marque = "Google", marqueCommerciale = "google", modele = "Pixel 9a",
+            caracteristiques = "nosdcard", fonctions = tactile)
+        assertEquals(TypeAppareil.TELEPHONE, pixel.typeAppareil)
+        assertFalse(pixel.typeAppareil.pourLeCatalogue)
+        // Le même Google, en Chromecast, reste une box ; la TCL, un téléviseur.
+        assertEquals(TypeAppareil.BOX, InfosAppareil(marque = "Google", modele = "Chromecast", fonctions = leanback).typeAppareil)
+        assertEquals(TypeAppareil.TELEVISEUR,
+            InfosAppareil(marque = "TCL", modele = "Smart TV Pro", caracteristiques = "tv", fonctions = leanback).typeAppareil)
+        assertEquals(TypeAppareil.TABLETTE,
+            InfosAppareil(marque = "samsung", modele = "SM-X200", caracteristiques = "tablet", fonctions = tactile).typeAppareil)
+        // Un Fire TV sans leanback, ou une box inconnue sans écran tactile, restent du côté des téléviseurs.
+        assertEquals(TypeAppareil.BOX,
+            InfosAppareil(marque = "Amazon", modele = "AFTKA", fonctions = setOf(InfosAppareil.FONCTION_FIRE_TV)).typeAppareil)
+        assertEquals(TypeAppareil.TELEVISEUR,
+            InfosAppareil(marque = "Formuler", modele = "Z11", caracteristiques = "default", fonctions = emptySet()).typeAppareil)
+        // Rien de lu : la marque décide, comme avant.
+        assertEquals(TypeAppareil.BOX, InfosAppareil(marque = "Google", modele = "Pixel 9a").typeAppareil)
+    }
+
+    @Test
+    fun `seules les fonctions qui disent le genre d'appareil sont gardees`() {
+        assertEquals(
+            setOf(InfosAppareil.FONCTION_LEANBACK, InfosAppareil.FONCTION_TACTILE),
+            LecteurDistant.fonctions(
+                listOf(
+                    "feature:android.software.leanback",
+                    "feature:android.hardware.touchscreen",
+                    "feature:android.hardware.touchscreen.multitouch",
+                    "feature:reqGlEsVersion=0x30002",
+                    "feature:android.hardware.wifi",
+                ),
+            ),
+        )
     }
 
     @Test

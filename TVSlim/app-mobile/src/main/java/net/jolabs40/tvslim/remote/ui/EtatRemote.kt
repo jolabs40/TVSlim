@@ -162,7 +162,7 @@ fun EtatRemote.avecBascule(paquet: String): EtatRemote = copy(
  * Coche tout ce qu'un profil couvre, sans jamais décocher ce qui l'était déjà. Une entrée non éprouvée n'est
  * jamais couverte : elle se coche à la main, une à une.
  */
-fun EtatRemote.avecProfil(profil: Profil): EtatRemote = copy(
+fun EtatRemote.avecProfil(profil: Profil): EtatRemote = if (!infos.typeAppareil.pourLeCatalogue) this else copy(
     lignes = lignes.map { ligne ->
         val couverte = ligne.entree.categorie in profil.categories && ligne.entree.eprouve
         if (couverte && ligne.etat == EtatPaquet.ACTIF) {

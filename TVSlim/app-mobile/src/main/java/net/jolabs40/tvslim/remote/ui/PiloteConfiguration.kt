@@ -83,6 +83,8 @@ class PiloteConfiguration(
      * existe aussi.
      */
     fun installerLauncher(paquet: String) {
+        // Hors téléviseur, la carte n'offre rien : rien n'est fait non plus si on y arrive autrement.
+        if (!etat().infos.typeAppareil.pourLeCatalogue) return
         val moteurActif = moteur()
         if (moteurActif == null) {
             afficher(contexte.getString(R.string.msg_connect_first))
@@ -105,6 +107,8 @@ class PiloteConfiguration(
      * accueil d'usine prioritaire est encore actif — Google TV sur la TCL.
      */
     fun definirAccueil(composant: String) {
+        // Hors téléviseur, la carte n'offre rien : rien n'est fait non plus si on y arrive autrement.
+        if (!etat().infos.typeAppareil.pourLeCatalogue) return
         val moteurActif = moteur()
         if (moteurActif == null) {
             afficher(contexte.getString(R.string.msg_connect_first))

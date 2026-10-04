@@ -27,12 +27,41 @@ data class InfosAppareil(
      * constructeur —, **désactivés compris** : c'est justement une fois coupés qu'il faut les retrouver.
      */
     val accueilsUsine: List<AccueilUsine> = emptyList(),
+    /** `ro.build.characteristics` : « tv » sur la TCL, « nosdcard » sur un Pixel, « tablet » sur une tablette. */
+    val caracteristiques: String = "",
+    /**
+     * Les fonctions déclarées qui disent le genre d'appareil — [FONCTIONS_LUES] —, sans le préfixe `feature:`.
+     * `null` tant qu'elles n'ont pas été lues ; vide, l'appareil n'en déclare aucune — pas même d'écran tactile.
+     */
+    val fonctions: Set<String>? = null,
 ) {
     /** Le fabricant reconnu, marque vendue d'abord : voir [Fabricant]. */
     val fabricant: Fabricant? get() = Fabricant.identifier(marqueCommerciale, marque)
 
-    /** Téléviseur ou box. Un appareil inconnu est présumé téléviseur : c'est le cas courant. */
-    val typeAppareil: TypeAppareil get() = fabricant?.typePour(modele) ?: TypeAppareil.TELEVISEUR
+    /**
+     * Ce que l'appareil **déclare** l'emporte sur sa marque : Google fait des box (Chromecast) et des téléphones
+     * (Pixel), et un Pixel passait pour une box. Est un téléviseur ce qui porte `leanback` — Google l'exige de tout
+     * Android TV —, `type.television`, la fonction Fire TV, la caractéristique « tv », ou n'a pas d'écran tactile ;
+     * la marque départage alors téléviseur et box. Le reste est un téléphone, ou une tablette si l'appareil le dit.
+     *
+     * Rien de lu — l'appareil n'a pas encore répondu —, la marque décide seule, et un inconnu est présumé
+     * téléviseur : c'est le cas courant.
+     */
+    val typeAppareil: TypeAppareil
+        get() {
+            val parMarque = fabricant?.typePour(modele) ?: TypeAppareil.TELEVISEUR
+            val lues = fonctions
+            if (lues == null && caracteristiques.isBlank()) return parMarque
+            val declarees = lues.orEmpty()
+            val traits = caracteristiques.split(',').map { it.trim().lowercase() }
+            val tele = FONCTION_LEANBACK in declarees || FONCTION_TELEVISION in declarees || FONCTION_FIRE_TV in declarees ||
+                "tv" in traits || (lues != null && FONCTION_TACTILE !in declarees)
+            return when {
+                tele -> if (parMarque.pourLeCatalogue) parMarque else TypeAppareil.TELEVISEUR
+                "tablet" in traits -> TypeAppareil.TABLETTE
+                else -> TypeAppareil.TELEPHONE
+            }
+        }
 
     /**
      * Le nom à montrer et à retenir : la marque vendue plutôt que le sous-traitant (« TPV »), puis le modèle
@@ -57,6 +86,14 @@ data class InfosAppareil(
 
     companion object {
         val VIDE = InfosAppareil()
+
+        const val FONCTION_LEANBACK = "android.software.leanback"
+        const val FONCTION_TELEVISION = "android.hardware.type.television"
+        const val FONCTION_FIRE_TV = "amazon.hardware.fire_tv"
+        const val FONCTION_TACTILE = "android.hardware.touchscreen"
+
+        /** Ce que la photographie demande à `pm list features` : le reste ne dit rien du genre d'appareil. */
+        val FONCTIONS_LUES = listOf(FONCTION_LEANBACK, FONCTION_TELEVISION, FONCTION_FIRE_TV, FONCTION_TACTILE)
     }
 }
 

@@ -103,6 +103,8 @@ class PiloteConfiguration(
      * télécommande, et vient de la boutique : c'est le chemin recommandé, là où un APK existe aussi.
      */
     fun installerLauncher(paquet: String) {
+        // Hors téléviseur, la carte n'offre rien : rien n'est fait non plus si on y arrive autrement.
+        if (!etat().infos.typeAppareil.pourLeCatalogue) return
         val moteurActif = moteur() ?: return afficher(texte(Res.string.msg_connect_first))
         portee.launch {
             val resultat = moteurActif.ouvrirFicheBoutique(paquet)
@@ -121,6 +123,8 @@ class PiloteConfiguration(
      * accueil d'usine prioritaire est encore actif — Google TV sur la TCL.
      */
     fun definirAccueil(composant: String) {
+        // Hors téléviseur, la carte n'offre rien : rien n'est fait non plus si on y arrive autrement.
+        if (!etat().infos.typeAppareil.pourLeCatalogue) return
         val moteurActif = moteur() ?: return afficher(texte(Res.string.msg_connect_first))
         val infos = etat().infos
         val paquet = composant.substringBefore('/')

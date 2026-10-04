@@ -325,4 +325,9 @@
     <string name="capture_failed_refused">The television refused the screenshot: %1$s</string>
     <string name="capture_failed_unreadable">The television did not return an image: %1$s</string>
     <string name="capture_write_failed">The screenshot could not be saved: %1$s</string>
+
+    <!-- Hors téléviseur -->
+    <string name="device_type_phone">Phone</string>
+    <string name="device_type_tablet">Tablet</string>
+    <string name="packages_not_tv">This device is not a television: TV Slim\'s catalogue describes televisions, so profiles are off. A package can still be disabled by hand, and re-enabled from the log.</string>
 </resources>

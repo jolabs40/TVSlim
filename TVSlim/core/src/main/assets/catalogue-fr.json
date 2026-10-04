@@ -13,7 +13,8 @@
     "bloatware_nvidia": "Applications NVIDIA",
     "bloatware_xiaomi": "Applications Xiaomi",
     "bloatware_philips": "Applications Philips",
-    "expert": "Réservé aux experts"
+    "expert": "Réservé aux experts",
+    "appareil": "Applications de l'appareil (hors catalogue)"
   },
   "profils": {
     "essentiel": {

@@ -1,7 +1,18 @@
 package net.jolabs40.tvslim.device
 
-/** Téléviseur ou box : ce que l'on dit de l'appareil joint. */
-enum class TypeAppareil { TELEVISEUR, BOX }
+/** Ce que l'on dit de l'appareil joint. */
+enum class TypeAppareil {
+    TELEVISEUR,
+    BOX,
+
+    /** Un téléphone, ou une tablette : rien de ce que le catalogue décrit n'est écrit pour eux. */
+    TELEPHONE,
+    TABLETTE,
+    ;
+
+    /** Ce pour quoi le catalogue est écrit : un téléviseur, ou une box branchée sur lui. Les profils n'agissent que là. */
+    val pourLeCatalogue: Boolean get() = this == TELEVISEUR || this == BOX
+}
 
 /**
  * Les fabricants reconnus, pour nommer l'appareil et montrer son logo.

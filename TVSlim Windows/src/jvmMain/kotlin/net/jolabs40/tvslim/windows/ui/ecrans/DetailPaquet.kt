@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import net.jolabs40.tvslim.catalog.CATEGORIE_APPAREIL
 import net.jolabs40.tvslim.catalog.Catalogue
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.origine
@@ -38,6 +39,7 @@ import net.jolabs40.tvslim.windows.ressources.packages_detail_risk
 import net.jolabs40.tvslim.windows.ressources.packages_detail_selected
 import net.jolabs40.tvslim.windows.ressources.packages_detail_size
 import net.jolabs40.tvslim.windows.ressources.packages_detail_state
+import net.jolabs40.tvslim.windows.ressources.packages_device_app_detail
 import net.jolabs40.tvslim.windows.ressources.packages_reactivate
 import net.jolabs40.tvslim.windows.ressources.packages_requires_launcher
 import net.jolabs40.tvslim.windows.ressources.packages_untested_detail
@@ -48,9 +50,9 @@ import net.jolabs40.tvslim.windows.ressources.state_enabled
 import net.jolabs40.tvslim.windows.ui.LignePaquet
 import net.jolabs40.tvslim.windows.ui.composants.IconeOrigine
 import net.jolabs40.tvslim.windows.ui.composants.LigneValeur
-import net.jolabs40.tvslim.windows.ui.composants.libelleOrigine
 import net.jolabs40.tvslim.windows.ui.composants.PastilleRisque
 import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
+import net.jolabs40.tvslim.windows.ui.composants.libelleOrigine
 import net.jolabs40.tvslim.windows.ui.composants.libelleRisque
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -156,7 +158,14 @@ fun DetailPaquet(
                         tint = MaterialTheme.colorScheme.tertiary,
                     )
                     Text(
-                        text = stringResource(Res.string.packages_untested_detail),
+                        // Une application d'un téléphone n'a été décrite par personne : voir avecApplicationsDuMenu.
+                        text = stringResource(
+                            if (entree.categorie == CATEGORIE_APPAREIL) {
+                                Res.string.packages_device_app_detail
+                            } else {
+                                Res.string.packages_untested_detail
+                            },
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.tertiary,
                     )

@@ -12,6 +12,8 @@ data class Photographie(
      * les distinguer, et une application installée passerait pour un paquet du constructeur.
      */
     val paquetsSysteme: Map<String, EtatPaquet> = emptyMap(),
+    /** Les paquets qui ont une icône dans le menu d'un téléphone (`category.LAUNCHER`), désactivés compris. */
+    val applicationsMenu: Set<String> = emptySet(),
 )
 
 /**
@@ -63,6 +65,9 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
                     desactives = desactives,
                     actifs = actifs,
                 ),
+                caracteristiques = sections[MARQUEUR_CARACTERISTIQUES].orEmpty().firstOrNull()?.trim().orEmpty(),
+                // Null quand la section manque : « aucune fonction déclarée » dirait « pas d'écran tactile ».
+                fonctions = sections[MARQUEUR_FONCTIONS]?.let(::fonctions),
             ),
             etats = paquetsSurveilles.associateWith { paquet ->
                 when (paquet) {
@@ -75,6 +80,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
                 (actifs.associateWith { EtatPaquet.ACTIF } + desactives.associateWith { EtatPaquet.DESACTIVE })
                     .filterKeys { it !in installes }
             }.orEmpty(),
+            applicationsMenu = applicationsMenu(sections[MARQUEUR_MENU].orEmpty()),
         )
     }
 
@@ -433,6 +439,32 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         /** Les applications installées par la personne : tout le reste est venu avec l'appareil. */
         const val MARQUEUR_TIERS = "@@TVSLIM_T"
 
+        /**
+         * Le genre d'appareil, tel qu'il le déclare — voir [InfosAppareil.typeAppareil]. Chacun sa section : une
+         * propriété vide ne décale rien.
+         */
+        const val MARQUEUR_CARACTERISTIQUES = "@@TVSLIM_C"
+
+        /**
+         * Les applications du menu d'un téléphone, désactivées comprises — sans le drapeau, une application coupée
+         * disparaîtrait de la liste, et ne s'y réactiverait plus. Voir `Catalogue.avecApplicationsDuMenu`.
+         */
+        const val MARQUEUR_MENU = "@@TVSLIM_A"
+
+        /** « com.google.android.youtube/com.google.android.apps.youtube.app.WatchWhileActivity » → le paquet. */
+        internal fun applicationsMenu(lignes: List<String>): Set<String> = lignes
+            .filter { '/' in it && !it.startsWith("priority") }
+            .map { it.substringBefore('/').trim() }
+            .filter { it.isNotEmpty() && ' ' !in it }
+            .toSet()
+        const val MARQUEUR_FONCTIONS = "@@TVSLIM_F"
+
+        /** « feature:android.software.leanback », « feature:android.hardware.touchscreen=1 » → le nom seul. */
+        internal fun fonctions(lignes: List<String>): Set<String> = lignes
+            .map { it.removePrefix("feature:").substringBefore('=').trim() }
+            .filter { it in InfosAppareil.FONCTIONS_LUES }
+            .toSet()
+
         /** `df` après `diskstats` : certains appareils ne donnent pas la ligne « Data-Free ». */
         const val COMMANDE_ACCUEIL =
             "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
@@ -461,6 +493,14 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             "echo $MARQUEUR_ACCUEILS_TOUS",
             "cmd package query-activities --brief --query-flags $AVEC_DESACTIVES " +
                 "-a android.intent.action.MAIN -c android.intent.category.HOME",
+            "echo $MARQUEUR_CARACTERISTIQUES",
+            "getprop ro.build.characteristics",
+            "echo $MARQUEUR_FONCTIONS",
+            "pm list features",
+            "echo $MARQUEUR_MENU",
+            "cmd package query-activities --brief --query-flags $AVEC_DESACTIVES " +
+                "-a android.intent.action.MAIN -c android.intent.category.LAUNCHER",
+            // En dernier : le code de retour de la commande entière est le sien.
             "echo $MARQUEUR_TIERS",
             "pm list packages -3",
         ).joinToString("; ")

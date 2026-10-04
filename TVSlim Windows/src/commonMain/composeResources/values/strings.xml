@@ -94,6 +94,7 @@
     <string name="packages_detail_selected">Selected for disabling</string>
     <string name="packages_requires_launcher">Requires a third-party launcher to be installed first.</string>
     <string name="packages_untested">Not tested</string>
+    <string name="packages_device_app_detail">An app of this device, missing from the catalogue: TV Slim knows neither its role nor what disabling it costs. No profile ticks it, and it is re-enabled from the log.</string>
     <string name="packages_untested_detail">Not tested: described from an inventory someone sent, without anyone having seen what disabling it does. No profile selects it.</string>
     <string name="state_enabled">Enabled</string>
     <string name="state_disabled">Disabled</string>
@@ -452,4 +453,9 @@
     <string name="video_no_sound">No sound: the television's recorder does not capture any.</string>
     <string name="closing_title">Finishing the video</string>
     <string name="closing_text">TV Slim copies the video from the television, then closes.</string>
+
+    <!-- Hors téléviseur -->
+    <string name="device_type_phone">Phone</string>
+    <string name="device_type_tablet">Tablet</string>
+    <string name="packages_not_tv">This device is not a television: TV Slim's catalogue describes televisions, so profiles are off. A package can still be disabled by hand, and re-enabled from the log.</string>
 </resources>

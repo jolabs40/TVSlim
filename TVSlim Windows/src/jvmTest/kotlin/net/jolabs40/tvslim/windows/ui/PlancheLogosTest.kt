@@ -579,6 +579,21 @@ class PlancheLogosTest {
             VideoEnregistreeDialogue(File("C:/Users/Camille/Videos/TV Slim/TVSlim-TCL-Smart-TV-Pro-2026-10-04_19-20-02.mp4"), {}, {})
         }
         rendre("48-fermeture-video", 900, 480, cadre = false) { FermetureDialogue(PhaseEnregistrement.Copie(0.55f)) }
+        // Un téléphone joint : seul l'accueil en place, ni recommandation ni accueils d'usine (relevé du Pixel 9a).
+        val pixel = EtatApp(
+            catalogue = catalogue,
+            infos = InfosAppareil(
+                marque = "Google",
+                marqueCommerciale = "google",
+                modele = "Pixel 9a",
+                accueilActuel = "com.teslacoilsw.launcher",
+                launchersTiers = listOf("net.jolabs40.startlight.debug", "com.teslacoilsw.launcher")
+                    .map { LauncherInstalle(paquet = it, nom = it, composant = "$it/.Accueil") },
+                caracteristiques = "nosdcard",
+                fonctions = setOf(InfosAppareil.FONCTION_TACTILE),
+            ),
+        )
+        rendre("49-accueil-telephone", 720, 300) { CarteAccueil(pixel, {}, {}, {}) }
     }
 
     @OptIn(ExperimentalComposeUiApi::class)

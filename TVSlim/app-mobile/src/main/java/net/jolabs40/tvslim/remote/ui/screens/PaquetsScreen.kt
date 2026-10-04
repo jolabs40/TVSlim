@@ -132,12 +132,22 @@ fun PaquetsScreen(
             }
         }
 
+        // Un téléphone, une tablette : le catalogue n'est pas écrit pour eux, et aucun profil n'y agit.
+        val pourLeCatalogue = etat.infos.typeAppareil.pourLeCatalogue
+        if (!pourLeCatalogue) {
+            Text(
+                text = stringResource(R.string.packages_not_tv),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         LazyRow(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(etat.catalogue.profils) { profil ->
-                AssistChip(onClick = { onProfil(profil) }, label = { Text(profil.nom) })
+                AssistChip(onClick = { onProfil(profil) }, label = { Text(profil.nom) }, enabled = pourLeCatalogue)
             }
         }
 

@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
@@ -56,6 +57,7 @@ import net.jolabs40.tvslim.device.origine
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.baseline_arrow_drop_down_24
 import net.jolabs40.tvslim.windows.ressources.baseline_search_24
+import net.jolabs40.tvslim.windows.ressources.baseline_warning_24
 import net.jolabs40.tvslim.windows.ressources.config_reinject
 import net.jolabs40.tvslim.windows.ressources.config_save
 import net.jolabs40.tvslim.windows.ressources.filter_all
@@ -65,6 +67,7 @@ import net.jolabs40.tvslim.windows.ressources.packages_apply
 import net.jolabs40.tvslim.windows.ressources.packages_clear
 import net.jolabs40.tvslim.windows.ressources.packages_none_matching
 import net.jolabs40.tvslim.windows.ressources.packages_not_connected
+import net.jolabs40.tvslim.windows.ressources.packages_not_tv
 import net.jolabs40.tvslim.windows.ressources.packages_profiles
 import net.jolabs40.tvslim.windows.ressources.packages_progress
 import net.jolabs40.tvslim.windows.ressources.packages_reactivate
@@ -124,10 +127,13 @@ fun PaquetsEcran(
             )
         }
 
+        // Un téléphone, une tablette : le catalogue n'est pas écrit pour eux, et aucun profil n'y agit.
+        val pourLeCatalogue = etat.infos.typeAppareil.pourLeCatalogue
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            if (!pourLeCatalogue) BandeauHorsTeleviseur()
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -171,6 +177,7 @@ fun PaquetsEcran(
                 ListeProfils(
                     profils = etat.catalogue.profils,
                     selectionVide = etat.selection.isEmpty(),
+                    actif = pourLeCatalogue,
                     onProfil = onProfil,
                 )
             }
@@ -253,13 +260,32 @@ private fun FiltreEtat(filtre: Filtre, actifs: Int, desactives: Int, onFiltre: (
     }
 }
 
+/** Un téléphone ou une tablette est joint : ce que le catalogue ne fera pas pour lui, et ce qui reste possible. */
+@Composable
+private fun BandeauHorsTeleviseur() {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(painterResource(Res.drawable.baseline_warning_24), contentDescription = null)
+            Text(stringResource(Res.string.packages_not_tv), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
 /**
  * Les profils, en liste déroulante. En choisir un coche tout ce qu'il couvre, sans rien décocher ;
  * sa description, sous son nom, dit ce qu'on perd en l'appliquant. Le champ rappelle le dernier
  * profil appliqué, tant que la sélection n'a pas été vidée.
  */
 @Composable
-private fun ListeProfils(profils: List<Profil>, selectionVide: Boolean, onProfil: (Profil) -> Unit) {
+private fun ListeProfils(profils: List<Profil>, selectionVide: Boolean, actif: Boolean, onProfil: (Profil) -> Unit) {
     var ouverte by remember { mutableStateOf(false) }
     var dernier by remember { mutableStateOf<Profil?>(null) }
 
@@ -270,6 +296,7 @@ private fun ListeProfils(profils: List<Profil>, selectionVide: Boolean, onProfil
             readOnly = true,
             singleLine = true,
             label = { Text(stringResource(Res.string.packages_profiles)) },
+            enabled = actif,
             trailingIcon = {
                 Icon(painter = painterResource(Res.drawable.baseline_arrow_drop_down_24), contentDescription = null)
             },
@@ -281,7 +308,7 @@ private fun ListeProfils(profils: List<Profil>, selectionVide: Boolean, onProfil
                 .matchParentSize()
                 .padding(top = 8.dp)
                 .clip(MaterialTheme.shapes.extraSmall)
-                .clickable { ouverte = true },
+                .clickable(enabled = actif) { ouverte = true },
         )
         DropdownMenu(
             expanded = ouverte,

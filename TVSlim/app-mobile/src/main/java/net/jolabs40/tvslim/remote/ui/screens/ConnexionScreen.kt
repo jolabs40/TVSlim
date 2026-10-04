@@ -343,7 +343,12 @@ private fun AppareilConnecte(
         ) {
             Text(
                 text = stringResource(
-                    if (etat.infos.typeAppareil == TypeAppareil.BOX) R.string.device_type_box else R.string.device_title,
+                    when (etat.infos.typeAppareil) {
+                        TypeAppareil.TELEVISEUR -> R.string.device_title
+                        TypeAppareil.BOX -> R.string.device_type_box
+                        TypeAppareil.TELEPHONE -> R.string.device_type_phone
+                        TypeAppareil.TABLETTE -> R.string.device_type_tablet
+                    },
                 ),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,

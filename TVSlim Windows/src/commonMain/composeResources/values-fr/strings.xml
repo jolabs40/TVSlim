@@ -94,6 +94,7 @@
     <string name="packages_detail_selected">Sélectionné pour la désactivation</string>
     <string name="packages_requires_launcher">Exige qu'un launcher tiers soit installé d'abord.</string>
     <string name="packages_untested">Non éprouvé</string>
+    <string name="packages_device_app_detail">Application de cet appareil, absente du catalogue : TV Slim n'en connaît ni le rôle ni ce que coûte sa désactivation. Aucun profil ne la coche, et elle se réactive depuis le journal.</string>
     <string name="packages_untested_detail">Non éprouvé : décrit d'après un inventaire envoyé, sans qu'on ait vu ce que coûte sa désactivation. Aucun profil ne le coche.</string>
     <string name="state_enabled">Actif</string>
     <string name="state_disabled">Désactivé</string>
@@ -452,4 +453,9 @@
     <string name="video_no_sound">Sans son : l'enregistreur du téléviseur n'en capture pas.</string>
     <string name="closing_title">Fin de la vidéo</string>
     <string name="closing_text">TV Slim copie la vidéo depuis le téléviseur, puis se ferme.</string>
+
+    <!-- Hors téléviseur -->
+    <string name="device_type_phone">Téléphone</string>
+    <string name="device_type_tablet">Tablette</string>
+    <string name="packages_not_tv">Cet appareil n'est pas un téléviseur : le catalogue de TV Slim décrit des téléviseurs, les profils sont donc désactivés. Un paquet se désactive encore à la main, et se réactive depuis le journal.</string>
 </resources>

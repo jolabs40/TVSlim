@@ -44,6 +44,8 @@ import net.jolabs40.tvslim.windows.ressources.device_packages_active
 import net.jolabs40.tvslim.windows.ressources.device_packages_disabled
 import net.jolabs40.tvslim.windows.ressources.device_title
 import net.jolabs40.tvslim.windows.ressources.device_type_box
+import net.jolabs40.tvslim.windows.ressources.device_type_phone
+import net.jolabs40.tvslim.windows.ressources.device_type_tablet
 import net.jolabs40.tvslim.windows.ressources.home_available
 import net.jolabs40.tvslim.windows.ressources.home_coming_soon
 import net.jolabs40.tvslim.windows.ressources.home_current_badge
@@ -92,7 +94,12 @@ fun CarteAppareil(
     }
 
     val infos = etat.infos
-    val titre = if (infos.typeAppareil == TypeAppareil.BOX) Res.string.device_type_box else Res.string.device_title
+    val titre = when (infos.typeAppareil) {
+        TypeAppareil.TELEVISEUR -> Res.string.device_title
+        TypeAppareil.BOX -> Res.string.device_type_box
+        TypeAppareil.TELEPHONE -> Res.string.device_type_phone
+        TypeAppareil.TABLETTE -> Res.string.device_type_tablet
+    }
     CarteSection(titre = stringResource(titre), espacement = 6.dp) {
         // La marque en tête, reconnue sur ce que l'appareil déclare : voir Fabricant.
         infos.fabricant?.let { PlaqueMarque(fabricant = it, hauteur = 40.dp, modifier = Modifier.padding(bottom = 6.dp)) }
@@ -137,6 +144,10 @@ fun CarteAccueil(
 
     CarteSection(titre = stringResource(Res.string.home_title), espacement = 10.dp) {
         AccueilActuel(catalogue = catalogue, infos = infos)
+        // Un téléphone, une tablette : seul l'accueil en place se montre. Rien n'y est à recommander — Startlight est
+        // un launcher de téléviseur —, et ce que la lecture des composants désactivés y prend pour des accueils d'usine
+        // (restauration, Play Services, gestion du téléphone) n'en sont pas : « Utiliser » en ferait l'écran d'accueil.
+        if (!infos.typeAppareil.pourLeCatalogue) return@CarteSection
 
         if (infos.launchersTiers.isEmpty()) {
             Text(
