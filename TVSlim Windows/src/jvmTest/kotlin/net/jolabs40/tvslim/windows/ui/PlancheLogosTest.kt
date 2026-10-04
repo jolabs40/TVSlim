@@ -75,6 +75,7 @@ import net.jolabs40.tvslim.windows.ui.composants.LOGOS_LAUNCHERS
 import net.jolabs40.tvslim.windows.ui.composants.LogoLauncher
 import net.jolabs40.tvslim.windows.ui.composants.PlaqueMarque
 import net.jolabs40.tvslim.windows.ui.ecrans.ActionsFichiers
+import net.jolabs40.tvslim.windows.ui.ecrans.BanniereSoutien
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAccueil
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAppareil
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteCommande
@@ -522,6 +523,10 @@ class PlancheLogosTest {
                 actions = actions,
             )
         }
+
+        // Le bandeau de soutien, en haut de la fenêtre, et son lien permanent dans « À propos ».
+        rendre("41-soutien", 1280, 80, cadre = false) { BanniereSoutien(true, {}, {}, {}) }
+        rendre("42-soutien-sombre", 1280, 80, sombre = true, cadre = false) { BanniereSoutien(true, {}, {}, {}) }
     }
 
     @OptIn(ExperimentalComposeUiApi::class)

@@ -27,6 +27,7 @@ import net.jolabs40.tvslim.remote.fichiers.lotDeDocuments
 import net.jolabs40.tvslim.remote.fichiers.lotDeDossier
 import net.jolabs40.tvslim.remote.fichiers.nomDuDocument
 import net.jolabs40.tvslim.remote.fichiers.nomDuDossier
+import net.jolabs40.tvslim.soutien.InvitationSoutien
 
 /**
  * Ce qu'on a choisi sur le téléphone, en attente du dossier du téléviseur où le déposer : des documents un à un,
@@ -57,9 +58,14 @@ class PiloteFichiers(
     client: ClientAdb,
     private val portee: CoroutineScope,
     private val afficher: (String) -> Unit,
+    /** Un envoi arrivé au bout : le bandeau de soutien peut se montrer. */
+    private val remercier: () -> Unit,
 ) {
 
-    val explorateur = ExplorateurFichiers(NavigateurFichiers(client, client), portee) { afficher(it.message()) }
+    val explorateur = ExplorateurFichiers(NavigateurFichiers(client, client), portee) { signal ->
+        afficher(signal.message())
+        if (InvitationSoutien.merite(signal)) remercier()
+    }
 
     private val _enAttente = MutableStateFlow<EnvoiEnAttente?>(null)
     val enAttente: StateFlow<EnvoiEnAttente?> = _enAttente.asStateFlow()

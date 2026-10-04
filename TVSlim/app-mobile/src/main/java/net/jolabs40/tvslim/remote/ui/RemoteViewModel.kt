@@ -33,6 +33,8 @@ import net.jolabs40.tvslim.remote.adb.ClientAdb
 import net.jolabs40.tvslim.remote.adb.DecouverteTv
 import net.jolabs40.tvslim.remote.adb.PORT_ADB_PAR_DEFAUT
 import net.jolabs40.tvslim.remote.data.PreferencesRemote
+import net.jolabs40.tvslim.soutien.InvitationSoutien
+import net.jolabs40.tvslim.soutien.PiloteSoutien
 import java.io.File
 import javax.inject.Inject
 
@@ -72,6 +74,9 @@ class RemoteViewModel @Inject constructor(
         afficher = ::afficher,
     )
 
+    /** Le bandeau de soutien, après un débloat, un transfert ou une installation qui ont abouti. */
+    val soutien = PiloteSoutien(preferences, viewModelScope)
+
     /**
      * L'écran d'accueil — fiche du launcher, guet de son installation — et la configuration qu'on
      * sauvegarde puis réinjecte ont aussi le leur : ils ne partagent que l'état et le moteur.
@@ -90,10 +95,11 @@ class RemoteViewModel @Inject constructor(
         terminer = { resultats ->
             terminer(resultats.count { it.reussi }, resultats.size, resultats.filterNot { it.reussi })
         },
+        remercier = soutien::remercier,
     )
 
     /** L'onglet Fichiers : il suit lui-même la connexion, et oublie ce qu'il a lu quand le téléviseur change. */
-    val fichiers = PiloteFichiers(contexte, client, viewModelScope, ::afficher)
+    val fichiers = PiloteFichiers(contexte, client, viewModelScope, ::afficher, soutien::remercier)
 
     /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
     private var suiviJournal: Job? = null
@@ -366,6 +372,7 @@ class RemoteViewModel @Inject constructor(
                 },
             )
             terminer(resultats.count { it.reussi }, resultats.size, resultats.filterNot { it.reussi })
+            if (InvitationSoutien.merite(resultats)) soutien.remercier()
         }
     }
 

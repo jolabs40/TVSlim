@@ -3,23 +3,27 @@ package net.jolabs40.tvslim.remote.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import net.jolabs40.tvslim.remote.adb.PORT_ADB_PAR_DEFAUT
+import net.jolabs40.tvslim.soutien.MagasinSoutien
+import net.jolabs40.tvslim.soutien.MemoireSoutien
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private val Context.magasin: DataStore<Preferences> by preferencesDataStore(name = "tvslim-remote")
 
-/** Dernier téléviseur joint, pour ne pas ressaisir son adresse à chaque fois. */
+/** Dernier téléviseur joint, pour ne pas ressaisir son adresse à chaque fois — et où en est le bandeau de soutien. */
 @Singleton
 class PreferencesRemote @Inject constructor(
     @ApplicationContext private val contexte: Context,
-) {
+) : MagasinSoutien {
 
     suspend fun dernierHote(): String = contexte.magasin.data.first()[CLE_HOTE].orEmpty()
 
@@ -49,9 +53,22 @@ class PreferencesRemote @Inject constructor(
         }
     }
 
+    override suspend fun lireSoutien(): MemoireSoutien = contexte.magasin.data.first().let {
+        MemoireSoutien(donDeclare = it[CLE_DON] ?: false, derniereInvitation = it[CLE_INVITATION] ?: 0L)
+    }
+
+    override suspend fun ecrireSoutien(memoire: MemoireSoutien) {
+        contexte.magasin.edit {
+            it[CLE_DON] = memoire.donDeclare
+            it[CLE_INVITATION] = memoire.derniereInvitation
+        }
+    }
+
     private companion object {
         const val PREFIXE_NOM = "nom_"
         val CLE_HOTE = stringPreferencesKey("dernier_hote")
         val CLE_PORT = intPreferencesKey("dernier_port")
+        val CLE_DON = booleanPreferencesKey("soutien_don_declare")
+        val CLE_INVITATION = longPreferencesKey("soutien_derniere_invitation")
     }
 }

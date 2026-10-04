@@ -17,6 +17,7 @@ import net.jolabs40.tvslim.fichiers.RefusLecture
 import net.jolabs40.tvslim.fichiers.ResultatDepot
 import net.jolabs40.tvslim.fichiers.SensTransfert
 import net.jolabs40.tvslim.fichiers.SignalFichiers
+import net.jolabs40.tvslim.soutien.InvitationSoutien
 import net.jolabs40.tvslim.windows.adb.ClientAdb
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.fichiers.CibleDisque
@@ -55,9 +56,14 @@ class PiloteFichiers(
     client: ClientAdb,
     portee: CoroutineScope,
     private val afficher: (MessageUi) -> Unit,
+    /** Un envoi ou une copie arrivés au bout : le bandeau de soutien peut se montrer. */
+    private val remercier: () -> Unit,
 ) {
 
-    val explorateur = ExplorateurFichiers(NavigateurFichiers(client, client, client), portee) { afficher(it.message()) }
+    val explorateur = ExplorateurFichiers(NavigateurFichiers(client, client, client), portee) { signal ->
+        afficher(signal.message())
+        if (InvitationSoutien.merite(signal)) remercier()
+    }
 
     init {
         // Ce qu'on a lu appartient au téléviseur : se déconnecter, ou en joindre un autre, l'oublie. Une reprise

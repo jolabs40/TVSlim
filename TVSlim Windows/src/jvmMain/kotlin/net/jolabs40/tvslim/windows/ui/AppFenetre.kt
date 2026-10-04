@@ -49,6 +49,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.jolabs40.tvslim.fichiers.EntreeDistante
+import net.jolabs40.tvslim.soutien.InvitationSoutien
 import net.jolabs40.tvslim.windows.InfosApp
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.maj.PiloteMisesAJour
@@ -82,6 +83,7 @@ import net.jolabs40.tvslim.windows.ressources.unknown_export_dialog
 import net.jolabs40.tvslim.windows.ui.ecrans.AProposDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ActionsFichiers
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereMiseAJour
+import net.jolabs40.tvslim.windows.ui.ecrans.BanniereSoutien
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.FichiersEcran
@@ -132,6 +134,7 @@ fun AppFenetre(
     val etat by pilote.etat.collectAsStateWithLifecycle()
     val etatFichiers by pilote.fichiers.explorateur.etat.collectAsStateWithLifecycle()
     val etatMaj by misesAJour.etat.collectAsStateWithLifecycle()
+    val soutienVisible by pilote.soutien.visible.collectAsStateWithLifecycle()
     val messages = remember { SnackbarHostState() }
     var aPropos by remember { mutableStateOf(false) }
     val titreExport = stringResource(Res.string.journal_export_dialog)
@@ -218,6 +221,7 @@ fun AppFenetre(
             onVerificationAuto = misesAJour::majVerificationAuto,
             onInstaller = misesAJour::installer,
             onSource = { ouvrirLien("https://github.com/${InfosApp.DEPOT_GITHUB}") },
+            onSoutenir = { ouvrirLien(InvitationSoutien.LIEN) },
             onDossier = ouvrirDossierDonnees,
         )
     }
@@ -279,6 +283,15 @@ fun AppFenetre(
                     onInstaller = misesAJour::installer,
                     onPage = misesAJour::ouvrirPage,
                     onPlusTard = misesAJour::ecarter,
+                )
+                BanniereSoutien(
+                    visible = soutienVisible,
+                    onSoutenir = {
+                        ouvrirLien(InvitationSoutien.LIEN)
+                        pilote.soutien.ecarter()
+                    },
+                    onDejaFait = pilote.soutien::declarerDon,
+                    onPlusTard = pilote.soutien::ecarter,
                 )
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     when (onglet) {

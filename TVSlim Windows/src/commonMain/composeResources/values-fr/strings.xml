@@ -299,6 +299,7 @@
     <string name="about_license">Licence : %1$s</string>
     <string name="about_data_folder">Ouvrir le dossier des données</string>
     <string name="about_close">Fermer</string>
+    <string name="about_support">Soutenir TV Slim</string>
 
     <!-- Mises à jour -->
     <string name="update_auto_check">Rechercher les mises à jour au démarrage</string>
@@ -404,4 +405,11 @@
     <string name="files_deleted">%1$s supprimé du téléviseur.</string>
     <string name="files_delete_protected">%1$s est un stockage entier, ou en contient un : TV Slim ne l'efface pas d'un bloc.</string>
     <string name="files_delete_failed">%1$s n'a pas pu être entièrement supprimé : %2$s</string>
+
+    <!-- Soutien -->
+    <string name="support_title">TV Slim vous a rendu service ?</string>
+    <string name="support_text">Il est gratuit, sans publicité ni pistage, et le restera. Un café aide à le faire vivre.</string>
+    <string name="support_donate">Offrir un café</string>
+    <string name="support_already">J'ai déjà fait un don</string>
+    <string name="support_later">Plus tard</string>
 </resources>

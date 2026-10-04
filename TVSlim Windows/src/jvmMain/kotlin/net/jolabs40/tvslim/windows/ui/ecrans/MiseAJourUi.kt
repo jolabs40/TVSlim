@@ -48,8 +48,10 @@ import net.jolabs40.tvslim.windows.ressources.about_description
 import net.jolabs40.tvslim.windows.ressources.about_license
 import net.jolabs40.tvslim.windows.ressources.about_open_source
 import net.jolabs40.tvslim.windows.ressources.about_source
+import net.jolabs40.tvslim.windows.ressources.about_support
 import net.jolabs40.tvslim.windows.ressources.about_version
 import net.jolabs40.tvslim.windows.ressources.app_name
+import net.jolabs40.tvslim.windows.ressources.baseline_favorite_24
 import net.jolabs40.tvslim.windows.ressources.baseline_folder_open_24
 import net.jolabs40.tvslim.windows.ressources.baseline_open_in_new_24
 import net.jolabs40.tvslim.windows.ressources.baseline_system_update_24
@@ -168,7 +170,7 @@ fun BanniereMiseAJour(
     }
 }
 
-/** Version, licence, code source, dossier des données — et le réglage des mises à jour. */
+/** Version, licence, code source, page de soutien, dossier des données — et le réglage des mises à jour. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AProposDialogue(
@@ -178,6 +180,7 @@ fun AProposDialogue(
     onVerificationAuto: (Boolean) -> Unit,
     onInstaller: () -> Unit,
     onSource: () -> Unit,
+    onSoutenir: () -> Unit,
     onDossier: () -> Unit,
 ) {
     AlertDialog(
@@ -208,6 +211,11 @@ fun AProposDialogue(
                         Icon(painterResource(Res.drawable.baseline_open_in_new_24), null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(Res.string.about_source))
+                    }
+                    TextButton(onClick = onSoutenir) {
+                        Icon(painterResource(Res.drawable.baseline_favorite_24), null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(Res.string.about_support))
                     }
                     TextButton(onClick = onDossier) {
                         Icon(painterResource(Res.drawable.baseline_folder_open_24), null, Modifier.size(18.dp))

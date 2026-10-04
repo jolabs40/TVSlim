@@ -6,6 +6,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import net.jolabs40.tvslim.soutien.MagasinSoutien
+import net.jolabs40.tvslim.soutien.MemoireSoutien
 import net.jolabs40.tvslim.windows.adb.PORT_ADB_PAR_DEFAUT
 import net.jolabs40.tvslim.windows.outils.Traces
 import java.io.File
@@ -20,6 +22,10 @@ data class DonneesPreferences(
     val nomsConnus: Map<String, String> = emptyMap(),
     /** On peut refuser que l'application interroge GitHub au démarrage. */
     val verifierMisesAJour: Boolean = true,
+    /** « J'ai déjà fait un don » : le bandeau de soutien ne revient plus. */
+    val donDeclare: Boolean = false,
+    /** Quand le bandeau de soutien s'est montré pour la dernière fois ; 0 tant qu'il ne l'a pas fait. */
+    val derniereInvitationSoutien: Long = 0L,
 )
 
 /**
@@ -29,7 +35,7 @@ data class DonneesPreferences(
  * chaque appareil, pour ne rien ressaisir. Chaque écriture passe par un fichier provisoire renommé
  * d'un coup : une coupure au mauvais moment laisse l'ancien fichier intact, jamais un demi-JSON.
  */
-class PreferencesWindows(private val fichier: File) {
+class PreferencesWindows(private val fichier: File) : MagasinSoutien {
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -57,6 +63,12 @@ class PreferencesWindows(private val fichier: File) {
 
     suspend fun majVerificationMisesAJour(active: Boolean) =
         modifier { it.copy(verifierMisesAJour = active) }
+
+    override suspend fun lireSoutien(): MemoireSoutien =
+        lire().let { MemoireSoutien(donDeclare = it.donDeclare, derniereInvitation = it.derniereInvitationSoutien) }
+
+    override suspend fun ecrireSoutien(memoire: MemoireSoutien) =
+        modifier { it.copy(donDeclare = memoire.donDeclare, derniereInvitationSoutien = memoire.derniereInvitation) }
 
     private suspend fun modifier(transformation: (DonneesPreferences) -> DonneesPreferences) {
         withContext(Dispatchers.IO) {

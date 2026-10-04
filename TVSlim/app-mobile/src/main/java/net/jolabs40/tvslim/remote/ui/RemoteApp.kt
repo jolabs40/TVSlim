@@ -2,6 +2,7 @@ package net.jolabs40.tvslim.remote.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cast
@@ -38,6 +39,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.screens.ActionsFichiers
+import net.jolabs40.tvslim.remote.ui.screens.BanniereSoutien
 import net.jolabs40.tvslim.remote.ui.screens.ConfirmationDialogue
 import net.jolabs40.tvslim.remote.ui.screens.ConnexionScreen
 import net.jolabs40.tvslim.remote.ui.screens.FichiersScreen
@@ -63,6 +65,7 @@ private val TYPES_APK = arrayOf("application/vnd.android.package-archive", "appl
 fun RemoteApp() {
     val modele: RemoteViewModel = hiltViewModel()
     val etat by modele.etat.collectAsStateWithLifecycle()
+    val soutienVisible by modele.soutien.visible.collectAsStateWithLifecycle()
     val navigation = rememberNavController()
     val pileCourante by navigation.currentBackStackEntryAsState()
     val messages = remember { SnackbarHostState() }
@@ -123,129 +126,138 @@ fun RemoteApp() {
             }
         },
     ) { marges ->
-        NavHost(
-            navController = navigation,
-            startDestination = "connexion",
-            modifier = Modifier.padding(marges),
-        ) {
-            composable("connexion") {
-                // L'APK se désigne dans le sélecteur d'Android : aucune permission de stockage à demander.
-                val apk = rememberLauncherForActivityResult(
-                    ActivityResultContracts.OpenDocument(),
-                ) { uri -> uri?.let(modele.configuration::choisirApk) }
-                ConnexionScreen(
-                    etat = etat,
-                    onHote = modele::majHote,
-                    onPort = modele::majPort,
-                    onConnecter = modele::connecter,
-                    onDeconnecter = modele::deconnecter,
-                    onActualiser = modele::rafraichir,
-                    onScan = modele::appliquerScan,
-                    onEchecScan = modele::signalerEchecScan,
-                    onInstallerLauncher = modele.configuration::installerLauncher,
-                    onDefinirAccueil = modele.configuration::definirAccueil,
-                    onReprendreDerive = modele.configuration::proposerDerive,
-                    onChercher = modele::chercherAppareils,
-                    onArreterRecherche = modele::arreterRecherche,
-                    onConnecterA = modele::connecterA,
-                    actionsPermissions = ActionsPermissions(
-                        onPaquet = modele.permissions::majPaquet,
-                        onPermission = modele.permissions::majPermission,
-                        onLire = modele.permissions::lire,
-                        onAccorder = modele.permissions::accorder,
-                        onRetirer = modele.permissions::retirer,
-                    ),
-                    onChoisirApk = { apk.launch(TYPES_APK) },
-                    actionsCommande = ActionsCommande(
-                        onSaisie = modele.configuration::saisirCommande,
-                        onEnvoyer = modele.configuration::envoyerCommande,
-                    ),
-                    actionsShizuku = ActionsShizuku(
-                        onRelancer = modele.configuration::relancerShizuku,
-                    ),
-                )
-            }
-            composable("paquets") {
-                // Le sélecteur d'Android désigne l'emplacement : rien n'est écrit ni lu sans qu'on l'ait choisi.
-                val sauvegarde = rememberLauncherForActivityResult(
-                    ActivityResultContracts.CreateDocument("application/json"),
-                ) { uri -> uri?.let(modele.configuration::sauvegarder) }
-                val reinjection = rememberLauncherForActivityResult(
-                    ActivityResultContracts.OpenDocument(),
-                ) { uri -> uri?.let(modele.configuration::charger) }
-                val inventaire = rememberLauncherForActivityResult(
-                    ActivityResultContracts.CreateDocument("text/markdown"),
-                ) { uri -> uri?.let { modele.configuration.exporterInconnus(it) } }
-                // Le même export, puis le formulaire du catalogue dans le navigateur.
-                val proposition = rememberLauncherForActivityResult(
-                    ActivityResultContracts.CreateDocument("text/markdown"),
-                ) { uri -> uri?.let { modele.configuration.exporterInconnus(it, proposer = true) } }
-                PaquetsScreen(
-                    etat = etat,
-                    onBasculer = modele::basculerSelection,
-                    onProfil = modele::selectionnerProfil,
-                    onToutDecocher = modele::toutDeselectionner,
-                    onAppliquer = modele::demanderApplication,
-                    onReactiver = { modele.reactiver(listOf(it)) },
-                    onRecherche = modele::majRecherche,
-                    onFiltre = modele::majFiltre,
-                    onSauvegarder = { sauvegarde.launch(modele.configuration.nomFichier()) },
-                    // Selon le gestionnaire de fichiers, un .json passe pour du texte ou pour du binaire.
-                    onReinjecter = {
-                        reinjection.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
-                    },
-                    onExporterInconnus = { inventaire.launch(modele.configuration.nomExportInconnus()) },
-                    onProposerInconnus = { proposition.launch(modele.configuration.nomExportInconnus()) },
-                )
-            }
-            composable("memoire") {
-                MemoireScreen(
-                    etat = etat,
-                    onActualiser = modele::rafraichirMemoire,
-                    onActualiserStockage = modele::rafraichirStockage,
-                    onForcerArret = modele::forcerArret,
-                    onRedefinirReference = modele::redefinirReference,
-                )
-            }
-            composable("fichiers") {
-                val etatFichiers by modele.fichiers.explorateur.etat.collectAsStateWithLifecycle()
-                val enAttente by modele.fichiers.enAttente.collectAsStateWithLifecycle()
-                val explorateur = modele.fichiers.explorateur
-                // Les documents se désignent dans le sélecteur d'Android : aucune permission de stockage à demander,
-                // et chacun n'est lu qu'au moment de partir. Ils attendent ensuite qu'on ouvre leur destination.
-                val documents = rememberLauncherForActivityResult(
-                    ActivityResultContracts.OpenMultipleDocuments(),
-                ) { uris -> modele.fichiers.choisirDocuments(uris) }
-                val dossier = rememberLauncherForActivityResult(
-                    ActivityResultContracts.OpenDocumentTree(),
-                ) { uri -> uri?.let(modele.fichiers::choisirDossier) }
-                FichiersScreen(
-                    connecte = etat.connecte,
-                    etat = etatFichiers,
-                    enAttente = enAttente,
-                    actions = ActionsFichiers(
-                        onDemarrer = explorateur::demarrer,
-                        onOuvrir = explorateur::ouvrir,
-                        onRemonter = explorateur::remonter,
-                        onActualiser = explorateur::actualiser,
-                        onEnvoyerFichiers = { documents.launch(arrayOf("*/*")) },
-                        onEnvoyerDossier = { dossier.launch(null) },
-                        onCreerDossier = explorateur::creerDossier,
-                        onConfirmer = modele.fichiers::confirmer,
-                        onAnnulerConfirmation = explorateur::annulerConfirmation,
-                        onArreter = explorateur::annulerEnvoi,
-                        onEnvoyerIci = modele.fichiers::envoyerIci,
-                        onAbandonnerEnvoi = modele.fichiers::abandonnerEnvoi,
-                    ),
-                )
-            }
-            composable("journal") {
-                JournalScreen(
-                    etat = etat,
-                    onToutRestaurer = modele::demanderRestauration,
-                    onExporter = modele::exporterJournal,
-                    onAnnulerAction = modele::annulerAction,
-                )
+        Column(modifier = Modifier.padding(marges)) {
+            // En tête de chaque onglet : le service rendu peut l'avoir été depuis n'importe lequel.
+            BanniereSoutien(
+                visible = soutienVisible,
+                onSoutenir = modele.soutien::ecarter,
+                onDejaFait = modele.soutien::declarerDon,
+                onPlusTard = modele.soutien::ecarter,
+            )
+            NavHost(
+                navController = navigation,
+                startDestination = "connexion",
+                modifier = Modifier.weight(1f),
+            ) {
+                composable("connexion") {
+                    // L'APK se désigne dans le sélecteur d'Android : aucune permission de stockage à demander.
+                    val apk = rememberLauncherForActivityResult(
+                        ActivityResultContracts.OpenDocument(),
+                    ) { uri -> uri?.let(modele.configuration::choisirApk) }
+                    ConnexionScreen(
+                        etat = etat,
+                        onHote = modele::majHote,
+                        onPort = modele::majPort,
+                        onConnecter = modele::connecter,
+                        onDeconnecter = modele::deconnecter,
+                        onActualiser = modele::rafraichir,
+                        onScan = modele::appliquerScan,
+                        onEchecScan = modele::signalerEchecScan,
+                        onInstallerLauncher = modele.configuration::installerLauncher,
+                        onDefinirAccueil = modele.configuration::definirAccueil,
+                        onReprendreDerive = modele.configuration::proposerDerive,
+                        onChercher = modele::chercherAppareils,
+                        onArreterRecherche = modele::arreterRecherche,
+                        onConnecterA = modele::connecterA,
+                        actionsPermissions = ActionsPermissions(
+                            onPaquet = modele.permissions::majPaquet,
+                            onPermission = modele.permissions::majPermission,
+                            onLire = modele.permissions::lire,
+                            onAccorder = modele.permissions::accorder,
+                            onRetirer = modele.permissions::retirer,
+                        ),
+                        onChoisirApk = { apk.launch(TYPES_APK) },
+                        actionsCommande = ActionsCommande(
+                            onSaisie = modele.configuration::saisirCommande,
+                            onEnvoyer = modele.configuration::envoyerCommande,
+                        ),
+                        actionsShizuku = ActionsShizuku(
+                            onRelancer = modele.configuration::relancerShizuku,
+                        ),
+                    )
+                }
+                composable("paquets") {
+                    // Le sélecteur d'Android désigne l'emplacement : rien n'est écrit ni lu sans qu'on l'ait choisi.
+                    val sauvegarde = rememberLauncherForActivityResult(
+                        ActivityResultContracts.CreateDocument("application/json"),
+                    ) { uri -> uri?.let(modele.configuration::sauvegarder) }
+                    val reinjection = rememberLauncherForActivityResult(
+                        ActivityResultContracts.OpenDocument(),
+                    ) { uri -> uri?.let(modele.configuration::charger) }
+                    val inventaire = rememberLauncherForActivityResult(
+                        ActivityResultContracts.CreateDocument("text/markdown"),
+                    ) { uri -> uri?.let { modele.configuration.exporterInconnus(it) } }
+                    // Le même export, puis le formulaire du catalogue dans le navigateur.
+                    val proposition = rememberLauncherForActivityResult(
+                        ActivityResultContracts.CreateDocument("text/markdown"),
+                    ) { uri -> uri?.let { modele.configuration.exporterInconnus(it, proposer = true) } }
+                    PaquetsScreen(
+                        etat = etat,
+                        onBasculer = modele::basculerSelection,
+                        onProfil = modele::selectionnerProfil,
+                        onToutDecocher = modele::toutDeselectionner,
+                        onAppliquer = modele::demanderApplication,
+                        onReactiver = { modele.reactiver(listOf(it)) },
+                        onRecherche = modele::majRecherche,
+                        onFiltre = modele::majFiltre,
+                        onSauvegarder = { sauvegarde.launch(modele.configuration.nomFichier()) },
+                        // Selon le gestionnaire de fichiers, un .json passe pour du texte ou pour du binaire.
+                        onReinjecter = {
+                            reinjection.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+                        },
+                        onExporterInconnus = { inventaire.launch(modele.configuration.nomExportInconnus()) },
+                        onProposerInconnus = { proposition.launch(modele.configuration.nomExportInconnus()) },
+                    )
+                }
+                composable("memoire") {
+                    MemoireScreen(
+                        etat = etat,
+                        onActualiser = modele::rafraichirMemoire,
+                        onActualiserStockage = modele::rafraichirStockage,
+                        onForcerArret = modele::forcerArret,
+                        onRedefinirReference = modele::redefinirReference,
+                    )
+                }
+                composable("fichiers") {
+                    val etatFichiers by modele.fichiers.explorateur.etat.collectAsStateWithLifecycle()
+                    val enAttente by modele.fichiers.enAttente.collectAsStateWithLifecycle()
+                    val explorateur = modele.fichiers.explorateur
+                    // Les documents se désignent dans le sélecteur d'Android : aucune permission de stockage à demander,
+                    // et chacun n'est lu qu'au moment de partir. Ils attendent ensuite qu'on ouvre leur destination.
+                    val documents = rememberLauncherForActivityResult(
+                        ActivityResultContracts.OpenMultipleDocuments(),
+                    ) { uris -> modele.fichiers.choisirDocuments(uris) }
+                    val dossier = rememberLauncherForActivityResult(
+                        ActivityResultContracts.OpenDocumentTree(),
+                    ) { uri -> uri?.let(modele.fichiers::choisirDossier) }
+                    FichiersScreen(
+                        connecte = etat.connecte,
+                        etat = etatFichiers,
+                        enAttente = enAttente,
+                        actions = ActionsFichiers(
+                            onDemarrer = explorateur::demarrer,
+                            onOuvrir = explorateur::ouvrir,
+                            onRemonter = explorateur::remonter,
+                            onActualiser = explorateur::actualiser,
+                            onEnvoyerFichiers = { documents.launch(arrayOf("*/*")) },
+                            onEnvoyerDossier = { dossier.launch(null) },
+                            onCreerDossier = explorateur::creerDossier,
+                            onConfirmer = modele.fichiers::confirmer,
+                            onAnnulerConfirmation = explorateur::annulerConfirmation,
+                            onArreter = explorateur::annulerEnvoi,
+                            onEnvoyerIci = modele.fichiers::envoyerIci,
+                            onAbandonnerEnvoi = modele.fichiers::abandonnerEnvoi,
+                        ),
+                    )
+                }
+                composable("journal") {
+                    JournalScreen(
+                        etat = etat,
+                        onToutRestaurer = modele::demanderRestauration,
+                        onExporter = modele::exporterJournal,
+                        onAnnulerAction = modele::annulerAction,
+                    )
+                }
             }
         }
     }

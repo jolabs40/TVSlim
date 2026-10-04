@@ -27,6 +27,8 @@ import net.jolabs40.tvslim.mesure.Mesure
 import net.jolabs40.tvslim.mesure.MesuresRepository
 import net.jolabs40.tvslim.moteur.MoteurDebloat
 import net.jolabs40.tvslim.moteur.ResultatAction
+import net.jolabs40.tvslim.soutien.InvitationSoutien
+import net.jolabs40.tvslim.soutien.PiloteSoutien
 import net.jolabs40.tvslim.windows.Emplacements
 import net.jolabs40.tvslim.windows.adb.ClientAdb
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
@@ -82,6 +84,9 @@ class PiloteApp(
         afficher = ::afficher,
     )
 
+    /** Le bandeau de soutien, après un débloat, un transfert ou une installation qui ont abouti. */
+    val soutien = PiloteSoutien(preferences, viewModelScope)
+
     /**
      * L'écran d'accueil — fiche du launcher, guet de son installation — et la configuration qu'on
      * sauvegarde puis réinjecte ont aussi le leur : ils ne partagent que l'état et le moteur.
@@ -97,10 +102,11 @@ class PiloteApp(
         afficher = ::afficher,
         rafraichir = ::rafraichir,
         terminer = ::terminer,
+        remercier = soutien::remercier,
     )
 
     /** L'onglet Fichiers : il suit lui-même la connexion, et oublie ce qu'il a lu quand le téléviseur change. */
-    val fichiers = PiloteFichiers(client, viewModelScope, ::afficher)
+    val fichiers = PiloteFichiers(client, viewModelScope, ::afficher, soutien::remercier)
 
     /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
     private var suiviJournal: Job? = null
@@ -355,6 +361,7 @@ class PiloteApp(
                 },
             )
             terminer(resultats)
+            if (InvitationSoutien.merite(resultats)) soutien.remercier()
         }
     }
 

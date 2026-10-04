@@ -103,6 +103,16 @@ TV Slim talks to your television over your local network, and to GitHub to look 
 nothing else. No account, no telemetry. The ADB key that lets this computer talk to your TVs is
 stored encrypted by Windows (DPAPI) in `%APPDATA%\TVSlim`, next to the logs.
 
+## Support the project
+
+TV Slim is free and will stay that way. If it has been useful to you, you can buy me a coffee on
+**[Ko-fi](https://ko-fi.com/jolabs40)**.
+
+The application mentions it in two places, no more: a **Support TV Slim** link in *About*, and a
+banner after a debloat, a file transfer or an APK installation that went through — at most once a
+month. *I already donated* hides it for good. The application never contacts Ko-fi itself: the
+button opens your browser.
+
 ## Uninstall
 
 *Settings → Apps → TV Slim → Uninstall*. Logs stay in `%APPDATA%\TVSlim`, in case something has to

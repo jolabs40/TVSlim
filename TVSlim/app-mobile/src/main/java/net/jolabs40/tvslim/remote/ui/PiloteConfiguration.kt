@@ -32,6 +32,7 @@ import net.jolabs40.tvslim.installation.RefusApk
 import net.jolabs40.tvslim.installation.ResultatInstallation
 import net.jolabs40.tvslim.moteur.MoteurDebloat
 import net.jolabs40.tvslim.moteur.ResultatAction
+import net.jolabs40.tvslim.soutien.InvitationSoutien
 import net.jolabs40.tvslim.remote.BuildConfig
 import net.jolabs40.tvslim.remote.R
 import java.io.File
@@ -58,6 +59,8 @@ class PiloteConfiguration(
     private val afficher: (String) -> Unit,
     private val rafraichir: () -> Unit,
     private val terminer: (List<ResultatAction>) -> Unit,
+    /** Une réinjection ou une installation a abouti : le bandeau de soutien peut se montrer. */
+    private val remercier: () -> Unit,
 ) {
 
     /** Guette l'arrivée d'un launcher que l'on vient d'envoyer installer. */
@@ -238,6 +241,7 @@ class PiloteConfiguration(
                 surProgression = { fait, total -> majEtat { it.copy(progression = Progression(fait, total)) } },
             )
             terminer(resultats)
+            if (InvitationSoutien.merite(resultats)) remercier()
         }
     }
 
@@ -347,6 +351,7 @@ class PiloteConfiguration(
                         contexte.getString(R.string.msg_apk_failed, contexte.getString(resultat.cause.ressource()))
                 },
             )
+            if (InvitationSoutien.merite(resultat)) remercier()
             // Les compteurs de paquets ont bougé, et l'application installée est peut-être un launcher.
             rafraichir()
         }

@@ -129,6 +129,7 @@ fun ConnexionScreen(
             CarteInstallation(etat = etat.installation, onChoisir = onChoisirApk)
             CarteCommande(etat = etat.commande, actions = actionsCommande)
             CarteShizuku(etat = etat.shizuku, actions = actionsShizuku)
+            LienSoutien()
             return@Column
         }
 
@@ -313,6 +314,8 @@ fun ConnexionScreen(
                 )
             }
         }
+
+        LienSoutien()
     }
 }
 

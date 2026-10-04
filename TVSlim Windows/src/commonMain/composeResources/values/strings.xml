@@ -299,6 +299,7 @@
     <string name="about_license">Licence: %1$s</string>
     <string name="about_data_folder">Open the data folder</string>
     <string name="about_close">Close</string>
+    <string name="about_support">Support TV Slim</string>
 
     <!-- Updates -->
     <string name="update_auto_check">Check for updates at startup</string>
@@ -404,4 +405,11 @@
     <string name="files_deleted">%1$s deleted from the television.</string>
     <string name="files_delete_protected">%1$s is a whole storage volume, or contains one: TV Slim does not erase it in one go.</string>
     <string name="files_delete_failed">%1$s could not be fully deleted: %2$s</string>
+
+    <!-- Support -->
+    <string name="support_title">Has TV Slim been useful?</string>
+    <string name="support_text">It is free, with no ads and no tracking, and will stay that way. A coffee helps keep it going.</string>
+    <string name="support_donate">Buy me a coffee</string>
+    <string name="support_already">I already donated</string>
+    <string name="support_later">Later</string>
 </resources>

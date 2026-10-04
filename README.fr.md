@@ -113,6 +113,16 @@ jour — à rien d'autre. Pas de compte, pas de télémétrie. La clé ADB qui p
 parler à vos téléviseurs est gardée chiffrée par Windows (DPAPI) dans `%APPDATA%\TVSlim`, à côté des
 journaux.
 
+## Soutenir le projet
+
+TV Slim est gratuit et le restera. S'il vous a rendu service, vous pouvez m'offrir un café sur
+**[Ko-fi](https://ko-fi.com/jolabs40)**.
+
+L'application en parle à deux endroits, pas davantage : un lien **Soutenir TV Slim** dans *À propos*,
+et un bandeau après un débloat, un transfert de fichiers ou une installation d'APK réussis — au plus
+une fois par mois. *J'ai déjà fait un don* le fait disparaître pour de bon. L'application ne contacte
+jamais Ko-fi elle-même : le bouton ouvre votre navigateur.
+
 ## Désinstaller
 
 *Paramètres → Applications → TV Slim → Désinstaller*. Les journaux restent dans `%APPDATA%\TVSlim`,
