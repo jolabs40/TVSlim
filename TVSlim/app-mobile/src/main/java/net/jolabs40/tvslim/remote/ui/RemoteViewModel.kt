@@ -102,6 +102,19 @@ class RemoteViewModel @Inject constructor(
     /** L'onglet Fichiers : il suit lui-même la connexion, et oublie ce qu'il a lu quand le téléviseur change. */
     val fichiers = PiloteFichiers(contexte, client, viewModelScope, ::afficher, soutien::remercier)
 
+    /** L'onglet Applications : noms et icônes lus par l'aide, gardés en cache ; il suit lui-même la connexion. */
+    val applications = PiloteApplications(
+        contexte = contexte,
+        client = client,
+        portee = viewModelScope,
+        afficher = ::afficher,
+        etatRemote = { _etat.value },
+        moteur = { moteur },
+        journal = { journal },
+        rafraichirPaquets = ::rafraichir,
+        remercier = soutien::remercier,
+    )
+
     /** La capture d'écran du téléviseur, depuis la barre du haut. */
     val capture = PiloteCapture(contexte, client, viewModelScope, { _etat.value.infos }, { _etat.value.connecte }, ::afficher)
 

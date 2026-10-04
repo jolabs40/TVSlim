@@ -56,6 +56,7 @@ import net.jolabs40.tvslim.windows.maj.PiloteMisesAJour
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.about_title
 import net.jolabs40.tvslim.windows.ressources.app_name
+import net.jolabs40.tvslim.windows.ressources.baseline_apps_24
 import net.jolabs40.tvslim.windows.ressources.baseline_cast_24
 import net.jolabs40.tvslim.windows.ressources.baseline_folder_24
 import net.jolabs40.tvslim.windows.ressources.baseline_history_24
@@ -75,6 +76,7 @@ import net.jolabs40.tvslim.windows.ressources.status_connected
 import net.jolabs40.tvslim.windows.ressources.status_connecting
 import net.jolabs40.tvslim.windows.ressources.status_disconnected
 import net.jolabs40.tvslim.windows.ressources.status_error
+import net.jolabs40.tvslim.windows.ressources.tab_apps
 import net.jolabs40.tvslim.windows.ressources.tab_connection
 import net.jolabs40.tvslim.windows.ressources.tab_files
 import net.jolabs40.tvslim.windows.ressources.tab_log
@@ -82,9 +84,11 @@ import net.jolabs40.tvslim.windows.ressources.tab_memory
 import net.jolabs40.tvslim.windows.ressources.tab_packages
 import net.jolabs40.tvslim.windows.ressources.unknown_export_dialog
 import net.jolabs40.tvslim.windows.ui.ecrans.AProposDialogue
+import net.jolabs40.tvslim.windows.ui.ecrans.ActionsApplicationsUi
 import net.jolabs40.tvslim.windows.ui.ecrans.ActionsEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.ActionsFichiers
 import net.jolabs40.tvslim.windows.ui.ecrans.ApercuCaptureDialogue
+import net.jolabs40.tvslim.windows.ui.ecrans.ApplicationsEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereMiseAJour
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereSoutien
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
@@ -104,10 +108,11 @@ import org.jetbrains.compose.resources.stringResource
 import java.io.File
 import java.net.URI
 
-/** Les cinq onglets du compagnon, dans le même ordre et avec les mêmes icônes. */
+/** Les six onglets du compagnon, dans le même ordre et avec les mêmes icônes. */
 enum class Onglet(val titre: StringResource, val icone: DrawableResource) {
     TELEVISEUR(Res.string.tab_connection, Res.drawable.baseline_cast_24),
     PAQUETS(Res.string.tab_packages, Res.drawable.baseline_inventory_2_24),
+    APPLICATIONS(Res.string.tab_apps, Res.drawable.baseline_apps_24),
     MEMOIRE(Res.string.tab_memory, Res.drawable.baseline_memory_24),
     FICHIERS(Res.string.tab_files, Res.drawable.baseline_folder_24),
     JOURNAL(Res.string.tab_log, Res.drawable.baseline_history_24),
@@ -143,6 +148,7 @@ fun AppFenetre(
 ) {
     val etat by pilote.etat.collectAsStateWithLifecycle()
     val etatFichiers by pilote.fichiers.explorateur.etat.collectAsStateWithLifecycle()
+    val etatApplications by pilote.applications.etat.collectAsStateWithLifecycle()
     val etatMaj by misesAJour.etat.collectAsStateWithLifecycle()
     val soutienVisible by pilote.soutien.visible.collectAsStateWithLifecycle()
     val etatEcran by ecran.etat.collectAsStateWithLifecycle()
@@ -392,6 +398,26 @@ fun AppFenetre(
                             onProposerInconnus = {
                                 choisirFichierExport(pilote.configuration.nomExportInconnus(), titreInconnus)
                                     ?.let { pilote.configuration.exporterInconnus(it, puisOuvrir = ouvrirLien) }
+                            },
+                        )
+
+                        Onglet.APPLICATIONS -> ApplicationsEcran(
+                            connecte = etat.connecte,
+                            etat = etatApplications,
+                            actions = remember(pilote) {
+                                val applications = pilote.applications
+                                ActionsApplicationsUi(
+                                    onCharger = applications::charger,
+                                    onRecherche = applications::majRecherche,
+                                    onOuvrir = applications::ouvrir,
+                                    onArreter = applications::forcerArret,
+                                    onDesactiver = applications::demanderDesactivation,
+                                    onReactiver = applications::reactiver,
+                                    onDesinstaller = applications::demanderDesinstallation,
+                                    onConfirmer = applications::confirmer,
+                                    onAnnuler = applications::annulerConfirmation,
+                                    desactivable = applications::entreeDesactivable,
+                                )
                             },
                         )
 

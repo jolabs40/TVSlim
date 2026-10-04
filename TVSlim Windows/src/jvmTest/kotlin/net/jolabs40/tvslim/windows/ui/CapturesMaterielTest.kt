@@ -217,6 +217,13 @@ class CapturesMaterielTest {
             "entrees=${pilote.fichiers.explorateur.etat.value.entrees.size}, " +
             "raccourcis=${pilote.fichiers.explorateur.etat.value.raccourcis.map { it.chemin }}"
 
+        // L'onglet Applications : l'aide copiée dans /data/local/tmp, lancée, effacée ; noms et icônes lus — le cache de
+        // l'essai est neuf, tout se lit : une demi-minute sur un téléphone.
+        pilote.applications.charger()
+        capturer("10-applications", Onglet.APPLICATIONS, attenteMs = 120_000) { pilote.applications.etat.value.lue }
+        releves += "applications: ${pilote.applications.etat.value.applications.size}, " +
+            "avec icone=${pilote.applications.etat.value.applications.count { it.lue }}"
+
         // La sauvegarde, relue contre le téléviseur qu'elle décrit, ne doit rien demander à
         // réinjecter. Tout se calcule en mémoire : aucune commande ne part vers le téléviseur.
         val lu = pilote.etat.value

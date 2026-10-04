@@ -458,4 +458,36 @@
     <string name="device_type_phone">Téléphone</string>
     <string name="device_type_tablet">Tablette</string>
     <string name="packages_not_tv">Cet appareil n'est pas un téléviseur : le catalogue de TV Slim décrit des téléviseurs, les profils sont donc désactivés. Un paquet se désactive encore à la main, et se réactive depuis le journal.</string>
+
+    <!-- Onglet Applications -->
+    <string name="tab_apps">Applications</string>
+    <string name="apps_not_connected">Connectez-vous à un téléviseur pour voir ses applications.</string>
+    <string name="apps_search">Rechercher une application</string>
+    <string name="apps_count">Applications : %1$d · désactivées : %2$d</string>
+    <string name="apps_reading_list">Lecture de la liste des applications…</string>
+    <string name="apps_reading">Lecture des noms et des icônes… %1$d / %2$d</string>
+    <string name="apps_helper_note">Noms et icônes sont lus par une petite aide que TV Slim copie dans /data/local/tmp le temps de la lecture, puis efface : rien n'est installé. Ils sont gardés sur ce PC, la lecture suivante est plus rapide.</string>
+    <string name="apps_system">Système</string>
+    <string name="apps_installed">Installée</string>
+    <string name="apps_disabled">Désactivée</string>
+    <string name="apps_open">Ouvrir</string>
+    <string name="apps_stop">Forcer l'arrêt</string>
+    <string name="apps_enable">Réactiver</string>
+    <string name="apps_disable">Désactiver</string>
+    <string name="apps_uninstall">Désinstaller</string>
+    <string name="apps_confirm_disable_title">Désactiver %1$s ?</string>
+    <string name="apps_confirm_disable_body">Elle disparaît du menu et cesse de tourner. Rien n'est désinstallé : elle se réactive depuis cet onglet ou depuis le journal.</string>
+    <string name="apps_confirm_uninstall_title">Désinstaller %1$s ?</string>
+    <string name="apps_confirm_uninstall_body">Elle est retirée de l'appareil, avec ses données. TV Slim ne peut pas l'annuler : il faudrait la réinstaller.</string>
+    <string name="apps_side_effect">Effet de bord : %1$s</string>
+    <string name="apps_opened">%1$s ouverte sur l'appareil.</string>
+    <string name="apps_stopped">%1$s arrêtée.</string>
+    <string name="apps_enabled_done">%1$s réactivée.</string>
+    <string name="apps_disabled_done">%1$s désactivée.</string>
+    <string name="apps_uninstalled">%1$s désinstallée.</string>
+    <string name="apps_failed">Échec : %1$s</string>
+    <string name="apps_read_helper_missing">L'aide qui lit noms et icônes manque à cette version de TV Slim.</string>
+    <string name="apps_read_send">L'appareil a refusé l'aide qui lit noms et icônes : %1$s</string>
+    <string name="apps_read_helper_refused">L'aide qui lit noms et icônes n'a pas répondu comme prévu : %1$s</string>
+    <string name="apps_read_connection">L'appareil n'a pas répondu : %1$s</string>
 </resources>

@@ -29,3 +29,5 @@ rootProject.name = "TVSlim"
 include(":core")
 include(":app-tv")
 include(":app-mobile")
+// Lancée sur l'appareil par app_process, pour lire noms et icônes : voir aide/build.gradle.kts.
+include(":aide")

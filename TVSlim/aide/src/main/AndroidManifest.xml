@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aucune activité, aucun service : l'aide n'est jamais installée, elle est lancée par app_process. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application android:hasCode="true" />
+
+</manifest>

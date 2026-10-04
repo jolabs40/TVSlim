@@ -65,6 +65,12 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
   [un formulaire GitHub](https://github.com/jolabs40/TVSlim/issues/new?template=nouvel-appareil.yml)
   pour l'envoyer. Un paquet décrit d'après un tel envoi est marqué *non éprouvé* : aucun profil ne
   le coche.
+- **Applications** — chaque application du menu et chaque application que vous avez installée, avec
+  son vrai nom et son icône : l'ouvrir sur le téléviseur, forcer son arrêt, la désactiver ou la
+  réactiver (selon les mêmes règles que l'onglet Paquets), ou désinstaller une application que vous
+  avez installée vous-même. Android ne donne ni les noms ni les icônes par ADB : une petite aide
+  (quelques Ko) est copiée dans `/data/local/tmp` le temps de la lecture, lancée, puis effacée — rien
+  n'est installé —, et ce qu'elle lit est gardé sur votre PC pour la fois suivante.
 - **Mémoire** — mémoire vive : ce que coûte réellement chaque processus, et la comparaison
   avant/après depuis la première visite. Stockage : l'espace libre et occupé, et les applications
   les plus lourdes.
@@ -87,7 +93,10 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
 
 ### Garde-fous
 
-- Jamais de `pm uninstall` : uniquement `pm disable-user --user 0`, annulé par `pm enable`.
+- Rien de ce qui est livré avec le téléviseur n'est jamais désinstallé : uniquement `pm disable-user
+  --user 0`, annulé par `pm enable`. Seule exception, une application que vous avez installée
+  vous-même, que l'onglet Applications peut désinstaller après confirmation — TV Slim vérifie juste
+  avant qu'il ne s'agit pas d'un paquet du système.
 - Une liste de paquets protégés est refusée quelle que soit la sélection — ceux dont l'absence
   provoque une boucle de redémarrage ou casse la télécommande, par exemple.
 - L'écran d'accueil d'usine ne se désactive pas tant qu'aucun launcher tiers n'est installé.

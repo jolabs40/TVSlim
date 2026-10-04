@@ -22,6 +22,9 @@ class Emplacements(
     val telechargements = File(local, "mises-a-jour")
     val scrcpy = File(local, "scrcpy")
 
+    /** Noms et icônes des applications, par paquet et par version : voir `CacheApplicationsFichiers`. */
+    val icones = File(local, "icones")
+
     companion object {
         private const val NOM = "TVSlim"
 

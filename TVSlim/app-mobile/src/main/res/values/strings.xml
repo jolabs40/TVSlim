@@ -330,4 +330,36 @@
     <string name="device_type_phone">Phone</string>
     <string name="device_type_tablet">Tablet</string>
     <string name="packages_not_tv">This device is not a television: TV Slim\'s catalogue describes televisions, so profiles are off. A package can still be disabled by hand, and re-enabled from the log.</string>
+
+    <!-- Apps tab -->
+    <string name="tab_apps">Apps</string>
+    <string name="apps_not_connected">Connect to a television to see its apps.</string>
+    <string name="apps_search">Search an app</string>
+    <string name="apps_count">Apps: %1$d · disabled: %2$d</string>
+    <string name="apps_reading_list">Reading the list of apps…</string>
+    <string name="apps_reading">Reading names and icons… %1$d / %2$d</string>
+    <string name="apps_helper_note">Names and icons are read by a small helper that TV Slim copies to /data/local/tmp for the reading, then erases: nothing is installed. They are kept on this phone, so the next reading is quicker.</string>
+    <string name="apps_system">System</string>
+    <string name="apps_installed">Installed</string>
+    <string name="apps_disabled">Disabled</string>
+    <string name="apps_open">Open</string>
+    <string name="apps_stop">Force stop</string>
+    <string name="apps_enable">Re-enable</string>
+    <string name="apps_disable">Disable</string>
+    <string name="apps_uninstall">Uninstall</string>
+    <string name="apps_confirm_disable_title">Disable %1$s?</string>
+    <string name="apps_confirm_disable_body">It disappears from the menu and stops running. Nothing is uninstalled: it is re-enabled from this tab or from the log.</string>
+    <string name="apps_confirm_uninstall_title">Uninstall %1$s?</string>
+    <string name="apps_confirm_uninstall_body">It is removed from the device, with its data. TV Slim cannot undo this: it would have to be installed again.</string>
+    <string name="apps_side_effect">Side effect: %1$s</string>
+    <string name="apps_opened">%1$s opened on the device.</string>
+    <string name="apps_stopped">%1$s stopped.</string>
+    <string name="apps_enabled_done">%1$s re-enabled.</string>
+    <string name="apps_disabled_done">%1$s disabled.</string>
+    <string name="apps_uninstalled">%1$s uninstalled.</string>
+    <string name="apps_failed">Failed: %1$s</string>
+    <string name="apps_read_helper_missing">The helper that reads names and icons is missing from this build of TV Slim.</string>
+    <string name="apps_read_send">The device refused the helper that reads names and icons: %1$s</string>
+    <string name="apps_read_helper_refused">The helper that reads names and icons did not answer as expected: %1$s</string>
+    <string name="apps_read_connection">The device did not answer: %1$s</string>
 </resources>

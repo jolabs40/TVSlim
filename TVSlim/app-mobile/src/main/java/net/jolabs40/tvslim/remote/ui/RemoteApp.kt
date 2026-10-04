@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
@@ -39,8 +40,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import net.jolabs40.tvslim.remote.R
+import net.jolabs40.tvslim.remote.ui.screens.ActionsApplicationsUi
 import net.jolabs40.tvslim.remote.ui.screens.ActionsFichiers
 import net.jolabs40.tvslim.remote.ui.screens.ApercuCaptureDialogue
+import net.jolabs40.tvslim.remote.ui.screens.ApplicationsScreen
 import net.jolabs40.tvslim.remote.ui.screens.BanniereSoutien
 import net.jolabs40.tvslim.remote.ui.screens.BoutonCapture
 import net.jolabs40.tvslim.remote.ui.screens.ConfirmationDialogue
@@ -55,6 +58,7 @@ private data class Onglet(val route: String, val titre: Int, val icone: ImageVec
 private val onglets = listOf(
     Onglet("connexion", R.string.tab_connection, Icons.Filled.Cast),
     Onglet("paquets", R.string.tab_packages, Icons.Filled.Inventory2),
+    Onglet("applications", R.string.tab_apps, Icons.Filled.Apps),
     Onglet("memoire", R.string.tab_memory, Icons.Filled.Memory),
     Onglet("fichiers", R.string.tab_files, Icons.Filled.Folder),
     Onglet("journal", R.string.tab_log, Icons.Filled.History),
@@ -228,6 +232,29 @@ fun RemoteApp() {
                         },
                         onExporterInconnus = { inventaire.launch(modele.configuration.nomExportInconnus()) },
                         onProposerInconnus = { proposition.launch(modele.configuration.nomExportInconnus()) },
+                    )
+                }
+                composable("applications") {
+                    val etatApplications by modele.applications.etat.collectAsStateWithLifecycle()
+                    val applications = modele.applications
+                    ApplicationsScreen(
+                        connecte = etat.connecte,
+                        etat = etatApplications,
+                        actions = remember(applications) {
+                            ActionsApplicationsUi(
+                                onCharger = applications::charger,
+                                onRecherche = applications::majRecherche,
+                                onChoisir = applications::choisir,
+                                onOuvrir = applications::ouvrir,
+                                onArreter = applications::forcerArret,
+                                onDesactiver = applications::demanderDesactivation,
+                                onReactiver = applications::reactiver,
+                                onDesinstaller = applications::demanderDesinstallation,
+                                onConfirmer = applications::confirmer,
+                                onAnnuler = applications::annulerConfirmation,
+                                desactivable = applications::entreeDesactivable,
+                            )
+                        },
                     )
                 }
                 composable("memoire") {

@@ -16,7 +16,7 @@ import java.util.Date
 import java.util.Locale
 
 @Serializable
-enum class TypeAction { DESACTIVATION, REACTIVATION, REGLAGE, ACCUEIL, PERMISSION, APP_OP, INSTALLATION, COMMANDE }
+enum class TypeAction { DESACTIVATION, REACTIVATION, REGLAGE, ACCUEIL, PERMISSION, APP_OP, INSTALLATION, COMMANDE, DESINSTALLATION }
 
 @Serializable
 data class ActionJournal(

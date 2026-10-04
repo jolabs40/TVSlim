@@ -138,6 +138,7 @@ fun main() {
                         }
 
                         Onglet.FICHIERS -> pilote.fichiers.explorateur.actualiser()
+                        Onglet.APPLICATIONS -> pilote.applications.charger()
                         else -> pilote.rafraichir()
                     }
                     true

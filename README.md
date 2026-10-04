@@ -59,6 +59,11 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
   maker, *Propose to the catalogue* exports it, then opens
   [a GitHub form](https://github.com/jolabs40/TVSlim/issues/new?template=nouvel-appareil.yml) to
   send it. A package described from such a report is marked *not tested*: no profile selects it.
+- **Apps** — every app in the menu and every app you installed, with its real name and icon: open it
+  on the TV, force-stop it, disable or re-enable it (under the same rules as the Packages tab), or
+  uninstall an app you installed yourself. Android gives neither names nor icons through ADB: a small
+  helper (a few KB) is copied to `/data/local/tmp` for the reading, run, then erased — nothing is
+  installed — and what it reads is kept on your PC for the next time.
 - **Memory** — RAM: what each running process really costs, and the before/after comparison since
   your first visit. Storage: free and used space, and the largest applications.
 - **Files** — browse the TV's folders as in File Explorer: internal storage, Downloads, Movies, a USB
@@ -79,7 +84,9 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 
 ### Safeguards
 
-- Never `pm uninstall`: only `pm disable-user --user 0`, undone by `pm enable`.
+- Nothing that came with the TV is ever uninstalled: only `pm disable-user --user 0`, undone by
+  `pm enable`. The one exception is an app you installed yourself, which the Apps tab can uninstall
+  after a confirmation — TV Slim checks right before that it is not a system package.
 - A protected list is refused whatever the selection — packages whose absence causes a boot loop or
   breaks the remote control, for instance.
 - The factory home screen cannot be disabled while no third-party launcher is installed.

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.jolabs40.tvslim.applications.CacheApplicationsFichiers
 import net.jolabs40.tvslim.catalog.CatalogueRepository
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
@@ -103,6 +104,19 @@ class PiloteApp(
         afficher = ::afficher,
         rafraichir = ::rafraichir,
         terminer = ::terminer,
+        remercier = soutien::remercier,
+    )
+
+    /** L'onglet Applications : noms et icônes lus par l'aide, gardés sur le disque ; il suit lui-même la connexion. */
+    val applications = PiloteApplications(
+        client = client,
+        cache = CacheApplicationsFichiers(emplacements.icones),
+        portee = viewModelScope,
+        afficher = ::afficher,
+        etatApp = { _etat.value },
+        moteur = { moteur },
+        journal = { journal },
+        rafraichirPaquets = ::rafraichir,
         remercier = soutien::remercier,
     )
 
