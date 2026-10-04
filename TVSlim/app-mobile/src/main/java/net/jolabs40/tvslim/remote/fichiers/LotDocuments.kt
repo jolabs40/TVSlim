@@ -54,13 +54,27 @@ fun lotDeDocuments(contexte: Context, documents: List<Uri>): LotLocal {
 fun lotDeDossier(contexte: Context, arbre: Uri): LotLocal {
     val resolveur = contexte.contentResolver
     val racine = DocumentsContract.getTreeDocumentId(arbre)
-    val nom = resolveur.query(DocumentsContract.buildDocumentUriUsingTree(arbre, racine), null, null, null, null)
-        ?.use { curseur -> if (curseur.moveToFirst()) curseur.texte(Document.COLUMN_DISPLAY_NAME) else null }
-        ?: racine.substringAfterLast(':').substringAfterLast('/').ifBlank { "dossier" }
+    val nom = nomDuDossier(contexte, arbre)
     val fichiers = mutableListOf<FichierLocal>()
     val dossiers = mutableListOf<String>()
     parcourir(resolveur, arbre, racine, nom, fichiers, dossiers, profondeur = 0)
     return LotLocal(fichiers, dossiers)
+}
+
+/** Le nom d'un document tel que le montre son fournisseur : « plage.jpg ». */
+fun nomDuDocument(contexte: Context, document: Uri): String =
+    contexte.contentResolver.query(document, null, null, null, null)
+        ?.use { curseur -> if (curseur.moveToFirst()) curseur.texte(OpenableColumns.DISPLAY_NAME) else null }
+        ?: document.lastPathSegment?.substringAfterLast('/')?.ifBlank { null }
+        ?: "document"
+
+/** Le nom d'un dossier choisi dans le sélecteur ; à défaut, la fin de son identifiant. */
+fun nomDuDossier(contexte: Context, arbre: Uri): String {
+    val racine = DocumentsContract.getTreeDocumentId(arbre)
+    return contexte.contentResolver
+        .query(DocumentsContract.buildDocumentUriUsingTree(arbre, racine), null, null, null, null)
+        ?.use { curseur -> if (curseur.moveToFirst()) curseur.texte(Document.COLUMN_DISPLAY_NAME) else null }
+        ?: racine.substringAfterLast(':').substringAfterLast('/').ifBlank { "dossier" }
 }
 
 private fun parcourir(

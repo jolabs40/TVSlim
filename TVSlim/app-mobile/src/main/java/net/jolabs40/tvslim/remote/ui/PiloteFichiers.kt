@@ -4,6 +4,9 @@ import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
@@ -22,10 +25,29 @@ import net.jolabs40.tvslim.remote.adb.ClientAdb
 import net.jolabs40.tvslim.remote.adb.EtatConnexion
 import net.jolabs40.tvslim.remote.fichiers.lotDeDocuments
 import net.jolabs40.tvslim.remote.fichiers.lotDeDossier
+import net.jolabs40.tvslim.remote.fichiers.nomDuDocument
+import net.jolabs40.tvslim.remote.fichiers.nomDuDossier
+
+/**
+ * Ce qu'on a choisi sur le téléphone, en attente du dossier du téléviseur où le déposer : des documents un à un,
+ * ou un dossier entier ([arbre]). [nom] est celui qu'on montre — du document quand il est seul, du dossier.
+ */
+data class EnvoiEnAttente(
+    val documents: List<Uri> = emptyList(),
+    val arbre: Uri? = null,
+    val nom: String,
+) {
+    val dossier: Boolean get() = arbre != null
+    val nombre: Int get() = documents.size
+}
 
 /**
  * L'onglet Fichiers : l'explorateur du noyau, partagé avec Windows, et ce que le téléphone y ajoute — les
  * documents désignés dans le sélecteur d'Android, et les mots pour dire ce qui s'est passé.
+ *
+ * Sur le téléphone, on choisit d'abord **quoi** envoyer, puis **où** : ce qui a été désigné attend
+ * ([enAttente]) qu'on ouvre le dossier de destination et qu'on l'envoie. Naviguer d'abord, puis « Envoyer
+ * ici », ne disait pas qu'on était en train de choisir une destination (remarque de l'utilisateur, 2026-10-04).
  *
  * Vit à côté du [RemoteViewModel], comme les permissions et la configuration : il n'en partage que la portée
  * et la bannière.
@@ -33,33 +55,69 @@ import net.jolabs40.tvslim.remote.fichiers.lotDeDossier
 class PiloteFichiers(
     private val contexte: Context,
     client: ClientAdb,
-    portee: CoroutineScope,
+    private val portee: CoroutineScope,
     private val afficher: (String) -> Unit,
 ) {
 
     val explorateur = ExplorateurFichiers(NavigateurFichiers(client, client), portee) { afficher(it.message()) }
 
+    private val _enAttente = MutableStateFlow<EnvoiEnAttente?>(null)
+    val enAttente: StateFlow<EnvoiEnAttente?> = _enAttente.asStateFlow()
+
     init {
         // Ce qu'on a lu appartient au téléviseur : se déconnecter, ou en joindre un autre, l'oublie. Une reprise
-        // sur le même téléviseur, non.
+        // sur le même téléviseur, non. Ce qu'on s'apprêtait à envoyer aussi : la destination n'existe plus.
         portee.launch {
             client.connexion
                 .map { if (it.etat == EtatConnexion.DECONNECTE) "" else it.hote }
                 .distinctUntilChanged()
                 .drop(1)
-                .collect { explorateur.oublier() }
+                .collect {
+                    _enAttente.value = null
+                    explorateur.oublier()
+                }
         }
     }
 
-    /** Des documents choisis un à un, envoyés dans le dossier où l'on est. */
-    fun deposerDocuments(documents: List<Uri>) {
+    /** Des documents choisis un à un, qui attendent leur dossier de destination. */
+    fun choisirDocuments(documents: List<Uri>) {
         if (documents.isEmpty()) return
-        explorateur.examiner { withContext(Dispatchers.IO) { lotDeDocuments(contexte, documents) } }
+        portee.launch {
+            val nom = withContext(Dispatchers.IO) { nomDuDocument(contexte, documents.first()) }
+            _enAttente.value = EnvoiEnAttente(documents = documents.distinct(), nom = nom)
+        }
     }
 
-    /** Un dossier entier, sous-dossiers compris. */
-    fun deposerDossier(arbre: Uri) {
-        explorateur.examiner { withContext(Dispatchers.IO) { lotDeDossier(contexte, arbre) } }
+    /** Un dossier entier, sous-dossiers compris, qui attend le sien. */
+    fun choisirDossier(arbre: Uri) {
+        portee.launch {
+            val nom = withContext(Dispatchers.IO) { nomDuDossier(contexte, arbre) }
+            _enAttente.value = EnvoiEnAttente(arbre = arbre, nom = nom)
+        }
+    }
+
+    /**
+     * Le dossier affiché est la destination : ce qui attend s'examine, puis se confirme. Rien ne se perd d'ici
+     * là — une confirmation refusée, ou un dossier qui ne convient pas, ramène au choix de la destination.
+     */
+    fun envoyerIci() {
+        val attente = _enAttente.value ?: return
+        val arbre = attente.arbre
+        explorateur.examiner {
+            withContext(Dispatchers.IO) {
+                if (arbre != null) lotDeDossier(contexte, arbre) else lotDeDocuments(contexte, attente.documents)
+            }
+        }
+    }
+
+    fun abandonnerEnvoi() {
+        _enAttente.value = null
+    }
+
+    /** L'envoi part : ce qui attendait est servi. */
+    fun confirmer() {
+        _enAttente.value = null
+        explorateur.confirmer()
     }
 
     private fun SignalFichiers.message(): String = when (this) {

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.Usb
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,7 +46,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -69,6 +74,7 @@ import net.jolabs40.tvslim.fichiers.NatureRaccourci
 import net.jolabs40.tvslim.fichiers.Raccourci
 import net.jolabs40.tvslim.fichiers.ResultatDepot
 import net.jolabs40.tvslim.remote.R
+import net.jolabs40.tvslim.remote.ui.EnvoiEnAttente
 import java.text.DateFormat
 import java.util.Date
 
@@ -84,15 +90,22 @@ data class ActionsFichiers(
     val onConfirmer: () -> Unit,
     val onAnnulerConfirmation: () -> Unit,
     val onArreter: () -> Unit,
+    /** Ce qui attend part dans le dossier affiché : examen, puis confirmation. */
+    val onEnvoyerIci: () -> Unit,
+    val onAbandonnerEnvoi: () -> Unit,
 )
 
 /**
- * Les dossiers du téléviseur : des raccourcis, le fil du chemin, la liste, et « Envoyer ici » pour y déposer
- * des documents ou un dossier du téléphone. Un appui sur un dossier y entre ; Retour remonte, jusqu'au stockage
- * interne.
+ * Les dossiers du téléviseur : des raccourcis, le fil du chemin, la liste, et « Envoyer au téléviseur » pour y
+ * déposer des documents ou un dossier du téléphone. Un appui sur un dossier y entre ; Retour remonte, jusqu'au
+ * stockage interne.
+ *
+ * On choisit d'abord quoi envoyer, puis où : tant que [enAttente] n'est pas parti, un bandeau dit ce qui attend
+ * et qu'il faut ouvrir le dossier de destination, et la barre du bas l'y envoie en le nommant. Retour, au
+ * stockage interne, y renonce.
  */
 @Composable
-fun FichiersScreen(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFichiers) {
+fun FichiersScreen(connecte: Boolean, etat: EtatExplorateur, enAttente: EnvoiEnAttente?, actions: ActionsFichiers) {
     if (!connecte) {
         Box(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
             Text(
@@ -105,6 +118,8 @@ fun FichiersScreen(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFic
     }
     // Première visite sur ce téléviseur : le stockage interne se lit sans qu'on le demande.
     LaunchedEffect(Unit) { actions.onDemarrer() }
+    // Déclaré d'abord, il ne sert qu'une fois qu'on ne peut plus remonter.
+    BackHandler(enabled = enAttente != null) { actions.onAbandonnerEnvoi() }
     BackHandler(enabled = etat.parent != null && etat.chemin != DOSSIER_DE_DEPART) { actions.onRemonter() }
 
     var nouveauDossier by rememberSaveable { mutableStateOf(false) }
@@ -142,6 +157,7 @@ fun FichiersScreen(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFic
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
+            enAttente?.let { BandeauEnAttente(it) }
             Raccourcis(etat, actions.onOuvrir)
             BarreChemin(
                 etat = etat,
@@ -161,12 +177,89 @@ fun FichiersScreen(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFic
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
             Liste(etat, actions.onOuvrir)
         }
-        if (ouvert && !etat.occupe) {
-            EnvoyerIci(
+        when {
+            enAttente != null -> BarreDestination(
+                // La racine n'a pas de nom : elle se dit « / ».
+                dossier = CheminDistant.nom(etat.chemin).ifEmpty { CheminDistant.RACINE },
+                actif = ouvert && !etat.occupe,
+                onAnnuler = actions.onAbandonnerEnvoi,
+                onEnvoyer = actions.onEnvoyerIci,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+
+            ouvert && !etat.occupe -> EnvoyerAuTeleviseur(
                 onFichiers = actions.onEnvoyerFichiers,
                 onDossier = actions.onEnvoyerDossier,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             )
+        }
+    }
+}
+
+/** Ce qui attend, et ce qu'il reste à faire : ouvrir le dossier du téléviseur qui le recevra. */
+@Composable
+private fun BandeauEnAttente(attente: EnvoiEnAttente) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (attente.dossier) Icons.Filled.DriveFolderUpload else Icons.Filled.UploadFile,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = when {
+                        attente.dossier -> stringResource(R.string.files_pending_folder, attente.nom)
+                        attente.nombre == 1 -> stringResource(R.string.files_pending_file, attente.nom)
+                        else -> pluralStringResource(R.plurals.files_pending_count, attente.nombre, attente.nombre)
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = stringResource(R.string.files_pending_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        }
+    }
+}
+
+/** Renoncer, ou envoyer dans le dossier affiché — qu'elle nomme, pour qu'on sache où ça part. */
+@Composable
+private fun BarreDestination(
+    dossier: String,
+    actif: Boolean,
+    onAnnuler: () -> Unit,
+    onEnvoyer: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(modifier = modifier.fillMaxWidth(), tonalElevation = 3.dp, shadowElevation = 8.dp) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(onClick = onAnnuler) { Text(stringResource(R.string.confirm_cancel)) }
+            Button(onClick = onEnvoyer, enabled = actif, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.files_send_into, dossier),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
@@ -257,15 +350,15 @@ private fun BarreChemin(
     }
 }
 
-/** Un bouton, deux choix : des documents un à un, ou un dossier entier. */
+/** Un bouton, deux choix : des documents un à un, ou un dossier entier. La destination se choisit ensuite. */
 @Composable
-private fun EnvoyerIci(onFichiers: () -> Unit, onDossier: () -> Unit, modifier: Modifier = Modifier) {
+private fun EnvoyerAuTeleviseur(onFichiers: () -> Unit, onDossier: () -> Unit, modifier: Modifier = Modifier) {
     var menu by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
         ExtendedFloatingActionButton(
             onClick = { menu = true },
             icon = { Icon(Icons.Filled.UploadFile, contentDescription = null) },
-            text = { Text(stringResource(R.string.files_send_here)) },
+            text = { Text(stringResource(R.string.files_send_to_tv)) },
         )
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
@@ -374,7 +467,8 @@ private fun Liste(etat: EtatExplorateur, onOuvrir: (String) -> Unit) {
                 Constat(stringResource(R.string.files_empty))
             } else {
                 val format = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
-                // De la place en bas pour le bouton flottant : il ne doit pas cacher la dernière ligne.
+                // De la place en bas pour le bouton flottant, ou la barre de destination : ni l'un ni l'autre ne
+                // doit cacher la dernière ligne.
                 LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 88.dp)) {
                     items(lecture.entrees, key = { it.nom }) { entree ->
                         LigneEntree(

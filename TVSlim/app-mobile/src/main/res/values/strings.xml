@@ -245,7 +245,15 @@
     <string name="files_go_to">Go to a folder…</string>
     <string name="files_go_to_label">Path on the television</string>
     <string name="files_go">Open</string>
-    <string name="files_send_here">Send here</string>
+    <string name="files_send_to_tv">Send to the television</string>
+    <string name="files_pending_file">%1$s, ready to go</string>
+    <string name="files_pending_folder">The folder %1$s, ready to go</string>
+    <plurals name="files_pending_count">
+        <item quantity="one">%d file, ready to go</item>
+        <item quantity="other">%d files, ready to go</item>
+    </plurals>
+    <string name="files_pending_hint">Open the destination folder on the television, below.</string>
+    <string name="files_send_into">Send to %1$s</string>
     <string name="files_send_files">Send files…</string>
     <string name="files_send_folder">Send a folder…</string>
     <string name="files_new_folder">New folder</string>

@@ -244,7 +244,16 @@
     <string name="files_go_to">Aller à un dossier…</string>
     <string name="files_go_to_label">Chemin sur le téléviseur</string>
     <string name="files_go">Ouvrir</string>
-    <string name="files_send_here">Envoyer ici</string>
+    <string name="files_send_to_tv">Envoyer au téléviseur</string>
+    <string name="files_pending_file">%1$s, prêt à partir</string>
+    <string name="files_pending_folder">Le dossier %1$s, prêt à partir</string>
+    <plurals name="files_pending_count">
+        <item quantity="one">%d fichier, prêt à partir</item>
+        <item quantity="other">%d fichiers, prêts à partir</item>
+        <item quantity="many">%d fichiers, prêts à partir</item>
+    </plurals>
+    <string name="files_pending_hint">Ouvrez ci-dessous le dossier de destination, sur le téléviseur.</string>
+    <string name="files_send_into">Envoyer dans %1$s</string>
     <string name="files_send_files">Envoyer des fichiers…</string>
     <string name="files_send_folder">Envoyer un dossier…</string>
     <string name="files_new_folder">Nouveau dossier</string>

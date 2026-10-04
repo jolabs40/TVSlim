@@ -208,18 +208,20 @@ fun RemoteApp() {
             }
             composable("fichiers") {
                 val etatFichiers by modele.fichiers.explorateur.etat.collectAsStateWithLifecycle()
+                val enAttente by modele.fichiers.enAttente.collectAsStateWithLifecycle()
                 val explorateur = modele.fichiers.explorateur
                 // Les documents se désignent dans le sélecteur d'Android : aucune permission de stockage à demander,
-                // et chacun n'est lu qu'au moment de partir.
+                // et chacun n'est lu qu'au moment de partir. Ils attendent ensuite qu'on ouvre leur destination.
                 val documents = rememberLauncherForActivityResult(
                     ActivityResultContracts.OpenMultipleDocuments(),
-                ) { uris -> modele.fichiers.deposerDocuments(uris) }
+                ) { uris -> modele.fichiers.choisirDocuments(uris) }
                 val dossier = rememberLauncherForActivityResult(
                     ActivityResultContracts.OpenDocumentTree(),
-                ) { uri -> uri?.let(modele.fichiers::deposerDossier) }
+                ) { uri -> uri?.let(modele.fichiers::choisirDossier) }
                 FichiersScreen(
                     connecte = etat.connecte,
                     etat = etatFichiers,
+                    enAttente = enAttente,
                     actions = ActionsFichiers(
                         onDemarrer = explorateur::demarrer,
                         onOuvrir = explorateur::ouvrir,
@@ -228,9 +230,11 @@ fun RemoteApp() {
                         onEnvoyerFichiers = { documents.launch(arrayOf("*/*")) },
                         onEnvoyerDossier = { dossier.launch(null) },
                         onCreerDossier = explorateur::creerDossier,
-                        onConfirmer = explorateur::confirmer,
+                        onConfirmer = modele.fichiers::confirmer,
                         onAnnulerConfirmation = explorateur::annulerConfirmation,
                         onArreter = explorateur::annulerEnvoi,
+                        onEnvoyerIci = modele.fichiers::envoyerIci,
+                        onAbandonnerEnvoi = modele.fichiers::abandonnerEnvoi,
                     ),
                 )
             }
