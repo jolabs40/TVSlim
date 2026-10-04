@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,7 +40,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.screens.ActionsFichiers
+import net.jolabs40.tvslim.remote.ui.screens.ApercuCaptureDialogue
 import net.jolabs40.tvslim.remote.ui.screens.BanniereSoutien
+import net.jolabs40.tvslim.remote.ui.screens.BoutonCapture
 import net.jolabs40.tvslim.remote.ui.screens.ConfirmationDialogue
 import net.jolabs40.tvslim.remote.ui.screens.ConnexionScreen
 import net.jolabs40.tvslim.remote.ui.screens.FichiersScreen
@@ -66,6 +69,8 @@ fun RemoteApp() {
     val modele: RemoteViewModel = hiltViewModel()
     val etat by modele.etat.collectAsStateWithLifecycle()
     val soutienVisible by modele.soutien.visible.collectAsStateWithLifecycle()
+    val etatCapture by modele.capture.etat.collectAsStateWithLifecycle()
+    val contexte = LocalContext.current
     val navigation = rememberNavController()
     val pileCourante by navigation.currentBackStackEntryAsState()
     val messages = remember { SnackbarHostState() }
@@ -102,8 +107,24 @@ fun RemoteApp() {
         )
     }
 
+    etatCapture.derniere?.let { derniere ->
+        ApercuCaptureDialogue(
+            capture = derniere,
+            onPartager = { runCatching { contexte.startActivity(modele.capture.intentionPartage(derniere)) } },
+            onFermer = modele.capture::fermer,
+        )
+    }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                actions = {
+                    // Seulement téléviseur joint : sans lui, il n'y a rien à capturer.
+                    if (etat.connecte) BoutonCapture(enCours = etatCapture.enCours, onCapturer = modele.capture::capturer)
+                },
+            )
+        },
         snackbarHost = { SnackbarHost(messages) },
         bottomBar = {
             NavigationBar {

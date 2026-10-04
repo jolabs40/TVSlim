@@ -74,6 +74,14 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
   copier un fichier ou un dossier vers le PC, et supprimer ce qui encombre le téléviseur — au survol
   d'une ligne ou par un clic droit. Les droits sont ceux d'ADB : le stockage partagé s'écrit,
   `Android/data` compris ; les dossiers du système, non.
+- **Écran** — depuis la barre du haut de chaque onglet : une capture d'écran du téléviseur, enregistrée
+  dans *Images\TV Slim* (sur le téléphone, dans la galerie), avec un aperçu pour la copier ou la
+  partager. Sous Windows, une vidéo de l'écran, enregistrée par le téléviseur lui-même puis copiée
+  dans *Vidéos\TV Slim* et effacée du téléviseur — sans son, que son enregistreur ne capture jamais,
+  et 3 minutes au plus avant Android 14 ; et le miroir de l'écran en direct dans sa propre fenêtre, par
+  [scrcpy](https://github.com/Genymobile/scrcpy), téléchargé depuis GitHub la première fois s'il n'est
+  pas installé. Enregistrer ferme le miroir. Les vidéos protégées (Netflix, la plupart des chaînes)
+  sortent en noir : c'est le téléviseur qui le décide.
 - **Journal** — chaque action, avec la commande qui l'annule ; annuler une seule ligne ou tout
   restaurer ; export en Markdown.
 
@@ -109,7 +117,9 @@ java "TVSlim Windows/outils/VerifierMiseAJour.java" TVSlim-Windows-x.y.z.msi x.y
 ## Confidentialité
 
 TV Slim parle à votre téléviseur sur votre réseau local, et à GitHub pour chercher les mises à
-jour — à rien d'autre. Pas de compte, pas de télémétrie. La clé ADB qui permet à cet ordinateur de
+jour — et, la première fois que vous ouvrez le miroir sans scrcpy installé,
+pour le télécharger depuis sa publication GitHub, après votre accord et en vérifiant son empreinte. À
+rien d'autre. Pas de compte, pas de télémétrie. La clé ADB qui permet à cet ordinateur de
 parler à vos téléviseurs est gardée chiffrée par Windows (DPAPI) dans `%APPDATA%\TVSlim`, à côté des
 journaux.
 

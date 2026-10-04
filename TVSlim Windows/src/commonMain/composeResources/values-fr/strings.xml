@@ -412,4 +412,44 @@
     <string name="support_donate">Offrir un café</string>
     <string name="support_already">J'ai déjà fait un don</string>
     <string name="support_later">Plus tard</string>
+
+    <!-- Écran : capture, miroir, vidéo -->
+    <string name="screen_capture">Capture d'écran</string>
+    <string name="screen_mirror">Miroir de l'écran</string>
+    <string name="screen_mirror_stop">Arrêter le miroir</string>
+    <string name="screen_record">Enregistrer une vidéo (sur le téléviseur, sans son)</string>
+    <string name="screen_record_stop">Arrêter l'enregistrement</string>
+    <string name="screen_starting">scrcpy démarre…</string>
+    <string name="capture_title">Capture d'écran</string>
+    <string name="capture_saved">Enregistrée dans %1$s</string>
+    <string name="capture_copy">Copier</string>
+    <string name="capture_copied">Capture copiée dans le presse-papiers.</string>
+    <string name="capture_open_folder">Ouvrir le dossier</string>
+    <string name="capture_drm">Les vidéos protégées (Netflix, la plupart des chaînes) sortent en noir : c'est le téléviseur qui le décide.</string>
+    <string name="capture_failed_connection">Le téléviseur n'a pas répondu : %1$s</string>
+    <string name="capture_failed_refused">Le téléviseur a refusé la capture : %1$s</string>
+    <string name="capture_failed_unreadable">Le téléviseur n'a pas rendu d'image : %1$s</string>
+    <string name="capture_write_failed">La capture n'a pas pu être enregistrée : %1$s</string>
+    <string name="scrcpy_title">Télécharger scrcpy ?</string>
+    <string name="scrcpy_text">Le miroir passe par scrcpy, un logiciel libre de Genymobile. TV Slim télécharge sa version %1$s depuis GitHub (11 Mo environ), vérifie son empreinte et la garde dans %2$s.</string>
+    <string name="scrcpy_authorization">La première fois, le téléviseur demande à nouveau d'autoriser le débogage depuis cet ordinateur : scrcpy a sa propre clé. Acceptez à la télécommande, en cochant Toujours autoriser.</string>
+    <string name="scrcpy_download">Télécharger</string>
+    <string name="scrcpy_downloading">Téléchargement de scrcpy…</string>
+    <string name="scrcpy_download_failed">scrcpy n'a pas pu être téléchargé : %1$s</string>
+    <string name="scrcpy_fingerprint_failed">Le scrcpy téléchargé ne correspond pas à son empreinte publiée : il a été effacé, rien n'est installé.</string>
+    <string name="scrcpy_unauthorized">Le téléviseur n'a pas encore autorisé scrcpy : acceptez la demande sur le téléviseur (cochez Toujours autoriser), puis relancez.</string>
+    <string name="scrcpy_failed">scrcpy s'est arrêté : %1$s</string>
+    <string name="scrcpy_window_mirror">TV Slim - Miroir - %1$s</string>
+    <string name="video_title">Vidéo enregistrée</string>
+    <string name="video_saved">Enregistrée dans %1$s</string>
+    <string name="record_starting">L'enregistrement démarre…</string>
+    <string name="record_finishing">Copie de la vidéo vers ce PC…</string>
+    <string name="record_limit">Cette version d'Android arrête l'enregistrement d'elle-même au bout de 3 minutes.</string>
+    <string name="record_unavailable">Ce téléviseur ne sait pas enregistrer son écran : %1$s</string>
+    <string name="record_failed_start">L'enregistrement n'a pas démarré : %1$s</string>
+    <string name="record_empty">Le téléviseur n'a rien enregistré : %1$s</string>
+    <string name="record_copy_failed">La vidéo n'a pas pu être copiée : %1$s. Elle reste sur le téléviseur (%2$s) jusqu'au prochain enregistrement.</string>
+    <string name="video_no_sound">Sans son : l'enregistreur du téléviseur n'en capture pas.</string>
+    <string name="closing_title">Fin de la vidéo</string>
+    <string name="closing_text">TV Slim copie la vidéo depuis le téléviseur, puis se ferme.</string>
 </resources>

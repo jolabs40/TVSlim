@@ -312,4 +312,17 @@
     <string name="support_already">I already donated</string>
     <string name="support_later">Later</string>
     <string name="support_link">Support TV Slim</string>
+
+    <!-- Screenshot -->
+    <string name="screen_capture">Screenshot</string>
+    <string name="capture_title">Screenshot</string>
+    <string name="capture_saved">Saved in %1$s</string>
+    <string name="capture_share">Share</string>
+    <string name="capture_share_title">Share the screenshot</string>
+    <string name="capture_close">Close</string>
+    <string name="capture_drm">Protected videos (Netflix, most channels) come out black: the television decides that.</string>
+    <string name="capture_failed_connection">The television did not answer: %1$s</string>
+    <string name="capture_failed_refused">The television refused the screenshot: %1$s</string>
+    <string name="capture_failed_unreadable">The television did not return an image: %1$s</string>
+    <string name="capture_write_failed">The screenshot could not be saved: %1$s</string>
 </resources>

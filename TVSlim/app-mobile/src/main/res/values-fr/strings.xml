@@ -312,4 +312,17 @@
     <string name="support_already">J\'ai déjà fait un don</string>
     <string name="support_later">Plus tard</string>
     <string name="support_link">Soutenir TV Slim</string>
+
+    <!-- Capture d'écran -->
+    <string name="screen_capture">Capture d\'écran</string>
+    <string name="capture_title">Capture d\'écran</string>
+    <string name="capture_saved">Enregistrée dans %1$s</string>
+    <string name="capture_share">Partager</string>
+    <string name="capture_share_title">Partager la capture</string>
+    <string name="capture_close">Fermer</string>
+    <string name="capture_drm">Les vidéos protégées (Netflix, la plupart des chaînes) sortent en noir : c\'est le téléviseur qui le décide.</string>
+    <string name="capture_failed_connection">Le téléviseur n\'a pas répondu : %1$s</string>
+    <string name="capture_failed_refused">Le téléviseur a refusé la capture : %1$s</string>
+    <string name="capture_failed_unreadable">Le téléviseur n\'a pas rendu d\'image : %1$s</string>
+    <string name="capture_write_failed">La capture n\'a pas pu être enregistrée : %1$s</string>
 </resources>

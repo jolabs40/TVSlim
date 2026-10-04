@@ -19,9 +19,12 @@ import androidx.compose.ui.window.rememberWindowState
 import com.sun.jna.platform.win32.KnownFolders
 import com.sun.jna.platform.win32.Shell32Util
 import net.jolabs40.tvslim.catalog.CatalogueRepository
+import net.jolabs40.tvslim.ecran.EnregistrementTv
 import net.jolabs40.tvslim.windows.adb.ClientAdb
 import net.jolabs40.tvslim.windows.adb.DepotCles
 import net.jolabs40.tvslim.windows.data.PreferencesWindows
+import net.jolabs40.tvslim.windows.ecran.InstallationScrcpy
+import net.jolabs40.tvslim.windows.ecran.LocalisationScrcpy
 import net.jolabs40.tvslim.windows.maj.ClientGithub
 import net.jolabs40.tvslim.windows.maj.Distribution
 import net.jolabs40.tvslim.windows.maj.InstallateurMiseAJour
@@ -33,8 +36,10 @@ import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.app_name
 import net.jolabs40.tvslim.windows.ressources.ic_tvslim
 import net.jolabs40.tvslim.windows.ui.AppFenetre
+import net.jolabs40.tvslim.windows.ui.CibleEcran
 import net.jolabs40.tvslim.windows.ui.Onglet
 import net.jolabs40.tvslim.windows.ui.PiloteApp
+import net.jolabs40.tvslim.windows.ui.PiloteEcran
 import net.jolabs40.tvslim.windows.ui.theme.TvSlimTheme
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -70,6 +75,21 @@ fun main() {
         val pilote = remember {
             PiloteApp(client, CatalogueRepository(), preferences, DecouverteTv(), emplacements)
         }
+        // Capture et vidéo par la session de TV Slim — la vidéo s'enregistre sur le téléviseur —, miroir par scrcpy.
+        val ecran = remember {
+            PiloteEcran(
+                lecteur = client,
+                enregistrement = EnregistrementTv(client, client),
+                localisation = LocalisationScrcpy(emplacements.scrcpy),
+                installation = InstallationScrcpy(github, emplacements.scrcpy),
+                cible = {
+                    pilote.etat.value.takeIf { it.connecte }
+                        ?.let { CibleEcran(it.connexion.hote, it.connexion.port, it.infos) }
+                },
+                dossierImages = ::dossierImages,
+                dossierVideos = ::dossierVideos,
+            )
+        }
         val misesAJour = remember {
             PiloteMisesAJour(
                 preferences = preferences,
@@ -83,8 +103,10 @@ fun main() {
                 versionActuelle = Version.lire(InfosApp.VERSION) ?: Version(0, 0, 0),
                 depot = InfosApp.DEPOT_GITHUB,
                 quitter = {
-                    client.deconnecter()
-                    exitApplication()
+                    ecran.fermer {
+                        client.deconnecter()
+                        exitApplication()
+                    }
                 },
                 ouvrirLien = ::ouvrirLien,
             )
@@ -97,8 +119,11 @@ fun main() {
 
         Window(
             onCloseRequest = {
-                client.deconnecter()
-                exitApplication()
+                // Une vidéo en cours est d'abord copiée : elle ne resterait pas sur le téléviseur, enregistreur tournant.
+                ecran.fermer {
+                    client.deconnecter()
+                    exitApplication()
+                }
             },
             state = etatFenetre,
             title = stringResource(Res.string.app_name),
@@ -126,6 +151,8 @@ fun main() {
                 AppFenetre(
                     pilote = pilote,
                     misesAJour = misesAJour,
+                    ecran = ecran,
+                    dossierScrcpy = emplacements.scrcpy,
                     onglet = onglet,
                     onOnglet = { onglet = it },
                     ouvrirLien = ::ouvrirLien,
@@ -239,6 +266,20 @@ private fun dossierDocuments(): File =
         .getOrNull()
         ?.takeIf { it.isDirectory }
         ?: File(System.getProperty("user.home"))
+
+/** Le vrai dossier Images, où vont les captures ; Documents à défaut. */
+private fun dossierImages(): File =
+    runCatching { File(Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Pictures)) }
+        .getOrNull()
+        ?.takeIf { it.isDirectory }
+        ?: dossierDocuments()
+
+/** Le vrai dossier Vidéos, où vont les enregistrements ; Documents à défaut. */
+private fun dossierVideos(): File =
+    runCatching { File(Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Videos)) }
+        .getOrNull()
+        ?.takeIf { it.isDirectory }
+        ?: dossierDocuments()
 
 /** Le vrai dossier Téléchargements, qui se déplace aussi ; Documents à défaut. */
 private fun dossierTelechargements(): File =

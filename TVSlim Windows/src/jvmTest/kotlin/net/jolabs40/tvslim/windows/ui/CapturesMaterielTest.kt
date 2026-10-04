@@ -13,11 +13,14 @@ import net.jolabs40.tvslim.configuration.configurationDe
 import net.jolabs40.tvslim.configuration.planifier
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.fichiers.LectureDossier
+import net.jolabs40.tvslim.ecran.EnregistrementTv
 import net.jolabs40.tvslim.windows.Emplacements
 import net.jolabs40.tvslim.windows.adb.ClientAdb
 import net.jolabs40.tvslim.windows.adb.DepotCles
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.data.PreferencesWindows
+import net.jolabs40.tvslim.windows.ecran.InstallationScrcpy
+import net.jolabs40.tvslim.windows.ecran.LocalisationScrcpy
 import net.jolabs40.tvslim.windows.maj.ClientGithub
 import net.jolabs40.tvslim.windows.maj.Distribution
 import net.jolabs40.tvslim.windows.maj.InstallateurMiseAJour
@@ -93,6 +96,15 @@ class CapturesMaterielTest {
             quitter = {},
             ouvrirLien = {},
         )
+        val ecran = PiloteEcran(
+            lecteur = client,
+            enregistrement = EnregistrementTv(client, client),
+            localisation = LocalisationScrcpy(emplacements.scrcpy),
+            installation = InstallationScrcpy(github, emplacements.scrcpy),
+            cible = { null },
+            dossierImages = { temporaire },
+            dossierVideos = { temporaire },
+        )
 
         fun capturer(nom: String, onglet: Onglet, sombre: Boolean = false, attenteMs: Long = 1_500, prete: () -> Boolean = { true }) {
             // Création, rendus et fermeture sur le fil d'AWT ; les attentes, elles, restent sur celui du
@@ -104,6 +116,8 @@ class CapturesMaterielTest {
                             AppFenetre(
                                 pilote = pilote,
                                 misesAJour = misesAJour,
+                                ecran = ecran,
+                                dossierScrcpy = emplacements.scrcpy,
                                 onglet = onglet,
                                 onOnglet = {},
                                 ouvrirLien = {},

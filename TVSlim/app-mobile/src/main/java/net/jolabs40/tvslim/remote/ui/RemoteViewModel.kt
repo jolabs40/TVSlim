@@ -101,6 +101,9 @@ class RemoteViewModel @Inject constructor(
     /** L'onglet Fichiers : il suit lui-même la connexion, et oublie ce qu'il a lu quand le téléviseur change. */
     val fichiers = PiloteFichiers(contexte, client, viewModelScope, ::afficher, soutien::remercier)
 
+    /** La capture d'écran du téléviseur, depuis la barre du haut. */
+    val capture = PiloteCapture(contexte, client, viewModelScope, { _etat.value.infos }, { _etat.value.connecte }, ::afficher)
+
     /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
     private var suiviJournal: Job? = null
 

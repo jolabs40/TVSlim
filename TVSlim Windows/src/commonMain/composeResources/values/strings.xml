@@ -412,4 +412,44 @@
     <string name="support_donate">Buy me a coffee</string>
     <string name="support_already">I already donated</string>
     <string name="support_later">Later</string>
+
+    <!-- Screen: screenshot, mirror, video -->
+    <string name="screen_capture">Screenshot</string>
+    <string name="screen_mirror">Mirror the screen</string>
+    <string name="screen_mirror_stop">Stop the mirror</string>
+    <string name="screen_record">Record a video (on the television, no sound)</string>
+    <string name="screen_record_stop">Stop recording</string>
+    <string name="screen_starting">scrcpy is starting…</string>
+    <string name="capture_title">Screenshot</string>
+    <string name="capture_saved">Saved in %1$s</string>
+    <string name="capture_copy">Copy</string>
+    <string name="capture_copied">Screenshot copied to the clipboard.</string>
+    <string name="capture_open_folder">Open the folder</string>
+    <string name="capture_drm">Protected videos (Netflix, most channels) come out black: the television decides that.</string>
+    <string name="capture_failed_connection">The television did not answer: %1$s</string>
+    <string name="capture_failed_refused">The television refused the screenshot: %1$s</string>
+    <string name="capture_failed_unreadable">The television did not return an image: %1$s</string>
+    <string name="capture_write_failed">The screenshot could not be saved: %1$s</string>
+    <string name="scrcpy_title">Download scrcpy?</string>
+    <string name="scrcpy_text">The mirror relies on scrcpy, free software by Genymobile. TV Slim downloads version %1$s from GitHub (about 11 MB), checks its fingerprint, and keeps it in %2$s.</string>
+    <string name="scrcpy_authorization">The first time, the television asks again to allow debugging from this computer: scrcpy has its own key. Accept with the remote, ticking Always allow.</string>
+    <string name="scrcpy_download">Download</string>
+    <string name="scrcpy_downloading">Downloading scrcpy…</string>
+    <string name="scrcpy_download_failed">scrcpy could not be downloaded: %1$s</string>
+    <string name="scrcpy_fingerprint_failed">The downloaded scrcpy does not match its published fingerprint: it was discarded, nothing was installed.</string>
+    <string name="scrcpy_unauthorized">The television has not authorized scrcpy yet: accept the request on the television (tick Always allow), then start again.</string>
+    <string name="scrcpy_failed">scrcpy stopped: %1$s</string>
+    <string name="scrcpy_window_mirror">TV Slim - Mirror - %1$s</string>
+    <string name="video_title">Video recorded</string>
+    <string name="video_saved">Saved in %1$s</string>
+    <string name="record_starting">The recording is starting…</string>
+    <string name="record_finishing">Copying the video to this PC…</string>
+    <string name="record_limit">This version of Android stops the recording by itself after 3 minutes.</string>
+    <string name="record_unavailable">This television cannot record its screen: %1$s</string>
+    <string name="record_failed_start">The recording did not start: %1$s</string>
+    <string name="record_empty">The television recorded nothing: %1$s</string>
+    <string name="record_copy_failed">The video could not be copied: %1$s. It stays on the television (%2$s) until the next recording.</string>
+    <string name="video_no_sound">No sound: the television's recorder does not capture any.</string>
+    <string name="closing_title">Finishing the video</string>
+    <string name="closing_text">TV Slim copies the video from the television, then closes.</string>
 </resources>

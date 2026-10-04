@@ -22,8 +22,10 @@ import net.jolabs40.tvslim.shell.ExecuteurCommande
 import net.jolabs40.tvslim.shell.ExecuteurDirect
 import net.jolabs40.tvslim.shell.InstallateurApk
 import net.jolabs40.tvslim.shell.Interruption
+import net.jolabs40.tvslim.shell.LecteurBinaire
 import net.jolabs40.tvslim.shell.ReponseDirecte
 import net.jolabs40.tvslim.shell.ResultatShell
+import net.jolabs40.tvslim.shell.SortieBinaire
 import okio.Buffer
 import okio.ForwardingSource
 import okio.Source
@@ -62,7 +64,7 @@ const val PORT_ADB_PAR_DEFAUT = 5555
 @Singleton
 class ClientAdb @Inject constructor(
     private val depotCles: DepotCles,
-) : ExecuteurCommande, InstallateurApk, ExecuteurDirect, EnvoyeurFichiers {
+) : ExecuteurCommande, InstallateurApk, ExecuteurDirect, EnvoyeurFichiers, LecteurBinaire {
 
     private val _connexion = MutableStateFlow(ConnexionUi())
     val connexion: StateFlow<ConnexionUi> = _connexion.asStateFlow()
@@ -294,6 +296,46 @@ class ClientAdb @Inject constructor(
                         val message = diagnostic(erreur)
                         signalerRupture(message)
                         ReponseDirecte(null, texteDe(recue), Interruption.CONNEXION, message)
+                    }
+                },
+            )
+        }
+    }
+
+    /**
+     * Lit une commande à sortie binaire — `screencap -p` —, sortie standard et sortie d'erreur à part : le
+     * protocole shell v2 de dadb les sépare, sans terminal pour traduire les fins de ligne. Rien n'est rejoué :
+     * une capture manquée se redemande d'un appui.
+     */
+    override suspend fun lireBinaire(commande: String): SortieBinaire = withContext(Dispatchers.IO) {
+        verrou.withLock {
+            if (session == null) reprendre()
+            val active = session ?: return@withLock SortieBinaire(null, ByteArray(0), motif = "Aucun téléviseur connecté.")
+            val sortie = ByteArrayOutputStream()
+            val erreurs = ByteArrayOutputStream()
+            var code: Int? = null
+
+            sousSurveillance(active, DELAI_COMMANDE_MS) {
+                active.openShell(commande).use { flux ->
+                    while (code == null) {
+                        when (val paquet = flux.read()) {
+                            is AdbShellPacket.Exit -> code = paquet.payload.firstOrNull()?.toInt()?.and(0xFF) ?: 0
+                            is AdbShellPacket.StdError -> erreurs.write(paquet.payload)
+                            else -> sortie.write(paquet.payload)
+                        }
+                    }
+                }
+            }.fold(
+                onSuccess = { SortieBinaire(code, sortie.toByteArray(), texteDe(erreurs)) },
+                onFailure = { erreur ->
+                    Log.w(TAG, "Lecture binaire interrompue" + detail(commande), erreur)
+                    fermerSession()
+                    if (erreur is DelaiDepasse) {
+                        SortieBinaire(null, ByteArray(0), motif = MESSAGE_DELAI)
+                    } else {
+                        val message = diagnostic(erreur)
+                        signalerRupture(message)
+                        SortieBinaire(null, ByteArray(0), motif = message)
                     }
                 },
             )

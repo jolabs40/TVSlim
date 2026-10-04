@@ -74,7 +74,11 @@ import net.jolabs40.tvslim.windows.reseau.ResultatDecouverte
 import net.jolabs40.tvslim.windows.ui.composants.LOGOS_LAUNCHERS
 import net.jolabs40.tvslim.windows.ui.composants.LogoLauncher
 import net.jolabs40.tvslim.windows.ui.composants.PlaqueMarque
+import net.jolabs40.tvslim.windows.maj.EtatMiseAJour
+import net.jolabs40.tvslim.windows.ui.ecrans.AProposDialogue
+import net.jolabs40.tvslim.windows.ui.ecrans.ActionsEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.ActionsFichiers
+import net.jolabs40.tvslim.windows.ui.ecrans.ApercuCaptureDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereSoutien
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAccueil
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAppareil
@@ -85,17 +89,24 @@ import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationRapatriement
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationSuppression
 import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
+import net.jolabs40.tvslim.windows.ui.ecrans.FermetureDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.FichiersEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.MemoireEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.PaquetsEcran
+import net.jolabs40.tvslim.windows.ui.ecrans.TelechargementScrcpyDialogue
+import net.jolabs40.tvslim.windows.ui.ecrans.VideoEnregistreeDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.VoileDepot
 import net.jolabs40.tvslim.windows.ui.theme.TvSlimTheme
 import org.jetbrains.skia.EncodedImageFormat
 import org.junit.Assume.assumeTrue
 import org.junit.Test
+import java.awt.GradientPaint
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.Locale
+import javax.imageio.ImageIO
 
 /**
  * Les logos et les cartes qui les portent, rendus hors écran avec des données fabriquées : aucun
@@ -527,6 +538,47 @@ class PlancheLogosTest {
         // Le bandeau de soutien, en haut de la fenêtre, et son lien permanent dans « À propos ».
         rendre("41-soutien", 1280, 80, cadre = false) { BanniereSoutien(true, {}, {}, {}) }
         rendre("42-soutien-sombre", 1280, 80, sombre = true, cadre = false) { BanniereSoutien(true, {}, {}, {}) }
+        rendre("43-a-propos", 900, 760, cadre = false) {
+            AProposDialogue(EtatMiseAJour(versionActuelle = "1.4.0"), {}, {}, {}, {}, {}, {}, {})
+        }
+
+        // L'écran du téléviseur : les boutons de la barre du haut au repos, puis pendant un miroir, un
+        // enregistrement et un téléchargement ; l'aperçu d'une capture, la proposition de scrcpy, la vidéo.
+        rendre("44-ecran-boutons", 640, 300) {
+            val il = System.currentTimeMillis()
+            ActionsEcran(EtatEcran(), connecte = true, {}, {}, {}, {}, {})
+            ActionsEcran(EtatEcran(scrcpy = PhaseScrcpy.Actif), connecte = true, {}, {}, {}, {}, {})
+            ActionsEcran(EtatEcran(enregistrement = PhaseEnregistrement.EnCours(il - 83_000, null)), connecte = true, {}, {}, {}, {}, {})
+            ActionsEcran(EtatEcran(enregistrement = PhaseEnregistrement.EnCours(il - 42_000, 180)), connecte = true, {}, {}, {}, {}, {})
+            ActionsEcran(
+                EtatEcran(captureEnCours = true, scrcpy = PhaseScrcpy.Telechargement(0.4f), enregistrement = PhaseEnregistrement.Copie(0.7f)),
+                connecte = true, {}, {}, {}, {}, {},
+            )
+        }
+        val png = ByteArrayOutputStream().also { flux ->
+            val image = BufferedImage(1920, 1080, BufferedImage.TYPE_INT_RGB)
+            val pinceau = image.createGraphics()
+            pinceau.paint = GradientPaint(0f, 0f, java.awt.Color(0x1F4A6E), 1920f, 1080f, java.awt.Color(0x9CF2C9))
+            pinceau.fillRect(0, 0, 1920, 1080)
+            pinceau.dispose()
+            ImageIO.write(image, "png", flux)
+        }.toByteArray()
+        val dossierImages = File("C:/Users/Camille/Pictures/TV Slim")
+        rendre("45-apercu-capture", 1000, 760, cadre = false) {
+            ApercuCaptureDialogue(
+                CaptureFaite(File(dossierImages, "TVSlim-TCL-Smart-TV-Pro-2026-10-04_19-15-30.png"), png, 1920, 1080),
+                {},
+                {},
+                {},
+            )
+        }
+        rendre("46-telechargement-scrcpy", 900, 560, cadre = false) {
+            TelechargementScrcpyDialogue(PhaseScrcpy.Telechargement(0.62f), File("C:/Users/Camille/AppData/Local/TVSlim/scrcpy"), {}, {})
+        }
+        rendre("47-video-enregistree", 900, 560, sombre = true, cadre = false) {
+            VideoEnregistreeDialogue(File("C:/Users/Camille/Videos/TV Slim/TVSlim-TCL-Smart-TV-Pro-2026-10-04_19-20-02.mp4"), {}, {})
+        }
+        rendre("48-fermeture-video", 900, 480, cadre = false) { FermetureDialogue(PhaseEnregistrement.Copie(0.55f)) }
     }
 
     @OptIn(ExperimentalComposeUiApi::class)

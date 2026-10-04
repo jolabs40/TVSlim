@@ -11,7 +11,7 @@ import java.io.File
 class Emplacements(
     /** Données de l'utilisateur : journaux, mesures, clé ADB, préférences, traces. */
     val donnees: File,
-    /** Fichiers jetables : les installateurs téléchargés par la mise à jour. */
+    /** Fichiers jetables : les installateurs téléchargés par la mise à jour, scrcpy s'il a fallu le télécharger. */
     val local: File,
 ) {
     val journaux = File(donnees, "journaux")
@@ -20,6 +20,7 @@ class Emplacements(
     val preferences = File(donnees, "preferences.json")
     val traces = File(donnees, "traces.log")
     val telechargements = File(local, "mises-a-jour")
+    val scrcpy = File(local, "scrcpy")
 
     companion object {
         private const val NOM = "TVSlim"

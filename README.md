@@ -66,6 +66,14 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
   dragged into the window or picked from your files. On Windows, copy a file or a folder to the PC,
   and delete what clutters the TV — by hovering over a line or with a right-click. The rights are
   those of ADB: shared storage is writable, `Android/data` included; system folders are not.
+- **Screen** — from the top bar of every tab: a screenshot of the TV, saved in *Pictures\TV Slim*
+  (on the phone, in the gallery) with a preview to copy or share it. On Windows, a video of the
+  screen, recorded by the TV itself then copied into *Videos\TV Slim* and erased from the TV —
+  without sound, which the TV's recorder never captures, and for 3 minutes at most before Android
+  14; and a live mirror of the screen in its own window, through
+  [scrcpy](https://github.com/Genymobile/scrcpy), downloaded from GitHub the first time if it is not
+  installed. Recording closes the mirror. Protected videos (Netflix, most channels) come out black:
+  the TV decides that.
 - **Log** — every action with the command that undoes it; undo a single line or restore everything;
   export as Markdown.
 
@@ -99,8 +107,9 @@ java "TVSlim Windows/outils/VerifierMiseAJour.java" TVSlim-Windows-x.y.z.msi x.y
 
 ## Privacy
 
-TV Slim talks to your television over your local network, and to GitHub to look for updates —
-nothing else. No account, no telemetry. The ADB key that lets this computer talk to your TVs is
+TV Slim talks to your television over your local network, and to GitHub to look for updates — and,
+the first time you open the mirror without scrcpy installed, to download it from
+its GitHub release, once you have agreed and after checking its fingerprint. Nothing else. No account, no telemetry. The ADB key that lets this computer talk to your TVs is
 stored encrypted by Windows (DPAPI) in `%APPDATA%\TVSlim`, next to the logs.
 
 ## Support the project

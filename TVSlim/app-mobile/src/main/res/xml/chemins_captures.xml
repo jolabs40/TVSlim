@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Avant Android 10 seulement : les captures du dossier d'images de l'application, partagées une à une. -->
+<paths>
+    <external-files-path name="captures" path="Pictures/" />
+    <files-path name="captures_internes" path="TV Slim/" />
+</paths>

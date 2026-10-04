@@ -70,6 +70,7 @@ import net.jolabs40.tvslim.windows.ressources.files_pick_files
 import net.jolabs40.tvslim.windows.ressources.files_pick_folder
 import net.jolabs40.tvslim.windows.ressources.install_dialog
 import net.jolabs40.tvslim.windows.ressources.journal_export_dialog
+import net.jolabs40.tvslim.windows.ressources.scrcpy_window_mirror
 import net.jolabs40.tvslim.windows.ressources.status_connected
 import net.jolabs40.tvslim.windows.ressources.status_connecting
 import net.jolabs40.tvslim.windows.ressources.status_disconnected
@@ -81,15 +82,20 @@ import net.jolabs40.tvslim.windows.ressources.tab_memory
 import net.jolabs40.tvslim.windows.ressources.tab_packages
 import net.jolabs40.tvslim.windows.ressources.unknown_export_dialog
 import net.jolabs40.tvslim.windows.ui.ecrans.AProposDialogue
+import net.jolabs40.tvslim.windows.ui.ecrans.ActionsEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.ActionsFichiers
+import net.jolabs40.tvslim.windows.ui.ecrans.ApercuCaptureDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereMiseAJour
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereSoutien
 import net.jolabs40.tvslim.windows.ui.ecrans.ConfirmationDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.ConnexionEcran
+import net.jolabs40.tvslim.windows.ui.ecrans.FermetureDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.FichiersEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.JournalEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.MemoireEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.PaquetsEcran
+import net.jolabs40.tvslim.windows.ui.ecrans.TelechargementScrcpyDialogue
+import net.jolabs40.tvslim.windows.ui.ecrans.VideoEnregistreeDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.VoileDepot
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
@@ -116,6 +122,10 @@ enum class Onglet(val titre: StringResource, val icone: DrawableResource) {
 fun AppFenetre(
     pilote: PiloteApp,
     misesAJour: PiloteMisesAJour,
+    /** Capture, miroir et vidéo de l'écran du téléviseur. */
+    ecran: PiloteEcran,
+    /** Où scrcpy arrive quand il faut le télécharger : dit dans la fenêtre qui le propose. */
+    dossierScrcpy: File,
     onglet: Onglet,
     onOnglet: (Onglet) -> Unit,
     ouvrirLien: (String) -> Unit,
@@ -135,6 +145,7 @@ fun AppFenetre(
     val etatFichiers by pilote.fichiers.explorateur.etat.collectAsStateWithLifecycle()
     val etatMaj by misesAJour.etat.collectAsStateWithLifecycle()
     val soutienVisible by pilote.soutien.visible.collectAsStateWithLifecycle()
+    val etatEcran by ecran.etat.collectAsStateWithLifecycle()
     val messages = remember { SnackbarHostState() }
     var aPropos by remember { mutableStateOf(false) }
     val titreExport = stringResource(Res.string.journal_export_dialog)
@@ -146,6 +157,9 @@ fun AppFenetre(
     val titreDossier = stringResource(Res.string.files_pick_folder)
     val titreDestinationFichier = stringResource(Res.string.files_pick_destination_file)
     val titreDestinationDossier = stringResource(Res.string.files_pick_destination_folder)
+    // Le titre de la fenêtre de scrcpy : c'est par lui qu'on la reconnaît dans la barre des tâches.
+    val nomTv = etat.infos.nomAffiche.ifBlank { etat.connexion.hote }
+    val titreMiroir = stringResource(Res.string.scrcpy_window_mirror, nomTv)
 
     // Un APK glissé depuis l'Explorateur, n'importe où dans la fenêtre : la carte d'installation n'est pas
     // forcément à l'écran quand on a le fichier sous la main. Le voile dit où il va partir. Sur l'onglet
@@ -204,6 +218,36 @@ fun AppFenetre(
         )
         pilote.effacerMessage()
     }
+    LaunchedEffect(etatEcran.message) {
+        val message = etatEcran.message ?: return@LaunchedEffect
+        messages.showSnackbar(message = message.rediger(), withDismissAction = true)
+        ecran.effacerMessage()
+    }
+
+    etatEcran.capture?.let { capture ->
+        ApercuCaptureDialogue(
+            capture = capture,
+            onCopier = ecran::copierCapture,
+            onOuvrirDossier = { capture.fichier.parentFile?.let(ouvrirDossier) },
+            onFermer = ecran::fermerCapture,
+        )
+    }
+    if (etatEcran.telechargementPropose != null) {
+        TelechargementScrcpyDialogue(
+            phase = etatEcran.scrcpy,
+            dossier = dossierScrcpy,
+            onTelecharger = ecran::accepterTelechargement,
+            onAnnuler = ecran::refuserTelechargement,
+        )
+    }
+    if (etatEcran.fermeture) FermetureDialogue(etatEcran.enregistrement)
+    etatEcran.video?.let { video ->
+        VideoEnregistreeDialogue(
+            video = video,
+            onOuvrirDossier = { video.parentFile?.let(ouvrirDossier) },
+            onFermer = ecran::fermerVideo,
+        )
+    }
 
     etat.confirmation?.let { demande ->
         ConfirmationDialogue(
@@ -252,6 +296,15 @@ fun AppFenetre(
             TopAppBar(
                 title = { Text(stringResource(Res.string.app_name)) },
                 actions = {
+                    ActionsEcran(
+                        etat = etatEcran,
+                        connecte = etat.connecte,
+                        onCapturer = ecran::capturer,
+                        onMiroir = { ecran.ouvrirMiroir(titreMiroir) },
+                        onArreterMiroir = ecran::arreterMiroir,
+                        onEnregistrer = ecran::enregistrer,
+                        onArreterEnregistrement = ecran::arreterEnregistrement,
+                    )
                     PastilleConnexion(etat)
                     IconButton(onClick = { aPropos = true }) {
                         Icon(
