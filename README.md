@@ -1,21 +1,68 @@
-<img src="TVSlim%20Windows/packaging/tvslim-256.png" alt="" width="96" align="right">
+<p align="center">
+  <img src="TVSlim%20Windows/packaging/tvslim-256.png" alt="TV Slim logo" width="112">
+</p>
 
-# TV Slim
+<h1 align="center">TV Slim</h1>
 
-**Reversible debloat for Android TV.** TV Slim switches off the advertising, telemetry, shop-demo
-leftovers and preinstalled apps that weigh a smart TV down — from a Windows PC or from an Android
-phone — and keeps a log of every change, so that each one can be undone.
+<p align="center">
+  <b>Debloat your Android TV or Google TV — without root, and with every change undoable.</b><br>
+  Switch off the ads, the telemetry and the preinstalled apps that slow your smart TV down,
+  from a Windows PC.
+</p>
 
-Nothing is ever uninstalled: packages are *disabled* and can be re-enabled at any time. And nothing
-has to be installed on the television.
+<p align="center">
+  <a href="https://github.com/jolabs40/TVSlim/releases/latest"><img src="https://img.shields.io/github/v/release/jolabs40/TVSlim?label=latest&color=2e7d5b" alt="Latest release"></a>
+  <a href="https://github.com/jolabs40/TVSlim/releases/latest"><img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4" alt="Windows 10 and 11"></a>
+  <a href="#faq"><img src="https://img.shields.io/badge/root-not%20needed-7fd8aa" alt="No root needed"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/jolabs40/TVSlim?color=blue" alt="Apache-2.0 licence"></a>
+</p>
 
-[Version française](README.fr.md)
+<p align="center">
+  <a href="https://github.com/jolabs40/TVSlim/releases/latest"><b>⬇ Download for Windows</b></a>
+  &nbsp;·&nbsp; <a href="#get-started-in-three-steps">Get started</a>
+  &nbsp;·&nbsp; <a href="#faq">FAQ</a>
+  &nbsp;·&nbsp; <a href="README.fr.md">Version française</a>
+</p>
 
-![TV Slim for Windows — the packages found on a TCL television, with the details of the selected one](docs/captures/paquets.png)
+![TV Slim for Windows connected to a TCL Google TV: model, Android 14, memory, 55 disabled packages, and the installed launchers — Startlight and Projectivy, with the Google TV home screen disabled](docs/captures/tv-slim-windows-television.png)
 
-## Download for Windows
+**TV Slim is a free, open-source debloater for Android TV and Google TV.** It connects to your
+television over your home network with ADB, shows what is really installed on it, and disables the
+advertising, the telemetry, the shop-demo leftovers and the preinstalled apps you never asked for —
+on a TCL, a Philips, an NVIDIA Shield, a Xiaomi Mi Box and others. Nothing is uninstalled, and
+nothing has to be installed on the TV: every package is *disabled*, written to a log with the
+command that undoes it, and can be re-enabled at any time.
 
-Get the latest version from the **[Releases page](https://github.com/jolabs40/TVSlim/releases)**:
+## Why TV Slim
+
+- 🛡️ **Reversible by design** — packages are disabled, never uninstalled. Undo one line of the
+  log, or restore everything in one click.
+- 🔌 **No root, nothing to install on the TV** — plain ADB over Wi-Fi or Ethernet. TV Slim finds
+  your television on the network by itself.
+- 📖 **It tells you what you are disabling** — every package comes with a description, a risk level
+  and its known side effects, plus ready-made profiles: ads and telemetry, voice assistants,
+  preinstalled streaming services, maker apps.
+- 🧱 **Safeguards you cannot click past** — packages that would cause a boot loop or break the remote
+  are refused, and the factory home screen stays until another one is installed.
+- 🔁 **Survives system updates** — when an update turns your ads or the Google TV home screen back
+  on, TV Slim notices at the next connection and puts everything back after one confirmation.
+- 🏠 **Ad-free home screen** — see the launchers installed, switch to Startlight, Projectivy or
+  another one, and keep the factory home screen out of the way.
+- 🧰 **Everything else ADB can do, with buttons** — apps (open, force-stop, uninstall your own),
+  files in both directions by drag and drop, APK installation, screenshots, screen recording, live
+  mirror, memory and storage.
+- 🔒 **Private** — no account, no telemetry. TV Slim talks to your television and to GitHub for
+  updates, nothing else.
+
+## Screenshots
+
+| Finds the TV on your network | Disabled packages, explained | Every app, with its real name |
+|:---:|:---:|:---:|
+| ![TV Slim finds a TCL Smart TV Pro and an NVIDIA Shield on the local network](docs/captures/tv-slim-find-tv-on-network.png) | ![The Packages tab: TCL recommendations, Channel+, Privacy Sandbox and Google telemetry disabled, each one with a Re-enable button](docs/captures/tv-slim-packages.png) | ![The Apps tab: Prime Video disabled, Projectivy, SmartTube and Spotify installed, with Open, Force stop and Uninstall](docs/captures/tv-slim-apps.png) |
+
+## Get started in three steps
+
+**1. Download TV Slim for Windows** from the **[Releases page](https://github.com/jolabs40/TVSlim/releases/latest)**:
 
 | File | For |
 |---|---|
@@ -28,16 +75,32 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 > signed with a paid certificate, so SmartScreen may warn you the first time. Click **More info**,
 > then **Run anyway**. `SHA256SUMS.txt`, published alongside, lets you check the file is genuine.
 
-## Prepare the television (once)
+**2. Prepare the television (once).**
 
 1. On the TV, open **Settings → About** (sometimes under *System* or *Device preferences*) and press
    OK seven times on the **build number**. Developer options appear.
 2. In **Developer options**, enable network debugging — called *Network debugging*, *ADB debugging*
    or *USB debugging* depending on the TV.
-3. Start TV Slim on a PC connected to the same network. It finds the TV by itself within a few
-   seconds; otherwise, type its IP address (shown in *Settings → Network*).
-4. On the first connection, the TV asks to **allow debugging from this computer**: tick *Always
-   allow* and accept with the remote. It will not ask again, even after a reboot.
+
+**3. Connect and slim it down.** Start TV Slim on a PC connected to the same network. It finds the
+TV by itself within a few seconds; otherwise, type its IP address (shown in *Settings → Network*).
+On the first connection, the TV asks to **allow debugging from this computer**: tick *Always allow*
+and accept with the remote — it will not ask again, even after a reboot. Then open **Packages**,
+pick a profile and click **Apply**.
+
+## Compatibility
+
+- **Any Android TV or Google TV device** whose developer options offer network debugging: smart TVs
+  (TCL, Philips, Sony, Hisense, Sharp, Toshiba, Grundig, Haier, Panasonic…) and TV boxes (NVIDIA
+  Shield TV, Xiaomi Mi Box, Freebox, Google TV streamers…). TV Slim recognises the maker and shows
+  its logo.
+- **The catalogue** describes the packages of Google TV and Android TV, and those of TCL, Philips,
+  NVIDIA and Xiaomi. On other makes, the packages TV Slim does not know yet are listed apart, with
+  nothing offered to do about them, and *Propose to the catalogue* sends their inventory in a few
+  clicks.
+- **Tested** on a TCL Smart TV Pro (65C89K, Google TV, Android 14) and an NVIDIA Shield TV.
+- **On the PC**: Windows 10 or 11, 64-bit, on the same local network as the TV. An Android phone
+  app, TV Slim Remote, is in this repository and is not published yet.
 
 ## What you can do
 
@@ -47,7 +110,8 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
   Play Store); grant the privileged permissions some apps need (`WRITE_SECURE_SETTINGS`, `DUMP`…);
   install an APK on the TV — dropped into the window or chosen from your files — after a confirmation
   that shows the package, its version and what it replaces; send an ADB shell command of your own and
-  read its output.
+  read its output. If the TV has undone some of your changes — after a system update, typically —
+  a card says so, and *Put them back* reapplies them.
 - **Packages** — the known packages actually present on *your* TV, with risk level, size,
   description and known side effects; ready-made profiles (ads and telemetry, voice assistants,
   preinstalled streaming services…); applied in one go, after a confirmation that lists the side
@@ -72,13 +136,12 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
   and delete what clutters the TV — by hovering over a line or with a right-click. The rights are
   those of ADB: shared storage is writable, `Android/data` included; system folders are not.
 - **Screen** — from the top bar of every tab: a screenshot of the TV, saved in *Pictures\TV Slim*
-  (on the phone, in the gallery) with a preview to copy or share it. On Windows, a video of the
-  screen, recorded by the TV itself then copied into *Videos\TV Slim* and erased from the TV —
-  without sound, which the TV's recorder never captures, and for 3 minutes at most before Android
-  14; and a live mirror of the screen in its own window, through
-  [scrcpy](https://github.com/Genymobile/scrcpy), downloaded from GitHub the first time if it is not
-  installed. Recording closes the mirror. Protected videos (Netflix, most channels) come out black:
-  the TV decides that.
+  with a preview to copy it. A video of the screen, recorded by the TV itself then copied into
+  *Videos\TV Slim* and erased from the TV — without sound, which the TV's recorder never captures,
+  and for 3 minutes at most before Android 14; and a live mirror of the screen in its own window,
+  through [scrcpy](https://github.com/Genymobile/scrcpy), downloaded from GitHub the first time if it
+  is not installed. Recording closes the mirror. Protected videos (Netflix, most channels) come out
+  black: the TV decides that.
 - **Log** — every action with the command that undoes it; undo a single line or restore everything;
   export as Markdown.
 
@@ -99,6 +162,51 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 - The one exception is the **ADB command** card: what you type there bypasses these safeguards and
   cannot be undone from TV Slim. The card says so, and every command is recorded in the log.
 
+## FAQ
+
+### How do I remove the ads from my Android TV or Google TV home screen?
+
+The ads come from the maker's recommendation service and from the factory home screen. In TV Slim,
+the **Advertising, telemetry and store demo** profile disables the former — on a TCL, *TCL
+recommendations* and *Channel+*, for instance. For a home screen with no ads at all, install another
+launcher, choose it on the **Television** tab, then apply the **Replacing the home screen** profile,
+which disables the Google TV home screen: TV Slim only allows that once a replacement is in place.
+
+### Is debloating my TV safe? Can it brick it?
+
+TV Slim only *disables* packages, and refuses the ones whose absence would cause a boot loop or break
+the remote control. Every change is logged with the command that undoes it, and **Restore
+everything** takes the TV back to where it started. As a last resort, a factory reset of the TV
+re-enables every package — and *Reinject a config* applies your choices again afterwards.
+
+### Do I need to root the TV?
+
+No. TV Slim uses ADB, the debugging bridge every Android TV and Google TV device ships with. Turning
+on network debugging in the developer options is all it takes.
+
+### Does it install anything on the television?
+
+No. The Apps tab copies a small helper to `/data/local/tmp` to read the names and icons, runs it and
+erases it straight away. An APK is installed on the TV only when you ask for it.
+
+### A system update brought the ads and the Google TV home screen back. What now?
+
+Connect TV Slim again. It compares the TV with its log: if packages you had disabled are running
+again, or if the factory home screen has taken over, a card says so, and *Put them back* reapplies
+your changes after one confirmation.
+
+### What is the difference with uninstalling packages over ADB?
+
+`pm uninstall --user 0`, which many guides and phone debloaters use, removes the app for your user;
+getting it back means finding the right command, and a factory reset may be the only way out of a
+mistake. TV Slim never does that: it disables, explains each package before you touch it, keeps a
+log you can undo line by line, and knows the packages that must never be touched on a television.
+
+### Is it free?
+
+Yes — free, open source under the Apache 2.0 licence, with no ads, no account and no telemetry. If
+it has been useful to you, you can [buy me a coffee](#support-the-project).
+
 ## Updates
 
 TV Slim asks GitHub for a new version when it starts — this can be switched off in **About**.
@@ -115,19 +223,24 @@ java "TVSlim Windows/outils/VerifierMiseAJour.java" TVSlim-Windows-x.y.z.msi x.y
 ## Privacy
 
 TV Slim talks to your television over your local network, and to GitHub to look for updates — and,
-the first time you open the mirror without scrcpy installed, to download it from
-its GitHub release, once you have agreed and after checking its fingerprint. Nothing else. No account, no telemetry. The ADB key that lets this computer talk to your TVs is
-stored encrypted by Windows (DPAPI) in `%APPDATA%\TVSlim`, next to the logs.
+the first time you open the mirror without scrcpy installed, to download it from its GitHub
+release, once you have agreed and after checking its fingerprint. Nothing else. No account, no
+telemetry. The ADB key that lets this computer talk to your TVs is stored encrypted by Windows
+(DPAPI) in `%APPDATA%\TVSlim`, next to the logs.
 
 ## Support the project
 
 TV Slim is free and will stay that way. If it has been useful to you, you can buy me a coffee on
 **[Ko-fi](https://ko-fi.com/jolabs40)**.
 
-The application mentions it in two ways, no more: a small ♥ in its top bar (and a link in *About*),
-and a banner after a debloat, a file transfer or an APK installation that went through — at most
-once a month. *I already donated* hides it for good. The application never contacts Ko-fi itself: the
-button opens your browser.
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/K7Z1286U38)
+
+The application mentions it in two ways, no more: the Ko-fi cup in its top bar (and a link in
+*About*), and a banner after a debloat, a file transfer or an APK installation that went through — at
+most once a month. *I already donated* hides it for good. The application never contacts Ko-fi
+itself: the button opens your browser.
+
+A star on this repository helps other people find TV Slim, too.
 
 ## Uninstall
 
@@ -164,5 +277,6 @@ See [LICENSE](LICENSE).
 
 TV Slim is not affiliated with any television, TV box or launcher maker. Brand names and logos
 belong to their owners and are shown only to identify the device or the application detected;
-[NOTICE-LOGOS.md](NOTICE-LOGOS.md) says where each one comes from. Startlight Launcher, which TV Slim recommends, comes from the same author. Every change TV Slim
-makes is reversible, but you remain in charge of what you disable.
+[NOTICE-LOGOS.md](NOTICE-LOGOS.md) says where each one comes from. Startlight Launcher, which TV
+Slim recommends, comes from the same author. Every change TV Slim makes is reversible, but you
+remain in charge of what you disable.
