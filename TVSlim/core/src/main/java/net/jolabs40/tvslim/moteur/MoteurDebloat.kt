@@ -12,7 +12,10 @@ data class ResultatAction(
     val paquet: String,
     val nom: String,
     val reussi: Boolean,
+    /** Ce que le téléviseur a répondu, tel quel. */
     val message: String = "",
+    /** Ce que le moteur en dit, à rédiger par l'application ; quand il est là, il passe avant [message]. */
+    val motif: MotifMoteur? = null,
 )
 
 /**
@@ -25,7 +28,8 @@ data class ResultatAction(
  *  - respect de l'ordre déclaré, pour que `setupwraith` tombe avant `launcherx` — sans quoi
  *    la RecoveryActivity de priorité 1 prendrait la main à la place du launcher choisi.
  *
- * Le moteur ignore par quel canal les commandes partent : service local ou connexion ADB.
+ * Le moteur ignore par quel canal les commandes partent : service local ou connexion ADB. Il ne
+ * rédige rien non plus : ses refus sont des [MotifMoteur], que chaque application met en mots.
  */
 class MoteurDebloat(
     private val executeur: ExecuteurCommande,
@@ -47,19 +51,17 @@ class MoteurDebloat(
             surProgression(rang, aTraiter.size)
             val refus = motifDeRefus(entree, catalogue, launchersDisponibles)
             if (refus != null) {
-                resultats += ResultatAction(entree.paquet, entree.nom, false, refus)
+                resultats += ResultatAction(entree.paquet, entree.nom, false, motif = refus)
                 return@forEachIndexed
             }
             when (etats[entree.paquet] ?: EtatPaquet.ABSENT) {
                 EtatPaquet.ABSENT -> {
-                    resultats += ResultatAction(
-                        entree.paquet, entree.nom, false, "Paquet absent de ce téléviseur.",
-                    )
+                    resultats += ResultatAction(entree.paquet, entree.nom, false, motif = MotifMoteur.PaquetAbsent)
                     return@forEachIndexed
                 }
 
                 EtatPaquet.DESACTIVE -> {
-                    resultats += ResultatAction(entree.paquet, entree.nom, true, "Déjà désactivé.")
+                    resultats += ResultatAction(entree.paquet, entree.nom, true, motif = MotifMoteur.DejaDesactive)
                     return@forEachIndexed
                 }
 
@@ -68,9 +70,9 @@ class MoteurDebloat(
 
             val sortie = executeur.executer("pm disable-user --user 0 ${entree.paquet}")
             val reussi = sortie.reussi && sortie.sortie.contains("disabled-user")
-            val message = if (reussi) "" else sortie.sortie.ifBlank { "Échec inexpliqué." }
+            val message = if (reussi) "" else sortie.sortie
 
-            resultats += ResultatAction(entree.paquet, entree.nom, reussi, message)
+            resultats += ResultatAction(entree.paquet, entree.nom, reussi, message, motifSiMuet(reussi, message))
             aJournaliser += ActionJournal(
                 horodatage = System.currentTimeMillis(),
                 type = TypeAction.DESACTIVATION,
@@ -98,9 +100,9 @@ class MoteurDebloat(
             surProgression(rang, paquets.size)
             val sortie = executeur.executer("pm enable $paquet")
             val reussi = sortie.reussi && sortie.sortie.contains("enabled")
-            val message = if (reussi) "" else sortie.sortie.ifBlank { "Échec inexpliqué." }
+            val message = if (reussi) "" else sortie.sortie
 
-            resultats += ResultatAction(paquet, paquet, reussi, message)
+            resultats += ResultatAction(paquet, paquet, reussi, message, motifSiMuet(reussi, message))
             aJournaliser += ActionJournal(
                 horodatage = System.currentTimeMillis(),
                 type = TypeAction.REACTIVATION,
@@ -120,13 +122,15 @@ class MoteurDebloat(
     /**
      * Désigne un écran d'accueil. À n'appeler qu'une fois l'accueil d'usine désactivé : tant
      * qu'il est actif, la commande répond `Success` sans le moindre effet.
+     *
+     * Le résultat porte le composant pour nom : c'est ce qu'un bilan d'échecs peut citer sans traduction.
      */
     suspend fun definirAccueil(composant: String, ancienAccueil: String): ResultatAction {
         // Les deux partent dans une commande : celui d'annulation aussi, et il sera rejoué tel
         // quel depuis le journal, longtemps après. Ils viennent d'une sortie de `cmd package`,
         // donc d'une source contrainte — mais c'est l'asymétrie qui se paie à la relecture.
         val refus = motifDeRefusComposant(composant) ?: motifDeRefusComposant(ancienAccueil)
-        if (refus != null) return ResultatAction(composant, "Écran d'accueil", false, refus)
+        if (refus != null) return ResultatAction(composant, composant, false, motif = refus)
 
         val sortie = executeur.executer("cmd package set-home-activity $composant")
         journal.ajouter(
@@ -134,13 +138,14 @@ class MoteurDebloat(
                 horodatage = System.currentTimeMillis(),
                 type = TypeAction.ACCUEIL,
                 cible = composant,
-                libelle = "Écran d'accueil",
+                // Les écrans du journal nomment ce type eux-mêmes ; ce libellé ne sert qu'à l'export.
+                libelle = LIBELLE_ACCUEIL,
                 commandeAnnulation = "cmd package set-home-activity $ancienAccueil",
                 reussi = sortie.reussi,
                 message = if (sortie.reussi) "" else sortie.sortie,
             ),
         )
-        return ResultatAction(composant, "Écran d'accueil", sortie.reussi, sortie.sortie)
+        return ResultatAction(composant, composant, sortie.reussi, sortie.sortie)
     }
 
     /**
@@ -153,7 +158,7 @@ class MoteurDebloat(
      */
     suspend fun ouvrirFicheBoutique(paquet: String): ResultatAction {
         if (!IDENTIFIANT.matches(paquet)) {
-            return ResultatAction(paquet, paquet, false, "Nom de paquet invalide : $paquet")
+            return ResultatAction(paquet, paquet, false, motif = MotifMoteur.NomInvalide(NatureNom.PAQUET, paquet))
         }
         val sortie = executeur.executer(
             "am start -a android.intent.action.VIEW -d market://details?id=$paquet",
@@ -170,10 +175,10 @@ class MoteurDebloat(
         // Ce nom-ci sort d'une expression régulière appliquée à `dumpsys meminfo` : le seul du
         // moteur qui ne vienne ni du catalogue ni d'une liste de paquets.
         if (!IDENTIFIANT.matches(paquet)) {
-            return ResultatAction(paquet, paquet, false, "Nom de paquet invalide : $paquet")
+            return ResultatAction(paquet, paquet, false, motif = MotifMoteur.NomInvalide(NatureNom.PAQUET, paquet))
         }
         val sortie = executeur.executer("am force-stop $paquet")
-        return ResultatAction(paquet, paquet, sortie.reussi, sortie.sortie)
+        return ResultatAction(paquet, paquet, sortie.reussi, sortie.sortie, motifSiMuet(sortie.reussi, sortie.sortie))
     }
 
     /** Applique une valeur de réglage système et journalise son annulation. */
@@ -196,7 +201,7 @@ class MoteurDebloat(
                 message = if (sortie.reussi) "" else sortie.sortie,
             ),
         )
-        return ResultatAction(cle, nom, sortie.reussi, sortie.sortie)
+        return ResultatAction(cle, nom, sortie.reussi, sortie.sortie, motifSiMuet(sortie.reussi, sortie.sortie))
     }
 
     /**
@@ -218,14 +223,14 @@ class MoteurDebloat(
         permissionsDeclarees: Set<String>,
     ): ResultatAction {
         val refus = motifDeRefusPermission(paquet, permission, permissionsDeclarees)
-        if (refus != null) return ResultatAction(paquet, permission, false, refus)
+        if (refus != null) return ResultatAction(paquet, permission, false, motif = refus)
         return changerPermission(paquet, permission, accorder = true)
     }
 
     /** Retire une permission accordée. Rendre est toujours licite : rien à vérifier au manifeste. */
     suspend fun retirerPermission(paquet: String, permission: String): ResultatAction {
         val refus = motifDeRefusPermission(paquet, permission, permissionsDeclarees = null)
-        if (refus != null) return ResultatAction(paquet, permission, false, refus)
+        if (refus != null) return ResultatAction(paquet, permission, false, motif = refus)
         return changerPermission(paquet, permission, accorder = false)
     }
 
@@ -240,7 +245,7 @@ class MoteurDebloat(
 
         // `pm grant` se tait quand il réussit : toute sortie est une exception du téléviseur.
         val reussi = sortie.reussi && sortie.sortie.isBlank()
-        val message = if (reussi) "" else sortie.sortie.ifBlank { "Échec inexpliqué." }
+        val message = if (reussi) "" else sortie.sortie
 
         journal.ajouter(
             ActionJournal(
@@ -253,7 +258,7 @@ class MoteurDebloat(
                 message = message,
             ),
         )
-        return ResultatAction(paquet, permission, reussi, message)
+        return ResultatAction(paquet, permission, reussi, message, motifSiMuet(reussi, message))
     }
 
     /**
@@ -270,18 +275,18 @@ class MoteurDebloat(
         modePrecedent: String,
     ): ResultatAction {
         val refus = when {
-            !IDENTIFIANT.matches(paquet) -> "Nom de paquet invalide : $paquet"
-            !IDENTIFIANT.matches(appOp) -> "Nom d'app-op invalide : $appOp"
-            mode !in MODES_APP_OP -> "Mode d'app-op inconnu : $mode"
+            !IDENTIFIANT.matches(paquet) -> MotifMoteur.NomInvalide(NatureNom.PAQUET, paquet)
+            !IDENTIFIANT.matches(appOp) -> MotifMoteur.NomInvalide(NatureNom.APP_OP, appOp)
+            mode !in MODES_APP_OP -> MotifMoteur.ModeAppOpInconnu(mode)
             else -> null
         }
-        if (refus != null) return ResultatAction(paquet, appOp, false, refus)
+        if (refus != null) return ResultatAction(paquet, appOp, false, motif = refus)
 
         val sortie = executeur.executer("cmd appops set $paquet $appOp $mode")
 
         // Comme `pm grant`, `cmd appops set` se tait quand il réussit.
         val reussi = sortie.reussi && sortie.sortie.isBlank()
-        val message = if (reussi) "" else sortie.sortie.ifBlank { "Échec inexpliqué." }
+        val message = if (reussi) "" else sortie.sortie
         val retour = modePrecedent.ifBlank { MODE_APP_OP_DEFAUT }
 
         journal.ajouter(
@@ -295,21 +300,21 @@ class MoteurDebloat(
                 message = message,
             ),
         )
-        return ResultatAction(paquet, appOp, reussi, message)
+        return ResultatAction(paquet, appOp, reussi, message, motifSiMuet(reussi, message))
     }
 
-    private fun motifDeRefusComposant(composant: String): String? =
-        if (COMPOSANT.matches(composant)) null else "Composant invalide : $composant"
+    private fun motifDeRefusComposant(composant: String): MotifMoteur? =
+        if (COMPOSANT.matches(composant)) null else MotifMoteur.NomInvalide(NatureNom.COMPOSANT, composant)
 
     private fun motifDeRefusPermission(
         paquet: String,
         permission: String,
         permissionsDeclarees: Set<String>?,
-    ): String? = when {
-        !IDENTIFIANT.matches(paquet) -> "Nom de paquet invalide : $paquet"
-        !IDENTIFIANT.matches(permission) -> "Nom de permission invalide : $permission"
+    ): MotifMoteur? = when {
+        !IDENTIFIANT.matches(paquet) -> MotifMoteur.NomInvalide(NatureNom.PAQUET, paquet)
+        !IDENTIFIANT.matches(permission) -> MotifMoteur.NomInvalide(NatureNom.PERMISSION, permission)
         permissionsDeclarees != null && permission !in permissionsDeclarees ->
-            "$paquet ne demande pas $permission dans son manifeste : rien à accorder."
+            MotifMoteur.PermissionNonDemandee(paquet, permission)
 
         else -> null
     }
@@ -318,16 +323,14 @@ class MoteurDebloat(
         entree: EntreePaquet,
         catalogue: Catalogue,
         launchersDisponibles: Boolean,
-    ): String? = when {
+    ): MotifMoteur? = when {
         // Le paquet part dans le shell : un nom, et rien d'autre. Ceux du catalogue le sont ; ceux qu'un téléphone
         // annonce (Catalogue.avecApplicationsDuMenu) viennent de l'appareil.
-        !IDENTIFIANT.matches(entree.paquet) -> "Nom de paquet invalide : ${entree.paquet}"
+        !IDENTIFIANT.matches(entree.paquet) -> MotifMoteur.NomInvalide(NatureNom.PAQUET, entree.paquet)
 
-        catalogue.estProtege(entree.paquet) ->
-            "Paquet protégé : ${catalogue.motifProtection(entree.paquet)}"
+        catalogue.estProtege(entree.paquet) -> MotifMoteur.Protege(catalogue.motifProtection(entree.paquet).orEmpty())
 
-        entree.requiertLauncherTiers && !launchersDisponibles ->
-            "Aucun launcher tiers installé : le téléviseur démarrerait sur un écran vide."
+        entree.requiertLauncherTiers && !launchersDisponibles -> MotifMoteur.SansLauncherTiers
 
         else -> null
     }
@@ -343,5 +346,8 @@ class MoteurDebloat(
 
         /** Les quatre modes qu'`appops` accepte. Tout le reste est une faute de frappe. */
         val MODES_APP_OP = setOf("allow", "deny", "ignore", MODE_APP_OP_DEFAUT)
+
+        /** Le libellé d'une ligne d'accueil au journal, tel que l'export Markdown l'écrit. */
+        const val LIBELLE_ACCUEIL = "Écran d'accueil"
     }
 }

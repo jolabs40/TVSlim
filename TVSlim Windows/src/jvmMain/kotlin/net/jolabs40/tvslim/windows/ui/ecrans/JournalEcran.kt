@@ -29,9 +29,11 @@ import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.TypeAction
 import net.jolabs40.tvslim.windows.ressources.Res
+import net.jolabs40.tvslim.windows.ressources.engine_unexplained
 import net.jolabs40.tvslim.windows.ressources.journal_empty
 import net.jolabs40.tvslim.windows.ressources.journal_export
 import net.jolabs40.tvslim.windows.ressources.journal_failure
+import net.jolabs40.tvslim.windows.ressources.journal_home
 import net.jolabs40.tvslim.windows.ressources.journal_not_connected
 import net.jolabs40.tvslim.windows.ressources.journal_restore_all
 import net.jolabs40.tvslim.windows.ressources.journal_subtitle
@@ -126,7 +128,9 @@ private fun VueAction(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(text = "${action.libelle} — ${action.cible}", style = MaterialTheme.typography.bodyMedium)
+            // L'accueil se nomme dans la langue de l'écran ; le libellé écrit au journal ne sert qu'à l'export.
+            val libelle = if (action.type == TypeAction.ACCUEIL) stringResource(Res.string.journal_home) else action.libelle
+            Text(text = "$libelle — ${action.cible}", style = MaterialTheme.typography.bodyMedium)
             // La commande d'annulation se copie : elle se rejoue aussi bien depuis un terminal. Une
             // installation n'en a pas.
             SelectionContainer {
@@ -140,7 +144,7 @@ private fun VueAction(
             text = if (action.reussi) {
                 stringResource(Res.string.journal_success)
             } else {
-                stringResource(Res.string.journal_failure, action.message)
+                stringResource(Res.string.journal_failure, action.message.ifBlank { stringResource(Res.string.engine_unexplained) })
             },
             modifier = Modifier.padding(horizontal = 12.dp).widthIn(max = 320.dp),
             style = MaterialTheme.typography.bodySmall,

@@ -93,7 +93,7 @@ class PiloteConfiguration(
         portee.launch {
             val resultat = moteurActif.ouvrirFicheBoutique(paquet)
             if (!resultat.reussi) {
-                afficher(contexte.getString(R.string.msg_store_failed, resultat.message))
+                afficher(contexte.getString(R.string.msg_store_failed, resultat.texte(contexte)))
                 return@launch
             }
             afficher(contexte.getString(R.string.msg_store_opened))
@@ -120,7 +120,7 @@ class PiloteConfiguration(
         portee.launch {
             val resultat = moteurActif.definirAccueil(composant, infos.composantAccueil.ifBlank { composant })
             if (!resultat.reussi) {
-                afficher(contexte.getString(R.string.msg_home_failed, resultat.message.ifBlank { "—" }))
+                afficher(contexte.getString(R.string.msg_home_failed, resultat.texte(contexte).ifBlank { "—" }))
                 return@launch
             }
             val enPlace = lecteur.accueilActuel()

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -41,7 +42,9 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import net.jolabs40.tvslim.device.Fabricant
 import net.jolabs40.tvslim.device.TypeAppareil
 import net.jolabs40.tvslim.remote.R
+import net.jolabs40.tvslim.remote.adb.ConnexionUi
 import net.jolabs40.tvslim.remote.adb.EtatConnexion
+import net.jolabs40.tvslim.remote.adb.ProblemeConnexion
 import net.jolabs40.tvslim.remote.ui.ActionsCommande
 import net.jolabs40.tvslim.remote.ui.ActionsPermissions
 import net.jolabs40.tvslim.remote.ui.ActionsShizuku
@@ -281,13 +284,14 @@ fun ConnexionScreen(
             }
         }
 
-        if (etat.connexion.message.isNotBlank()) {
+        if (etat.connexion.etat == EtatConnexion.CONNEXION) {
             Text(
-                text = etat.connexion.message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
+                text = stringResource(R.string.connection_waiting),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        EtatErreur(etat.connexion)
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -395,5 +399,32 @@ private fun Mesure(libelle: String, valeur: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(text = valeur, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/** Pourquoi la connexion a échoué, en clair, puis le message technique pour qui le veut. */
+@Composable
+private fun EtatErreur(connexion: ConnexionUi) {
+    if (connexion.etat != EtatConnexion.ERREUR) return
+    val explication = when (connexion.probleme ?: ProblemeConnexion.AUTRE) {
+        ProblemeConnexion.REFUSEE -> R.string.connection_problem_refused
+        ProblemeConnexion.DELAI -> R.string.connection_problem_timeout
+        ProblemeConnexion.NON_AUTORISEE -> R.string.connection_problem_unauthorized
+        ProblemeConnexion.INJOIGNABLE -> R.string.connection_problem_unreachable
+        ProblemeConnexion.AUTRE -> R.string.connection_problem_other
+    }
+    Text(
+        text = stringResource(explication),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.error,
+    )
+    if (connexion.detail.isNotBlank()) {
+        SelectionContainer {
+            Text(
+                text = connexion.detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }

@@ -434,6 +434,8 @@ private fun Avancement(texte: String, fraction: Float?) {
 /** Ce que le dernier envoi n'a pas déposé, et pourquoi : la bannière passe, la carte reste jusqu'au suivant. */
 @Composable
 private fun Echecs(resultat: ResultatDepot) {
+    // Un refus sans un mot du téléviseur se dit dans la langue de l'écran.
+    val refuse = stringResource(R.string.files_refused_silent)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -446,7 +448,7 @@ private fun Echecs(resultat: ResultatDepot) {
             )
             SelectionContainer {
                 Text(
-                    text = resultat.echecs.take(ECHECS_MAX).joinToString("\n") { "${it.chemin} : ${it.motif}" },
+                    text = resultat.echecs.take(ECHECS_MAX).joinToString("\n") { "${it.chemin} : ${it.motif.ifBlank { refuse }}" },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )

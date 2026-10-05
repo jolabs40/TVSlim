@@ -103,8 +103,10 @@ private fun VueAction(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            // L'accueil se nomme dans la langue de l'écran ; le libellé écrit au journal ne sert qu'à l'export.
+            val libelle = if (action.type == TypeAction.ACCUEIL) stringResource(R.string.journal_home) else action.libelle
             Text(
-                text = "${action.libelle} — ${action.cible}",
+                text = "$libelle — ${action.cible}",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
@@ -112,7 +114,7 @@ private fun VueAction(
                 text = if (action.reussi) {
                     stringResource(R.string.journal_success)
                 } else {
-                    stringResource(R.string.journal_failure, action.message)
+                    stringResource(R.string.journal_failure, action.message.ifBlank { stringResource(R.string.engine_unexplained) })
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = if (action.reussi) {

@@ -82,7 +82,7 @@ class PilotePermissions(
         }
         val resultat = moteurActif.accorderPermission(paquet, permission, lues.demandees)
         if (!resultat.reussi) {
-            afficher(texte(Res.string.msg_failure, resultat.message))
+            afficher(texte(Res.string.msg_failure, resultat.texte()))
             return@agir
         }
         val complement = poserAppOp(paquet, permission, MODE_AUTORISE, moteurActif)
@@ -101,7 +101,7 @@ class PilotePermissions(
     fun retirer() = agir { paquet, permission, moteurActif ->
         val resultat = moteurActif.retirerPermission(paquet, permission)
         if (!resultat.reussi) {
-            afficher(texte(Res.string.msg_failure, resultat.message))
+            afficher(texte(Res.string.msg_failure, resultat.texte()))
             return@agir
         }
         // On rend l'app-op à « default » plutôt qu'à « ignore » : rien ne dit qu'il était refusé
@@ -147,7 +147,7 @@ class PilotePermissions(
                 if (resultat.reussi) {
                     texte(Res.string.msg_undone)
                 } else {
-                    texte(Res.string.msg_failure, resultat.message)
+                    texte(Res.string.msg_failure, resultat.texte())
                 },
             )
             if (paquet == _etat.value.paquet) relire(paquet)
@@ -172,7 +172,7 @@ class PilotePermissions(
         return if (resultat.reussi) {
             texte(Res.string.msg_appop_set, appOp, mode)
         } else {
-            texte(Res.string.msg_appop_failed, appOp, resultat.message)
+            texte(Res.string.msg_appop_failed, appOp, resultat.texte())
         }
     }
 

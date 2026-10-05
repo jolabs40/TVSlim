@@ -1,5 +1,6 @@
 package net.jolabs40.tvslim.remote.ui
 
+import android.content.Context
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,6 +12,8 @@ import net.jolabs40.tvslim.device.PermissionsPaquet
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.TypeAction
 import net.jolabs40.tvslim.moteur.MoteurDebloat
+import net.jolabs40.tvslim.moteur.ResultatAction
+import net.jolabs40.tvslim.remote.R
 
 /**
  * Accorde aux applications du téléviseur les permissions qu'aucune d'elles ne peut s'attribuer
@@ -30,6 +33,7 @@ import net.jolabs40.tvslim.moteur.MoteurDebloat
  * lignes, et la carte des permissions a son propre état, sans rapport avec le reste.
  */
 class PilotePermissions(
+    private val contexte: Context,
     private val lecteur: LecteurDistant,
     private val moteur: () -> MoteurDebloat?,
     private val portee: CoroutineScope,
@@ -56,11 +60,11 @@ class PilotePermissions(
     fun lire() {
         val paquet = _etat.value.paquet
         if (paquet.isBlank()) {
-            afficher("Indiquez le paquet de l'application.")
+            afficher(contexte.getString(R.string.msg_perm_enter_package))
             return
         }
         if (moteur() == null) {
-            afficher("Connectez-vous d'abord à un téléviseur.")
+            afficher(contexte.getString(R.string.msg_connect_first))
             return
         }
         portee.launch { relire(paquet) }
@@ -69,29 +73,35 @@ class PilotePermissions(
     fun accorder() = agir { paquet, permission, moteurActif ->
         val lues = relire(paquet)
         if (!lues.paquetTrouve) {
-            afficher("$paquet est introuvable sur ce téléviseur.")
+            afficher(contexte.getString(R.string.msg_perm_not_found, paquet))
             return@agir
         }
         val resultat = moteurActif.accorderPermission(paquet, permission, lues.demandees)
         if (!resultat.reussi) {
-            afficher("Échec : ${resultat.message}")
+            afficher(echec(resultat))
             return@agir
         }
         val complement = poserAppOp(paquet, permission, MODE_AUTORISE, moteurActif)
-        afficher("$permission accordée.$complement Rouvrez l'application sur le téléviseur.")
+        afficher(
+            phrases(
+                contexte.getString(R.string.msg_perm_granted, permission),
+                complement,
+                contexte.getString(R.string.msg_perm_reopen),
+            ),
+        )
         relire(paquet)
     }
 
     fun retirer() = agir { paquet, permission, moteurActif ->
         val resultat = moteurActif.retirerPermission(paquet, permission)
         if (!resultat.reussi) {
-            afficher("Échec : ${resultat.message}")
+            afficher(echec(resultat))
             return@agir
         }
         // On rend l'app-op à « default » plutôt qu'à « ignore » : rien ne dit qu'il était refusé
         // avant notre passage, et « default » laisse la permission trancher, comme à l'origine.
         val complement = poserAppOp(paquet, permission, MODE_DEFAUT, moteurActif)
-        afficher("$permission retirée.$complement")
+        afficher(phrases(contexte.getString(R.string.msg_perm_revoked, permission), complement))
         relire(paquet)
     }
 
@@ -103,7 +113,7 @@ class PilotePermissions(
         val moteurActif = moteur()
         val morceaux = action.cible.split(' ')
         if (moteurActif == null || morceaux.size != 2) {
-            afficher("Cette action ne s'annule pas depuis ici.")
+            afficher(contexte.getString(R.string.msg_not_undoable))
             return
         }
         portee.launch {
@@ -127,7 +137,7 @@ class PilotePermissions(
                     permissionsDeclarees = lecteur.permissions(paquet).demandees,
                 )
             }
-            afficher(if (resultat.reussi) "Annulé." else "Échec : ${resultat.message}")
+            afficher(if (resultat.reussi) contexte.getString(R.string.msg_undone) else echec(resultat))
             if (paquet == _etat.value.paquet) relire(paquet)
         }
     }
@@ -148,9 +158,9 @@ class PilotePermissions(
 
         val resultat = moteurActif.reglerAppOp(paquet, appOp, mode, actuel)
         return if (resultat.reussi) {
-            " App-op $appOp : $mode."
+            contexte.getString(R.string.msg_appop_set, appOp, mode)
         } else {
-            " App-op $appOp non posé : ${resultat.message}"
+            contexte.getString(R.string.msg_appop_failed, appOp, resultat.texte(contexte))
         }
     }
 
@@ -160,13 +170,18 @@ class PilotePermissions(
         val courant = _etat.value
         val moteurActif = moteur()
         when {
-            moteurActif == null -> afficher("Connectez-vous d'abord à un téléviseur.")
-            !courant.saisieComplete -> afficher("Indiquez le paquet et la permission.")
+            moteurActif == null -> afficher(contexte.getString(R.string.msg_connect_first))
+            !courant.saisieComplete -> afficher(contexte.getString(R.string.msg_perm_enter_both))
             else -> portee.launch {
                 bloc(courant.paquet, courant.permission, moteurActif)
             }
         }
     }
+
+    private fun echec(resultat: ResultatAction): String = contexte.getString(R.string.msg_failure, resultat.texte(contexte))
+
+    /** Des phrases bout à bout, les vides sautées — l'app-op n'a pas toujours quelque chose à dire. */
+    private fun phrases(vararg morceaux: String): String = morceaux.filter { it.isNotBlank() }.joinToString(" ")
 
     /** Relit l'état du paquet — permissions et app-op associé — et le publie. */
     private suspend fun relire(paquet: String): PermissionsPaquet {

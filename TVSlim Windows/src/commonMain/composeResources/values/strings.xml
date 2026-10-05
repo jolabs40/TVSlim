@@ -490,4 +490,22 @@
     <string name="apps_read_send">The device refused the helper that reads names and icons: %1$s</string>
     <string name="apps_read_helper_refused">The helper that reads names and icons did not answer as expected: %1$s</string>
     <string name="apps_read_connection">The device did not answer: %1$s</string>
+
+    <!-- Ce que le moteur dit d'une action (MotifMoteur) -->
+    <string name="engine_absent">Package not on this television.</string>
+    <string name="engine_already_disabled">Already disabled.</string>
+    <string name="engine_unexplained">Failed, with no answer from the television.</string>
+    <string name="engine_invalid_package">Invalid package name: %1$s</string>
+    <string name="engine_invalid_permission">Invalid permission name: %1$s</string>
+    <string name="engine_invalid_appop">Invalid app-op name: %1$s</string>
+    <string name="engine_invalid_component">Invalid component: %1$s</string>
+    <string name="engine_unknown_appop_mode">Unknown app-op mode: %1$s</string>
+    <string name="engine_protected">Protected package: %1$s</string>
+    <string name="engine_no_launcher">No third-party launcher installed: the television would start on an empty screen.</string>
+    <string name="engine_permission_not_requested">%1$s does not request %2$s in its manifest: nothing to grant.</string>
+    <string name="engine_no_activity">No activity to open.</string>
+    <string name="engine_not_user_installed">Not an app that was installed on this device: it cannot be uninstalled.</string>
+    <string name="journal_home">Home screen</string>
+    <string name="files_refused_silent">refused by the television</string>
+    <string name="files_refused_silent_line">%1$s: refused by the television</string>
 </resources>

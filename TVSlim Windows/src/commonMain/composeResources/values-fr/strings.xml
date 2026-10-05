@@ -490,4 +490,22 @@
     <string name="apps_read_send">L'appareil a refusé l'aide qui lit noms et icônes : %1$s</string>
     <string name="apps_read_helper_refused">L'aide qui lit noms et icônes n'a pas répondu comme prévu : %1$s</string>
     <string name="apps_read_connection">L'appareil n'a pas répondu : %1$s</string>
+
+    <!-- Ce que le moteur dit d'une action (MotifMoteur) -->
+    <string name="engine_absent">Paquet absent de ce téléviseur.</string>
+    <string name="engine_already_disabled">Déjà désactivé.</string>
+    <string name="engine_unexplained">Échec, sans réponse du téléviseur.</string>
+    <string name="engine_invalid_package">Nom de paquet invalide : %1$s</string>
+    <string name="engine_invalid_permission">Nom de permission invalide : %1$s</string>
+    <string name="engine_invalid_appop">Nom d'app-op invalide : %1$s</string>
+    <string name="engine_invalid_component">Composant invalide : %1$s</string>
+    <string name="engine_unknown_appop_mode">Mode d'app-op inconnu : %1$s</string>
+    <string name="engine_protected">Paquet protégé : %1$s</string>
+    <string name="engine_no_launcher">Aucun launcher tiers installé : le téléviseur démarrerait sur un écran vide.</string>
+    <string name="engine_permission_not_requested">%1$s ne demande pas %2$s dans son manifeste : rien à accorder.</string>
+    <string name="engine_no_activity">Aucune activité à ouvrir.</string>
+    <string name="engine_not_user_installed">Ce n'est pas une application installée : elle ne se désinstalle pas.</string>
+    <string name="journal_home">Écran d'accueil</string>
+    <string name="files_refused_silent">refusé par le téléviseur</string>
+    <string name="files_refused_silent_line">%1$s : refusé par le téléviseur</string>
 </resources>

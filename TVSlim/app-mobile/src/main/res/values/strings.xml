@@ -362,4 +362,54 @@
     <string name="apps_read_send">The device refused the helper that reads names and icons: %1$s</string>
     <string name="apps_read_helper_refused">The helper that reads names and icons did not answer as expected: %1$s</string>
     <string name="apps_read_connection">The device did not answer: %1$s</string>
+
+    <!-- Connexion et canal ADB -->
+    <string name="connection_waiting">Waiting for the television… If it asks to allow debugging from this device, accept with the remote.</string>
+    <string name="connection_problem_refused">Connection refused: network debugging does not seem to be enabled on the television.</string>
+    <string name="connection_problem_timeout">The television did not answer in time. If it shows an authorisation request, accept it with the remote, then try again.</string>
+    <string name="connection_problem_unauthorized">The television closed the connection. Accept the debugging request with the remote, ticking “Always allow”.</string>
+    <string name="connection_problem_unreachable">Television unreachable: check that it is switched on and connected to the same network as this phone.</string>
+    <string name="connection_problem_other">The connection failed.</string>
+    <string name="adb_no_session">No television connected.</string>
+    <string name="adb_timeout">The television did not answer in time. Check that it is switched on and try again.</string>
+    <string name="adb_send_cancelled">Sending cancelled.</string>
+
+    <!-- Messages du pilote -->
+    <string name="msg_enter_address">Enter the television\'s address.</string>
+    <string name="msg_code_unknown">Code not recognised: %1$s</string>
+    <string name="msg_scan_cancelled">Scan cancelled.</string>
+    <string name="msg_nothing_selected">No package selected.</string>
+    <string name="msg_nothing_to_restore">Nothing to restore on this television.</string>
+    <string name="msg_not_undoable">This action cannot be undone from here.</string>
+    <string name="msg_stopped">%1$s stopped.</string>
+    <string name="msg_failure">Failed: %1$s</string>
+    <string name="msg_journal_exported">Log exported: %1$s</string>
+    <string name="msg_baseline_reset">New starting point recorded.</string>
+    <string name="msg_perm_enter_package">Enter the application\'s package.</string>
+    <string name="msg_perm_enter_both">Enter the package and the permission.</string>
+    <string name="msg_perm_not_found">%1$s is not installed on this television.</string>
+    <string name="msg_perm_granted">%1$s granted.</string>
+    <string name="msg_perm_reopen">Reopen the application on the television.</string>
+    <string name="msg_perm_revoked">%1$s revoked.</string>
+    <string name="msg_appop_set">App-op %1$s: %2$s.</string>
+    <string name="msg_appop_failed">App-op %1$s not set: %2$s</string>
+    <string name="msg_undone">Undone.</string>
+    <string name="result_summary">Succeeded: %1$d/%2$d.</string>
+
+    <!-- Ce que le moteur dit d'une action (MotifMoteur) -->
+    <string name="engine_absent">Package not on this television.</string>
+    <string name="engine_already_disabled">Already disabled.</string>
+    <string name="engine_unexplained">Failed, with no answer from the television.</string>
+    <string name="engine_invalid_package">Invalid package name: %1$s</string>
+    <string name="engine_invalid_permission">Invalid permission name: %1$s</string>
+    <string name="engine_invalid_appop">Invalid app-op name: %1$s</string>
+    <string name="engine_invalid_component">Invalid component: %1$s</string>
+    <string name="engine_unknown_appop_mode">Unknown app-op mode: %1$s</string>
+    <string name="engine_protected">Protected package: %1$s</string>
+    <string name="engine_no_launcher">No third-party launcher installed: the television would start on an empty screen.</string>
+    <string name="engine_permission_not_requested">%1$s does not request %2$s in its manifest: nothing to grant.</string>
+    <string name="engine_no_activity">No activity to open.</string>
+    <string name="engine_not_user_installed">Not an app that was installed on this device: it cannot be uninstalled.</string>
+    <string name="journal_home">Home screen</string>
+    <string name="files_refused_silent">refused by the television</string>
 </resources>

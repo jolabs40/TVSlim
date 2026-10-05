@@ -121,7 +121,8 @@ class NavigateurFichiers(
                     interrompu = true,
                 )
 
-                else -> echecs += EchecDepot(fichier.chemin, reponse.sortie.ifBlank { "Refusé par le téléviseur." })
+                // Vide quand le téléviseur refuse sans un mot : chaque application le dit alors dans sa langue.
+                else -> echecs += EchecDepot(fichier.chemin, reponse.sortie)
             }
         }
         return bilan.copy(envoyes = envoyes, echecs = echecs)
@@ -234,7 +235,7 @@ class NavigateurFichiers(
                     interrompu = true,
                 )
 
-                else -> echecs += EchecDepot(fichier.local, reponse.sortie.ifBlank { "Refusé par le téléviseur." })
+                else -> echecs += EchecDepot(fichier.local, reponse.sortie)
             }
         }
         return bilan.copy(envoyes = copies, echecs = echecs)

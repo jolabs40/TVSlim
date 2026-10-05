@@ -135,13 +135,13 @@ class PiloteApplications(
 
     fun ouvrir(application: ApplicationAppareil) = agir(application) {
         val resultat = actions.ouvrir(application)
-        afficher(if (resultat.reussi) contexte.getString(R.string.apps_opened, application.nom) else echec(resultat.message))
+        afficher(if (resultat.reussi) contexte.getString(R.string.apps_opened, application.nom) else echec(resultat.texte(contexte)))
         false
     }
 
     fun forcerArret(application: ApplicationAppareil) = agir(application) {
         val resultat = moteur()?.forcerArret(application.paquet) ?: return@agir false
-        afficher(if (resultat.reussi) contexte.getString(R.string.apps_stopped, application.nom) else echec(resultat.message))
+        afficher(if (resultat.reussi) contexte.getString(R.string.apps_stopped, application.nom) else echec(resultat.texte(contexte)))
         false
     }
 
@@ -152,7 +152,7 @@ class PiloteApplications(
 
     fun reactiver(application: ApplicationAppareil) = agir(application) {
         val resultat = moteur()?.reactiver(listOf(application.paquet))?.singleOrNull() ?: return@agir false
-        afficher(if (resultat.reussi) contexte.getString(R.string.apps_enabled_done, application.nom) else echec(resultat.message))
+        afficher(if (resultat.reussi) contexte.getString(R.string.apps_enabled_done, application.nom) else echec(resultat.texte(contexte)))
         resultat.reussi
     }
 
@@ -178,7 +178,7 @@ class PiloteApplications(
                 )
                 val resultat = resultats.single()
                 afficher(
-                    if (resultat.reussi) contexte.getString(R.string.apps_disabled_done, demande.application.nom) else echec(resultat.message),
+                    if (resultat.reussi) contexte.getString(R.string.apps_disabled_done, demande.application.nom) else echec(resultat.texte(contexte)),
                 )
                 if (InvitationSoutien.merite(resultats)) remercier()
                 resultat.reussi
@@ -187,7 +187,7 @@ class PiloteApplications(
             is ConfirmationApplication.Desinstallation -> agir(demande.application) {
                 val resultat = actions.desinstaller(demande.application)
                 afficher(
-                    if (resultat.reussi) contexte.getString(R.string.apps_uninstalled, demande.application.nom) else echec(resultat.message),
+                    if (resultat.reussi) contexte.getString(R.string.apps_uninstalled, demande.application.nom) else echec(resultat.texte(contexte)),
                 )
                 resultat.reussi
             }

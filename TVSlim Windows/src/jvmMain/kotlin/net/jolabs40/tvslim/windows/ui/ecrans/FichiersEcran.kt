@@ -86,6 +86,7 @@ import net.jolabs40.tvslim.windows.ressources.baseline_link_24
 import net.jolabs40.tvslim.windows.ressources.baseline_refresh_24
 import net.jolabs40.tvslim.windows.ressources.baseline_upload_file_24
 import net.jolabs40.tvslim.windows.ressources.baseline_usb_24
+import net.jolabs40.tvslim.windows.ressources.files_refused_silent
 import net.jolabs40.tvslim.windows.ressources.files_copy
 import net.jolabs40.tvslim.windows.ressources.files_copying
 import net.jolabs40.tvslim.windows.ressources.files_create
@@ -406,6 +407,8 @@ private fun DerniereCopie(resultat: ResultatDepot, onOuvrirDossierLocal: (String
 /** Ce que le dernier envoi n'a pas déposé, et pourquoi : la bannière passe, la liste reste jusqu'au suivant. */
 @Composable
 private fun Echecs(resultat: ResultatDepot) {
+    // Un refus sans un mot du téléviseur se dit dans la langue de l'écran.
+    val refuse = stringResource(Res.string.files_refused_silent)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -424,7 +427,7 @@ private fun Echecs(resultat: ResultatDepot) {
             )
             SelectionContainer {
                 Text(
-                    text = resultat.echecs.take(ECHECS_MAX).joinToString("\n") { "${it.chemin} : ${it.motif}" },
+                    text = resultat.echecs.take(ECHECS_MAX).joinToString("\n") { "${it.chemin} : ${it.motif.ifBlank { refuse }}" },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )

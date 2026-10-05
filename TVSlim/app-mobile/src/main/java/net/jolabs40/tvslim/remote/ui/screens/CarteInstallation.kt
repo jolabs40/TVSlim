@@ -119,12 +119,15 @@ private fun Bilan(resultat: ResultatInstallation) {
             )
             if (resultat is ResultatInstallation.Echouee) {
                 Text(text = stringResource(resultat.cause.ressource()), style = MaterialTheme.typography.bodyMedium)
-                SelectionContainer {
-                    Text(
-                        text = resultat.detail,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                // Vide quand le téléviseur n'a rien répondu : la cause suffit.
+                if (resultat.detail.isNotBlank()) {
+                    SelectionContainer {
+                        Text(
+                            text = resultat.detail,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

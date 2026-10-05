@@ -73,7 +73,7 @@ class MoteurDebloatTest {
         )
 
         assertFalse(resultats.single().reussi)
-        assertTrue(resultats.single().message.contains("protégé"))
+        assertTrue(resultats.single().motif is MotifMoteur.Protege)
         assertTrue("Aucune commande ne doit partir : ${espion.commandes}", espion.commandes.isEmpty())
     }
 
@@ -90,6 +90,7 @@ class MoteurDebloatTest {
         )
 
         assertFalse(resultats.single().reussi)
+        assertEquals(MotifMoteur.SansLauncherTiers, resultats.single().motif)
         assertTrue(espion.commandes.isEmpty())
     }
 

@@ -362,4 +362,54 @@
     <string name="apps_read_send">L\'appareil a refusé l\'aide qui lit noms et icônes : %1$s</string>
     <string name="apps_read_helper_refused">L\'aide qui lit noms et icônes n\'a pas répondu comme prévu : %1$s</string>
     <string name="apps_read_connection">L\'appareil n\'a pas répondu : %1$s</string>
+
+    <!-- Connexion et canal ADB -->
+    <string name="connection_waiting">En attente du téléviseur… S\'il demande d\'autoriser le débogage depuis cet appareil, acceptez à la télécommande.</string>
+    <string name="connection_problem_refused">Connexion refusée : le débogage réseau ne semble pas activé sur le téléviseur.</string>
+    <string name="connection_problem_timeout">Le téléviseur n\'a pas répondu à temps. S\'il affiche une demande d\'autorisation, acceptez-la à la télécommande, puis réessayez.</string>
+    <string name="connection_problem_unauthorized">Le téléviseur a fermé la connexion. Acceptez la demande de débogage à la télécommande, en cochant « Toujours autoriser ».</string>
+    <string name="connection_problem_unreachable">Téléviseur injoignable : vérifiez qu\'il est allumé et branché au même réseau que ce téléphone.</string>
+    <string name="connection_problem_other">La connexion a échoué.</string>
+    <string name="adb_no_session">Aucun téléviseur connecté.</string>
+    <string name="adb_timeout">Le téléviseur n\'a pas répondu à temps. Vérifiez qu\'il est allumé et réessayez.</string>
+    <string name="adb_send_cancelled">Envoi annulé.</string>
+
+    <!-- Messages du pilote -->
+    <string name="msg_enter_address">Renseignez l\'adresse du téléviseur.</string>
+    <string name="msg_code_unknown">Code non reconnu : %1$s</string>
+    <string name="msg_scan_cancelled">Lecture annulée.</string>
+    <string name="msg_nothing_selected">Aucun paquet sélectionné.</string>
+    <string name="msg_nothing_to_restore">Rien à restaurer sur ce téléviseur.</string>
+    <string name="msg_not_undoable">Cette action ne s\'annule pas depuis ici.</string>
+    <string name="msg_stopped">%1$s arrêté.</string>
+    <string name="msg_failure">Échec : %1$s</string>
+    <string name="msg_journal_exported">Journal exporté : %1$s</string>
+    <string name="msg_baseline_reset">Nouveau point de départ enregistré.</string>
+    <string name="msg_perm_enter_package">Indiquez le paquet de l\'application.</string>
+    <string name="msg_perm_enter_both">Indiquez le paquet et la permission.</string>
+    <string name="msg_perm_not_found">%1$s est introuvable sur ce téléviseur.</string>
+    <string name="msg_perm_granted">%1$s accordée.</string>
+    <string name="msg_perm_reopen">Rouvrez l\'application sur le téléviseur.</string>
+    <string name="msg_perm_revoked">%1$s retirée.</string>
+    <string name="msg_appop_set">App-op %1$s : %2$s.</string>
+    <string name="msg_appop_failed">App-op %1$s non posé : %2$s</string>
+    <string name="msg_undone">Annulé.</string>
+    <string name="result_summary">Réussis : %1$d/%2$d.</string>
+
+    <!-- Ce que le moteur dit d'une action (MotifMoteur) -->
+    <string name="engine_absent">Paquet absent de ce téléviseur.</string>
+    <string name="engine_already_disabled">Déjà désactivé.</string>
+    <string name="engine_unexplained">Échec, sans réponse du téléviseur.</string>
+    <string name="engine_invalid_package">Nom de paquet invalide : %1$s</string>
+    <string name="engine_invalid_permission">Nom de permission invalide : %1$s</string>
+    <string name="engine_invalid_appop">Nom d\'app-op invalide : %1$s</string>
+    <string name="engine_invalid_component">Composant invalide : %1$s</string>
+    <string name="engine_unknown_appop_mode">Mode d\'app-op inconnu : %1$s</string>
+    <string name="engine_protected">Paquet protégé : %1$s</string>
+    <string name="engine_no_launcher">Aucun launcher tiers installé : le téléviseur démarrerait sur un écran vide.</string>
+    <string name="engine_permission_not_requested">%1$s ne demande pas %2$s dans son manifeste : rien à accorder.</string>
+    <string name="engine_no_activity">Aucune activité à ouvrir.</string>
+    <string name="engine_not_user_installed">Ce n\'est pas une application installée : elle ne se désinstalle pas.</string>
+    <string name="journal_home">Écran d\'accueil</string>
+    <string name="files_refused_silent">refusé par le téléviseur</string>
 </resources>

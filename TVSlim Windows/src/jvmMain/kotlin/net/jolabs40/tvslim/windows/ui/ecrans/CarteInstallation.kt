@@ -120,7 +120,8 @@ private fun Bilan(resultat: ResultatInstallation) {
             TexteSecondaire(identite(resultat.apk), petit = true)
             if (resultat is ResultatInstallation.Echouee) {
                 Text(text = stringResource(resultat.cause.ressource()), style = MaterialTheme.typography.bodyMedium)
-                SelectionContainer { TexteSecondaire(resultat.detail, petit = true) }
+                // Vide quand le téléviseur n'a rien répondu : la cause suffit.
+                if (resultat.detail.isNotBlank()) SelectionContainer { TexteSecondaire(resultat.detail, petit = true) }
             }
         }
     }

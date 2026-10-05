@@ -114,7 +114,8 @@ class InstallationApk(
     ): ResultatInstallation {
         val sortie = installateur.installer(apk.fichier, surEnvoi)
         val reussie = sortie.reussi && sortie.sortie.contains("Success")
-        val detail = sortie.sortie.ifBlank { "Échec inexpliqué." }
+        // Vide quand le téléviseur n'a rien dit : la cause typée suffit alors à l'écran.
+        val detail = sortie.sortie
 
         val version = apk.manifeste.versionName.takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty()
         journal.ajouter(

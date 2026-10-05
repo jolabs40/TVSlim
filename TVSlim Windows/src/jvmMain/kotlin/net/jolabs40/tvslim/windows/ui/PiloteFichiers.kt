@@ -23,6 +23,7 @@ import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.fichiers.CibleDisque
 import net.jolabs40.tvslim.windows.fichiers.lotDepuis
 import net.jolabs40.tvslim.windows.ressources.Res
+import net.jolabs40.tvslim.windows.ressources.files_refused_silent_line
 import net.jolabs40.tvslim.windows.ressources.files_busy
 import net.jolabs40.tvslim.windows.ressources.files_content_denied
 import net.jolabs40.tvslim.windows.ressources.files_content_failed
@@ -115,7 +116,9 @@ class PiloteFichiers(
 
         is SignalFichiers.Depot -> MessageUi.Lignes(
             listOf(bilan(resultat)) +
-                resultat.echecs.take(MAX_ECHECS).map { MessageUi.Brut("${it.chemin} : ${it.motif}") },
+                resultat.echecs.take(MAX_ECHECS).map {
+                    if (it.motif.isBlank()) texte(Res.string.files_refused_silent_line, it.chemin) else MessageUi.Brut("${it.chemin} : ${it.motif}")
+                },
         )
 
         is SignalFichiers.ContenuIllisible -> when (refus) {

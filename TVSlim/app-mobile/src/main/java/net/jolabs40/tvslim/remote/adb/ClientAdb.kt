@@ -1,10 +1,12 @@
 package net.jolabs40.tvslim.remote.adb
 
+import android.content.Context
 import android.util.Log
 import dadb.AdbShellPacket
 import dadb.Dadb
 import dadb.InstallResult
 import dadb.SyncResult
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -15,8 +17,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import net.jolabs40.tvslim.commande.ConsoleAdb
+import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.shell.EnvoyeurFichiers
 import net.jolabs40.tvslim.shell.ExecuteurCommande
 import net.jolabs40.tvslim.shell.ExecuteurDirect
@@ -41,11 +43,16 @@ import javax.inject.Singleton
 
 enum class EtatConnexion { DECONNECTE, CONNEXION, CONNECTE, ERREUR }
 
+/** Pourquoi la connexion n'a pas abouti : l'écran le dit, dans la langue de la personne. */
+enum class ProblemeConnexion { REFUSEE, DELAI, NON_AUTORISEE, INJOIGNABLE, AUTRE }
+
 data class ConnexionUi(
     val etat: EtatConnexion = EtatConnexion.DECONNECTE,
     val hote: String = "",
     val port: Int = PORT_ADB_PAR_DEFAUT,
-    val message: String = "",
+    val probleme: ProblemeConnexion? = null,
+    /** Le message technique d'origine, affiché en petit sous l'explication. */
+    val detail: String = "",
 )
 
 const val PORT_ADB_PAR_DEFAUT = 5555
@@ -60,9 +67,16 @@ const val PORT_ADB_PAR_DEFAUT = 5555
  * C'est précisément ce qui manque à un service privilégié local, qui meurt à chaque extinction.
  *
  * La clé privée ne quitte jamais l'appareil, et y dort chiffrée (voir [DepotCles]).
+ *
+ * Deux leçons de dadb, apprises pour la version Windows et reprises ici :
+ *  - dadb n'ouvre la connexion qu'à la première commande. On la provoque dès [connecter], pour ne
+ *    pas afficher « connecté » avant que le téléviseur ait accepté quoi que ce soit ;
+ *  - un `withTimeout` n'interrompt pas une lecture de socket bloquée : les délais maximaux sont
+ *    tenus par [sousSurveillance], qui ferme la session depuis une autre coroutine.
  */
 @Singleton
 class ClientAdb @Inject constructor(
+    @ApplicationContext private val contexte: Context,
     private val depotCles: DepotCles,
 ) : ExecuteurCommande, InstallateurApk, ExecuteurDirect, EnvoyeurFichiers, LecteurBinaire {
 
@@ -70,6 +84,8 @@ class ClientAdb @Inject constructor(
     val connexion: StateFlow<ConnexionUi> = _connexion.asStateFlow()
 
     private val verrou = Mutex()
+
+    @Volatile
     private var session: Dadb? = null
 
     /** Le dernier téléviseur joint volontairement : c'est vers lui que va toute reprise. */
@@ -79,9 +95,9 @@ class ClientAdb @Inject constructor(
     private var dernierEchecReprise = 0L
 
     /**
-     * Ouvre la connexion. [discret] sert aux tentatives que personne n'a demandées — au retour
-     * dans l'application, par exemple : un échec y est banal (téléviseur éteint) et ne mérite
-     * pas d'afficher une erreur en travers de l'écran.
+     * Ouvre la connexion et attend que le téléviseur l'accepte. [discret] sert aux tentatives que
+     * personne n'a demandées — au retour dans l'application, par exemple : un échec y est banal
+     * (téléviseur éteint) et ne mérite pas d'afficher une erreur en travers de l'écran.
      */
     suspend fun connecter(
         hote: String,
@@ -91,29 +107,38 @@ class ClientAdb @Inject constructor(
         verrou.withLock {
             fermerSession()
             _connexion.value = ConnexionUi(EtatConnexion.CONNEXION, hote, port)
-            try {
-                val delai = if (discret) DELAI_REPRISE_MS else DELAI_CONNEXION_MS
-                val ouverte = withTimeoutOrNull(delai) {
-                    Dadb.create(hote, port, depotCles.paire())
-                } ?: throw java.net.SocketTimeoutException(MESSAGE_ATTENTE_AUTORISATION)
-                session = ouverte
-                cible = hote to port
-                dernierEchecReprise = 0L
-                _connexion.value = ConnexionUi(EtatConnexion.CONNECTE, hote, port)
-                true
-            } catch (erreur: Throwable) {
-                Log.w(TAG, "Connexion impossible" + detail("$hote:$port"), erreur)
-                _connexion.value = if (discret) {
-                    ConnexionUi(EtatConnexion.DECONNECTE, hote, port)
-                } else {
-                    ConnexionUi(EtatConnexion.ERREUR, hote, port, diagnostic(erreur))
+            val delai = if (discret) DELAI_REPRISE_MS else DELAI_CONNEXION_MS
+            when (val issue = ouvrir(hote, port, delai)) {
+                is Ouverture.Reussie -> {
+                    session = issue.session
+                    cible = hote to port
+                    dernierEchecReprise = 0L
+                    _connexion.value = ConnexionUi(EtatConnexion.CONNECTE, hote, port)
+                    true
                 }
-                false
+
+                is Ouverture.Echouee -> {
+                    Log.w(TAG, "Connexion impossible" + detail("$hote:$port"), issue.erreur)
+                    _connexion.value = if (discret) {
+                        ConnexionUi(EtatConnexion.DECONNECTE, hote, port)
+                    } else {
+                        ConnexionUi(
+                            etat = EtatConnexion.ERREUR,
+                            hote = hote,
+                            port = port,
+                            probleme = issue.probleme,
+                            detail = issue.erreur.message.orEmpty(),
+                        )
+                    }
+                    false
+                }
             }
         }
     }
 
     fun deconnecter() {
+        // Sans le verrou, exprès : fermer la socket est justement ce qui débloque une commande
+        // en attente, et le verrou est tenu pendant ce temps.
         fermerSession()
         // Se déconnecter est un choix : rien ne doit rouvrir la session dans le dos.
         cible = null
@@ -155,13 +180,13 @@ class ClientAdb @Inject constructor(
             is Issue.Repondu -> premiere.resultat
             is Issue.Rompue ->
                 if (!reprendre()) {
-                    signalerRupture(premiere.motif)
+                    signalerRupture(premiere)
                     ResultatShell.indisponible(premiere.motif)
                 } else {
                     when (val seconde = tenter(commande)) {
                         is Issue.Repondu -> seconde.resultat
                         is Issue.Rompue -> {
-                            signalerRupture(seconde.motif)
+                            signalerRupture(seconde)
                             ResultatShell.indisponible(seconde.motif)
                         }
                     }
@@ -174,18 +199,14 @@ class ClientAdb @Inject constructor(
      *
      * Hors du chemin d'[executer], exprès : un envoi de plusieurs dizaines de mégaoctets ne se rejoue pas
      * dans le dos de la personne. Une session tombée avant l'envoi est rouverte ; une rupture pendant
-     * l'envoi est rapportée.
-     *
-     * Le délai maximal est réel, lui : `withTimeoutOrNull` n'interrompt pas une écriture de socket
-     * bloquée, alors un chien de garde ferme la session depuis une autre coroutine — ce que la version
-     * Windows fait pour toutes ses commandes. Il suit la taille du fichier, et laisse à Android le temps de
+     * l'envoi est rapportée. Le délai maximal suit la taille du fichier, et laisse à Android le temps de
      * vérifier l'application.
      */
     override suspend fun installer(apk: File, surEnvoi: (envoye: Long, total: Long) -> Unit): ResultatShell =
         withContext(Dispatchers.IO) {
             verrou.withLock {
                 if (session == null) reprendre()
-                val active = session ?: return@withLock ResultatShell.indisponible("Aucun téléviseur connecté.")
+                val active = session ?: return@withLock ResultatShell.indisponible(motifAucuneSession())
                 val total = apk.length()
                 val delai = DELAI_INSTALLATION_MS + total / OCTETS_PAR_MO * DELAI_PAR_MO_MS
 
@@ -203,9 +224,9 @@ class ClientAdb @Inject constructor(
                     onFailure = { erreur ->
                         Log.w(TAG, "Installation interrompue" + detail(apk.name), erreur)
                         fermerSession()
-                        val message = if (erreur is DelaiDepasse) MESSAGE_DELAI else diagnostic(erreur)
-                        signalerRupture(message)
-                        ResultatShell.indisponible(message)
+                        val rupture = rupture(erreur, delaiDepasse = erreur is DelaiDepasse)
+                        signalerRupture(rupture)
+                        ResultatShell.indisponible(rupture.motif)
                     },
                 )
             }
@@ -229,7 +250,7 @@ class ClientAdb @Inject constructor(
         source.use { flux ->
             verrou.withLock {
                 if (session == null) reprendre()
-                val active = session ?: return@withLock ResultatShell.indisponible("Aucun téléviseur connecté.")
+                val active = session ?: return@withLock ResultatShell.indisponible(motifAucuneSession())
                 val activite = AtomicLong(System.currentTimeMillis())
 
                 sousVeille(active, activite, DELAI_SILENCE_MS) {
@@ -245,13 +266,13 @@ class ClientAdb @Inject constructor(
                     },
                     onFailure = { erreur ->
                         if (erreur is EnvoiAnnule) {
-                            ResultatShell.indisponible(MESSAGE_ANNULE)
+                            ResultatShell.indisponible(contexte.getString(R.string.adb_send_cancelled))
                         } else {
                             Log.w(TAG, "Envoi interrompu" + detail(chemin), erreur)
                             fermerSession()
-                            val message = if (erreur is SilenceProlonge) MESSAGE_DELAI else diagnostic(erreur)
-                            signalerRupture(message)
-                            ResultatShell.indisponible(message)
+                            val rupture = rupture(erreur, delaiDepasse = erreur is SilenceProlonge)
+                            signalerRupture(rupture)
+                            ResultatShell.indisponible(rupture.motif)
                         }
                     },
                 )
@@ -272,7 +293,7 @@ class ClientAdb @Inject constructor(
         verrou.withLock {
             if (session == null) reprendre()
             val active = session
-                ?: return@withLock ReponseDirecte(null, "", Interruption.CONNEXION, "Aucun téléviseur connecté.")
+                ?: return@withLock ReponseDirecte(null, "", Interruption.CONNEXION, motifAucuneSession())
             val recue = ByteArrayOutputStream()
             var code: Int? = null
 
@@ -291,11 +312,11 @@ class ClientAdb @Inject constructor(
                     Log.w(TAG, "Commande libre interrompue" + detail(commande), erreur)
                     fermerSession()
                     if (erreur is DelaiDepasse) {
-                        ReponseDirecte(null, texteDe(recue), Interruption.DELAI, "délai dépassé")
+                        ReponseDirecte(null, texteDe(recue), Interruption.DELAI, motifDelai())
                     } else {
-                        val message = diagnostic(erreur)
-                        signalerRupture(message)
-                        ReponseDirecte(null, texteDe(recue), Interruption.CONNEXION, message)
+                        val rupture = rupture(erreur, delaiDepasse = false)
+                        signalerRupture(rupture)
+                        ReponseDirecte(null, texteDe(recue), Interruption.CONNEXION, rupture.motif)
                     }
                 },
             )
@@ -310,7 +331,7 @@ class ClientAdb @Inject constructor(
     override suspend fun lireBinaire(commande: String): SortieBinaire = withContext(Dispatchers.IO) {
         verrou.withLock {
             if (session == null) reprendre()
-            val active = session ?: return@withLock SortieBinaire(null, ByteArray(0), motif = "Aucun téléviseur connecté.")
+            val active = session ?: return@withLock SortieBinaire(null, ByteArray(0), motif = motifAucuneSession())
             val sortie = ByteArrayOutputStream()
             val erreurs = ByteArrayOutputStream()
             var code: Int? = null
@@ -331,11 +352,11 @@ class ClientAdb @Inject constructor(
                     Log.w(TAG, "Lecture binaire interrompue" + detail(commande), erreur)
                     fermerSession()
                     if (erreur is DelaiDepasse) {
-                        SortieBinaire(null, ByteArray(0), motif = MESSAGE_DELAI)
+                        SortieBinaire(null, ByteArray(0), motif = motifDelai())
                     } else {
-                        val message = diagnostic(erreur)
-                        signalerRupture(message)
-                        SortieBinaire(null, ByteArray(0), motif = message)
+                        val rupture = rupture(erreur, delaiDepasse = false)
+                        signalerRupture(rupture)
+                        SortieBinaire(null, ByteArray(0), motif = rupture.motif)
                     }
                 },
             )
@@ -344,60 +365,42 @@ class ClientAdb @Inject constructor(
 
     private fun texteDe(octets: ByteArrayOutputStream): String = String(octets.toByteArray(), Charsets.UTF_8).trimEnd()
 
-    /**
-     * Exécute un appel bloquant de dadb avec un **vrai** délai maximal : `withTimeoutOrNull` n'interrompt
-     * pas une lecture de socket, fermer la session depuis une autre coroutine si. Repris de la version
-     * Windows, pour les deux chemins qui ne se rejouent pas — l'installation et la commande libre.
-     */
-    private suspend fun <T> sousSurveillance(active: Dadb, delaiMs: Long, appel: () -> T): Result<T> = coroutineScope {
-        val depasse = AtomicBoolean(false)
-        val chien = launch {
-            delay(delaiMs)
-            depasse.set(true)
-            runCatching { active.close() }
-        }
-        try {
-            Result.success(appel())
-        } catch (erreur: Exception) {
-            Result.failure(if (depasse.get()) DelaiDepasse(erreur) else erreur)
-        } finally {
-            chien.cancel()
-        }
+    private sealed interface Ouverture {
+        data class Reussie(val session: Dadb) : Ouverture
+        data class Echouee(val erreur: Throwable, val probleme: ProblemeConnexion) : Ouverture
     }
-
-    private class DelaiDepasse(cause: Throwable) : IOException("délai dépassé", cause)
 
     /** Ce qu'une commande a donné : une réponse, ou une session à rouvrir. */
     private sealed interface Issue {
         data class Repondu(val resultat: ResultatShell) : Issue
-        data class Rompue(val motif: String) : Issue
+        data class Rompue(val motif: String, val probleme: ProblemeConnexion) : Issue
+    }
+
+    private suspend fun ouvrir(hote: String, port: Int, delaiMs: Long): Ouverture {
+        val ouverte = try {
+            // La socket attend jusqu'à DELAI_CONNEXION_MS : le temps qu'on accepte la demande sur
+            // le téléviseur. Le délai plus court d'une reprise est tenu par la surveillance.
+            Dadb.create(hote, port, depotCles.paire(), DELAI_TCP_MS, DELAI_CONNEXION_MS.toInt())
+        } catch (erreur: Exception) {
+            return Ouverture.Echouee(erreur, diagnostic(erreur))
+        }
+        // Un aller-retour anodin force la poignée de main — et donc l'autorisation — maintenant.
+        return sousSurveillance(ouverte, delaiMs) { ouverte.shell("echo tvslim") }.fold(
+            onSuccess = { Ouverture.Reussie(ouverte) },
+            onFailure = { erreur ->
+                runCatching { ouverte.close() }
+                Ouverture.Echouee(erreur, diagnostic(erreur))
+            },
+        )
     }
 
     private suspend fun tenter(commande: String): Issue {
-        val active = session ?: return Issue.Rompue("Aucun téléviseur connecté.")
+        val active = session ?: return Issue.Rompue(motifAucuneSession(), ProblemeConnexion.AUTRE)
 
-        // Sans délai maximal, un téléviseur qui se fige ou s'endort en pleine commande
-        // bloquerait l'application pour toujours — et le verrou avec elle. Fermer la
-        // session est ce qui débloque réellement la lecture en cours.
-        val reponse = withTimeoutOrNull(DELAI_COMMANDE_MS) {
-            runCatching { active.shell(commande) }
-        }
-
-        return when {
-            reponse == null -> {
-                Log.w(TAG, "Délai dépassé" + detail(commande))
-                fermerSession()
-                Issue.Rompue(MESSAGE_DELAI)
-            }
-
-            reponse.isFailure -> {
-                val erreur = reponse.exceptionOrNull() ?: IllegalStateException()
-                Log.w(TAG, "Commande refusée" + detail(commande), erreur)
-                fermerSession()
-                Issue.Rompue(diagnostic(erreur))
-            }
-
-            else -> reponse.getOrThrow().let { sortie ->
+        // Sans délai maximal réel, un téléviseur qui se fige ou s'endort en pleine commande
+        // bloquerait l'application pour toujours — et le verrou avec elle.
+        return sousSurveillance(active, DELAI_COMMANDE_MS) { active.shell(commande) }.fold(
+            onSuccess = { sortie ->
                 Issue.Repondu(
                     ResultatShell(
                         code = sortie.exitCode,
@@ -407,8 +410,14 @@ class ClientAdb @Inject constructor(
                             .trim(),
                     ),
                 )
-            }
-        }
+            },
+            onFailure = { erreur ->
+                val delaiDepasse = erreur is DelaiDepasse
+                Log.w(TAG, (if (delaiDepasse) "Délai dépassé" else "Commande interrompue") + detail(commande), erreur)
+                fermerSession()
+                rupture(erreur, delaiDepasse)
+            },
+        )
     }
 
     /**
@@ -425,21 +434,64 @@ class ClientAdb @Inject constructor(
 
         Log.i(TAG, "Session rompue, reprise" + detail("$hote:$port"))
         _connexion.value = _connexion.value.copy(etat = EtatConnexion.CONNEXION)
-        val ouverte = withTimeoutOrNull(DELAI_REPRISE_MS) {
-            runCatching { Dadb.create(hote, port, depotCles.paire()) }.getOrNull()
+        return when (val issue = ouvrir(hote, port, DELAI_REPRISE_MS)) {
+            is Ouverture.Reussie -> {
+                session = issue.session
+                dernierEchecReprise = 0L
+                _connexion.value = ConnexionUi(EtatConnexion.CONNECTE, hote, port)
+                true
+            }
+
+            is Ouverture.Echouee -> {
+                Log.w(TAG, "Reprise impossible" + detail("$hote:$port"), issue.erreur)
+                dernierEchecReprise = maintenant
+                false
+            }
         }
-        if (ouverte == null) {
-            dernierEchecReprise = maintenant
-            return false
-        }
-        session = ouverte
-        dernierEchecReprise = 0L
-        _connexion.value = ConnexionUi(EtatConnexion.CONNECTE, hote, port)
-        return true
     }
 
-    private fun signalerRupture(message: String) {
-        _connexion.value = _connexion.value.copy(etat = EtatConnexion.ERREUR, message = message)
+    /**
+     * Exécute un appel bloquant de dadb avec un **vrai** délai maximal.
+     *
+     * `withTimeout` n'y suffit pas : il annule la coroutine, pas la lecture de socket en cours,
+     * qui continuerait d'attendre — verrou tenu, application figée. Fermer la session depuis une
+     * autre coroutine, si : la lecture lève aussitôt une exception, rendue ici en [DelaiDepasse].
+     */
+    private suspend fun <T> sousSurveillance(active: Dadb, delaiMs: Long, appel: () -> T): Result<T> = coroutineScope {
+        val depasse = AtomicBoolean(false)
+        val chien = launch(Dispatchers.IO) {
+            delay(delaiMs)
+            depasse.set(true)
+            runCatching { active.close() }
+        }
+        try {
+            Result.success(appel())
+        } catch (erreur: Exception) {
+            Result.failure(if (depasse.get()) DelaiDepasse(erreur) else erreur)
+        } finally {
+            chien.cancel()
+        }
+    }
+
+    private class DelaiDepasse(cause: Throwable) : IOException("délai dépassé", cause)
+
+    /** Une session perdue : le motif, dans la langue de la personne, et sa cause pour l'écran de connexion. */
+    private fun rupture(erreur: Throwable, delaiDepasse: Boolean): Issue.Rompue =
+        if (delaiDepasse) {
+            Issue.Rompue(motifDelai(), ProblemeConnexion.DELAI)
+        } else {
+            Issue.Rompue(
+                erreur.message?.takeIf { it.isNotBlank() } ?: erreur.javaClass.simpleName,
+                diagnostic(erreur),
+            )
+        }
+
+    private fun signalerRupture(issue: Issue.Rompue) {
+        _connexion.value = _connexion.value.copy(
+            etat = EtatConnexion.ERREUR,
+            probleme = issue.probleme,
+            detail = issue.motif,
+        )
     }
 
     private fun fermerSession() {
@@ -447,38 +499,28 @@ class ClientAdb @Inject constructor(
         session = null
     }
 
-    /**
-     * Traduit les échecs les plus courants. Le premier est le plus fréquent : la demande
-     * d'autorisation attend sur le téléviseur, personne ne l'a validée.
-     */
-    private fun diagnostic(erreur: Throwable): String {
-        val texte = erreur.message.orEmpty()
-        return when {
-            texte.contains("Connection refused", ignoreCase = true) ->
-                "Connexion refusée : le débogage ADB réseau est-il activé sur le téléviseur ?"
+    private fun diagnostic(erreur: Throwable): ProblemeConnexion =
+        diagnostiquer(erreur, delaiDepasse = erreur is DelaiDepasse)
 
-            texte.contains("timed out", ignoreCase = true) ||
-                texte.contains("timeout", ignoreCase = true) ->
-                "Délai dépassé. Si le téléviseur affiche une demande d'autorisation, acceptez-la " +
-                    "à la télécommande, puis réessayez."
+    // Ces motifs remontent dans les résultats du moteur, à côté des réponses du téléviseur.
+    private fun motifAucuneSession(): String = contexte.getString(R.string.adb_no_session)
 
-            texte.contains("unauthorized", ignoreCase = true) ->
-                "Autorisation refusée par le téléviseur. Acceptez la demande de débogage, en " +
-                    "cochant « Toujours autoriser »."
-
-            texte.isBlank() -> erreur.javaClass.simpleName
-            else -> texte
-        }
-    }
+    private fun motifDelai(): String = contexte.getString(R.string.adb_timeout)
 
     private companion object {
         const val TAG = "TVSlim/Adb"
 
+        /** Ouverture TCP : un téléviseur allumé sur le réseau local répond en quelques millisecondes. */
+        const val DELAI_TCP_MS = 5_000
+
         /** Large : la connexion attend que quelqu'un accepte la demande sur le téléviseur. */
         const val DELAI_CONNEXION_MS = 45_000L
 
-        /** Une commande de gestion de paquets répond en quelques dizaines de millisecondes. */
-        const val DELAI_COMMANDE_MS = 20_000L
+        /**
+         * Une commande de gestion de paquets répond en quelques dizaines de millisecondes ;
+         * `dumpsys meminfo` peut demander plusieurs secondes sur un petit boîtier. Comme Windows.
+         */
+        const val DELAI_COMMANDE_MS = 30_000L
 
         /** Court : une reprise ne demande aucune validation, elle aboutit ou l'appareil dort. */
         const val DELAI_REPRISE_MS = 12_000L
@@ -504,14 +546,6 @@ class ClientAdb @Inject constructor(
 
         /** `-r` remplace une version en place en gardant ses données ; `-t` admet une build de test. */
         val OPTIONS_INSTALLATION = arrayOf("-r", "-t")
-
-        const val MESSAGE_ANNULE = "Envoi annulé."
-
-        const val MESSAGE_DELAI =
-            "Le téléviseur n'a pas répondu à temps. Vérifiez qu'il est allumé et réessayez."
-
-        const val MESSAGE_ATTENTE_AUTORISATION =
-            "timed out: la demande d'autorisation attend peut-être sur le téléviseur."
     }
 }
 

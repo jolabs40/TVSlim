@@ -30,7 +30,7 @@ sealed interface MessageUi {
     data class Bilan(
         val succes: Int,
         val total: Int,
-        val echecs: List<Pair<String, String>>,
+        val echecs: List<Pair<String, MessageUi>>,
     ) : MessageUi
 }
 
@@ -47,6 +47,6 @@ suspend fun MessageUi.rediger(): String = when (this) {
     is MessageUi.Lignes -> lignes.map { it.rediger() }.filter { it.isNotBlank() }.joinToString("\n")
     is MessageUi.Bilan -> buildString {
         append(getString(Res.string.result_summary, succes, total))
-        echecs.forEach { (nom, motif) -> append("\n").append(nom).append(" : ").append(motif) }
+        echecs.forEach { (nom, motif) -> append("\n").append(nom).append(" : ").append(motif.rediger()) }
     }
 }

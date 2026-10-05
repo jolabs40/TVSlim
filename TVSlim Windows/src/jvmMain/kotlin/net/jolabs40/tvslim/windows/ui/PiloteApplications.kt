@@ -18,6 +18,7 @@ import net.jolabs40.tvslim.applications.ResultatLecture
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.moteur.MoteurDebloat
+import net.jolabs40.tvslim.moteur.ResultatAction
 import net.jolabs40.tvslim.soutien.InvitationSoutien
 import net.jolabs40.tvslim.windows.adb.ClientAdb
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
@@ -145,13 +146,13 @@ class PiloteApplications(
 
     fun ouvrir(application: ApplicationAppareil) = agir(application) {
         val resultat = actions.ouvrir(application)
-        afficher(if (resultat.reussi) texte(Res.string.apps_opened, application.nom) else echec(resultat.message))
+        afficher(if (resultat.reussi) texte(Res.string.apps_opened, application.nom) else echec(resultat))
         false
     }
 
     fun forcerArret(application: ApplicationAppareil) = agir(application) {
         val resultat = moteur()?.forcerArret(application.paquet) ?: return@agir false
-        afficher(if (resultat.reussi) texte(Res.string.apps_stopped, application.nom) else echec(resultat.message))
+        afficher(if (resultat.reussi) texte(Res.string.apps_stopped, application.nom) else echec(resultat))
         false
     }
 
@@ -162,7 +163,7 @@ class PiloteApplications(
 
     fun reactiver(application: ApplicationAppareil) = agir(application) {
         val resultat = moteur()?.reactiver(listOf(application.paquet))?.singleOrNull() ?: return@agir false
-        afficher(if (resultat.reussi) texte(Res.string.apps_enabled_done, application.nom) else echec(resultat.message))
+        afficher(if (resultat.reussi) texte(Res.string.apps_enabled_done, application.nom) else echec(resultat))
         resultat.reussi
     }
 
@@ -187,14 +188,14 @@ class PiloteApplications(
                     launchersDisponibles = courant.infos.launchersTiers.isNotEmpty(),
                 )
                 val resultat = resultats.single()
-                afficher(if (resultat.reussi) texte(Res.string.apps_disabled_done, demande.application.nom) else echec(resultat.message))
+                afficher(if (resultat.reussi) texte(Res.string.apps_disabled_done, demande.application.nom) else echec(resultat))
                 if (InvitationSoutien.merite(resultats)) remercier()
                 resultat.reussi
             }
 
             is ConfirmationApplication.Desinstallation -> agir(demande.application) {
                 val resultat = actions.desinstaller(demande.application)
-                afficher(if (resultat.reussi) texte(Res.string.apps_uninstalled, demande.application.nom) else echec(resultat.message))
+                afficher(if (resultat.reussi) texte(Res.string.apps_uninstalled, demande.application.nom) else echec(resultat))
                 resultat.reussi
             }
         }
@@ -214,5 +215,5 @@ class PiloteApplications(
         }
     }
 
-    private fun echec(motif: String): MessageUi = texte(Res.string.apps_failed, MessageUi.Brut(motif))
+    private fun echec(resultat: ResultatAction): MessageUi = texte(Res.string.apps_failed, resultat.texte())
 }

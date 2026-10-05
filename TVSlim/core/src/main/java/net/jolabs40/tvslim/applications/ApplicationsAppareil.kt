@@ -3,7 +3,10 @@ package net.jolabs40.tvslim.applications
 import net.jolabs40.tvslim.journal.ActionJournal
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.journal.TypeAction
+import net.jolabs40.tvslim.moteur.MotifMoteur
+import net.jolabs40.tvslim.moteur.NatureNom
 import net.jolabs40.tvslim.moteur.ResultatAction
+import net.jolabs40.tvslim.moteur.motifSiMuet
 import net.jolabs40.tvslim.shell.EnvoyeurFichiers
 import net.jolabs40.tvslim.shell.ExecuteurCommande
 import java.io.ByteArrayInputStream
@@ -221,12 +224,13 @@ class ActionsApplications(
     suspend fun ouvrir(application: ApplicationAppareil): ResultatAction {
         val lancement = application.lancement
         if (lancement == null || !COMPOSANT.matches(lancement)) {
-            return ResultatAction(application.paquet, application.nom, false, "Aucune activité à ouvrir.")
+            return ResultatAction(application.paquet, application.nom, false, motif = MotifMoteur.AucuneActivite)
         }
         // Entre apostrophes : un nom d'activité interne porte un « $ », que le shell prendrait pour une variable.
         val sortie = executeur.executer("am start -n '$lancement'")
         val reussi = sortie.reussi && !sortie.sortie.contains("Error")
-        return ResultatAction(application.paquet, application.nom, reussi, if (reussi) "" else sortie.sortie.trim())
+        val message = if (reussi) "" else sortie.sortie.trim()
+        return ResultatAction(application.paquet, application.nom, reussi, message, motifSiMuet(reussi, message))
     }
 
     /**
@@ -236,15 +240,17 @@ class ActionsApplications(
      */
     suspend fun desinstaller(application: ApplicationAppareil): ResultatAction {
         val paquet = application.paquet
-        if (!IDENTIFIANT.matches(paquet)) return ResultatAction(paquet, application.nom, false, "Nom de paquet invalide.")
+        if (!IDENTIFIANT.matches(paquet)) {
+            return ResultatAction(paquet, application.nom, false, motif = MotifMoteur.NomInvalide(NatureNom.PAQUET, paquet))
+        }
         val tiers = executeur.executer("pm list packages -3 $paquet")
         if (tiers.code < 0) return ResultatAction(paquet, application.nom, false, tiers.sortie)
         if (tiers.sortie.lines().none { it.trim() == "package:$paquet" }) {
-            return ResultatAction(paquet, application.nom, false, "Ce n'est pas une application installée : elle ne se désinstalle pas.")
+            return ResultatAction(paquet, application.nom, false, motif = MotifMoteur.PasInstalleeParLaPersonne)
         }
         val sortie = executeur.executer("pm uninstall $paquet")
         val reussi = sortie.reussi && sortie.sortie.contains("Success")
-        val message = if (reussi) "" else sortie.sortie.trim().ifBlank { "Échec inexpliqué." }
+        val message = if (reussi) "" else sortie.sortie.trim()
         journal()?.ajouter(
             listOf(
                 ActionJournal(
@@ -258,7 +264,7 @@ class ActionsApplications(
                 ),
             ),
         )
-        return ResultatAction(paquet, application.nom, reussi, message)
+        return ResultatAction(paquet, application.nom, reussi, message, motifSiMuet(reussi, message))
     }
 
     private companion object {

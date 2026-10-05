@@ -435,7 +435,7 @@ class PiloteApp(
                 if (resultat.reussi) {
                     texte(Res.string.msg_stopped, paquet)
                 } else {
-                    texte(Res.string.msg_failure, resultat.message)
+                    texte(Res.string.msg_failure, resultat.texte())
                 },
             )
             rafraichirMemoire()
@@ -479,7 +479,7 @@ class PiloteApp(
             MessageUi.Bilan(
                 succes = resultats.count { it.reussi },
                 total = resultats.size,
-                echecs = echecs.take(MAX_ECHECS).map { it.nom to it.message },
+                echecs = echecs.take(MAX_ECHECS).map { it.nom to it.texte() },
             ),
         )
         _etat.update { it.copy(progression = null) }

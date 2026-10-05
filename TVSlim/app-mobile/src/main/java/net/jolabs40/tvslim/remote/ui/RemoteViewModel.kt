@@ -29,6 +29,8 @@ import net.jolabs40.tvslim.mesure.HistoriqueMesures
 import net.jolabs40.tvslim.mesure.Mesure
 import net.jolabs40.tvslim.mesure.MesuresRepository
 import net.jolabs40.tvslim.moteur.MoteurDebloat
+import net.jolabs40.tvslim.moteur.ResultatAction
+import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.adb.AppareilDecouvert
 import net.jolabs40.tvslim.remote.adb.ClientAdb
 import net.jolabs40.tvslim.remote.adb.DecouverteTv
@@ -69,6 +71,7 @@ class RemoteViewModel @Inject constructor(
      * permission, ce que le téléviseur en dit — n'a rien à voir avec celui du débloat.
      */
     val permissions = PilotePermissions(
+        contexte = contexte,
         lecteur = lecteur,
         moteur = { moteur },
         portee = viewModelScope,
@@ -204,7 +207,7 @@ class RemoteViewModel @Inject constructor(
         val hote = courant.hoteSaisi
         val port = courant.portSaisi.toIntOrNull() ?: PORT_ADB_PAR_DEFAUT
         if (hote.isBlank()) {
-            afficher("Renseignez l'adresse du téléviseur.")
+            afficher(contexte.getString(R.string.msg_enter_address))
             return
         }
         viewModelScope.launch {
@@ -241,7 +244,7 @@ class RemoteViewModel @Inject constructor(
     fun appliquerScan(valeur: String) {
         val adresse = lireCodeAppairage(valeur)
         if (adresse == null) {
-            afficher("Code non reconnu : ${valeur.trim()}")
+            afficher(contexte.getString(R.string.msg_code_unknown, valeur.trim()))
             return
         }
         _etat.update { it.copy(hoteSaisi = adresse.hote, portSaisi = adresse.port.toString()) }
@@ -249,7 +252,7 @@ class RemoteViewModel @Inject constructor(
     }
 
     fun signalerEchecScan(motif: String) =
-        afficher(if (motif.isBlank()) "Lecture annulée." else motif)
+        afficher(motif.ifBlank { contexte.getString(R.string.msg_scan_cancelled) })
 
     fun deconnecter() {
         client.deconnecter()
@@ -346,8 +349,8 @@ class RemoteViewModel @Inject constructor(
         val courant = _etat.value
         val choisies = courant.selection.map { it.entree }
         when {
-            choisies.isEmpty() -> afficher("Aucun paquet sélectionné.")
-            !courant.connecte -> afficher("Connectez-vous d'abord à un téléviseur.")
+            choisies.isEmpty() -> afficher(contexte.getString(R.string.msg_nothing_selected))
+            !courant.connecte -> afficher(contexte.getString(R.string.msg_connect_first))
             else -> _etat.update { it.copy(confirmation = Confirmation.Application(choisies)) }
         }
     }
@@ -355,8 +358,8 @@ class RemoteViewModel @Inject constructor(
     fun demanderRestauration() {
         val aRestaurer = journal?.paquetsADesactivationActive().orEmpty()
         when {
-            aRestaurer.isEmpty() -> afficher("Rien à restaurer sur ce téléviseur.")
-            !_etat.value.connecte -> afficher("Connectez-vous d'abord à un téléviseur.")
+            aRestaurer.isEmpty() -> afficher(contexte.getString(R.string.msg_nothing_to_restore))
+            !_etat.value.connecte -> afficher(contexte.getString(R.string.msg_connect_first))
             else -> _etat.update { it.copy(confirmation = Confirmation.Restauration(aRestaurer)) }
         }
     }
@@ -398,7 +401,7 @@ class RemoteViewModel @Inject constructor(
     fun reactiver(paquets: List<String>) {
         val moteurActif = moteur
         if (paquets.isEmpty() || moteurActif == null) {
-            afficher("Rien à restaurer.")
+            afficher(contexte.getString(R.string.msg_nothing_to_restore))
             return
         }
         viewModelScope.launch {
@@ -415,7 +418,7 @@ class RemoteViewModel @Inject constructor(
         when (action.type) {
             TypeAction.DESACTIVATION -> reactiver(listOf(action.cible))
             TypeAction.PERMISSION, TypeAction.APP_OP -> permissions.annuler(action)
-            else -> afficher("Cette action ne s'annule pas depuis ici.")
+            else -> afficher(contexte.getString(R.string.msg_not_undoable))
         }
     }
 
@@ -445,7 +448,11 @@ class RemoteViewModel @Inject constructor(
         viewModelScope.launch {
             val resultat = moteurActif.forcerArret(paquet)
             afficher(
-                if (resultat.reussi) "$paquet arrêté." else "Échec : ${resultat.message}",
+                if (resultat.reussi) {
+                    contexte.getString(R.string.msg_stopped, paquet)
+                } else {
+                    contexte.getString(R.string.msg_failure, resultat.texte(contexte))
+                },
             )
             rafraichirMemoire()
         }
@@ -462,7 +469,7 @@ class RemoteViewModel @Inject constructor(
                 entete = "Appareil : ${infos.marque} ${infos.modele} — Android " +
                     "${infos.versionAndroid} (${infos.build})",
             )
-            afficher("Journal exporté : $chemin")
+            afficher(contexte.getString(R.string.msg_journal_exported, chemin))
         }
     }
 
@@ -471,12 +478,12 @@ class RemoteViewModel @Inject constructor(
     private fun terminer(
         succes: Int,
         total: Int,
-        echecs: List<net.jolabs40.tvslim.moteur.ResultatAction>,
+        echecs: List<ResultatAction>,
     ) {
         afficher(
             buildString {
-                append("$succes sur $total.")
-                echecs.take(MAX_ECHECS).forEach { append("\n${it.nom} : ${it.message}") }
+                append(contexte.getString(R.string.result_summary, succes, total))
+                echecs.take(MAX_ECHECS).forEach { append("\n${it.nom} : ${it.texte(contexte)}") }
             },
         )
         _etat.update { it.copy(progression = null) }
@@ -492,7 +499,7 @@ class RemoteViewModel @Inject constructor(
         val actives = mesures ?: return
         viewModelScope.launch {
             actives.redefinirReference()
-            afficher("Nouveau point de départ enregistré.")
+            afficher(contexte.getString(R.string.msg_baseline_reset))
         }
     }
 
