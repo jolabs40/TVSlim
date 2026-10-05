@@ -7,18 +7,20 @@
 <p align="center">
   <b>Allégez votre téléviseur Android TV ou Google TV — sans root, et chaque changement s'annule.</b><br>
   Coupez la publicité, la télémétrie et les applications préinstallées qui ralentissent votre
-  Smart TV, depuis un PC Windows.
+  Smart TV, depuis un PC Windows ou un téléphone Android.
 </p>
 
 <p align="center">
   <a href="https://github.com/jolabs40/TVSlim/releases/latest"><img src="https://img.shields.io/github/v/release/jolabs40/TVSlim?label=derni%C3%A8re%20version&color=2e7d5b" alt="Dernière version"></a>
   <a href="https://github.com/jolabs40/TVSlim/releases/latest"><img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4" alt="Windows 10 et 11"></a>
+  <a href="https://github.com/jolabs40/TVSlim/releases?q=android&expanded=true"><img src="https://img.shields.io/badge/Android-8%2B-3DDC84" alt="Android 8 et plus"></a>
   <a href="#questions-fréquentes"><img src="https://img.shields.io/badge/root-inutile-7fd8aa" alt="Sans root"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/jolabs40/TVSlim?color=blue" alt="Licence Apache-2.0"></a>
 </p>
 
 <p align="center">
   <a href="https://github.com/jolabs40/TVSlim/releases/latest"><b>⬇ Télécharger pour Windows</b></a>
+  &nbsp;·&nbsp; <a href="https://github.com/jolabs40/TVSlim/releases?q=android&expanded=true"><b>⬇ Android</b></a>
   &nbsp;·&nbsp; <a href="#démarrer-en-trois-étapes">Démarrer</a>
   &nbsp;·&nbsp; <a href="#questions-fréquentes">Questions fréquentes</a>
   &nbsp;·&nbsp; <a href="README.md">English version</a>
@@ -26,8 +28,8 @@
 
 ![TV Slim pour Windows connecté à un téléviseur TCL Google TV : modèle, Android 14, mémoire, 55 paquets désactivés, et les launchers installés — Startlight et Projectivy, l'accueil Google TV désactivé](docs/captures/tv-slim-windows-television.png)
 
-**TV Slim est un outil de débloat libre et gratuit pour Android TV et Google TV.** Il se connecte à
-votre téléviseur par le réseau de la maison, en ADB, montre ce qui y est réellement installé, et
+**TV Slim est un outil de débloat libre et gratuit pour Android TV et Google TV.** Depuis un PC
+Windows ou un téléphone Android, il se connecte à votre téléviseur par le réseau de la maison, en ADB, montre ce qui y est réellement installé, et
 désactive la publicité, la télémétrie, les restes du mode démonstration et les applications
 préinstallées que vous n'avez jamais demandées — sur un TCL, un Philips, un NVIDIA Shield, une
 Xiaomi Mi Box et d'autres. Rien n'est désinstallé, et rien n'est à installer sur le téléviseur :
@@ -78,6 +80,18 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
 > première fois. Cliquez sur **Informations complémentaires**, puis sur **Exécuter quand même**.
 > `SHA256SUMS.txt`, publié à côté, permet de vérifier que le fichier est authentique.
 
+**…ou TV Slim pour Android**, sur les **[publications Android](https://github.com/jolabs40/TVSlim/releases?q=android&expanded=true)** :
+
+| Fichier | Pour |
+|---|---|
+| `TVSlim-Remote-x.y.z.apk` | **L'application du téléphone**, TV Slim Remote — Android 8 ou plus récent. Ouvrez le fichier sur le téléphone, et autorisez votre navigateur ou votre gestionnaire de fichiers à installer des applications quand Android le demande. |
+| `TVSlim-TV-x.y.z.apk` | **Facultative, pour le téléviseur.** Elle affiche un QR code que le téléphone scanne pour se connecter, et garde le téléviseur joignable sur le réseau pendant la veille. Installez-la depuis TV Slim lui-même, avec *Installer une application*. |
+
+TV Slim pour Android est publié ici, pas sur le Play Store. Les deux APK sont signés par la même clé,
+dont le certificat a pour SHA-256
+`42:96:BD:A0:51:8F:1A:59:1D:66:91:4E:6B:AB:7B:2F:0D:00:30:BE:6D:6C:79:8E:F3:AE:D5:D2:79:CF:96:F8` —
+`apksigner verify --print-certs` l'affiche ; `SHA256SUMS.txt` liste les fichiers.
+
 **2. Préparez le téléviseur (une seule fois).**
 
 1. Sur le téléviseur, ouvrez **Paramètres → À propos** (parfois sous *Système* ou *Préférences de
@@ -86,10 +100,11 @@ Windows 10 ou 11, 64 bits. Java est inclus : il n'y a rien d'autre à installer.
 2. Dans les **options pour les développeurs**, activez le débogage réseau — selon le téléviseur, il
    s'appelle *Débogage réseau*, *Débogage ADB* ou *Débogage USB*.
 
-**3. Connectez-vous et allégez-le.** Lancez TV Slim sur un PC branché au même réseau. Il trouve le
-téléviseur tout seul en quelques secondes ; sinon, saisissez son adresse IP (indiquée dans
-*Paramètres → Réseau*). À la première connexion, le téléviseur demande d'**autoriser le débogage
-depuis cet ordinateur** : cochez *Toujours autoriser* et acceptez à la télécommande — il ne le
+**3. Connectez-vous et allégez-le.** Lancez TV Slim sur un PC ou un téléphone branché au même
+réseau. Il trouve le téléviseur tout seul en quelques secondes ; sinon, saisissez son adresse IP
+(indiquée dans *Paramètres → Réseau*) — ou, sur le téléphone, scannez le QR code de l'application
+TV. À la première connexion, le téléviseur demande d'**autoriser le débogage depuis cet ordinateur**
+(ou ce téléphone) : cochez *Toujours autoriser* et acceptez à la télécommande — il ne le
 redemandera plus, même après un redémarrage. Ouvrez ensuite **Paquets**, choisissez un profil et
 cliquez sur **Appliquer**.
 
@@ -103,9 +118,8 @@ cliquez sur **Appliquer**.
   Xiaomi. Sur les autres marques, les paquets que TV Slim ne connaît pas encore sont listés à part,
   sans rien proposer d'en faire, et *Proposer au catalogue* envoie leur inventaire en quelques clics.
 - **Éprouvé** sur un TCL Smart TV Pro (65C89K, Google TV, Android 14) et un NVIDIA Shield TV.
-- **Côté PC** : Windows 10 ou 11, 64 bits, sur le même réseau local que le téléviseur. Une
-  application pour téléphone Android, TV Slim Remote, est dans ce dépôt ; elle n'est pas encore
-  publiée.
+- **Côté PC** : Windows 10 ou 11, 64 bits. **Côté téléphone** : Android 8 ou plus récent. L'un ou
+  l'autre sur le même réseau local que le téléviseur.
 
 ## Ce qu'on peut faire
 
@@ -146,7 +160,8 @@ cliquez sur **Appliquer**.
   d'une ligne ou par un clic droit. Les droits sont ceux d'ADB : le stockage partagé s'écrit,
   `Android/data` compris ; les dossiers du système, non.
 - **Écran** — depuis la barre du haut de chaque onglet : une capture d'écran du téléviseur,
-  enregistrée dans *Images\TV Slim*, avec un aperçu pour la copier. Une vidéo de l'écran, enregistrée
+  enregistrée dans *Images\TV Slim* (sur le téléphone, dans la galerie), avec un aperçu pour la copier
+  ou la partager. Sous Windows, une vidéo de l'écran, enregistrée
   par le téléviseur lui-même puis copiée dans *Vidéos\TV Slim* et effacée du téléviseur — sans son,
   que son enregistreur ne capture jamais, et 3 minutes au plus avant Android 14 ; et le miroir de
   l'écran en direct dans sa propre fenêtre, par [scrcpy](https://github.com/Genymobile/scrcpy),
@@ -200,9 +215,9 @@ d'origine. Il suffit d'activer le débogage réseau dans les options pour les d�
 
 ### Installe-t-il quelque chose sur le téléviseur ?
 
-Non. L'onglet Applications copie une petite aide dans `/data/local/tmp` pour lire les noms et les
-icônes, la lance, puis l'efface aussitôt. Un APK ne s'installe sur le téléviseur que si vous le
-demandez.
+Pas sans que vous le demandiez. L'onglet Applications copie une petite aide dans `/data/local/tmp`
+pour lire les noms et les icônes, la lance, puis l'efface aussitôt. Un APK — l'application TV Slim
+facultative du téléviseur comprise — ne s'installe sur le téléviseur que si vous le demandez.
 
 ### Une mise à jour système a ramené la publicité et l'accueil Google TV. Que faire ?
 
@@ -245,6 +260,10 @@ depuis sa publication GitHub, après votre accord et en vérifiant son empreinte
 de compte, pas de télémétrie. La clé ADB qui permet à cet ordinateur de parler à vos téléviseurs est
 gardée chiffrée par Windows (DPAPI) dans `%APPDATA%\TVSlim`, à côté des journaux.
 
+Sur le téléphone, TV Slim parle à votre téléviseur, et à rien d'autre ; sa clé ADB est chiffrée par
+le magasin de clés d'Android. Le scanner de QR codes est celui de Google, fourni par les services
+Google Play.
+
 ## Soutenir le projet
 
 TV Slim est gratuit et le restera. S'il vous a rendu service, vous pouvez m'offrir un café sur
@@ -265,6 +284,10 @@ Une étoile sur ce dépôt aide aussi d'autres personnes à trouver TV Slim.
 au cas où il faudrait restaurer quelque chose plus tard ; supprimez ce dossier pour tout effacer.
 Pour retirer à cet ordinateur l'accès à un téléviseur : *Options pour les développeurs → Révoquer
 les autorisations de débogage USB*.
+
+Sur le téléphone, TV Slim Remote se désinstalle comme n'importe quelle application — et ses journaux
+partent avec lui. Exportez-les d'abord (*Journal → Exporter en Markdown*) : ils gardent la commande
+qui annule chaque changement.
 
 ## Compiler depuis les sources
 

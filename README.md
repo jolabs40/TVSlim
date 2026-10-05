@@ -7,18 +7,20 @@
 <p align="center">
   <b>Debloat your Android TV or Google TV — without root, and with every change undoable.</b><br>
   Switch off the ads, the telemetry and the preinstalled apps that slow your smart TV down,
-  from a Windows PC.
+  from a Windows PC or an Android phone.
 </p>
 
 <p align="center">
   <a href="https://github.com/jolabs40/TVSlim/releases/latest"><img src="https://img.shields.io/github/v/release/jolabs40/TVSlim?label=latest&color=2e7d5b" alt="Latest release"></a>
   <a href="https://github.com/jolabs40/TVSlim/releases/latest"><img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4" alt="Windows 10 and 11"></a>
+  <a href="https://github.com/jolabs40/TVSlim/releases?q=android&expanded=true"><img src="https://img.shields.io/badge/Android-8%2B-3DDC84" alt="Android 8 and later"></a>
   <a href="#faq"><img src="https://img.shields.io/badge/root-not%20needed-7fd8aa" alt="No root needed"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/jolabs40/TVSlim?color=blue" alt="Apache-2.0 licence"></a>
 </p>
 
 <p align="center">
   <a href="https://github.com/jolabs40/TVSlim/releases/latest"><b>⬇ Download for Windows</b></a>
+  &nbsp;·&nbsp; <a href="https://github.com/jolabs40/TVSlim/releases?q=android&expanded=true"><b>⬇ Android</b></a>
   &nbsp;·&nbsp; <a href="#get-started-in-three-steps">Get started</a>
   &nbsp;·&nbsp; <a href="#faq">FAQ</a>
   &nbsp;·&nbsp; <a href="README.fr.md">Version française</a>
@@ -26,8 +28,8 @@
 
 ![TV Slim for Windows connected to a TCL Google TV: model, Android 14, memory, 55 disabled packages, and the installed launchers — Startlight and Projectivy, with the Google TV home screen disabled](docs/captures/tv-slim-windows-television.png)
 
-**TV Slim is a free, open-source debloater for Android TV and Google TV.** It connects to your
-television over your home network with ADB, shows what is really installed on it, and disables the
+**TV Slim is a free, open-source debloater for Android TV and Google TV.** From a Windows PC or an
+Android phone, it connects to your television over your home network with ADB, shows what is really installed on it, and disables the
 advertising, the telemetry, the shop-demo leftovers and the preinstalled apps you never asked for —
 on a TCL, a Philips, an NVIDIA Shield, a Xiaomi Mi Box and others. Nothing is uninstalled, and
 nothing has to be installed on the TV: every package is *disabled*, written to a log with the
@@ -75,6 +77,18 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 > signed with a paid certificate, so SmartScreen may warn you the first time. Click **More info**,
 > then **Run anyway**. `SHA256SUMS.txt`, published alongside, lets you check the file is genuine.
 
+**…or TV Slim for Android**, from the **[Android releases](https://github.com/jolabs40/TVSlim/releases?q=android&expanded=true)**:
+
+| File | For |
+|---|---|
+| `TVSlim-Remote-x.y.z.apk` | **The phone app**, TV Slim Remote — Android 8 or later. Open the file on the phone, and allow your browser or file manager to install apps when Android asks. |
+| `TVSlim-TV-x.y.z.apk` | **Optional, for the television.** It shows a QR code the phone scans to connect, and keeps the TV reachable on the network during standby. Install it from TV Slim itself, with *Install an application*. |
+
+TV Slim for Android is published here, not on the Play Store. Both APKs are signed with the same key,
+whose certificate SHA-256 is
+`42:96:BD:A0:51:8F:1A:59:1D:66:91:4E:6B:AB:7B:2F:0D:00:30:BE:6D:6C:79:8E:F3:AE:D5:D2:79:CF:96:F8` —
+`apksigner verify --print-certs` shows it; `SHA256SUMS.txt` lists the files.
+
 **2. Prepare the television (once).**
 
 1. On the TV, open **Settings → About** (sometimes under *System* or *Device preferences*) and press
@@ -82,9 +96,10 @@ Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.
 2. In **Developer options**, enable network debugging — called *Network debugging*, *ADB debugging*
    or *USB debugging* depending on the TV.
 
-**3. Connect and slim it down.** Start TV Slim on a PC connected to the same network. It finds the
-TV by itself within a few seconds; otherwise, type its IP address (shown in *Settings → Network*).
-On the first connection, the TV asks to **allow debugging from this computer**: tick *Always allow*
+**3. Connect and slim it down.** Start TV Slim on a PC or a phone connected to the same network. It
+finds the TV by itself within a few seconds; otherwise, type its IP address (shown in *Settings →
+Network*) — or, on the phone, scan the QR code of the TV app. On the first connection, the TV asks
+to **allow debugging from this computer** (or this phone): tick *Always allow*
 and accept with the remote — it will not ask again, even after a reboot. Then open **Packages**,
 pick a profile and click **Apply**.
 
@@ -99,8 +114,8 @@ pick a profile and click **Apply**.
   nothing offered to do about them, and *Propose to the catalogue* sends their inventory in a few
   clicks.
 - **Tested** on a TCL Smart TV Pro (65C89K, Google TV, Android 14) and an NVIDIA Shield TV.
-- **On the PC**: Windows 10 or 11, 64-bit, on the same local network as the TV. An Android phone
-  app, TV Slim Remote, is in this repository and is not published yet.
+- **On the PC**: Windows 10 or 11, 64-bit. **On the phone**: Android 8 or later. Either one on the
+  same local network as the TV.
 
 ## What you can do
 
@@ -136,7 +151,7 @@ pick a profile and click **Apply**.
   and delete what clutters the TV — by hovering over a line or with a right-click. The rights are
   those of ADB: shared storage is writable, `Android/data` included; system folders are not.
 - **Screen** — from the top bar of every tab: a screenshot of the TV, saved in *Pictures\TV Slim*
-  with a preview to copy it. A video of the screen, recorded by the TV itself then copied into
+  (on the phone, in the gallery) with a preview to copy or share it. On Windows, a video of the screen, recorded by the TV itself then copied into
   *Videos\TV Slim* and erased from the TV — without sound, which the TV's recorder never captures,
   and for 3 minutes at most before Android 14; and a live mirror of the screen in its own window,
   through [scrcpy](https://github.com/Genymobile/scrcpy), downloaded from GitHub the first time if it
@@ -186,8 +201,9 @@ on network debugging in the developer options is all it takes.
 
 ### Does it install anything on the television?
 
-No. The Apps tab copies a small helper to `/data/local/tmp` to read the names and icons, runs it and
-erases it straight away. An APK is installed on the TV only when you ask for it.
+Not unless you ask. The Apps tab copies a small helper to `/data/local/tmp` to read the names and
+icons, runs it and erases it straight away. An APK — the optional TV Slim app for the television
+included — is installed on the TV only when you ask for it.
 
 ### A system update brought the ads and the Google TV home screen back. What now?
 
@@ -228,6 +244,9 @@ release, once you have agreed and after checking its fingerprint. Nothing else. 
 telemetry. The ADB key that lets this computer talk to your TVs is stored encrypted by Windows
 (DPAPI) in `%APPDATA%\TVSlim`, next to the logs.
 
+On the phone, TV Slim talks to your television, and to nothing else; its ADB key is encrypted by the
+Android keystore. The QR code scanner is Google's, from Google Play services.
+
 ## Support the project
 
 TV Slim is free and will stay that way. If it has been useful to you, you can buy me a coffee on
@@ -247,6 +266,9 @@ A star on this repository helps other people find TV Slim, too.
 *Settings → Apps → TV Slim → Uninstall*. Logs stay in `%APPDATA%\TVSlim`, in case something has to
 be restored later; delete that folder to remove everything. To withdraw this computer's access to a
 TV: *Developer options → Revoke USB debugging authorisations*.
+
+On the phone, TV Slim Remote uninstalls like any other app — and its logs go with it. Export them
+first (*Log → Export as Markdown*): they keep the command that undoes each change.
 
 ## Build from source
 
