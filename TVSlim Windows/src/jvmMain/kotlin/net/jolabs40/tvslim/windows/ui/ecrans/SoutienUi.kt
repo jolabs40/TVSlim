@@ -1,6 +1,7 @@
 package net.jolabs40.tvslim.windows.ui.ecrans
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -20,12 +20,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.about_support
-import net.jolabs40.tvslim.windows.ressources.baseline_favorite_24
+import net.jolabs40.tvslim.windows.ressources.kofi_symbol
 import net.jolabs40.tvslim.windows.ressources.support_already
 import net.jolabs40.tvslim.windows.ressources.support_donate
 import net.jolabs40.tvslim.windows.ressources.support_later
@@ -34,11 +34,22 @@ import net.jolabs40.tvslim.windows.ressources.support_title
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
-/** Le rouge du cœur, le même en thème clair et sombre : un cœur se reconnaît à sa couleur. */
-private val ROUGE_COEUR = Color(0xFFEF6C7B)
+/**
+ * Le symbole de Ko-fi — la tasse au cœur —, tel que Ko-fi le publie dans ses ressources de marque, sans teinte : il se
+ * reconnaît à ses couleurs, et son intérieur blanc le garde lisible sur le thème sombre. Plus large que haut, il tient
+ * dans la boîte de 24 dp d'une icône. Fichiers ramenés à 24 dp de large dans chaque `drawable-*dpi`.
+ */
+@Composable
+fun SymboleKofi(contentDescription: String?, modifier: Modifier = Modifier, taille: Dp = 24.dp) {
+    Image(
+        painter = painterResource(Res.drawable.kofi_symbol),
+        contentDescription = contentDescription,
+        modifier = modifier.size(taille),
+    )
+}
 
 /**
- * Le ♥ de la barre du haut, visible depuis chaque onglet, qui ouvre la page de soutien. Discret par principe : rien ne
+ * Le symbole de Ko-fi dans la barre du haut, visible depuis chaque onglet, qui ouvre la page de soutien. Discret par principe : rien ne
  * clignote, rien ne revient seul — c'est le bandeau qui remercie après un service rendu.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -62,7 +73,7 @@ fun BoutonSoutien(onClick: () -> Unit) {
         },
     ) {
         IconButton(onClick = onClick) {
-            Icon(painterResource(Res.drawable.baseline_favorite_24), contentDescription = libelle, tint = ROUGE_COEUR)
+            SymboleKofi(contentDescription = libelle)
         }
     }
 }
@@ -88,7 +99,7 @@ fun BanniereSoutien(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(painter = painterResource(Res.drawable.baseline_favorite_24), contentDescription = null)
+            SymboleKofi(contentDescription = null)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = stringResource(Res.string.support_title),
@@ -100,7 +111,7 @@ fun BanniereSoutien(
             TextButton(onClick = onDejaFait) { Text(stringResource(Res.string.support_already)) }
             TextButton(onClick = onPlusTard) { Text(stringResource(Res.string.support_later)) }
             Button(onClick = onSoutenir) {
-                Icon(painterResource(Res.drawable.baseline_favorite_24), null, Modifier.size(18.dp))
+                SymboleKofi(contentDescription = null, taille = 18.dp)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(Res.string.support_donate))
             }

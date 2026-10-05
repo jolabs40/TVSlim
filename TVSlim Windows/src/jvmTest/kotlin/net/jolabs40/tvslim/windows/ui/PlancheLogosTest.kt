@@ -80,6 +80,7 @@ import net.jolabs40.tvslim.windows.ui.ecrans.ActionsEcran
 import net.jolabs40.tvslim.windows.ui.ecrans.ActionsFichiers
 import net.jolabs40.tvslim.windows.ui.ecrans.ApercuCaptureDialogue
 import net.jolabs40.tvslim.windows.ui.ecrans.BanniereSoutien
+import net.jolabs40.tvslim.windows.ui.ecrans.BoutonSoutien
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAccueil
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteAppareil
 import net.jolabs40.tvslim.windows.ui.ecrans.CarteCommande
@@ -594,6 +595,10 @@ class PlancheLogosTest {
             ),
         )
         rendre("49-accueil-telephone", 720, 300) { CarteAccueil(pixel, {}, {}, {}) }
+
+        // Le symbole de Ko-fi de la barre du haut, en clair et en sombre.
+        rendre("50-bouton-soutien", 120, 80) { BoutonSoutien {} }
+        rendre("51-bouton-soutien-sombre", 120, 80, sombre = true) { BoutonSoutien {} }
     }
 
     @OptIn(ExperimentalComposeUiApi::class)

@@ -16,6 +16,13 @@ replaced by the name written in plain text.
 
 `launcher_startlight.png` is the icon of Startlight Launcher, made by the author of TV Slim.
 
+## Ko-fi
+
+`kofi_symbol.png` is the Ko-fi symbol, shown on the button that opens TV Slim's Ko-fi page. It is
+taken from Ko-fi's brand assets (`storage.ko-fi.com/cdn/brandasset/v2/kofi_symbol.png`), resized to
+24 dp wide with no other change, one file per screen density (`drawable-mdpi` to `drawable-xxxhdpi`
+in both places above). Ko-fi is a trademark of Ko-fi Labs Limited.
+
 ## Launcher icons — `launcher_*.png`
 
 Each file is the application's own icon, resized to 128 px. The icons remain the property of their
@@ -73,6 +80,9 @@ des développeurs cités ci-dessus, qui n'approuvent ni ne parrainent l'applicat
 appartient à son propriétaire.
 
 - **Startlight Launcher** : icône de l'auteur de TV Slim.
+- **Ko-fi** : le symbole de Ko-fi, sur le bouton qui ouvre la page Ko-fi de TV Slim, pris dans les
+  ressources de marque de Ko-fi et ramené à 24 dp de large sans autre modification, un fichier par
+  densité d'écran. Ko-fi est une marque de Ko-fi Labs Limited.
 - **Launchers** : l'icône de chaque application, ramenée à 128 px, prise sur sa fiche Google Play,
   dans son APK ou dans son dépôt officiel (détail dans le premier tableau). Elle reste la propriété de
   son développeur et, pour un projet libre, sous la licence de ce projet.

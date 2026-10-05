@@ -51,7 +51,6 @@ import net.jolabs40.tvslim.windows.ressources.about_source
 import net.jolabs40.tvslim.windows.ressources.about_support
 import net.jolabs40.tvslim.windows.ressources.about_version
 import net.jolabs40.tvslim.windows.ressources.app_name
-import net.jolabs40.tvslim.windows.ressources.baseline_favorite_24
 import net.jolabs40.tvslim.windows.ressources.baseline_folder_open_24
 import net.jolabs40.tvslim.windows.ressources.baseline_open_in_new_24
 import net.jolabs40.tvslim.windows.ressources.baseline_system_update_24
@@ -213,7 +212,7 @@ fun AProposDialogue(
                         Text(stringResource(Res.string.about_source))
                     }
                     TextButton(onClick = onSoutenir) {
-                        Icon(painterResource(Res.drawable.baseline_favorite_24), null, Modifier.size(18.dp))
+                        SymboleKofi(contentDescription = null, taille = 18.dp)
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(Res.string.about_support))
                     }

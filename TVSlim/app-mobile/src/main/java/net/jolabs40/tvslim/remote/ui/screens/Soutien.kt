@@ -1,5 +1,6 @@
 package net.jolabs40.tvslim.remote.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,10 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -20,10 +18,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.soutien.InvitationSoutien
@@ -50,7 +49,7 @@ fun BanniereSoutien(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Favorite, contentDescription = null)
+                SymboleKofi(contentDescription = null)
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = stringResource(R.string.support_title),
@@ -68,7 +67,7 @@ fun BanniereSoutien(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Icon(Icons.Filled.Favorite, contentDescription = null, modifier = Modifier.size(18.dp))
+                SymboleKofi(contentDescription = null, taille = 18.dp)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.support_donate))
             }
@@ -80,17 +79,28 @@ fun BanniereSoutien(
     }
 }
 
-/** Le rouge du cœur, le même en thème clair et sombre : un cœur se reconnaît à sa couleur. */
-private val ROUGE_COEUR = Color(0xFFEF6C7B)
+/**
+ * Le symbole de Ko-fi — la tasse au cœur —, tel que Ko-fi le publie dans ses ressources de marque, sans teinte : il
+ * se reconnaît à ses couleurs, et son intérieur blanc le garde lisible sur le thème sombre. Plus large que haut, il
+ * tient dans la boîte de 24 dp d'une icône. Fichiers ramenés à 24 dp de large dans chaque `drawable-*dpi`.
+ */
+@Composable
+private fun SymboleKofi(contentDescription: String?, modifier: Modifier = Modifier, taille: Dp = 24.dp) {
+    Image(
+        painter = painterResource(R.drawable.kofi_symbol),
+        contentDescription = contentDescription,
+        modifier = modifier.size(taille),
+    )
+}
 
 /**
- * Le ♥ de la barre du haut, visible depuis chaque onglet, téléviseur joint ou non : le compagnon n'a pas d'écran
- * « À propos ». Discret par principe — c'est le bandeau qui remercie après un service rendu.
+ * Le symbole de Ko-fi dans la barre du haut, visible depuis chaque onglet, téléviseur joint ou non : le compagnon n'a
+ * pas d'écran « À propos ». Discret par principe — c'est le bandeau qui remercie après un service rendu.
  */
 @Composable
 fun BoutonSoutien() {
     val liens = LocalUriHandler.current
     IconButton(onClick = { runCatching { liens.openUri(InvitationSoutien.LIEN) } }) {
-        Icon(Icons.Filled.Favorite, contentDescription = stringResource(R.string.support_link), tint = ROUGE_COEUR)
+        SymboleKofi(contentDescription = stringResource(R.string.support_link))
     }
 }
