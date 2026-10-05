@@ -1,0 +1,182 @@
+# Construit, teste et publie TV Slim pour Android : TV Slim Remote (le téléphone) et l'application TV.
+#
+#  - Pull request ou push sur main touchant le projet Android : tests, puis les deux APK de release —
+#    minifiés par R8, non signés —, gardés comme artefact.
+#  - Tag annoté android-vX.Y.Z : la même chose, puis signature des deux APK par la clé de release,
+#    vérification du certificat contre l'empreinte de gradle.properties, et publication — le message du
+#    tag sert de notes de version.
+#
+# Le keystore (secrets TVSLIM_ANDROID_KEYSTORE, en base 64, et TVSLIM_ANDROID_KEYSTORE_PASSWORD) n'est lu
+# que par le job de publication, et seulement sur un tag. Les actions sont épinglées par empreinte de
+# commit : une étiquette se déplace, une empreinte non.
+#
+# ⚠️ Une publication Android ne devient jamais « Latest » (--latest=false) : le README et son badge
+# envoient /releases/latest vers Windows, et « Download for Windows » mènerait sinon à des APK.
+
+name: TV Slim Android
+
+on:
+  push:
+    tags: ['android-v*']
+    branches: [main]
+    paths:
+      - 'TVSlim/**'
+      - '.github/workflows/android.yml'
+  pull_request:
+    paths:
+      - 'TVSlim/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  construire:
+    name: Tests et APK de release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TVSlim
+    outputs:
+      version: ${{ steps.version.outputs.valeur }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+
+      - name: Version
+        id: version
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [[ "$REF" == refs/tags/android-v* ]]; then
+            version="${REF#refs/tags/android-v}"
+          else
+            version=$(sed -n 's/^versionApp=//p' gradle.properties)
+          fi
+          # Le versionCode en dépend (X·10 000 + Y·100 + Z) : Y et Z sous 100.
+          if [[ ! "$version" =~ ^[0-9]{1,3}\.[0-9]{1,2}\.[0-9]{1,2}$ ]]; then
+            echo "::error::Version invalide : $version"
+            exit 1
+          fi
+          echo "valeur=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Tests (noyau, téléphone, téléviseur)
+        run: ./gradlew :core:test :app-mobile:testDebugUnitTest :app-tv:testDebugUnitTest "-PversionApp=${{ steps.version.outputs.valeur }}"
+
+      - name: APK de release, minifiés
+        run: ./gradlew :app-mobile:assembleRelease :app-tv:assembleRelease "-PversionApp=${{ steps.version.outputs.valeur }}"
+
+      # Sans keystore, AGP rend des « -release-unsigned.apk » : la signature est l'affaire du job suivant.
+      - name: Rassembler les APK
+        env:
+          VERSION: ${{ steps.version.outputs.valeur }}
+        run: |
+          mkdir -p publication
+          for module in app-mobile:Remote app-tv:TV; do
+            apks=("${module%%:*}"/build/outputs/apk/release/*.apk)
+            if [ "${#apks[@]}" -ne 1 ]; then
+              echo "::error::${module%%:*} : un seul APK de release attendu, trouvé ${#apks[@]}"
+              exit 1
+            fi
+            cp "${apks[0]}" "publication/TVSlim-${module#*:}-$VERSION.apk"
+          done
+          ls -l publication
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tvslim-android-non-signe
+          path: TVSlim/publication/
+          if-no-files-found: error
+
+  publier:
+    name: Signature et publication
+    needs: construire
+    if: startsWith(github.ref, 'refs/tags/android-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: tvslim-android-non-signe
+          path: publication
+
+      # Mêmes réglages que la signatureConfig de Gradle : pas de v1 (minSdk 26), v2, et v3 qui porte la
+      # lignée de certificat. AGP a déjà aligné les APK, bibliothèques natives à 16 Ko comprises ; on le
+      # vérifie, sans réaligner — apksigner ne déplace rien.
+      - name: Signer les APK
+        env:
+          KEYSTORE_B64: ${{ secrets.TVSLIM_ANDROID_KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.TVSLIM_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          outils=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "build-tools : $outils"
+          magasin="$RUNNER_TEMP/tvslim-release.keystore"
+          printf %s "$KEYSTORE_B64" | base64 -d > "$magasin"
+          for apk in publication/*.apk; do
+            "$outils/zipalign" -c -P 16 4 "$apk"
+            "$outils/apksigner" sign --ks "$magasin" --ks-key-alias tvslim \
+              --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD \
+              --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true "$apk"
+          done
+          rm -f "$magasin"
+
+      # Un APK signé d'une autre clé serait refusé en mise à jour par chaque téléphone et chaque téléviseur
+      # qui porte déjà TV Slim : on vérifie comme Android, avant de publier.
+      - name: Vérifier le certificat contre l'empreinte attendue
+        run: |
+          outils=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          attendue=$(sed -n 's/^empreinteCertificat=//p' TVSlim/gradle.properties)
+          for apk in publication/*.apk; do
+            "$outils/apksigner" verify --print-certs "$apk" > certificat.txt
+            if ! grep -qF "certificate SHA-256 digest: $attendue" certificat.txt; then
+              echo "::error::$apk n'est pas signé par la clé attendue"
+              cat certificat.txt
+              exit 1
+            fi
+          done
+          (cd publication && sha256sum *.apk > SHA256SUMS.txt && cat SHA256SUMS.txt)
+
+      # actions/checkout rapatrie un tag par l'empreinte de son commit : il arrive « léger », sans son
+      # message. Les notes se lisent donc par l'API, sur l'objet tag lui-même (comme pour Windows).
+      - name: Notes de version, depuis le message du tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          objet=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha')
+          if [ "${objet%% *}" != "tag" ]; then
+            echo "::error::$TAG doit être un tag annoté : son message sert de notes de version."
+            exit 1
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/git/tags/${objet#* }" --jq .message > notes.md
+
+      - name: Publier sur GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.construire.outputs.version }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" publication/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "TV Slim for Android $VERSION" \
+            --notes-file notes.md \
+            --latest=false \
+            --verify-tag

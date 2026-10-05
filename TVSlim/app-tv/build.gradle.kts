@@ -14,8 +14,9 @@ android {
         applicationId = "net.jolabs40.tvslim"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        // La même version pour les deux applications : voir le build.gradle.kts racine.
+        versionCode = rootProject.extra["codeDeVersion"] as Int
+        versionName = rootProject.extra["versionApp"] as String
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
