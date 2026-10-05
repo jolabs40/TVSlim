@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="tab_connection">Téléviseur</string>
+    <string name="tab_connection">TV</string>
     <string name="tab_packages">Paquets</string>
     <string name="tab_memory">Mémoire</string>
     <string name="tab_files">Fichiers</string>
@@ -34,7 +34,7 @@
     <string name="size_gb">%1$s Go</string>
 
     <string name="connection_title">Se connecter à un téléviseur</string>
-    <string name="connection_subtitle">Le téléphone parle au téléviseur en ADB, sur le réseau local. Aucun ordinateur n\'intervient.</string>
+    <string name="connection_subtitle">En ADB, sur votre réseau local. Aucun ordinateur.</string>
     <string name="connection_host">Adresse</string>
     <string name="connection_port">Port</string>
     <string name="connection_connect">Se connecter</string>
@@ -155,7 +155,7 @@
     <string name="gain_memory_caveat">La mémoire libre varie selon ce que fait le téléviseur : à lire comme une tendance, pas comme un verdict.</string>
 
     <string name="permissions_title">Permissions privilégiées</string>
-    <string name="permissions_hint">Certaines permissions ne s\'accordent que depuis un ordinateur — ou d\'ici. L\'octroi survit aux redémarrages, et le journal garde la commande qui le reprend.</string>
+    <string name="permissions_hint">Les permissions que seul ADB accorde. Chacune se reprend depuis le journal.</string>
     <string name="permissions_package">Paquet</string>
     <string name="permissions_permission">Permission</string>
     <string name="permissions_permission_hint">Par exemple android.permission.WRITE_SECURE_SETTINGS</string>
@@ -169,7 +169,7 @@
     <string name="permissions_state_appop">App-op %1$s : %2$s</string>
 
     <string name="install_title">Installer une application</string>
-    <string name="install_hint">Envoyez un fichier APK de ce téléphone au téléviseur et installez-le, comme le ferait adb install. Une application déjà installée est mise à jour et garde ses données.</string>
+    <string name="install_hint">Installe un APK sur le téléviseur. Une application déjà là est mise à jour, avec ses données.</string>
     <string name="install_choose">Choisir un APK…</string>
     <string name="install_examining">Lecture de l\'APK et du téléviseur…</string>
     <string name="install_sending">Envoi : %1$s sur %2$s Mo</string>
@@ -189,7 +189,7 @@
     <string name="apk_cause_other">Android a refusé l\'installation.</string>
 
     <string name="command_title">Commande ADB</string>
-    <string name="command_warning">Pour ce que les autres cartes ne font pas. Ces commandes échappent aux garde-fous de TV Slim et ne s\'annulent pas — pm uninstall désinstalle pour de bon. Chacune est consignée au journal.</string>
+    <string name="command_warning">Échappe à tous les garde-fous et ne s\'annule pas. Consignée au journal.</string>
     <string name="command_label">adb shell</string>
     <string name="command_placeholder">pm list packages -d</string>
     <string name="command_history">Commandes précédentes</string>
@@ -199,8 +199,10 @@
     <string name="command_cut_delay">Coupée au bout de %1$d s</string>
     <string name="command_cut_connection">Connexion perdue</string>
     <string name="command_no_output">(aucune sortie)</string>
+    <string name="advanced_title">Outils avancés</string>
+    <string name="advanced_summary">Permissions, installation d\'APK, commande ADB, Shizuku</string>
     <string name="shizuku_title">Shizuku</string>
-    <string name="shizuku_hint">Shizuku prête les privilèges du shell aux autres applications du téléviseur, et son service meurt à chaque extinction — seul ADB le ranime. TV Slim ne s’en sert pas : c’est un service rendu à celles qui en dépendent, comme le gestionnaire des tâches de StartLight.</string>
+    <string name="shizuku_hint">Relance Shizuku après un redémarrage du téléviseur, pour les applications qui en dépendent.</string>
     <string name="shizuku_restart">Relancer Shizuku</string>
     <string name="shizuku_started">Service démarré.</string>
     <string name="shizuku_failed">Le service n’a pas démarré.</string>

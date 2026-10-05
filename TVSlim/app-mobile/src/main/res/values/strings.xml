@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name" translatable="false">TV Slim Remote</string>
 
-    <string name="tab_connection">Television</string>
+    <string name="tab_connection">TV</string>
     <string name="tab_packages">Packages</string>
     <string name="tab_memory">Memory</string>
     <string name="tab_files">Files</string>
@@ -36,7 +36,7 @@
     <string name="size_gb">%1$s GB</string>
 
     <string name="connection_title">Connect to a television</string>
-    <string name="connection_subtitle">The phone talks to the television over ADB, on the local network. No computer involved.</string>
+    <string name="connection_subtitle">Over ADB, on your local network. No computer needed.</string>
     <string name="connection_host">Address</string>
     <string name="connection_port">Port</string>
     <string name="connection_connect">Connect</string>
@@ -156,7 +156,7 @@
     <string name="gain_memory_caveat">Free memory swings with what the television is doing: read it as a trend, not as a verdict.</string>
 
     <string name="permissions_title">Privileged permissions</string>
-    <string name="permissions_hint">Some permissions can only be granted from a computer — or from here. The grant survives reboots, and the log keeps the command that takes it back.</string>
+    <string name="permissions_hint">Permissions only ADB can grant. Each one can be taken back from the log.</string>
     <string name="permissions_package">Package</string>
     <string name="permissions_permission">Permission</string>
     <string name="permissions_permission_hint">For example android.permission.WRITE_SECURE_SETTINGS</string>
@@ -170,7 +170,7 @@
     <string name="permissions_state_appop">App-op %1$s: %2$s</string>
 
     <string name="install_title">Install an application</string>
-    <string name="install_hint">Send an APK file from this phone to the television and install it, as adb install would. An application already installed is updated and keeps its data.</string>
+    <string name="install_hint">Installs an APK on the TV. An app already there is updated and keeps its data.</string>
     <string name="install_choose">Choose an APK…</string>
     <string name="install_examining">Reading the APK and the television…</string>
     <string name="install_sending">Sending: %1$s of %2$s MB</string>
@@ -190,7 +190,7 @@
     <string name="apk_cause_other">Android refused the installation.</string>
 
     <string name="command_title">ADB command</string>
-    <string name="command_warning">For what the other cards do not do. These commands bypass TV Slim\'s safeguards and cannot be undone — pm uninstall really uninstalls. Each one is recorded in the log.</string>
+    <string name="command_warning">Bypasses every safeguard and cannot be undone. Recorded in the log.</string>
     <string name="command_label">adb shell</string>
     <string name="command_placeholder">pm list packages -d</string>
     <string name="command_history">Previous commands</string>
@@ -200,8 +200,10 @@
     <string name="command_cut_delay">Cut after %1$d s</string>
     <string name="command_cut_connection">Connection lost</string>
     <string name="command_no_output">(no output)</string>
+    <string name="advanced_title">Advanced tools</string>
+    <string name="advanced_summary">Permissions, APK installation, ADB command, Shizuku</string>
     <string name="shizuku_title">Shizuku</string>
-    <string name="shizuku_hint">Shizuku lends its shell privileges to other apps on the TV, and its service dies at every shutdown — only ADB can bring it back. TV Slim does not use it: this is a favour to the apps that do, such as StartLight’s task manager.</string>
+    <string name="shizuku_hint">Restarts Shizuku after a TV reboot, for the apps that rely on it.</string>
     <string name="shizuku_restart">Restart Shizuku</string>
     <string name="shizuku_started">Service started.</string>
     <string name="shizuku_failed">The service did not start.</string>

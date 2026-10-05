@@ -126,12 +126,17 @@ fun ConnexionScreen(
             etat.derive?.let { plan -> CarteDerive(plan = plan, onReprendre = onReprendreDerive) }
             CarteAccueil(etat = etat, onInstaller = onInstallerLauncher, onDefinirAccueil = onDefinirAccueil)
             AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
-            // En dernier : accorder une permission privilégiée est rare, et sans rapport avec
-            // le débloat. Elle n'a de sens que téléviseur joint, d'où sa place ici.
-            CartePermissions(etat = etat.permissions, actions = actionsPermissions)
-            CarteInstallation(etat = etat.installation, onChoisir = onChoisirApk)
-            CarteCommande(etat = etat.commande, actions = actionsCommande)
-            CarteShizuku(etat = etat.shizuku, actions = actionsShizuku)
+            // En dernier, repliés : des outils rares, sans rapport avec le débloat, qui n'ont de sens
+            // que téléviseur joint.
+            OutilsAvances(
+                occupe = etat.permissions.lecture || etat.installation.occupee ||
+                    etat.commande.enCours || etat.shizuku.enCours,
+            ) {
+                CartePermissions(etat = etat.permissions, actions = actionsPermissions)
+                CarteInstallation(etat = etat.installation, onChoisir = onChoisirApk)
+                CarteCommande(etat = etat.commande, actions = actionsCommande)
+                CarteShizuku(etat = etat.shizuku, actions = actionsShizuku)
+            }
             return@Column
         }
 
