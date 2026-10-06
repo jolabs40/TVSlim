@@ -18,6 +18,13 @@ android {
         // La même version pour les deux applications : voir le build.gradle.kts racine.
         versionCode = rootProject.extra["codeDeVersion"] as Int
         versionName = rootProject.extra["versionApp"] as String
+        // Le certificat attendu de l'APK du téléviseur, téléchargé depuis GitHub : celui que la CI vérifie
+        // avant de publier. Rien n'est envoyé au téléviseur qui ne le porte pas.
+        buildConfigField(
+            "String",
+            "EMPREINTE_CERTIFICAT",
+            "\"${providers.gradleProperty("empreinteCertificat").get()}\"",
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

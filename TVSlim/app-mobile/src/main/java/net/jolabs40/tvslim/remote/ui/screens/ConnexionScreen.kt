@@ -71,6 +71,8 @@ fun ConnexionScreen(
     onArreterRecherche: () -> Unit,
     onConnecterA: (net.jolabs40.tvslim.remote.adb.AppareilDecouvert) -> Unit,
     actionsPermissions: ActionsPermissions,
+    etatApplicationTv: net.jolabs40.tvslim.remote.ui.EtatApplicationTvUi,
+    actionsApplicationTv: net.jolabs40.tvslim.remote.ui.ActionsApplicationTv,
     onChoisirApk: () -> Unit,
     actionsCommande: ActionsCommande,
     actionsShizuku: ActionsShizuku,
@@ -125,7 +127,17 @@ fun ConnexionScreen(
             // téléviseur a défait seul ce qu'on avait réglé.
             etat.derive?.let { plan -> CarteDerive(plan = plan, onReprendre = onReprendreDerive) }
             CarteAccueil(etat = etat, onInstaller = onInstallerLauncher, onDefinirAccueil = onDefinirAccueil)
-            AppareilConnecte(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
+            // Face à un téléviseur ou une box seulement : sur un téléphone joint pour essai, elle n'a rien à faire.
+            val televiseur = etat.infos.typeAppareil == TypeAppareil.TELEVISEUR || etat.infos.typeAppareil == TypeAppareil.BOX
+            AppareilConnecte(
+                etat = etat,
+                onDeconnecter = onDeconnecter,
+                // Actualiser relit aussi l'application TV : elle a pu changer sur le téléviseur.
+                onActualiser = { onActualiser(); if (televiseur) actionsApplicationTv.onLire() },
+            )
+            if (televiseur) {
+                CarteApplicationTv(etat = etatApplicationTv, hote = etat.connexion.hote, actions = actionsApplicationTv)
+            }
             // En dernier, repliés : des outils rares, sans rapport avec le débloat, qui n'ont de sens
             // que téléviseur joint.
             OutilsAvances(

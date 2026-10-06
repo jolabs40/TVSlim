@@ -118,6 +118,18 @@ class RemoteViewModel @Inject constructor(
         remercier = soutien::remercier,
     )
 
+    /** L'application TV Slim du téléviseur, installée depuis GitHub : son propre pilote, comme les permissions. */
+    val applicationTv = PiloteApplicationTv(
+        contexte = contexte,
+        client = client,
+        lecteur = lecteur,
+        moteur = { moteur },
+        installation = { installationApk },
+        portee = viewModelScope,
+        afficher = ::afficher,
+        remercier = soutien::remercier,
+    )
+
     /** La capture d'écran du téléviseur, depuis la barre du haut. */
     val capture = PiloteCapture(contexte, client, viewModelScope, { _etat.value.infos }, { _etat.value.connecte }, ::afficher)
 
@@ -266,6 +278,7 @@ class RemoteViewModel @Inject constructor(
         moteur = null
         installationApk = null
         permissions.oublier()
+        applicationTv.oublier()
         _etat.update {
             it.copy(
                 lignes = emptyList(),

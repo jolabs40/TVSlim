@@ -83,6 +83,7 @@ fun RemoteApp() {
     val etat by modele.etat.collectAsStateWithLifecycle()
     val soutienVisible by modele.soutien.visible.collectAsStateWithLifecycle()
     val etatCapture by modele.capture.etat.collectAsStateWithLifecycle()
+    val etatApplicationTv by modele.applicationTv.etat.collectAsStateWithLifecycle()
     val contexte = LocalContext.current
     val navigation = rememberNavController()
     val pileCourante by navigation.currentBackStackEntryAsState()
@@ -211,6 +212,12 @@ fun RemoteApp() {
                             onLire = modele.permissions::lire,
                             onAccorder = modele.permissions::accorder,
                             onRetirer = modele.permissions::retirer,
+                        ),
+                        etatApplicationTv = etatApplicationTv,
+                        actionsApplicationTv = ActionsApplicationTv(
+                            onLire = modele.applicationTv::lire,
+                            onInstaller = modele.applicationTv::installer,
+                            onAutoriser = modele.applicationTv::autoriser,
                         ),
                         onChoisirApk = { apk.launch(TYPES_APK) },
                         actionsCommande = ActionsCommande(

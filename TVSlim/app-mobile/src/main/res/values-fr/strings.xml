@@ -414,4 +414,35 @@
     <string name="engine_not_user_installed">Ce n\'est pas une application installée : elle ne se désinstalle pas.</string>
     <string name="journal_home">Écran d\'accueil</string>
     <string name="files_refused_silent">refusé par le téléviseur</string>
+
+    <!-- L'application TV Slim du téléviseur, installée depuis GitHub -->
+    <string name="tvapp_title">TV Slim sur le téléviseur</string>
+    <string name="tvapp_body">Facultative. Elle affiche un code à scanner pour reconnecter ce téléphone, garde le téléviseur joignable pendant la veille, et vous prévient quand une mise à jour système a défait vos réglages.</string>
+    <string name="tvapp_reading">Lecture du téléviseur…</string>
+    <string name="tvapp_absent">Pas installée sur ce téléviseur.</string>
+    <string name="tvapp_update">Version %1$s installée ; la %2$s est disponible.</string>
+    <string name="tvapp_no_permission">Installée (%1$s), mais sans l\'autorisation dont son gardien de démarrage a besoin.</string>
+    <string name="tvapp_up_to_date">Installée et à jour (%1$s), avec son autorisation.</string>
+    <string name="tvapp_how">TV Slim la télécharge depuis ses publications GitHub, vérifie qu\'elle est signée de sa propre clé, l\'installe, lui accorde l\'autorisation que seul ADB donne, et allume son gardien de démarrage.</string>
+    <string name="tvapp_install">Installer depuis GitHub</string>
+    <string name="tvapp_install_version">Installer la %1$s depuis GitHub</string>
+    <string name="tvapp_update_action">Mettre à jour</string>
+    <string name="tvapp_grant_action">Accorder l\'autorisation</string>
+    <string name="tvapp_step_search">Recherche de la dernière version…</string>
+    <string name="tvapp_step_download">Téléchargement… %1$d %%</string>
+    <string name="tvapp_step_verify">Vérification de la signature…</string>
+    <string name="tvapp_step_send">Installation sur le téléviseur… %1$d %%</string>
+    <string name="tvapp_step_permission">Autorisation…</string>
+    <string name="tvapp_step_guardian">Lancement de l\'application et de son gardien…</string>
+    <string name="tvapp_done">TV Slim %1$s est installée sur le téléviseur, et son gardien de démarrage est allumé.</string>
+    <string name="tvapp_done_guardian_manual">TV Slim %1$s est installée. Ouvrez-la sur le téléviseur pour allumer son gardien de démarrage, dans Réglages.</string>
+    <string name="tvapp_done_no_permission">TV Slim %1$s est installée, mais le téléviseur a refusé l\'autorisation dont son gardien de démarrage a besoin.</string>
+    <string name="tvapp_error_not_found">Aucune application TV dans les publications GitHub de TV Slim.</string>
+    <string name="tvapp_error_network">GitHub est injoignable : vérifiez la connexion Internet de ce téléphone.</string>
+    <string name="tvapp_error_too_big">Le fichier téléchargé est bien trop gros : rien n\'a été installé.</string>
+    <string name="tvapp_error_certificate">L\'APK téléchargé n\'est pas signé de la clé de TV Slim : rien n\'a été envoyé au téléviseur.</string>
+    <string name="tvapp_error_package">L\'APK téléchargé n\'est pas l\'application TV de TV Slim : rien n\'a été envoyé au téléviseur.</string>
+    <string name="tvapp_error_sdk">La version d\'Android de ce téléviseur est trop ancienne pour l\'application TV.</string>
+    <string name="tvapp_error_tv">Le téléviseur ne répond plus.</string>
+    <string name="tvapp_error_install">Le téléviseur a refusé l\'installation : %1$s</string>
 </resources>

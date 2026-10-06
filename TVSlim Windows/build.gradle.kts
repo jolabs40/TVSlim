@@ -12,6 +12,9 @@ val versionApp: String = providers.gradleProperty("versionApp").get()
 val depotGithub: String = providers.gradleProperty("depotGithub").get()
 val clePubliqueMisesAJour: String = providers.gradleProperty("clePubliqueMisesAJour").get()
 val licenceApp: String = providers.gradleProperty("licenceApp").get()
+/** Le certificat des APK Android, lu à sa source — `TVSlim/gradle.properties` —, sans copie à tenir à jour. */
+val empreinteCertificat: String = providers.fileContents(layout.projectDirectory.file("../TVSlim/gradle.properties"))
+    .asText.get().lineSequence().first { it.startsWith("empreinteCertificat=") }.substringAfter('=').trim()
 version = versionApp
 
 /**
@@ -29,10 +32,12 @@ val genererInfosApp by tasks.registering {
     val depot = depotGithub
     val clePublique = clePubliqueMisesAJour
     val licence = licenceApp
+    val empreinte = empreinteCertificat
     inputs.property("version", version)
     inputs.property("depot", depot)
     inputs.property("clePublique", clePublique)
     inputs.property("licence", licence)
+    inputs.property("empreinte", empreinte)
     outputs.dir(dossier)
     doLast {
         val fichier = dossier.get().file("net/jolabs40/tvslim/windows/InfosApp.kt").asFile
@@ -47,6 +52,8 @@ val genererInfosApp by tasks.registering {
             |    const val DEPOT_GITHUB = "$depot"
             |    const val CLE_PUBLIQUE_MISES_A_JOUR = "$clePublique"
             |    const val LICENCE = "$licence"
+            |    /** Certificat attendu de l'APK du téléviseur téléchargé depuis GitHub. */
+            |    const val EMPREINTE_CERTIFICAT_ANDROID = "$empreinte"
             |}
             |""".trimMargin(),
         )
