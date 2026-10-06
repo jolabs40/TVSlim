@@ -243,7 +243,7 @@ class ActionsApplications(
         if (!IDENTIFIANT.matches(paquet)) {
             return ResultatAction(paquet, application.nom, false, motif = MotifMoteur.NomInvalide(NatureNom.PAQUET, paquet))
         }
-        val tiers = executeur.executer("pm list packages -3 $paquet")
+        val tiers = executeur.executer("pm list packages -3 --user 0 $paquet")
         if (tiers.code < 0) return ResultatAction(paquet, application.nom, false, tiers.sortie)
         if (tiers.sortie.lines().none { it.trim() == "package:$paquet" }) {
             return ResultatAction(paquet, application.nom, false, motif = MotifMoteur.PasInstalleeParLaPersonne)

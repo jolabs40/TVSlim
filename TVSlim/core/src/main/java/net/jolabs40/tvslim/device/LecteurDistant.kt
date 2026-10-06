@@ -175,7 +175,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     }
 
     suspend fun estInstalle(paquet: String): Boolean {
-        val sortie = executeur.executer("pm list packages $paquet")
+        val sortie = executeur.executer("pm list packages --user 0 $paquet")
         return sortie.reussi &&
             sortie.sortie.lineSequence().any { it.trim() == "package:$paquet" }
     }
@@ -471,11 +471,14 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
 
         const val COMMANDE_STOCKAGE = "dumpsys diskstats; echo ${LectureStockage.MARQUEUR_DF}; df -k /data"
 
+        // `--user 0` partout : sans lui, `pm list packages -e` compte actif un paquet actif dans N'IMPORTE
+        // QUEL profil. La TCL en porte un second, jamais ouvert (`new_user`, n° 10) : ce qu'on y a coupé
+        // pour le profil principal y reste actif (relevé le 2026-10-06). `pm disable-user` vise déjà 0.
         val COMMANDE = listOf(
             "echo $MARQUEUR_DESACTIVES",
-            "pm list packages -d",
+            "pm list packages -d --user 0",
             "echo $MARQUEUR_ACTIFS",
-            "pm list packages -e",
+            "pm list packages -e --user 0",
             "echo $MARQUEUR_PROPRIETES",
             "getprop ro.product.manufacturer",
             "getprop ro.product.model",
@@ -502,7 +505,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
                 "-a android.intent.action.MAIN -c android.intent.category.LAUNCHER",
             // En dernier : le code de retour de la commande entière est le sien.
             "echo $MARQUEUR_TIERS",
-            "pm list packages -3",
+            "pm list packages -3 --user 0",
         ).joinToString("; ")
     }
 }

@@ -120,7 +120,9 @@ jobs:
 
       # Mêmes réglages que la signatureConfig de Gradle : pas de v1 (minSdk 26), v2, et v3 qui porte la
       # lignée de certificat. AGP a déjà aligné les APK, bibliothèques natives à 16 Ko comprises ; on le
-      # vérifie, sans réaligner — apksigner ne déplace rien.
+      # vérifie, sans réaligner — apksigner ne déplace rien. Pas de v4 non plus : apksigner l'écrirait dans
+      # un .apk.idsig à côté, que `publication/*` aurait publié (android-v1.0.0) et qui ne sert qu'à
+      # l'installation incrémentale d'un `adb install` en USB.
       - name: Signer les APK
         env:
           KEYSTORE_B64: ${{ secrets.TVSLIM_ANDROID_KEYSTORE }}
@@ -134,7 +136,8 @@ jobs:
             "$outils/zipalign" -c -P 16 4 "$apk"
             "$outils/apksigner" sign --ks "$magasin" --ks-key-alias tvslim \
               --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD \
-              --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true "$apk"
+              --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true \
+              --v4-signing-enabled false "$apk"
           done
           rm -f "$magasin"
 
