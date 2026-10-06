@@ -21,6 +21,7 @@
 <p align="center">
   <a href="https://github.com/jolabs40/TVSlim/releases/latest"><b>⬇ Télécharger pour Windows</b></a>
   &nbsp;·&nbsp; <a href="https://github.com/jolabs40/TVSlim/releases?q=android&expanded=true"><b>⬇ Android</b></a>
+  &nbsp;·&nbsp; <a href="https://tvslim.app/fr/"><b>tvslim.app</b></a>
   &nbsp;·&nbsp; <a href="#démarrer-en-trois-étapes">Démarrer</a>
   &nbsp;·&nbsp; <a href="#questions-fréquentes">Questions fréquentes</a>
   &nbsp;·&nbsp; <a href="README.md">English version</a>
@@ -115,7 +116,8 @@ cliquez sur **Appliquer**.
   Panasonic…) et box (NVIDIA Shield TV, Xiaomi Mi Box, Freebox, boîtiers Google TV…). TV Slim
   reconnaît le fabricant et affiche son logo.
 - **Le catalogue** décrit les paquets de Google TV et d'Android TV, et ceux de TCL, Philips, NVIDIA et
-  Xiaomi. Sur les autres marques, les paquets que TV Slim ne connaît pas encore sont listés à part,
+  Xiaomi — et de Sony, pas encore éprouvés. Il se parcourt, paquet par paquet, sur
+  [tvslim.app/fr/packages](https://tvslim.app/fr/packages/). Sur les autres marques, les paquets que TV Slim ne connaît pas encore sont listés à part,
   sans rien proposer d'en faire, et *Proposer au catalogue* envoie leur inventaire en quelques clics.
 - **Éprouvé** sur un TCL Smart TV Pro (65C89K, Google TV, Android 14) et un NVIDIA Shield TV.
 - **Côté PC** : Windows 10 ou 11, 64 bits. **Côté téléphone** : Android 8 ou plus récent. L'un ou

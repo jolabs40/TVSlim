@@ -1,0 +1,52 @@
+---
+import Base from '../layouts/Base.astro';
+import { REPO, type Lang } from '../site';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const fr = lang === 'fr';
+const t = fr
+  ? {
+      title: 'Confidentialité | TV Slim',
+      description: 'Ce que TV Slim et tvslim.app savent de vous : rien. Pas de compte, pas de télémétrie, pas de cookie.',
+      h1: 'Confidentialité',
+      lede: 'Pas de compte, pas de télémétrie, pas de cookie. Voici, précisément, à qui parlent l’application et ce site.',
+      blocs: [
+        ['TV Slim pour Windows', 'TV Slim parle à votre téléviseur sur votre réseau local, et à GitHub pour chercher les mises à jour — et, la première fois que vous ouvrez le miroir sans scrcpy installé, pour le télécharger depuis sa publication GitHub, après votre accord et en vérifiant son empreinte. À rien d’autre. La clé ADB qui permet à cet ordinateur de parler à vos téléviseurs est gardée chiffrée par Windows (DPAPI) dans %APPDATA%\\TVSlim, à côté des journaux.'],
+        ['TV Slim Remote, sur le téléphone', 'Il parle à votre téléviseur, et à rien d’autre ; sa clé ADB est chiffrée par le magasin de clés d’Android. Le scanner de QR codes est celui de Google, fourni par les services Google Play.'],
+        ['Le soutien', 'L’application ne contacte jamais Ko-fi elle-même : le bouton ouvre votre navigateur.'],
+        ['Ce site', 'tvslim.app ne dépose aucun cookie, ne mesure pas son audience et ne charge rien d’un service tiers : les polices et les images sont servies par le site lui-même. Comme tout hébergeur, Infomaniak, en Suisse, tient les journaux techniques habituels de son serveur. Les boutons de téléchargement mènent à GitHub.'],
+      ],
+      contact: 'Une question ? Ouvrez une discussion sur GitHub.',
+    }
+  : {
+      title: 'Privacy | TV Slim',
+      description: 'What TV Slim and tvslim.app know about you: nothing. No account, no telemetry, no cookies.',
+      h1: 'Privacy',
+      lede: 'No account, no telemetry, no cookies. Here is exactly who the app and this site talk to.',
+      blocs: [
+        ['TV Slim for Windows', 'TV Slim talks to your television over your local network, and to GitHub to look for updates — and, the first time you open the mirror without scrcpy installed, to download it from its GitHub release, once you have agreed and after checking its fingerprint. Nothing else. The ADB key that lets this computer talk to your TVs is stored encrypted by Windows (DPAPI) in %APPDATA%\\TVSlim, next to the logs.'],
+        ['TV Slim Remote, on the phone', 'It talks to your television, and to nothing else; its ADB key is encrypted by the Android keystore. The QR code scanner is Google’s, from Google Play services.'],
+        ['Support', 'The app never contacts Ko-fi itself: the button opens your browser.'],
+        ['This site', 'tvslim.app sets no cookies, measures no audience and loads nothing from a third-party service: fonts and images are served by the site itself. Like any host, Infomaniak, in Switzerland, keeps the usual technical logs of its server. The download buttons lead to GitHub.'],
+      ],
+      contact: 'A question? Open a discussion on GitHub.',
+    };
+---
+<Base lang={lang} page="/privacy/" current="privacy" title={t.title} description={t.description}>
+  <section>
+    <div class="wrap stack" style="max-width:820px;gap:26px">
+      <h1>{t.h1}</h1>
+      <p class="lede">{t.lede}</p>
+      {t.blocs.map(([titre, texte]) => (
+        <div class="stack" style="gap:8px">
+          <h2 style="font-size:24px">{titre}</h2>
+          <p>{texte}</p>
+        </div>
+      ))}
+      <p><a href={`${REPO}/issues`} rel="noopener">{t.contact}</a></p>
+    </div>
+  </section>
+</Base>

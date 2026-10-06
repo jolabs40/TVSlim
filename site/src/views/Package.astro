@@ -1,0 +1,180 @@
+---
+// La fiche d'un paquet : ce qu'il fait, ce que coûte sa désactivation, ce que TV Slim en fait.
+// Une page par paquet, pour répondre à la question telle qu'on la tape : « com.tcl.xxx, c'est quoi ? ».
+import Base from '../layouts/Base.astro';
+import Risk from '../components/Risk.astro';
+import DownloadButtons from '../components/DownloadButtons.astro';
+import { catalogue, nomMarque } from '../data/catalogue';
+import { path, url, SITE, STARTLIGHT, type Lang } from '../site';
+
+interface Props {
+  lang: Lang;
+  id: string;
+}
+const { lang, id } = Astro.props;
+const fr = lang === 'fr';
+const cat = catalogue(lang);
+const entree = cat.entrees.find((e) => e.paquet === id);
+const protege = cat.proteges.find((p) => p.paquet === id);
+const marque = entree?.marque ?? protege?.marque ?? '';
+const nom = entree?.nom ?? protege?.raison ?? id;
+const profil = entree ? cat.profilDe(entree) : undefined;
+const accueil = entree?.categorie === 'accueil';
+const voisins = [
+  ...cat.entrees.filter((e) => e.marque === marque && e.paquet !== id).map((e) => ({ id: e.paquet, nom: e.nom })),
+  ...cat.proteges.filter((p) => p.marque === marque && p.paquet !== id).map((p) => ({ id: p.paquet, nom: p.paquet })),
+].slice(0, 12);
+
+const t = fr
+  ? {
+      title: protege
+        ? `${id} : à ne jamais désactiver — ${nomMarque(marque, lang)} | TV Slim`
+        : `${id} — ${nom} : à quoi sert-il, peut-on le désactiver ? | TV Slim`,
+      description: protege
+        ? `${id} (${nomMarque(marque, lang)}) : ${protege.raison} Ne le désactivez pas — TV Slim le refuse, quelle que soit la sélection.`
+        : `${id} (${nomMarque(marque, lang)}) : ${entree!.description}${entree!.effetDeBord ? ` En le désactivant : ${entree!.effetDeBord}` : ''}`,
+      paquets: 'Paquets',
+      faits: ['Marque', 'Catégorie', 'Risque', 'Profil', 'Taille'],
+      aucunProfil: 'Aucun profil : à désactiver un par un',
+      effet: 'En le désactivant :',
+      nonEprouve: 'Non éprouvé : décrit d’après un inventaire ou des rapports, sans avoir été coupé sur un appareil. Aucun profil de TV Slim ne le coche ; il se désactive à la main, et se réactive depuis le journal.',
+      tvslimH2: 'Ce que fait TV Slim',
+      tvslimProtege: 'TV Slim refuse de désactiver ce paquet, quelle que soit la sélection. Ne le désactivez pas non plus à la main.',
+      tvslimEntree: `TV Slim le désactive par pm disable-user --user 0 — il n’est jamais désinstallé — après une confirmation qui liste les effets de bord. Le journal garde la commande qui l’annule : un clic le réactive.`,
+      accueil: 'TV Slim ne désactive l’écran d’accueil d’usine qu’une fois un autre launcher installé. Celui qu’il recommande, du même auteur :',
+      accueilLien: 'Startlight Launcher, un accueil sans publicité',
+      mainH2: 'À la main, en ADB',
+      mainP: 'Les mêmes commandes, si vous préférez les taper. La première désactive le paquet pour l’utilisateur principal ; la seconde l’annule.',
+      voisinsH2: `Autres paquets ${nomMarque(marque, lang)}`,
+      tous: 'Tous les paquets',
+      cta: 'Le désactiver sans taper de commande',
+    }
+  : {
+      title: protege
+        ? `${id}: never disable it — ${nomMarque(marque, lang)} | TV Slim`
+        : `${id} — ${nom}: what is it, can you disable it? | TV Slim`,
+      description: protege
+        ? `${id} (${nomMarque(marque, lang)}): ${protege.raison} Do not disable it — TV Slim refuses to, whatever the selection.`
+        : `${id} (${nomMarque(marque, lang)}): ${entree!.description}${entree!.effetDeBord ? ` If you disable it: ${entree!.effetDeBord}` : ''}`,
+      paquets: 'Packages',
+      faits: ['Maker', 'Category', 'Risk', 'Profile', 'Size'],
+      aucunProfil: 'No profile: disable it on its own',
+      effet: 'If you disable it:',
+      nonEprouve: 'Not tested: described from an inventory or from reports, without having been disabled on a device. No TV Slim profile selects it; it can be disabled by hand, and re-enabled from the log.',
+      tvslimH2: 'What TV Slim does',
+      tvslimProtege: 'TV Slim refuses to disable this package, whatever the selection. Do not disable it by hand either.',
+      tvslimEntree: `TV Slim disables it with pm disable-user --user 0 — it is never uninstalled — after a confirmation that lists the side effects. The log keeps the command that undoes it: one click re-enables it.`,
+      accueil: 'TV Slim only disables the factory home screen once another launcher is installed. The one it recommends, by the same author:',
+      accueilLien: 'Startlight Launcher, an ad-free home screen',
+      mainH2: 'By hand, over ADB',
+      mainP: 'The same commands, if you would rather type them. The first one disables the package for the main user; the second one undoes it.',
+      voisinsH2: `Other ${nomMarque(marque, lang)} packages`,
+      tous: 'All packages',
+      cta: 'Disable it without typing a command',
+    };
+
+const schema = [
+  {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TV Slim', item: url(lang, '/') },
+      { '@type': 'ListItem', position: 2, name: t.paquets, item: url(lang, '/packages/') },
+      { '@type': 'ListItem', position: 3, name: id, item: url(lang, `/packages/${id}/`) },
+    ],
+  },
+  {
+    '@type': 'WebPage',
+    '@id': `${url(lang, `/packages/${id}/`)}#page`,
+    name: t.title.replace(/ \| TV Slim$/, ''),
+    description: t.description,
+    inLanguage: lang,
+    isPartOf: { '@id': `${SITE}/#site` },
+    about: { '@type': 'SoftwareApplication', name: entree?.nom ?? id, identifier: id, operatingSystem: 'Android TV, Google TV' },
+  },
+];
+---
+<Base lang={lang} page={`/packages/${id}/`} current="packages" title={t.title} description={t.description} schema={schema}>
+  <section>
+    <div class="wrap narrow stack" style="gap:26px">
+      <nav class="crumbs" aria-label={fr ? 'Fil d’Ariane' : 'Breadcrumb'}>
+        <a href={path(lang, '/packages/')}>{t.paquets}</a> › <span>{nomMarque(marque, lang)}</span>
+      </nav>
+      <div class="stack" style="gap:12px">
+        <h1>{protege ? id : nom}</h1>
+        {entree && <p class="pkg big">{id}</p>}
+        <div class="badges">
+          <Risk lang={lang} risque={entree?.risque} protege={!!protege} nonEprouve={entree ? !entree.eprouve : false} />
+        </div>
+      </div>
+
+      {protege && <div class="note danger"><p>{protege.raison}</p></div>}
+      {entree && <p class="lede">{entree.description}</p>}
+      {entree?.effetDeBord && (
+        <div class="note"><p><strong>{t.effet}</strong> {entree.effetDeBord}</p></div>
+      )}
+      {entree && !entree.eprouve && <div class="note info"><p>{t.nonEprouve}</p></div>}
+
+      {entree && (
+        <dl class="facts">
+          <div><dt>{t.faits[0]}</dt><dd>{nomMarque(marque, lang)}</dd></div>
+          <div><dt>{t.faits[1]}</dt><dd>{cat.categories.get(entree.categorie)}</dd></div>
+          <div><dt>{t.faits[2]}</dt><dd>{(fr ? { aucun: 'aucun connu', faible: 'faible', moyen: 'moyen', eleve: 'élevé' } : { aucun: 'none known', faible: 'low', moyen: 'medium', eleve: 'high' })[entree.risque]}</dd></div>
+          <div><dt>{t.faits[3]}</dt><dd>{profil ? profil.nom : t.aucunProfil}</dd></div>
+          {entree.tailleMo && <div><dt>{t.faits[4]}</dt><dd>{entree.tailleMo} {fr ? 'Mo' : 'MB'}</dd></div>}
+        </dl>
+      )}
+
+      <div class="stack" style="gap:12px">
+        <h2>{t.tvslimH2}</h2>
+        <p>{protege ? t.tvslimProtege : t.tvslimEntree}</p>
+        {accueil && (
+          <p>{t.accueil} <a href={STARTLIGHT} rel="noopener">{t.accueilLien}</a>.</p>
+        )}
+      </div>
+
+      {entree && (
+        <div class="stack" style="gap:12px">
+          <h2>{t.mainH2}</h2>
+          <p class="muted">{t.mainP}</p>
+          <pre><code>{`adb shell pm disable-user --user 0 ${id}\nadb shell pm enable ${id}`}</code></pre>
+        </div>
+      )}
+
+      {!protege && (
+        <div class="card stack cta">
+          <h2>{t.cta}</h2>
+          <DownloadButtons lang={lang} />
+        </div>
+      )}
+
+      {voisins.length > 0 && (
+        <div class="stack" style="gap:12px">
+          <h2>{t.voisinsH2}</h2>
+          <ul class="voisins">
+            {voisins.map((v) => <li><a href={path(lang, `/packages/${v.id}/`)}>{v.nom}</a></li>)}
+          </ul>
+          <p><a href={path(lang, '/packages/')}>{t.tous} →</a></p>
+        </div>
+      )}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .narrow { max-width: 860px; }
+  .crumbs { font-size: 15px; color: var(--muted); }
+  .crumbs a { color: var(--muted); }
+  h1 { font-size: clamp(30px, 4.6vw, 46px); overflow-wrap: anywhere; }
+  .big { font-size: 17px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  h2 { font-size: 24px; }
+  .facts { margin: 0; display: grid; gap: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+  .facts div { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+  .facts div:last-child { border-bottom: 0; }
+  dt { color: var(--muted); }
+  dd { margin: 0; }
+  .cta { gap: 16px; }
+  .voisins { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .voisins a { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; color: var(--ink); background: var(--surface); font-size: 14.5px; }
+  .voisins a:hover { border-color: var(--blue); }
+</style>

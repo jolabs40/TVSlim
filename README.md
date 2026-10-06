@@ -21,6 +21,7 @@
 <p align="center">
   <a href="https://github.com/jolabs40/TVSlim/releases/latest"><b>⬇ Download for Windows</b></a>
   &nbsp;·&nbsp; <a href="https://github.com/jolabs40/TVSlim/releases?q=android&expanded=true"><b>⬇ Android</b></a>
+  &nbsp;·&nbsp; <a href="https://tvslim.app/"><b>tvslim.app</b></a>
   &nbsp;·&nbsp; <a href="#get-started-in-three-steps">Get started</a>
   &nbsp;·&nbsp; <a href="#faq">FAQ</a>
   &nbsp;·&nbsp; <a href="README.fr.md">Version française</a>
@@ -110,7 +111,8 @@ pick a profile and click **Apply**.
   Shield TV, Xiaomi Mi Box, Freebox, Google TV streamers…). TV Slim recognises the maker and shows
   its logo.
 - **The catalogue** describes the packages of Google TV and Android TV, and those of TCL, Philips,
-  NVIDIA and Xiaomi. On other makes, the packages TV Slim does not know yet are listed apart, with
+  NVIDIA and Xiaomi — and of Sony, not tested yet. Browse it, package by package, on
+  [tvslim.app/packages](https://tvslim.app/packages/). On other makes, the packages TV Slim does not know yet are listed apart, with
   nothing offered to do about them, and *Propose to the catalogue* sends their inventory in a few
   clicks.
 - **Tested** on a TCL Smart TV Pro (65C89K, Google TV, Android 14) and an NVIDIA Shield TV.

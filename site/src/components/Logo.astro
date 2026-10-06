@@ -1,0 +1,15 @@
+---
+// Le logo tel que `outils/logo.py` le dessine (docs/logo/tvslim.svg) : jamais redessiné ici.
+import svg from '../../../docs/logo/tvslim.svg?raw';
+
+interface Props {
+  size?: number;
+}
+const { size = 36 } = Astro.props;
+---
+<span class="logo" style={`width:${size}px;height:${size}px`} aria-hidden="true" set:html={svg.replace(/<title>.*?<\/title>/s, '')} />
+
+<style>
+  .logo { display: inline-block; flex: none; }
+  .logo :global(svg) { width: 100%; height: 100%; display: block; }
+</style>

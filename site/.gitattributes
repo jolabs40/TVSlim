@@ -1,0 +1,2 @@
+# deploy.sh tourne sous bash : des fins de ligne CRLF le casseraient au premier checkout Windows.
+*.sh text eol=lf

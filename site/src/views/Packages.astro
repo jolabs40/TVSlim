@@ -1,0 +1,185 @@
+---
+import Base from '../layouts/Base.astro';
+import Risk from '../components/Risk.astro';
+import { catalogue, nomMarque, ORDRE_MARQUES } from '../data/catalogue';
+import { path, ISSUE_DEVICE, type Lang } from '../site';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const fr = lang === 'fr';
+const cat = catalogue(lang);
+const parMarque = ORDRE_MARQUES.map((m) => ({
+  marque: m,
+  entrees: cat.entrees.filter((e) => e.marque === m).sort((a, b) => a.nom.localeCompare(b.nom, lang)),
+})).filter((g) => g.entrees.length > 0);
+const proteges = [...cat.proteges].sort(
+  (a, b) => ORDRE_MARQUES.indexOf(a.marque) - ORDRE_MARQUES.indexOf(b.marque) || a.paquet.localeCompare(b.paquet),
+);
+
+const t = fr
+  ? {
+      title: 'Paquets Android TV et Google TV : à quoi ils servent, peut-on les désactiver ? | TV Slim',
+      description: `${cat.entrees.length} paquets d’Android TV, de Google TV, de TCL, Philips, Sony, NVIDIA et Xiaomi décrits, avec leur niveau de risque et leurs effets de bord, et ${cat.proteges.length} paquets à ne jamais désactiver.`,
+      h1: 'Les paquets d’Android TV et de Google TV',
+      lede: `Ce que fait chaque paquet, ce que coûte sa désactivation, et ceux auxquels il ne faut jamais toucher. ${cat.entrees.length} paquets décrits, ${cat.proteges.length} protégés : le catalogue même de TV Slim.`,
+      legend: 'Le niveau de risque dit ce qu’on perd en désactivant le paquet. « Non éprouvé » : décrit d’après un inventaire ou des rapports, sans avoir été coupé sur un appareil — aucun profil de TV Slim ne le coche.',
+      filtre: 'Filtrer les paquets',
+      filtrePh: 'Nom ou paquet, par exemple « launcherx »',
+      tous: 'Toutes',
+      aucun: 'Aucun paquet ne correspond.',
+      col: ['Application', 'Paquet', 'Catégorie', 'Risque'],
+      protH2: 'Ne jamais les désactiver',
+      protP: 'TV Slim refuse de désactiver ces paquets, quelle que soit la sélection : sans eux, le téléviseur peut redémarrer en boucle, perdre ses entrées HDMI ou ne plus obéir à la télécommande.',
+      protCol: ['Paquet', 'Marque', 'Pourquoi'],
+      missH2: 'Votre téléviseur n’y est pas ?',
+      missP: 'Sur une marque que le catalogue ne connaît pas encore, TV Slim liste les paquets inconnus à part, sans rien proposer d’en faire. « Proposer au catalogue » exporte leur inventaire et ouvre un formulaire GitHub pour l’envoyer.',
+      missLink: 'Ouvrir le formulaire',
+    }
+  : {
+      title: 'Android TV & Google TV packages: what they do, can you disable them? | TV Slim',
+      description: `${cat.entrees.length} Android TV, Google TV, TCL, Philips, Sony, NVIDIA and Xiaomi packages described, with their risk level and side effects, and ${cat.proteges.length} packages you must never disable.`,
+      h1: 'Android TV and Google TV packages',
+      lede: `What each package does, what disabling it costs, and the ones you must never touch. ${cat.entrees.length} packages described, ${cat.proteges.length} protected: TV Slim’s own catalogue.`,
+      legend: 'The risk level says what you lose by disabling the package. “Not tested”: described from an inventory or from reports, without having been disabled on a device — no TV Slim profile selects it.',
+      filtre: 'Filter the packages',
+      filtrePh: 'Name or package, for instance “launcherx”',
+      tous: 'All',
+      aucun: 'No package matches.',
+      col: ['App', 'Package', 'Category', 'Risk'],
+      protH2: 'Never disable these',
+      protP: 'TV Slim refuses to disable these packages, whatever the selection: without them, the TV may boot loop, lose its HDMI inputs or stop obeying the remote.',
+      protCol: ['Package', 'Maker', 'Why'],
+      missH2: 'Your TV is not here?',
+      missP: 'On a make the catalogue does not know yet, TV Slim lists the unknown packages apart, with nothing offered to do about them. “Propose to the catalogue” exports their inventory and opens a GitHub form to send it.',
+      missLink: 'Open the form',
+    };
+---
+<Base lang={lang} page="/packages/" current="packages" title={t.title} description={t.description}>
+  <section>
+    <div class="wrap">
+      <div class="head">
+        <h1>{t.h1}</h1>
+        <p class="lede">{t.lede}</p>
+        <p class="muted legend">{t.legend}</p>
+      </div>
+
+      <div class="filters" role="search">
+        <label class="search">
+          <span class="visually-hidden">{t.filtre}</span>
+          <input id="filtre" type="search" placeholder={t.filtrePh} autocomplete="off" />
+        </label>
+        <div class="chips" role="group" aria-label={t.filtre}>
+          <button type="button" data-marque="" aria-pressed="true">{t.tous}</button>
+          {parMarque.map((g) => <button type="button" data-marque={g.marque} aria-pressed="false">{nomMarque(g.marque, lang)}</button>)}
+        </div>
+      </div>
+      <p id="vide" class="muted" hidden>{t.aucun}</p>
+
+      {parMarque.map((g) => (
+        <div class="group" data-groupe={g.marque}>
+          <h2 id={`marque-${g.marque.toLowerCase().replace(/\s+/g, '-')}`}>{nomMarque(g.marque, lang)} <span class="count">{g.entrees.length}</span></h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>{t.col.map((c) => <th scope="col">{c}</th>)}</tr></thead>
+              <tbody>
+                {g.entrees.map((e) => (
+                  <tr data-texte={`${e.nom} ${e.paquet}`.toLowerCase()}>
+                    <td><a href={path(lang, `/packages/${e.paquet}/`)}>{e.nom}</a></td>
+                    <td class="pkg">{e.paquet}</td>
+                    <td class="muted">{cat.categories.get(e.categorie)}</td>
+                    <td class="badges"><Risk lang={lang} risque={e.risque} nonEprouve={!e.eprouve} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="never-disable">
+    <div class="wrap">
+      <div class="head">
+        <h2>{t.protH2}</h2>
+        <p class="lede">{t.protP}</p>
+      </div>
+      <div class="table-wrap group" data-groupe="*">
+        <table>
+          <thead><tr>{t.protCol.map((c) => <th scope="col">{c}</th>)}</tr></thead>
+          <tbody>
+            {proteges.map((p) => (
+              <tr data-texte={`${p.raison} ${p.paquet}`.toLowerCase()} data-marque={p.marque}>
+                <td><a class="pkg link" href={path(lang, `/packages/${p.paquet}/`)}>{p.paquet}</a></td>
+                <td>{nomMarque(p.marque, lang)}</td>
+                <td class="muted">{p.raison}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap stack" style="max-width:760px">
+      <h2>{t.missH2}</h2>
+      <p>{t.missP}</p>
+      <p><a href={ISSUE_DEVICE} rel="noopener">{t.missLink} →</a></p>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Filtre sans recharger : par texte (nom ou paquet) et par marque. Sans script, tout reste affiché.
+  const champ = document.getElementById('filtre') as HTMLInputElement | null;
+  const puces = [...document.querySelectorAll<HTMLButtonElement>('.chips button')];
+  const vide = document.getElementById('vide');
+  let marque = '';
+  function filtrer() {
+    const q = (champ?.value ?? '').trim().toLowerCase();
+    let visibles = 0;
+    document.querySelectorAll<HTMLElement>('[data-groupe]').forEach((groupe) => {
+      const tousLesGroupes = groupe.dataset.groupe === '*';
+      let dansGroupe = 0;
+      groupe.querySelectorAll<HTMLTableRowElement>('tbody tr').forEach((ligne) => {
+        const m = tousLesGroupes ? ligne.dataset.marque : groupe.dataset.groupe;
+        const ok = (!q || (ligne.dataset.texte ?? '').includes(q)) && (!marque || m === marque);
+        ligne.hidden = !ok;
+        if (ok) dansGroupe++;
+      });
+      groupe.hidden = dansGroupe === 0;
+      if (!tousLesGroupes) visibles += dansGroupe;
+    });
+    if (vide) vide.hidden = visibles > 0;
+  }
+  champ?.addEventListener('input', filtrer);
+  puces.forEach((b) =>
+    b.addEventListener('click', () => {
+      marque = b.dataset.marque ?? '';
+      puces.forEach((p) => p.setAttribute('aria-pressed', String(p === b)));
+      filtrer();
+    }),
+  );
+</script>
+
+<style>
+  .legend { font-size: 15px; }
+  .filters { display: grid; gap: 14px; margin-bottom: 28px; position: sticky; top: 64px; z-index: 2; background: var(--bg); padding-block: 12px; }
+  .search input { width: 100%; max-width: 520px; font: 16px var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .search input:focus { border-color: var(--blue); outline: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips button { font: 500 14px var(--body); color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .chips button[aria-pressed='true'] { background: var(--mint); color: var(--mint-ink); border-color: var(--mint); }
+  .group { margin-bottom: 36px; }
+  .group h2 { font-size: 24px; margin-bottom: 14px; display: flex; align-items: baseline; gap: 10px; }
+  .count { font: 500 14px var(--mono); color: var(--muted); }
+  td a { color: var(--ink); text-decoration: none; font-weight: 500; }
+  td a:hover { color: var(--blue); text-decoration: underline; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .link { color: var(--ink) !important; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (max-width: 640px) { th:nth-child(3), td:nth-child(3) { display: none; } }
+</style>

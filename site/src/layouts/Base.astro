@@ -1,0 +1,84 @@
+---
+import '@fontsource-variable/outfit';
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { ui, url, SITE, BRAND, OG_IMAGE, REPO, ORG_ID, STARTLIGHT, type Lang } from '../site';
+
+interface Props {
+  lang: Lang;
+  /** Chemin de la page sans préfixe de langue : canonique, hreflang et bascule. */
+  page: string;
+  title?: string;
+  description?: string;
+  current?: 'home' | 'download' | 'guide' | 'packages' | 'privacy';
+  /** Données structurées propres à la page ; l'éditeur et le site s'y ajoutent toujours. */
+  schema?: object[];
+  noindex?: boolean;
+}
+const { lang, page, title, description, current, schema = [], noindex = false } = Astro.props;
+const t = ui[lang];
+const pageTitle = title ?? t.meta.title;
+const pageDescription = description ?? t.meta.description;
+const enUrl = url('en', page);
+const frUrl = url('fr', page);
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'Organization', '@id': ORG_ID, name: 'JOLABS40', url: 'https://jolabs40.net', sameAs: [REPO, STARTLIGHT] },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE}/#site`,
+      url: SITE,
+      name: BRAND,
+      inLanguage: ['en', 'fr'],
+      publisher: { '@id': ORG_ID },
+      description: t.meta.description,
+    },
+    ...schema,
+  ],
+});
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large'} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="canonical" href={lang === 'en' ? enUrl : frUrl} />
+    <link rel="alternate" hreflang="en" href={enUrl} />
+    <link rel="alternate" hreflang="fr" href={frUrl} />
+    <link rel="alternate" hreflang="x-default" href={enUrl} />
+    <meta name="theme-color" content="#101418" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={BRAND} />
+    <meta property="og:url" content={lang === 'en' ? enUrl : frUrl} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:image" content={OG_IMAGE} />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content={lang === 'en' ? 'en_US' : 'fr_FR'} />
+    <meta property="og:locale:alternate" content={lang === 'en' ? 'fr_FR' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="sitemap" href="/sitemap.xml" />
+    <script type="application/ld+json" set:html={jsonLd} />
+  </head>
+  <body>
+    <a class="skip" href="#main">{t.skip}</a>
+    <Header lang={lang} page={page} current={current} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>

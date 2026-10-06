@@ -1,0 +1,187 @@
+---
+import Base from '../layouts/Base.astro';
+import { path, url, SITE, type Lang } from '../site';
+import { ORG_ID } from '../site';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const fr = lang === 'fr';
+
+const t = fr
+  ? {
+      title: 'Activer ADB sur un Android TV ou Google TV : le guide | TV Slim',
+      description: 'Activer les options pour les développeurs et le débogage réseau sur un téléviseur Android TV ou Google TV, puis connecter TV Slim. Une seule fois, sans root.',
+      h1: 'Préparer le téléviseur',
+      lede: 'Une seule fois par téléviseur, sans root : on active les options pour les développeurs, puis le débogage réseau. TV Slim parle ensuite au téléviseur par ADB, le pont de débogage que tout Android TV porte d’origine.',
+      steps: [
+        {
+          titre: 'Faire apparaître les options pour les développeurs',
+          texte: 'Ouvrez Paramètres → À propos, et appuyez sept fois sur OK sur le numéro de build. Un message confirme que vous êtes développeur.',
+          chemins: [
+            ['Google TV', 'Paramètres → Système → À propos → Build de l’OS Android TV'],
+            ['Android TV', 'Paramètres → Préférences de l’appareil → À propos → Build'],
+          ],
+        },
+        {
+          titre: 'Activer le débogage réseau',
+          texte: 'Dans les options pour les développeurs, activez le débogage réseau. Selon le téléviseur, il s’appelle Débogage réseau, Débogage ADB ou Débogage USB.',
+          chemins: [
+            ['Google TV', 'Paramètres → Système → Options pour les développeurs'],
+            ['Android TV', 'Paramètres → Préférences de l’appareil → Options pour les développeurs'],
+          ],
+        },
+        {
+          titre: 'Lancer TV Slim sur le même réseau',
+          texte: 'Sur un PC ou un téléphone branché au même réseau que le téléviseur. TV Slim le trouve tout seul en quelques secondes ; sinon, saisissez son adresse IP, indiquée dans Paramètres → Réseau. Sur le téléphone, vous pouvez aussi scanner le QR code de l’application TV.',
+        },
+        {
+          titre: 'Autoriser la connexion',
+          texte: 'À la première connexion, le téléviseur demande d’autoriser le débogage depuis cet ordinateur (ou ce téléphone). Cochez Toujours autoriser et acceptez à la télécommande : il ne le redemandera plus, même après un redémarrage.',
+        },
+        {
+          titre: 'Alléger le téléviseur',
+          texte: 'Ouvrez Paquets, choisissez un profil et cliquez sur Appliquer. La confirmation liste les effets de bord avant que rien ne parte, et chaque changement s’inscrit au journal avec la commande qui l’annule.',
+        },
+      ],
+      cheminsLabel: 'Le chemin, le plus souvent',
+      helpH2: 'Si ça coince',
+      help: [
+        ['Le téléviseur n’apparaît pas', 'Vérifiez que le PC ou le téléphone est sur le même réseau que le téléviseur, et pas sur un réseau invité : beaucoup de box isolent les appareils d’un réseau invité. Saisissez sinon l’adresse IP du téléviseur à la main.'],
+        ['Aucune demande d’autorisation n’apparaît', 'Une demande peut rester cachée derrière une application qui occupait l’écran. Appuyez sur Retour à la télécommande pour la faire réapparaître. Le téléviseur n’affiche qu’une demande à la fois : tant qu’une demande cachée attend, les suivantes ne s’affichent pas.'],
+        ['Il redemande l’autorisation au bout de quelques jours', 'Android oublie une autorisation qui n’a pas servi depuis sept jours, « Toujours autoriser » compris. Quand les options pour les développeurs proposent de désactiver l’expiration des autorisations ADB, l’activer évite de la redonner.'],
+        ['Injoignable quand le téléviseur est en veille', 'Beaucoup de téléviseurs coupent leur réseau en veille. Rallumez-le, ou installez l’application TV Slim du téléviseur, qui le garde joignable pendant la veille.'],
+        ['Mon téléviseur ne propose que le « débogage sans fil »', 'Le débogage sans fil d’Android 11 et plus, avec code d’appairage, est un autre mécanisme, que TV Slim ne sait pas encore ouvrir. Il faut le débogage réseau classique, sur le port 5555.'],
+      ],
+      undoH2: 'Revenir en arrière',
+      undoP: 'Dans TV Slim, le Journal annule une ligne ou restaure tout. Pour retirer l’accès d’un ordinateur au téléviseur : Options pour les développeurs → Révoquer les autorisations de débogage USB. Et vous pouvez désactiver le débogage réseau une fois le débloat fait : il ne sert qu’au moment de se connecter.',
+      packagesLink: 'Voir ce que chaque paquet fait',
+    }
+  : {
+      title: 'Turn on ADB on an Android TV or Google TV: the guide | TV Slim',
+      description: 'Turn on the developer options and network debugging on an Android TV or Google TV, then connect TV Slim. Once, without root.',
+      h1: 'Prepare the television',
+      lede: 'Once per television, without root: turn on the developer options, then network debugging. TV Slim then talks to the TV over ADB, the debugging bridge every Android TV ships with.',
+      steps: [
+        {
+          titre: 'Make the developer options appear',
+          texte: 'Open Settings → About, and press OK seven times on the build number. A message confirms you are now a developer.',
+          chemins: [
+            ['Google TV', 'Settings → System → About → Android TV OS build'],
+            ['Android TV', 'Settings → Device Preferences → About → Build'],
+          ],
+        },
+        {
+          titre: 'Turn on network debugging',
+          texte: 'In the developer options, turn on network debugging. Depending on the TV, it is called Network debugging, ADB debugging or USB debugging.',
+          chemins: [
+            ['Google TV', 'Settings → System → Developer options'],
+            ['Android TV', 'Settings → Device Preferences → Developer options'],
+          ],
+        },
+        {
+          titre: 'Start TV Slim on the same network',
+          texte: 'On a PC or a phone connected to the same network as the TV. TV Slim finds it by itself within a few seconds; otherwise, type its IP address, shown in Settings → Network. On the phone, you can also scan the QR code of the TV app.',
+        },
+        {
+          titre: 'Allow the connection',
+          texte: 'On the first connection, the TV asks to allow debugging from this computer (or this phone). Tick Always allow and accept with the remote: it will not ask again, even after a reboot.',
+        },
+        {
+          titre: 'Slim the TV down',
+          texte: 'Open Packages, pick a profile and click Apply. The confirmation lists the side effects before anything is sent, and every change goes to the log with the command that undoes it.',
+        },
+      ],
+      cheminsLabel: 'The path, most of the time',
+      helpH2: 'If something gets stuck',
+      help: [
+        ['The TV does not show up', 'Check that the PC or phone is on the same network as the TV, not on a guest network: many routers isolate the devices of a guest network. Otherwise, type the TV’s IP address by hand.'],
+        ['No authorisation prompt appears', 'A prompt can stay hidden behind an app that was on screen. Press Back on the remote to bring it up. The TV shows one prompt at a time: while a hidden one is waiting, the next ones do not appear.'],
+        ['It asks for authorisation again after a few days', 'Android forgets an authorisation that has not been used for seven days, “Always allow” included. When the developer options offer to disable the ADB authorisation timeout, turning that on saves you from giving it again.'],
+        ['Unreachable while the TV is on standby', 'Many TVs cut their network on standby. Turn it on again, or install the TV Slim app on the television, which keeps it reachable during standby.'],
+        ['My TV only offers “Wireless debugging”', 'Wireless debugging on Android 11 and later, with a pairing code, is a different mechanism that TV Slim cannot open yet. You need classic network debugging, on port 5555.'],
+      ],
+      undoH2: 'Going back',
+      undoP: 'In TV Slim, the Log undoes one line or restores everything. To withdraw a computer’s access to the TV: Developer options → Revoke USB debugging authorisations. And you can turn network debugging off once the debloat is done: it is only needed to connect.',
+      packagesLink: 'See what each package does',
+    };
+
+const schema = [
+  {
+    '@type': 'HowTo',
+    name: t.h1,
+    description: t.description,
+    inLanguage: lang,
+    url: url(lang, '/guide/'),
+    tool: [{ '@type': 'HowToTool', name: 'TV Slim' }],
+    step: t.steps.map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.titre, text: s.texte })),
+    publisher: { '@id': ORG_ID },
+  },
+];
+---
+<Base lang={lang} page="/guide/" current="guide" title={t.title} description={t.description} schema={schema}>
+  <section>
+    <div class="wrap narrow">
+      <div class="head">
+        <h1>{t.h1}</h1>
+        <p class="lede">{t.lede}</p>
+      </div>
+      <ol class="steps">
+        {t.steps.map((s) => (
+          <li>
+            <h2>{s.titre}</h2>
+            <p>{s.texte}</p>
+            {'chemins' in s && s.chemins && (
+              <div class="paths">
+                <p class="eyebrow">{t.cheminsLabel}</p>
+                <dl>
+                  {s.chemins.map(([systeme, chemin]) => (
+                    <div><dt>{systeme}</dt><dd>{chemin}</dd></div>
+                  ))}
+                </dl>
+              </div>
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap narrow">
+      <h2 style="margin-bottom:24px">{t.helpH2}</h2>
+      <div class="help">
+        {t.help.map(([q, a]) => (
+          <div class="card stack" style="gap:8px">
+            <h3>{q}</h3>
+            <p class="muted">{a}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap narrow stack">
+      <h2>{t.undoH2}</h2>
+      <p>{t.undoP}</p>
+      <p><a href={path(lang, '/packages/')}>{t.packagesLink} →</a></p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .narrow { max-width: 860px; }
+  .steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 30px; }
+  .steps li { counter-increment: s; display: grid; gap: 10px; padding-left: 58px; position: relative; }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: 0; font: 600 16px var(--mono); color: var(--mint-ink); background: var(--mint); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; }
+  .steps h2 { font-size: 23px; }
+  .paths { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
+  dl { margin: 0; display: grid; gap: 6px; }
+  dl div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; }
+  dt { font-weight: 600; color: var(--blue); }
+  dd { margin: 0; font-family: var(--mono); font-size: 14.5px; }
+  @media (max-width: 520px) { dl div { grid-template-columns: minmax(0, 1fr); gap: 0; } .steps li { padding-left: 0; padding-top: 48px; } }
+  .help { display: grid; gap: 14px; }
+</style>

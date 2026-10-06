@@ -1,0 +1,34 @@
+# tvslim.app — repris du .htaccess posé par Infomaniak à la création du site (2026-10-06), que le
+# déploiement remplace : sans cette copie, `rsync --delete` l'aurait effacé.
+
+# --- Infomaniak : compression et protection de .git, à l'identique ---
+SetOutputFilter DEFLATE
+AddOutputFilterByType DEFLATE "application/atom+xml" "application/javascript" "application/json" "application/ld+json" "application/manifest+json" "application/rdf+xml" "application/rss+xml" "application/schema+json" "application/vnd.geo+json" "application/vnd.ms-fontobject" "application/x-font-ttf" "application/x-javascript" "application/x-web-app-manifest+json" "application/xhtml+xml" "application/xml" "font/eot" "font/opentype" "image/bmp" "image/svg+xml" "image/vnd.microsoft.icon" "image/x-icon" "text/cache-manifest" "text/css" "text/html" "text/javascript" "text/plain" "text/vcard" "text/vnd.rim.location.xloc" "text/vtt" "text/x-component" "text/x-cross-domain-policy" "text/xml"
+
+# SECTION BEGIN GIT PROTECTION
+RedirectMatch 404 /\.git
+# SECTION END GIT PROTECTION
+
+# --- Le site ---
+# Une seule adresse : https://tvslim.app. http:// et www. y mènent par une 301.
+# ⚠️ Le TLS est terminé DEVANT Apache, par un proxy d'Infomaniak qui transmet X-Forwarded-Proto
+# (relevé sur startlightlauncher.com le 2026-10-03). On ne redirige que si les deux indices disent
+# « pas HTTPS » : un seul des deux pourrait boucler.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^ https://tvslim.app%{REQUEST_URI} [R=301,L]
+  RewriteCond %{HTTP_HOST} ^www\.tvslim\.app$ [NC]
+  RewriteRule ^ https://tvslim.app%{REQUEST_URI} [R=301,L]
+</IfModule>
+
+# Une adresse inconnue rend la page 404 du site (noindex), avec le code 404.
+ErrorDocument 404 /404.html
+
+# Les fichiers de /_astro/ portent une empreinte dans leur nom : ils ne changent jamais, un an de cache.
+<IfModule mod_headers.c>
+  <If "%{REQUEST_URI} =~ m#^/_astro/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+</IfModule>

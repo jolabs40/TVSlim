@@ -1,0 +1,362 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import DownloadButtons from '../components/DownloadButtons.astro';
+import Risk from '../components/Risk.astro';
+import { catalogue, nomMarque } from '../data/catalogue';
+import { path, url, REPO, KOFI, OG_IMAGE, SITE, STARTLIGHT, type Lang } from '../site';
+import { ORG_ID } from '../site';
+import ecranTv from '../../../docs/captures/tv-slim-windows-television.png';
+import trouve from '../../../docs/captures/tv-slim-find-tv-on-network.png';
+import paquets from '../../../docs/captures/tv-slim-packages.png';
+import applis from '../../../docs/captures/tv-slim-apps.png';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const fr = lang === 'fr';
+const cat = catalogue(lang);
+const marques = new Set([...cat.entrees.map((e) => e.marque), ...cat.proteges.map((p) => p.marque)]);
+const exemples = ['com.tcl.waterfall.overseas', 'com.google.android.apps.tv.launcherx', 'com.sony.dtv.promos']
+  .map((id) => cat.entrees.find((e) => e.paquet === id))
+  .filter((e) => e !== undefined);
+const garde = cat.proteges.find((p) => p.paquet === 'com.tcl.suspension');
+
+const t = fr
+  ? {
+      eyebrow: 'Libre et gratuit · Android TV · Google TV',
+      h1: 'Débloatez votre Android TV ou Google TV, sans root',
+      lede: 'Coupez la publicité, la télémétrie et les applications préinstallées qui ralentissent votre téléviseur, depuis un PC Windows ou un téléphone Android. Rien n’est désinstallé : chaque changement s’annule.',
+      trust: ['Sans root', 'Rien à installer sur le téléviseur', 'Pas de compte, pas de télémétrie'],
+      heroAlt: 'TV Slim pour Windows connecté à un téléviseur TCL Google TV : modèle, Android 14, mémoire, 55 paquets désactivés, et les launchers installés — Startlight et Projectivy, l’accueil Google TV désactivé',
+      whyEyebrow: 'Pourquoi TV Slim',
+      whyH2: 'Alléger le téléviseur sans jamais le casser',
+      why: [
+        ['Réversible par construction', 'Les paquets sont désactivés, jamais désinstallés. Annulez une ligne du journal, ou restaurez tout d’un clic.'],
+        ['Sans root, rien à installer sur le téléviseur', 'De l’ADB tout simple, en Wi-Fi ou en Ethernet. TV Slim trouve seul votre téléviseur sur le réseau.'],
+        ['Il dit ce que vous désactivez', 'Chaque paquet a sa description, son niveau de risque et ses effets de bord connus, avec des profils prêts à l’emploi.'],
+        ['Des garde-fous qu’on ne contourne pas d’un clic', 'Les paquets dont l’absence provoquerait une boucle de redémarrage ou casserait la télécommande sont refusés.'],
+        ['Tient tête aux mises à jour', 'Quand une mise à jour système rallume la publicité ou l’accueil Google TV, TV Slim le voit et remet tout en place après une confirmation.'],
+        ['Un accueil sans publicité', 'Voyez les launchers installés, passez à Startlight, à Projectivy ou à un autre, et écartez l’accueil d’usine.'],
+        ['Tout ce que permet ADB, avec des boutons', 'Applications, fichiers dans les deux sens, installation d’APK, captures, vidéo de l’écran, miroir, mémoire et stockage.'],
+        ['Confidentiel', 'Pas de compte, pas de télémétrie. TV Slim parle à votre téléviseur et à GitHub pour les mises à jour, à rien d’autre.'],
+      ],
+      shotsH2: 'Ce que vous verrez',
+      shots: [
+        [trouve, 'Il trouve le téléviseur sur le réseau', 'TV Slim trouve un TCL Smart TV Pro et un NVIDIA Shield sur le réseau local'],
+        [paquets, 'Les paquets désactivés, expliqués', 'L’onglet Paquets : recommandations TCL, Channel+, Privacy Sandbox et télémétrie Google désactivés, chacun avec un bouton Réactiver'],
+        [applis, 'Chaque application, avec son vrai nom', 'L’onglet Applications : Prime Video désactivé, Projectivy, SmartTube et Spotify installés, avec Ouvrir, Forcer l’arrêt et Désinstaller'],
+      ],
+      stepsEyebrow: 'Démarrer',
+      stepsH2: 'Trois étapes, une seule fois',
+      steps: [
+        ['Téléchargez TV Slim', 'Pour Windows 10 ou 11, ou pour un téléphone Android 8 ou plus récent. Rien d’autre à installer.'],
+        ['Préparez le téléviseur', 'Activez les options pour les développeurs, puis le débogage réseau. Le guide montre où, selon le téléviseur.'],
+        ['Connectez-vous et allégez-le', 'TV Slim trouve le téléviseur. Acceptez la connexion à la télécommande, choisissez un profil, cliquez sur Appliquer.'],
+      ],
+      stepsLink: 'Lire le guide pas à pas',
+      catEyebrow: 'Encyclopédie des paquets',
+      catH2: 'Savoir ce qu’on coupe avant de le couper',
+      catLede: `${cat.entrees.length} paquets décrits, avec leur niveau de risque et leurs effets de bord, et ${cat.proteges.length} paquets auxquels il ne faut jamais toucher. ${marques.size} familles : les fabricants, Google, Android et les éditeurs tiers.`,
+      catLink: 'Parcourir les paquets',
+      compatEyebrow: 'Compatibilité',
+      compatH2: 'Tout Android TV ou Google TV qui accepte le débogage réseau',
+      compat: [
+        ['Téléviseurs et box', 'TCL, Philips, Sony, Hisense, Sharp, Toshiba, Grundig, Haier, Panasonic… et les box NVIDIA Shield TV, Xiaomi Mi Box, Freebox, boîtiers Google TV. TV Slim reconnaît le fabricant et affiche son logo.'],
+        ['Éprouvé', 'Sur un TCL Smart TV Pro (65C89K, Google TV, Android 14) et un NVIDIA Shield TV.'],
+        ['Le catalogue', 'Google TV et Android TV, TCL, Philips, NVIDIA et Xiaomi ; Sony, pas encore éprouvé. Les paquets inconnus sont listés à part, et « Proposer au catalogue » envoie leur inventaire.'],
+        ['De quoi le piloter', 'Un PC Windows 10 ou 11 (64 bits), ou un téléphone Android 8 ou plus récent, sur le même réseau que le téléviseur.'],
+      ],
+      slEyebrow: 'Du même auteur',
+      slH2: 'Un accueil sans publicité : Startlight Launcher',
+      slP: 'Couper l’accueil Google TV demande un remplaçant. Celui que TV Slim recommande, du même auteur, est Startlight Launcher : un écran d’accueil pour Android TV et Google TV, sans publicité. TV Slim le reconnaît, le propose dans l’onglet Téléviseur, et vous aide à en faire votre accueil.',
+      slLink: 'Découvrir Startlight Launcher',
+      faqH2: 'Questions fréquentes',
+      supportH2: 'Gratuit, et ça le restera',
+      supportP: 'TV Slim est libre, sous licence Apache 2.0, sans publicité, sans compte et sans télémétrie. S’il vous a rendu service, vous pouvez m’offrir un café sur Ko-fi. Une étoile sur GitHub aide aussi d’autres personnes à le trouver.',
+      kofi: 'M’offrir un café',
+      star: 'Étoile sur GitHub',
+    }
+  : {
+      eyebrow: 'Free & open source · Android TV · Google TV',
+      h1: 'Debloat your Android TV or Google TV, without root',
+      lede: 'Switch off the ads, the telemetry and the preinstalled apps that slow your smart TV down, from a Windows PC or an Android phone. Nothing is uninstalled: every change can be undone.',
+      trust: ['No root', 'Nothing to install on the TV', 'No account, no telemetry'],
+      heroAlt: 'TV Slim for Windows connected to a TCL Google TV: model, Android 14, memory, 55 disabled packages, and the installed launchers — Startlight and Projectivy, with the Google TV home screen disabled',
+      whyEyebrow: 'Why TV Slim',
+      whyH2: 'Slim the TV down without ever breaking it',
+      why: [
+        ['Reversible by design', 'Packages are disabled, never uninstalled. Undo one line of the log, or restore everything in one click.'],
+        ['No root, nothing to install on the TV', 'Plain ADB over Wi-Fi or Ethernet. TV Slim finds your television on the network by itself.'],
+        ['It tells you what you are disabling', 'Every package comes with a description, a risk level and its known side effects, plus ready-made profiles.'],
+        ['Safeguards you cannot click past', 'Packages that would cause a boot loop or break the remote are refused.'],
+        ['Survives system updates', 'When an update turns your ads or the Google TV home screen back on, TV Slim notices and puts everything back after one confirmation.'],
+        ['Ad-free home screen', 'See the launchers installed, switch to Startlight, Projectivy or another one, and keep the factory home screen out of the way.'],
+        ['Everything else ADB can do, with buttons', 'Apps, files in both directions, APK installation, screenshots, screen recording, live mirror, memory and storage.'],
+        ['Private', 'No account, no telemetry. TV Slim talks to your television and to GitHub for updates, nothing else.'],
+      ],
+      shotsH2: 'What you will see',
+      shots: [
+        [trouve, 'Finds the TV on your network', 'TV Slim finds a TCL Smart TV Pro and an NVIDIA Shield on the local network'],
+        [paquets, 'Disabled packages, explained', 'The Packages tab: TCL recommendations, Channel+, Privacy Sandbox and Google telemetry disabled, each one with a Re-enable button'],
+        [applis, 'Every app, with its real name', 'The Apps tab: Prime Video disabled, Projectivy, SmartTube and Spotify installed, with Open, Force stop and Uninstall'],
+      ],
+      stepsEyebrow: 'Get started',
+      stepsH2: 'Three steps, once',
+      steps: [
+        ['Download TV Slim', 'For Windows 10 or 11, or for an Android 8+ phone. Nothing else to install.'],
+        ['Prepare the television', 'Turn on the developer options, then network debugging. The guide shows where, depending on the TV.'],
+        ['Connect and slim it down', 'TV Slim finds the TV. Accept the connection with the remote, pick a profile, click Apply.'],
+      ],
+      stepsLink: 'Read the step-by-step guide',
+      catEyebrow: 'Package encyclopedia',
+      catH2: 'Know what you switch off before you switch it off',
+      catLede: `${cat.entrees.length} packages described, with their risk level and side effects, and ${cat.proteges.length} packages you must never touch. ${marques.size} families: the makers, Google, Android and third-party apps.`,
+      catLink: 'Browse the packages',
+      compatEyebrow: 'Compatibility',
+      compatH2: 'Any Android TV or Google TV that offers network debugging',
+      compat: [
+        ['Smart TVs and boxes', 'TCL, Philips, Sony, Hisense, Sharp, Toshiba, Grundig, Haier, Panasonic… and the NVIDIA Shield TV, Xiaomi Mi Box, Freebox and Google TV streamers. TV Slim recognises the maker and shows its logo.'],
+        ['Tested', 'On a TCL Smart TV Pro (65C89K, Google TV, Android 14) and an NVIDIA Shield TV.'],
+        ['The catalogue', 'Google TV and Android TV, TCL, Philips, NVIDIA and Xiaomi; Sony, not tested yet. Unknown packages are listed apart, and “Propose to the catalogue” sends their inventory.'],
+        ['What drives it', 'A Windows 10 or 11 PC (64-bit), or an Android 8+ phone, on the same network as the TV.'],
+      ],
+      slEyebrow: 'By the same author',
+      slH2: 'An ad-free home screen: Startlight Launcher',
+      slP: 'Switching off the Google TV home screen needs a replacement. The one TV Slim recommends, by the same author, is Startlight Launcher: a home screen for Android TV and Google TV, with no ads. TV Slim recognises it, suggests it on the Television tab, and helps you make it your home screen.',
+      slLink: 'Discover Startlight Launcher',
+      faqH2: 'FAQ',
+      supportH2: 'Free, and it will stay that way',
+      supportP: 'TV Slim is open source under the Apache 2.0 licence, with no ads, no account and no telemetry. If it has been useful to you, you can buy me a coffee on Ko-fi. A star on GitHub helps other people find it, too.',
+      kofi: 'Buy me a coffee',
+      star: 'Star on GitHub',
+    };
+
+const faq = fr
+  ? [
+      ['Comment enlever la publicité de l’accueil de mon Android TV ou Google TV ?', 'La publicité vient du service de recommandations du fabricant et de l’écran d’accueil d’usine. Dans TV Slim, le profil « Publicité, télémétrie et mode démo » désactive le premier — sur un TCL, Recommandations TCL et Channel+, par exemple. Pour un accueil sans aucune publicité, installez un autre launcher, choisissez-le dans l’onglet Téléviseur, puis appliquez le profil « Remplacement de l’écran d’accueil », qui désactive l’accueil Google TV : TV Slim ne le permet qu’une fois le remplaçant en place.'],
+      ['Débloater son téléviseur, est-ce sans danger ? Peut-on le rendre inutilisable ?', 'TV Slim ne fait que désactiver des paquets, et refuse ceux dont l’absence provoquerait une boucle de redémarrage ou casserait la télécommande. Chaque changement est inscrit au journal avec la commande qui l’annule, et « Tout restaurer » ramène le téléviseur à son point de départ. En dernier recours, une réinitialisation d’usine du téléviseur réactive tous les paquets — et « Réinjecter une config » réapplique ensuite vos choix.'],
+      ['Faut-il rooter le téléviseur ?', 'Non. TV Slim passe par ADB, le pont de débogage que tout appareil Android TV ou Google TV porte d’origine. Il suffit d’activer le débogage réseau dans les options pour les développeurs.'],
+      ['Installe-t-il quelque chose sur le téléviseur ?', 'Pas sans que vous le demandiez. L’onglet Applications copie une petite aide dans /data/local/tmp pour lire les noms et les icônes, la lance, puis l’efface aussitôt. Un APK — l’application TV Slim facultative du téléviseur comprise — ne s’installe sur le téléviseur que si vous le demandez.'],
+      ['Une mise à jour système a ramené la publicité et l’accueil Google TV. Que faire ?', 'Reconnectez TV Slim. Il compare le téléviseur à son journal : si des paquets que vous aviez désactivés tournent à nouveau, ou si l’accueil d’usine a repris la main, une carte le dit, et « Tout remettre » réapplique vos changements après une confirmation.'],
+      ['Quelle différence avec la désinstallation de paquets par ADB ?', 'pm uninstall --user 0, qu’emploient beaucoup de tutoriels et d’outils de débloat pour téléphones, retire l’application pour votre utilisateur ; la récupérer demande de trouver la bonne commande, et une réinitialisation d’usine peut être la seule issue après une erreur. TV Slim ne le fait jamais : il désactive, explique chaque paquet avant que vous n’y touchiez, tient un journal qui s’annule ligne à ligne, et connaît les paquets auxquels il ne faut jamais toucher sur un téléviseur.'],
+      ['Est-ce gratuit ?', 'Oui — gratuit, libre sous licence Apache 2.0, sans publicité, sans compte et sans télémétrie.'],
+    ]
+  : [
+      ['How do I remove the ads from my Android TV or Google TV home screen?', 'The ads come from the maker’s recommendation service and from the factory home screen. In TV Slim, the “Advertising, telemetry and store demo” profile disables the former — on a TCL, TCL recommendations and Channel+, for instance. For a home screen with no ads at all, install another launcher, choose it on the Television tab, then apply the “Replacing the home screen” profile, which disables the Google TV home screen: TV Slim only allows that once a replacement is in place.'],
+      ['Is debloating my TV safe? Can it brick it?', 'TV Slim only disables packages, and refuses the ones whose absence would cause a boot loop or break the remote control. Every change is logged with the command that undoes it, and “Restore everything” takes the TV back to where it started. As a last resort, a factory reset of the TV re-enables every package — and “Reinject a config” applies your choices again afterwards.'],
+      ['Do I need to root the TV?', 'No. TV Slim uses ADB, the debugging bridge every Android TV and Google TV device ships with. Turning on network debugging in the developer options is all it takes.'],
+      ['Does it install anything on the television?', 'Not unless you ask. The Apps tab copies a small helper to /data/local/tmp to read the names and icons, runs it and erases it straight away. An APK — the optional TV Slim app for the television included — is installed on the TV only when you ask for it.'],
+      ['A system update brought the ads and the Google TV home screen back. What now?', 'Connect TV Slim again. It compares the TV with its log: if packages you had disabled are running again, or if the factory home screen has taken over, a card says so, and “Put them back” reapplies your changes after one confirmation.'],
+      ['What is the difference with uninstalling packages over ADB?', 'pm uninstall --user 0, which many guides and phone debloaters use, removes the app for your user; getting it back means finding the right command, and a factory reset may be the only way out of a mistake. TV Slim never does that: it disables, explains each package before you touch it, keeps a log you can undo line by line, and knows the packages that must never be touched on a television.'],
+      ['Is it free?', 'Yes — free, open source under the Apache 2.0 licence, with no ads, no account and no telemetry.'],
+    ];
+
+const schema = [
+  {
+    '@type': 'SoftwareApplication',
+    '@id': `${SITE}/#app`,
+    name: 'TV Slim',
+    url: url(lang, '/'),
+    downloadUrl: url(lang, '/download/'),
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Windows 10, Windows 11, Android 8+',
+    license: 'https://www.apache.org/licenses/LICENSE-2.0',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+    image: OG_IMAGE,
+    screenshot: OG_IMAGE,
+    sameAs: [REPO],
+    description: t.lede,
+    featureList: t.why.map(([titre]) => titre),
+    publisher: { '@id': ORG_ID },
+  },
+  {
+    '@type': 'FAQPage',
+    mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  },
+];
+---
+<Base lang={lang} page="/" current="home" schema={schema}>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="stack" style="gap:22px">
+        <p class="eyebrow">{t.eyebrow}</p>
+        <h1>{t.h1}</h1>
+        <p class="lede">{t.lede}</p>
+        <DownloadButtons lang={lang} />
+        <ul class="trust">{t.trust.map((x) => <li>{x}</li>)}</ul>
+      </div>
+      <figure class="shot">
+        <Image src={ecranTv} alt={t.heroAlt} widths={[640, 960, 1600]} sizes="(min-width: 960px) 620px, 100vw" loading="eager" />
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">{t.whyEyebrow}</p>
+        <h2>{t.whyH2}</h2>
+      </div>
+      <div class="why">
+        {t.why.map(([titre, texte]) => (
+          <div class="point">
+            <h3>{titre}</h3>
+            <p class="muted">{texte}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="head"><h2>{t.shotsH2}</h2></div>
+      <div class="shots">
+        {t.shots.map(([image, legende, alt]) => (
+          <figure class="card shot-card">
+            <Image src={image as ImageMetadata} alt={alt as string} widths={[480, 800]} sizes="(min-width: 960px) 360px, 100vw" />
+            <figcaption>{legende as string}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">{t.stepsEyebrow}</p>
+        <h2>{t.stepsH2}</h2>
+      </div>
+      <ol class="steps">
+        {t.steps.map(([titre, texte]) => (
+          <li class="card">
+            <h3>{titre}</h3>
+            <p class="muted">{texte}</p>
+          </li>
+        ))}
+      </ol>
+      <p style="margin-top:24px"><a href={path(lang, '/guide/')}>{t.stepsLink} →</a></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap cat">
+      <div class="stack">
+        <p class="eyebrow">{t.catEyebrow}</p>
+        <h2>{t.catH2}</h2>
+        <p class="lede">{t.catLede}</p>
+        <p><a class="btn btn-ghost" href={path(lang, '/packages/')}>{t.catLink}</a></p>
+      </div>
+      <ul class="samples">
+        {exemples.map((e) => (
+          <li>
+            <a href={path(lang, `/packages/${e.paquet}/`)}>
+              <span class="n">{e.nom}</span>
+              <span class="pkg">{e.paquet}</span>
+              <span class="b"><Risk lang={lang} risque={e.risque} nonEprouve={!e.eprouve} /></span>
+            </a>
+          </li>
+        ))}
+        {garde && (
+          <li>
+            <a href={path(lang, `/packages/${garde.paquet}/`)}>
+              <span class="n">{garde.raison}</span>
+              <span class="pkg">{garde.paquet} · {nomMarque(garde.marque, lang)}</span>
+              <span class="b"><Risk lang={lang} protege /></span>
+            </a>
+          </li>
+        )}
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">{t.compatEyebrow}</p>
+        <h2>{t.compatH2}</h2>
+      </div>
+      <div class="grid">
+        {t.compat.map(([titre, texte]) => (
+          <div class="card stack" style="gap:8px">
+            <h3>{titre}</h3>
+            <p class="muted">{texte}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap startlight">
+      <div class="stack">
+        <p class="eyebrow">{t.slEyebrow}</p>
+        <h2>{t.slH2}</h2>
+        <p class="lede">{t.slP}</p>
+        <p><a class="btn btn-ghost" href={STARTLIGHT} rel="noopener">{t.slLink} →</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="head"><h2>{t.faqH2}</h2></div>
+      <div class="faq">
+        {faq.map(([q, a]) => (
+          <details>
+            <summary>{q}</summary>
+            <p class="muted">{a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap support">
+      <h2>{t.supportH2}</h2>
+      <p class="lede">{t.supportP}</p>
+      <div class="actions">
+        <a class="btn btn-primary" href={KOFI} rel="noopener">{t.kofi}</a>
+        <a class="btn btn-ghost" href={REPO} rel="noopener">{t.star}</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { padding-block: clamp(36px, 6vw, 72px); background: radial-gradient(1200px 500px at 85% 0%, rgb(127 209 174 / 0.09), transparent 60%); }
+  .hero-grid { display: grid; gap: 40px; align-items: center; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }
+  @media (max-width: 900px) { .hero-grid { grid-template-columns: minmax(0, 1fr); } }
+  .shot { margin: 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.8); }
+  .trust { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; color: var(--muted); font-size: 15px; }
+  .trust li::before { content: '✓'; color: var(--mint); margin-right: 8px; font-weight: 700; }
+  .why { display: grid; gap: 28px 32px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .point { display: grid; gap: 8px; align-content: start; border-top: 2px solid var(--line); padding-top: 16px; }
+  .point h3 { font-size: 19px; }
+  .shots { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .shot-card { padding: 0; overflow: hidden; display: grid; align-content: start; }
+  .shot :global(img), .shot-card :global(img) { width: 100%; height: auto; }
+  .shot-card figcaption { padding: 14px 18px; font-weight: 500; }
+  .steps { list-style: none; counter-reset: s; padding: 0; margin: 0; display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+  .steps li { counter-increment: s; display: grid; gap: 8px; align-content: start; }
+  .steps li::before { content: counter(s); font: 600 15px var(--mono); color: var(--mint-ink); background: var(--mint); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 6px; }
+  .cat { display: grid; gap: 36px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
+  @media (max-width: 900px) { .cat { grid-template-columns: minmax(0, 1fr); } }
+  .samples { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .samples a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-decoration: none; color: var(--ink); }
+  .samples a:hover { border-color: var(--blue); }
+  .samples .n { font-weight: 600; }
+  .samples .pkg { grid-column: 1; font-size: 13.5px; }
+  .samples .b { grid-column: 2; grid-row: 1 / span 2; align-self: center; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .faq { display: grid; gap: 10px; max-width: 860px; }
+  details { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 4px 18px; }
+  summary { cursor: pointer; font: 600 18px/1.4 var(--display); padding-block: 14px; list-style-position: outside; }
+  details p { padding-bottom: 16px; }
+  .support { display: grid; gap: 18px; justify-items: start; }
+  .startlight { max-width: 860px; }
+</style>

@@ -1,0 +1,13 @@
+---
+// Une seule page 404 pour les deux langues : Apache la sert pour toute adresse inconnue.
+import Base from '../layouts/Base.astro';
+---
+<Base lang="en" page="/" title="Page not found | TV Slim" description="This page does not exist." noindex>
+  <section>
+    <div class="wrap stack" style="max-width:720px">
+      <h1>Page not found</h1>
+      <p class="lede">This page does not exist, or no longer does. <span lang="fr">Cette page n’existe pas, ou plus.</span></p>
+      <p><a href="/">TV Slim</a> · <a href="/packages/">Packages</a> · <a href="/fr/" lang="fr">Version française</a></p>
+    </div>
+  </section>
+</Base>

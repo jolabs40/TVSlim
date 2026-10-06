@@ -414,6 +414,9 @@ def main() -> None:
     print("  TVSlim Windows/packaging/tvslim-256.png")
     dessiner(icone_pleine(), 512).save(RACINE / "docs/logo/tvslim-512.png")
     print("  docs/logo/tvslim-512.png")
+    # Pour le site : un raccourci sur l'écran d'un téléphone veut un carré plein, le système l'arrondit.
+    dessiner([rect(0, 0, 108, 108, 0, FOND)] + marque(), 180).save(RACINE / "docs/logo/tvslim-carre-180.png")
+    print("  docs/logo/tvslim-carre-180.png")
 
 
 if __name__ == "__main__":

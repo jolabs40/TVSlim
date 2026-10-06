@@ -1,0 +1,26 @@
+---
+// Les deux boutons de téléchargement : l'installateur Windows de la dernière publication, et la page
+// Android. Les icônes sont des Material Icons (Apache 2.0) — aucun logo de marque.
+import { publications, fichier } from '../data/releases';
+import { path, RELEASES, type Lang } from '../site';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const fr = lang === 'fr';
+const { windows, android } = await publications();
+const msi = fichier(windows, (n) => n.endsWith('.msi'));
+---
+<div class="actions">
+  <a class="btn btn-primary" href={msi?.url ?? `${RELEASES}/latest`}>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z" /></svg>
+    {fr ? 'Télécharger pour Windows' : 'Download for Windows'}
+    {windows && <small>{windows.version}</small>}
+  </a>
+  <a class="btn btn-ghost" href={path(lang, '/download/') + '#android'}>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 1.01 7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z" /></svg>
+    {fr ? 'Application Android' : 'Android app'}
+    {android && <small>{android.version}</small>}
+  </a>
+</div>

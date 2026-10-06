@@ -1,0 +1,43 @@
+---
+import Logo from './Logo.astro';
+import { path, ui, REPO, KOFI, STARTLIGHT, type Lang } from '../site';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = ui[lang];
+---
+<footer>
+  <div class="wrap cols">
+    <div class="stack" style="gap:10px">
+      <p class="id"><Logo size={26} /> <span>TV Slim</span></p>
+      <p class="muted">{t.footer.tagline}</p>
+    </div>
+    <ul>
+      <li><a href={path(lang, '/download/')}>{t.nav.download}</a></li>
+      <li><a href={path(lang, '/guide/')}>{t.nav.guide}</a></li>
+      <li><a href={path(lang, '/packages/')}>{t.nav.packages}</a></li>
+      <li><a href={path(lang, '/privacy/')}>{t.footer.privacy}</a></li>
+    </ul>
+    <ul>
+      <li><a href={REPO} rel="noopener">GitHub</a></li>
+      <li><a href={`${REPO}/blob/main/LICENSE`} rel="noopener">{t.footer.license}</a></li>
+      <li><a href={KOFI} rel="noopener">{t.footer.support}</a></li>
+      <li><a href={STARTLIGHT} rel="noopener">Startlight Launcher</a></li>
+    </ul>
+  </div>
+  <div class="wrap">
+    <p class="fine muted">{t.footer.disclaimer}</p>
+  </div>
+</footer>
+
+<style>
+  footer { border-top: 1px solid var(--line); padding-block: 40px 32px; background: #090c0e; font-size: 15px; }
+  .cols { display: grid; gap: 28px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+  .id { display: flex; align-items: center; gap: 10px; font: 600 19px var(--display); }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  ul a { color: var(--ink); text-decoration: none; }
+  ul a:hover { color: var(--blue); }
+  .fine { margin-top: 28px; font-size: 13.5px; max-width: 90ch; }
+</style>
