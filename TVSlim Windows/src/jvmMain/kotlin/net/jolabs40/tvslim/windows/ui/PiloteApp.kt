@@ -120,6 +120,18 @@ class PiloteApp(
         remercier = soutien::remercier,
     )
 
+    /** L'application TV Slim du téléviseur, installée depuis GitHub : son propre pilote, comme les permissions. */
+    val applicationTv = PiloteApplicationTv(
+        client = client,
+        lecteur = lecteur,
+        moteur = { moteur },
+        installation = { installationApk },
+        dossier = File(emplacements.local, "application-tv"),
+        portee = viewModelScope,
+        afficher = ::afficher,
+        remercier = soutien::remercier,
+    )
+
     /** L'onglet Fichiers : il suit lui-même la connexion, et oublie ce qu'il a lu quand le téléviseur change. */
     val fichiers = PiloteFichiers(client, viewModelScope, ::afficher, soutien::remercier)
 
@@ -241,6 +253,7 @@ class PiloteApp(
         moteur = null
         installationApk = null
         permissions.oublier()
+        applicationTv.oublier()
         _etat.update {
             it.copy(
                 lignes = emptyList(),

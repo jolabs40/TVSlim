@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
 import net.jolabs40.tvslim.device.Fabricant
+import net.jolabs40.tvslim.device.TypeAppareil
 import net.jolabs40.tvslim.windows.adb.ConnexionUi
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.adb.ProblemeConnexion
@@ -59,9 +60,11 @@ import net.jolabs40.tvslim.windows.ressources.discovery_none
 import net.jolabs40.tvslim.windows.ressources.discovery_searching
 import net.jolabs40.tvslim.windows.ressources.discovery_title
 import net.jolabs40.tvslim.windows.ressources.discovery_wireless
+import net.jolabs40.tvslim.windows.ui.ActionsApplicationTv
 import net.jolabs40.tvslim.windows.ui.ActionsCommande
 import net.jolabs40.tvslim.windows.ui.ActionsPermissions
 import net.jolabs40.tvslim.windows.ui.EtatApp
+import net.jolabs40.tvslim.windows.ui.EtatApplicationTvUi
 import net.jolabs40.tvslim.windows.ui.composants.CarteSection
 import net.jolabs40.tvslim.windows.ui.composants.DeuxColonnes
 import net.jolabs40.tvslim.windows.ui.composants.PlaqueMarque
@@ -93,6 +96,8 @@ fun ConnexionEcran(
     onArreterRecherche: () -> Unit,
     onConnecterA: (AppareilDecouvert) -> Unit,
     actionsPermissions: ActionsPermissions,
+    etatApplicationTv: EtatApplicationTvUi,
+    actionsApplicationTv: ActionsApplicationTv,
     onChoisirApk: () -> Unit,
     actionsCommande: ActionsCommande,
 ) {
@@ -104,7 +109,17 @@ fun ConnexionEcran(
                 // « Se connecter » n'a plus lieu d'être, la barre du haut dit à qui l'on parle.
                 // La dérive passe devant tout : le téléviseur a défait seul ce qu'on avait réglé.
                 etat.derive?.let { plan -> CarteDerive(plan = plan, onReprendre = onReprendreDerive) }
-                CarteAppareil(etat = etat, onDeconnecter = onDeconnecter, onActualiser = onActualiser)
+                // Face à un téléviseur ou une box seulement : sur un téléphone joint pour essai, elle n'a rien à faire.
+                val televiseur = etat.infos.typeAppareil == TypeAppareil.TELEVISEUR || etat.infos.typeAppareil == TypeAppareil.BOX
+                CarteAppareil(
+                    etat = etat,
+                    onDeconnecter = onDeconnecter,
+                    // Actualiser relit aussi l'application TV : elle a pu changer sur le téléviseur.
+                    onActualiser = { onActualiser(); if (televiseur) actionsApplicationTv.onLire() },
+                )
+                if (televiseur) {
+                    CarteApplicationTv(etat = etatApplicationTv, hote = etat.connexion.hote, actions = actionsApplicationTv)
+                }
                 CarteAccueil(
                     etat = etat,
                     onInstaller = onInstallerLauncher,

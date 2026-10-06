@@ -508,4 +508,35 @@
     <string name="journal_home">Home screen</string>
     <string name="files_refused_silent">refused by the television</string>
     <string name="files_refused_silent_line">%1$s: refused by the television</string>
+
+    <!-- L'application TV Slim du téléviseur, installée depuis GitHub -->
+    <string name="tvapp_title">TV Slim on the television</string>
+    <string name="tvapp_body">Optional. It keeps the television reachable during standby, warns you when a system update undid your changes, and shows a code that TV Slim Remote, on a phone, scans to connect.</string>
+    <string name="tvapp_reading">Reading the television…</string>
+    <string name="tvapp_absent">Not installed on this television.</string>
+    <string name="tvapp_update">Version %1$s installed; %2$s is available.</string>
+    <string name="tvapp_no_permission">Installed (%1$s), but without the permission its boot guardian needs.</string>
+    <string name="tvapp_up_to_date">Installed and up to date (%1$s), with its permission.</string>
+    <string name="tvapp_how">TV Slim downloads it from its GitHub releases, checks it is signed with TV Slim's own key, installs it, grants the permission only ADB can give, and switches its boot guardian on.</string>
+    <string name="tvapp_install">Install from GitHub</string>
+    <string name="tvapp_install_version">Install %1$s from GitHub</string>
+    <string name="tvapp_update_action">Update</string>
+    <string name="tvapp_grant_action">Grant the permission</string>
+    <string name="tvapp_step_search">Looking for the latest version…</string>
+    <string name="tvapp_step_download">Downloading… %1$d%%</string>
+    <string name="tvapp_step_verify">Checking the signature…</string>
+    <string name="tvapp_step_send">Installing on the television… %1$d%%</string>
+    <string name="tvapp_step_permission">Granting the permission…</string>
+    <string name="tvapp_step_guardian">Starting the app and its boot guardian…</string>
+    <string name="tvapp_done">TV Slim %1$s is installed on the television, and its boot guardian is on.</string>
+    <string name="tvapp_done_guardian_manual">TV Slim %1$s is installed. Open it on the television to switch its boot guardian on, in Settings.</string>
+    <string name="tvapp_done_no_permission">TV Slim %1$s is installed, but the television refused the permission its boot guardian needs.</string>
+    <string name="tvapp_error_not_found">No TV app found in TV Slim's GitHub releases.</string>
+    <string name="tvapp_error_network">GitHub could not be reached. Check this PC's Internet connection.</string>
+    <string name="tvapp_error_too_big">The downloaded file is far too big: nothing was installed.</string>
+    <string name="tvapp_error_certificate">The downloaded APK is not signed with TV Slim's key: nothing was sent to the television.</string>
+    <string name="tvapp_error_package">The downloaded APK is not TV Slim's TV app: nothing was sent to the television.</string>
+    <string name="tvapp_error_sdk">This television's Android version is too old for the TV app.</string>
+    <string name="tvapp_error_tv">The television no longer answers.</string>
+    <string name="tvapp_error_install">The television refused the installation: %1$s</string>
 </resources>

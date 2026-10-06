@@ -1,5 +1,7 @@
 package net.jolabs40.tvslim.windows.ui
 
+import net.jolabs40.tvslim.applicationtv.PublicationTv
+import net.jolabs40.tvslim.applicationtv.SituationTv
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -220,7 +222,8 @@ class PlancheLogosTest {
         )
         rendre("19-decouverte-marques", 1280, 640, cadre = false) {
             ConnexionEcran(
-                decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
+                decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}),
+                EtatApplicationTvUi(), ActionsApplicationTv({}, {}, {}), {},
                 ActionsCommande({}, {}, {}),
             )
         }
@@ -347,7 +350,14 @@ class PlancheLogosTest {
         )
         rendre("25-televiseur-installation", 1280, 1100, cadre = false) {
             ConnexionEcran(
-                joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}), {},
+                joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}),
+                // La carte de l'application TV, absente du téléviseur, la 1.1.0 publiée.
+                EtatApplicationTvUi(
+                    situation = SituationTv(
+                        disponible = PublicationTv("1.1.0", 10100, "TVSlim-TV-1.1.0.apk", "https://github.com/", 1_300_000),
+                    ),
+                ),
+                ActionsApplicationTv({}, {}, {}), {},
                 ActionsCommande({}, {}, {}),
             )
         }

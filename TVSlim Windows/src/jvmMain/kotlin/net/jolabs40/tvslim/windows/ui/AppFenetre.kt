@@ -150,6 +150,7 @@ fun AppFenetre(
     val etat by pilote.etat.collectAsStateWithLifecycle()
     val etatFichiers by pilote.fichiers.explorateur.etat.collectAsStateWithLifecycle()
     val etatApplications by pilote.applications.etat.collectAsStateWithLifecycle()
+    val etatApplicationTv by pilote.applicationTv.etat.collectAsStateWithLifecycle()
     val etatMaj by misesAJour.etat.collectAsStateWithLifecycle()
     val soutienVisible by pilote.soutien.visible.collectAsStateWithLifecycle()
     val etatEcran by ecran.etat.collectAsStateWithLifecycle()
@@ -277,6 +278,13 @@ fun AppFenetre(
         )
     }
 
+    val actionsApplicationTv = remember(pilote) {
+        ActionsApplicationTv(
+            onLire = pilote.applicationTv::lire,
+            onInstaller = pilote.applicationTv::installer,
+            onAutoriser = pilote.applicationTv::autoriser,
+        )
+    }
     val actionsPermissions = remember(pilote) {
         ActionsPermissions(
             onPaquet = pilote.permissions::majPaquet,
@@ -371,6 +379,8 @@ fun AppFenetre(
                             onArreterRecherche = pilote::arreterRecherche,
                             onConnecterA = pilote::connecterA,
                             actionsPermissions = actionsPermissions,
+                            etatApplicationTv = etatApplicationTv,
+                            actionsApplicationTv = actionsApplicationTv,
                             onChoisirApk = { choisirApk(titreApk)?.let(pilote.configuration::choisirApk) },
                             actionsCommande = actionsCommande,
                         )
