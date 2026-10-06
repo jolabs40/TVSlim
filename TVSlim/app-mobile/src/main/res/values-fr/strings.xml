@@ -469,4 +469,16 @@
     <string name="reboot_in_progress">Le téléviseur redémarre. TV Slim se reconnecte dès qu\'il revient…</string>
     <string name="msg_reboot_back">Le téléviseur a redémarré, et TV Slim s\'y est reconnecté.</string>
     <string name="msg_reboot_not_back">Le téléviseur n\'est pas revenu sur le réseau. Rallumez-le s\'il est éteint ; s\'il est allumé, le débogage réseau doit peut-être être réactivé.</string>
+
+    <!-- À propos -->
+    <string name="about_title">À propos</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_description">Débloat réversible des téléviseurs Android, en ADB depuis ce téléphone. Rien n\'est désinstallé ni installé sur le téléviseur sans que vous le demandiez — un APK envoyé, une commande tapée. Chaque changement est consigné au journal, avec la commande qui l\'annule quand il y en a une.</string>
+    <string name="about_open_source">Code ouvert : chacun peut lire le code, recompiler l\'application et vérifier ce qu\'elle fait.</string>
+    <string name="about_license">Licence : %1$s</string>
+    <string name="about_website">Site web : tvslim.app</string>
+    <string name="about_website_url">https://tvslim.app/fr/</string>
+    <string name="about_source">Voir le code source</string>
+    <string name="about_support">Soutenir TV Slim</string>
+    <string name="about_close">Fermer</string>
 </resources>

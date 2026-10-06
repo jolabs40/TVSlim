@@ -552,7 +552,7 @@ class PlancheLogosTest {
         rendre("41-soutien", 1280, 80, cadre = false) { BanniereSoutien(true, {}, {}, {}) }
         rendre("42-soutien-sombre", 1280, 80, sombre = true, cadre = false) { BanniereSoutien(true, {}, {}, {}) }
         rendre("43-a-propos", 900, 760, cadre = false) {
-            AProposDialogue(EtatMiseAJour(versionActuelle = "1.4.0"), {}, {}, {}, {}, {}, {}, {})
+            AProposDialogue(EtatMiseAJour(versionActuelle = "1.4.0"), {}, {}, {}, {}, {}, {}, {}, {})
         }
 
         // L'écran du téléviseur : les boutons de la barre du haut au repos, puis pendant un miroir, un

@@ -50,8 +50,10 @@ import net.jolabs40.tvslim.windows.ressources.about_open_source
 import net.jolabs40.tvslim.windows.ressources.about_source
 import net.jolabs40.tvslim.windows.ressources.about_support
 import net.jolabs40.tvslim.windows.ressources.about_version
+import net.jolabs40.tvslim.windows.ressources.about_website
 import net.jolabs40.tvslim.windows.ressources.app_name
 import net.jolabs40.tvslim.windows.ressources.baseline_folder_open_24
+import net.jolabs40.tvslim.windows.ressources.baseline_language_24
 import net.jolabs40.tvslim.windows.ressources.baseline_open_in_new_24
 import net.jolabs40.tvslim.windows.ressources.baseline_system_update_24
 import net.jolabs40.tvslim.windows.ressources.ic_tvslim
@@ -169,7 +171,7 @@ fun BanniereMiseAJour(
     }
 }
 
-/** Version, licence, code source, page de soutien, dossier des données — et le réglage des mises à jour. */
+/** Version, licence, site, code source, page de soutien, dossier des données — et le réglage des mises à jour. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AProposDialogue(
@@ -178,6 +180,7 @@ fun AProposDialogue(
     onVerifier: () -> Unit,
     onVerificationAuto: (Boolean) -> Unit,
     onInstaller: () -> Unit,
+    onSite: () -> Unit,
     onSource: () -> Unit,
     onSoutenir: () -> Unit,
     onDossier: () -> Unit,
@@ -206,6 +209,11 @@ fun AProposDialogue(
                 TexteSecondaire(stringResource(Res.string.about_license, InfosApp.LICENCE), petit = true)
 
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onSite) {
+                        Icon(painterResource(Res.drawable.baseline_language_24), null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(Res.string.about_website))
+                    }
                     TextButton(onClick = onSource) {
                         Icon(painterResource(Res.drawable.baseline_open_in_new_24), null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))

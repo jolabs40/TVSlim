@@ -85,7 +85,7 @@ fun BanniereSoutien(
  * tient dans la boîte de 24 dp d'une icône. Fichiers ramenés à 24 dp de large dans chaque `drawable-*dpi`.
  */
 @Composable
-private fun SymboleKofi(contentDescription: String?, modifier: Modifier = Modifier, taille: Dp = 24.dp) {
+internal fun SymboleKofi(contentDescription: String?, modifier: Modifier = Modifier, taille: Dp = 24.dp) {
     Image(
         painter = painterResource(R.drawable.kofi_symbol),
         contentDescription = contentDescription,
@@ -94,8 +94,8 @@ private fun SymboleKofi(contentDescription: String?, modifier: Modifier = Modifi
 }
 
 /**
- * Le symbole de Ko-fi dans la barre du haut, visible depuis chaque onglet, téléviseur joint ou non : le compagnon n'a
- * pas d'écran « À propos ». Discret par principe — c'est le bandeau qui remercie après un service rendu.
+ * Le symbole de Ko-fi dans la barre du haut, visible depuis chaque onglet, téléviseur joint ou non — « À propos » le
+ * propose aussi. Discret par principe : c'est le bandeau qui remercie après un service rendu.
  */
 @Composable
 fun BoutonSoutien() {

@@ -55,6 +55,7 @@ import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.maj.PiloteMisesAJour
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.about_title
+import net.jolabs40.tvslim.windows.ressources.about_website_url
 import net.jolabs40.tvslim.windows.ressources.app_name
 import net.jolabs40.tvslim.windows.ressources.baseline_apps_24
 import net.jolabs40.tvslim.windows.ressources.baseline_cast_24
@@ -265,6 +266,7 @@ fun AppFenetre(
         )
     }
 
+    val siteWeb = stringResource(Res.string.about_website_url)
     if (aPropos) {
         AProposDialogue(
             etat = etatMaj,
@@ -272,6 +274,8 @@ fun AppFenetre(
             onVerifier = { misesAJour.verifier() },
             onVerificationAuto = misesAJour::majVerificationAuto,
             onInstaller = misesAJour::installer,
+            // Dans la langue de l'application : la page anglaise est à la racine, la française sous /fr/.
+            onSite = { ouvrirLien(siteWeb) },
             onSource = { ouvrirLien("https://github.com/${InfosApp.DEPOT_GITHUB}") },
             onSoutenir = { ouvrirLien(InvitationSoutien.LIEN) },
             onDossier = ouvrirDossierDonnees,

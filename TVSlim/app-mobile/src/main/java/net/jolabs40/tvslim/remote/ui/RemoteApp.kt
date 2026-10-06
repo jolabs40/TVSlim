@@ -29,6 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,9 +53,11 @@ import androidx.navigation.compose.rememberNavController
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.screens.ActionsApplicationsUi
 import net.jolabs40.tvslim.remote.ui.screens.ActionsFichiers
+import net.jolabs40.tvslim.remote.ui.screens.AProposDialogue
 import net.jolabs40.tvslim.remote.ui.screens.ApercuCaptureDialogue
 import net.jolabs40.tvslim.remote.ui.screens.ApplicationsScreen
 import net.jolabs40.tvslim.remote.ui.screens.BanniereSoutien
+import net.jolabs40.tvslim.remote.ui.screens.BoutonAPropos
 import net.jolabs40.tvslim.remote.ui.screens.BoutonCapture
 import net.jolabs40.tvslim.remote.ui.screens.BoutonSoutien
 import net.jolabs40.tvslim.remote.ui.screens.ConfirmationDialogue
@@ -123,6 +128,9 @@ fun RemoteApp() {
         )
     }
 
+    var aPropos by rememberSaveable { mutableStateOf(false) }
+    if (aPropos) AProposDialogue(onFermer = { aPropos = false })
+
     etatCapture.derniere?.let { derniere ->
         ApercuCaptureDialogue(
             capture = derniere,
@@ -150,6 +158,7 @@ fun RemoteApp() {
                     // Seulement téléviseur joint : sans lui, il n'y a rien à capturer.
                     if (etat.connecte) BoutonCapture(enCours = etatCapture.enCours, onCapturer = modele.capture::capturer)
                     BoutonSoutien()
+                    BoutonAPropos(onOuvrir = { aPropos = true })
                 },
             )
         },
