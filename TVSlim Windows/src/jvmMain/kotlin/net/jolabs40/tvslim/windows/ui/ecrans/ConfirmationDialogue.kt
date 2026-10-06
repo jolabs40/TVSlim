@@ -1,5 +1,9 @@
 package net.jolabs40.tvslim.windows.ui.ecrans
 
+import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
+import net.jolabs40.tvslim.windows.ressources.confirm_reboot_warning
+import net.jolabs40.tvslim.windows.ressources.confirm_reboot_body
+import net.jolabs40.tvslim.windows.ressources.confirm_reboot_title
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -74,6 +78,7 @@ fun ConfirmationDialogue(
                         is Confirmation.Reinjection ->
                             if (confirmation.derive) Res.string.confirm_drift_title else Res.string.confirm_reinject_title
                         is Confirmation.Installation -> Res.string.confirm_install_title
+                        Confirmation.Redemarrage -> Res.string.confirm_reboot_title
                     },
                 ),
             )
@@ -124,6 +129,10 @@ fun ConfirmationDialogue(
 
                     is Confirmation.Reinjection -> Reinjection(confirmation.plan, confirmation.derive)
                     is Confirmation.Installation -> ApercuInstallation(confirmation.apk)
+                    Confirmation.Redemarrage -> {
+                        Text(text = stringResource(Res.string.confirm_reboot_body), style = MaterialTheme.typography.bodyMedium)
+                        TexteSecondaire(stringResource(Res.string.confirm_reboot_warning), modifier = Modifier.padding(top = 8.dp))
+                    }
                 }
             }
         },

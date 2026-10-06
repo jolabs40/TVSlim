@@ -1,5 +1,10 @@
 package net.jolabs40.tvslim.windows.ui
 
+import net.jolabs40.tvslim.windows.ressources.msg_reboot_not_back
+import net.jolabs40.tvslim.windows.ressources.msg_reboot_back
+import net.jolabs40.tvslim.device.Redemarrage
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.delay
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -141,6 +146,9 @@ class PiloteApp(
     /** Une reconnexion silencieuse à la fois. */
     private var reprise: Job? = null
 
+    /** Le guet du retour d'un téléviseur qu'on vient de redémarrer. */
+    private var redemarrage: Job? = null
+
     /** La recherche sur le réseau ne tourne que pendant qu'on regarde l'écran de connexion. */
     private var veille: Job? = null
 
@@ -229,7 +237,8 @@ class PiloteApp(
      * Jamais non plus vers une adresse seulement tapée : on ne reprend que ce qui a déjà abouti.
      */
     fun reprendreConnexion() {
-        if (deconnexionVolontaire || _etat.value.connecte || reprise?.isActive == true) return
+        // Pendant un redémarrage, c'est son guet qui se reconnecte : pas de course entre les deux.
+        if (deconnexionVolontaire || _etat.value.connecte || reprise?.isActive == true || _etat.value.redemarrage) return
         if (_etat.value.connexion.etat == EtatConnexion.CONNEXION) return
         reprise = viewModelScope.launch {
             val lues = preferences.lire()
@@ -369,6 +378,7 @@ class PiloteApp(
             is Confirmation.Restauration -> reactiver(demande.paquets)
             is Confirmation.Reinjection -> configuration.reinjecter(demande.plan)
             is Confirmation.Installation -> configuration.installerApk(demande.apk)
+            Confirmation.Redemarrage -> redemarrer()
             null -> Unit
         }
         annulerConfirmation()
@@ -500,6 +510,41 @@ class PiloteApp(
         rafraichir()
     }
 
+    /** Redémarrer le téléviseur : une confirmation d'abord, qui dit ce que ça interrompt. */
+    fun demanderRedemarrage() = _etat.update { it.copy(confirmation = Confirmation.Redemarrage) }
+
+    /**
+     * L'ordre part une seule fois (`Redemarrage`, dans le noyau), la session est fermée proprement, puis on
+     * guette le retour du téléviseur pour s'y reconnecter sans rien demander : la carte de dérive dira
+     * ensuite si le redémarrage a défait quelque chose. Le même geste que sur le téléphone.
+     */
+    private fun redemarrer() {
+        val journalActif = journal ?: return
+        val hote = _etat.value.connexion.hote
+        val port = _etat.value.connexion.port
+        if (redemarrage?.isActive == true) return
+        redemarrage = viewModelScope.launch {
+            Redemarrage(client, journalActif).redemarrer()
+            deconnecter()
+            // Ce n'est pas un « Se déconnecter » : la reprise ordinaire pourra rouvrir la session ensuite.
+            deconnexionVolontaire = false
+            _etat.update { it.copy(redemarrage = true) }
+            delay(ATTENTE_REDEMARRAGE_MS)
+            val revenu = withTimeoutOrNull(DELAI_RETOUR_MS) {
+                while (!client.connecter(hote, port, discret = true)) delay(PAS_RETOUR_MS)
+                true
+            } ?: false
+            _etat.update { it.copy(redemarrage = false) }
+            if (revenu) {
+                ouvrirJournal(hote)
+                rafraichir()
+                afficher(texte(Res.string.msg_reboot_back))
+            } else {
+                afficher(texte(Res.string.msg_reboot_not_back))
+            }
+        }
+    }
+
     private suspend fun ouvrirJournal(hote: String) {
         suiviJournal?.cancel()
         val cle = cleDeFichier(hote)
@@ -532,5 +577,10 @@ class PiloteApp(
 
     private companion object {
         const val MAX_ECHECS = 4
+
+        /** Un téléviseur met plus de vingt secondes à rouvrir ADB : inutile de frapper avant. */
+        const val ATTENTE_REDEMARRAGE_MS = 20_000L
+        const val DELAI_RETOUR_MS = 180_000L
+        const val PAS_RETOUR_MS = 5_000L
     }
 }

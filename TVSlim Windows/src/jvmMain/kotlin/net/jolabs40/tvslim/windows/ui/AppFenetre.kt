@@ -386,6 +386,7 @@ fun AppFenetre(
                             actionsApplicationTv = actionsApplicationTv,
                             onChoisirApk = { choisirApk(titreApk)?.let(pilote.configuration::choisirApk) },
                             actionsCommande = actionsCommande,
+                            onRedemarrer = pilote::demanderRedemarrage,
                         )
 
                         Onglet.PAQUETS -> PaquetsEcran(

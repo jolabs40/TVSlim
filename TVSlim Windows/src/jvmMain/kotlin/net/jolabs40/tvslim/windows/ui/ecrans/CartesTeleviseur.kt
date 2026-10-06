@@ -1,5 +1,6 @@
 package net.jolabs40.tvslim.windows.ui.ecrans
 
+import net.jolabs40.tvslim.windows.ressources.device_reboot
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -73,6 +74,7 @@ fun CarteAppareil(
     etat: EtatApp,
     onDeconnecter: () -> Unit,
     onActualiser: () -> Unit,
+    onRedemarrer: () -> Unit = {},
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -89,6 +91,9 @@ fun CarteAppareil(
             )
             Spacer(Modifier.width(8.dp))
             Text(stringResource(Res.string.action_refresh))
+        }
+        OutlinedButton(onClick = onRedemarrer, enabled = !etat.chargement) {
+            Text(stringResource(Res.string.device_reboot))
         }
         if (etat.chargement) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
     }

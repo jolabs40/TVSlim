@@ -1,5 +1,7 @@
 package net.jolabs40.tvslim.windows.ui.ecrans
 
+import net.jolabs40.tvslim.windows.ressources.reboot_in_progress
+import net.jolabs40.tvslim.windows.ressources.device_reboot
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -102,6 +104,7 @@ fun ConnexionEcran(
     actionsApplicationTv: ActionsApplicationTv,
     onChoisirApk: () -> Unit,
     actionsCommande: ActionsCommande,
+    onRedemarrer: () -> Unit = {},
 ) {
     if (etat.connecte) {
         DeuxColonnes(
@@ -116,6 +119,7 @@ fun ConnexionEcran(
                 CarteAppareil(
                     etat = etat,
                     onDeconnecter = onDeconnecter,
+                    onRedemarrer = onRedemarrer,
                     // Actualiser relit aussi l'application TV : elle a pu changer sur le téléviseur.
                     onActualiser = { onActualiser(); if (televiseur) actionsApplicationTv.onLire() },
                 )
@@ -148,6 +152,15 @@ fun ConnexionEcran(
     DeuxColonnes(
         gauche = {
             EnTete()
+            // Le téléviseur redémarre sur demande : on dit qu'on guette son retour, sans rien demander.
+            if (etat.redemarrage) {
+                CarteSection(titre = stringResource(Res.string.device_reboot)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                        Text(text = stringResource(Res.string.reboot_in_progress), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
             CarteDecouverte(etat = etat, onConnecterA = onConnecterA)
             CarteSaisie(etat = etat, onHote = onHote, onPort = onPort, onConnecter = onConnecter)
         },
