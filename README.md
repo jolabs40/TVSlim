@@ -124,7 +124,11 @@ pick a profile and click **Apply**.
 - **Television** — model and maker, Android version, memory, enabled and disabled packages; the
   home screen and the launchers installed, recognised by their logo, the factory home screen
   included even once disabled; the recommended replacement, Startlight Launcher (coming soon to the
-  Play Store); grant the privileged permissions some apps need (`WRITE_SECURE_SETTINGS`, `DUMP`…);
+  Play Store); grant the privileged permissions some apps need (`WRITE_SECURE_SETTINGS`, `DUMP`…),
+  picking the app from a list — name, then package — that shows the permissions it requests;
+  install the optional TV Slim app for the television straight from its GitHub release (*Install from
+  GitHub*): its signing certificate is checked before anything reaches the TV, then it gets its
+  permission and its boot guardian is switched on; *Restart* the TV, and reconnect once it is back;
   install an APK on the TV — dropped into the window or chosen from your files — after a confirmation
   that shows the package, its version and what it replaces; send an ADB shell command of your own and
   read its output. If the TV has undone some of your changes — after a system update, typically —
@@ -144,7 +148,9 @@ pick a profile and click **Apply**.
   on the TV, force-stop it, disable or re-enable it (under the same rules as the Packages tab), or
   uninstall an app you installed yourself. Android gives neither names nor icons through ADB: a small
   helper (a few KB) is copied to `/data/local/tmp` for the reading, run, then erased — nothing is
-  installed — and what it reads is kept on your PC for the next time.
+  installed — and what it reads is kept on your PC for the next time. Apps, memory and storage are
+  read in the background as soon as the TV is connected, through a second ADB session: the tabs are
+  ready when you open them, and the TV keeps answering what you ask in the meantime.
 - **Memory** — RAM: what each running process really costs, and the before/after comparison since
   your first visit. Storage: free and used space, and the largest applications.
 - **Files** — browse the TV's folders as in File Explorer: internal storage, Downloads, Movies, a USB
@@ -242,12 +248,15 @@ java "TVSlim Windows/outils/VerifierMiseAJour.java" TVSlim-Windows-x.y.z.msi x.y
 
 TV Slim talks to your television over your local network, and to GitHub to look for updates — and,
 the first time you open the mirror without scrcpy installed, to download it from its GitHub
-release, once you have agreed and after checking its fingerprint. Nothing else. No account, no
+release, once you have agreed and after checking its fingerprint. Connected to a television or a
+box, it also asks GitHub, once per launch, for the latest TV Slim app for the television, and
+downloads it if you ask. Nothing else. No account, no
 telemetry. The ADB key that lets this computer talk to your TVs is stored encrypted by Windows
 (DPAPI) in `%APPDATA%\TVSlim`, next to the logs.
 
-On the phone, TV Slim talks to your television, and to nothing else; its ADB key is encrypted by the
-Android keystore. The QR code scanner is Google's, from Google Play services.
+On the phone, TV Slim talks to your television, and to GitHub only for that TV app — once per
+launch, connected to a television or a box, and to download it if you ask; its ADB key is encrypted
+by the Android keystore. The QR code scanner is Google's, from Google Play services.
 
 ## Support the project
 

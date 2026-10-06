@@ -129,7 +129,12 @@ cliquez sur **Appliquer**.
   l'écran d'accueil et les launchers installés, reconnus à leur logo, l'accueil d'usine compris même
   désactivé ; le remplaçant recommandé, Startlight Launcher (bientôt sur le Play Store) ; accorder
   les permissions privilégiées dont certaines applications ont besoin (`WRITE_SECURE_SETTINGS`,
-  `DUMP`…) ; installer un APK sur le téléviseur — glissé dans la fenêtre ou choisi dans vos fichiers —
+  `DUMP`…), en choisissant l'application dans une liste — nom, puis paquet — qui montre les
+  permissions qu'elle demande ; installer l'application TV Slim du téléviseur, facultative,
+  directement depuis sa publication GitHub (*Installer depuis GitHub*) : son certificat de signature
+  est vérifié avant que rien ne parte vers le téléviseur, puis elle reçoit sa permission et son
+  gardien de démarrage s'allume ; *Redémarrer* le téléviseur, et s'y reconnecter à son retour ;
+  installer un APK sur le téléviseur — glissé dans la fenêtre ou choisi dans vos fichiers —
   après une confirmation qui montre le paquet, sa version et ce qu'il remplace ; envoyer une commande
   ADB de votre cru et lire sa sortie. Si le téléviseur a défait une partie de vos réglages — après
   une mise à jour système, le plus souvent —, une carte le dit, et *Tout remettre* les réapplique.
@@ -151,7 +156,10 @@ cliquez sur **Appliquer**.
   réactiver (selon les mêmes règles que l'onglet Paquets), ou désinstaller une application que vous
   avez installée vous-même. Android ne donne ni les noms ni les icônes par ADB : une petite aide
   (quelques Ko) est copiée dans `/data/local/tmp` le temps de la lecture, lancée, puis effacée — rien
-  n'est installé —, et ce qu'elle lit est gardé sur votre PC pour la fois suivante.
+  n'est installé —, et ce qu'elle lit est gardé sur votre PC pour la fois suivante. Applications,
+  mémoire et stockage sont lus en arrière-plan dès que le téléviseur est joint, par une seconde
+  session ADB : les onglets sont prêts quand on les ouvre, et le téléviseur répond entre-temps à ce
+  que vous demandez.
 - **Mémoire** — mémoire vive : ce que coûte réellement chaque processus, et la comparaison
   avant/après depuis la première visite. Stockage : l'espace libre et occupé, et les applications
   les plus lourdes.
@@ -258,12 +266,15 @@ java "TVSlim Windows/outils/VerifierMiseAJour.java" TVSlim-Windows-x.y.z.msi x.y
 
 TV Slim parle à votre téléviseur sur votre réseau local, et à GitHub pour chercher les mises à
 jour — et, la première fois que vous ouvrez le miroir sans scrcpy installé, pour le télécharger
-depuis sa publication GitHub, après votre accord et en vérifiant son empreinte. À rien d'autre. Pas
+depuis sa publication GitHub, après votre accord et en vérifiant son empreinte. Joint à un
+téléviseur ou à une box, il demande aussi à GitHub, une fois par lancement, la dernière application
+TV Slim du téléviseur, et la télécharge si vous le demandez. À rien d'autre. Pas
 de compte, pas de télémétrie. La clé ADB qui permet à cet ordinateur de parler à vos téléviseurs est
 gardée chiffrée par Windows (DPAPI) dans `%APPDATA%\TVSlim`, à côté des journaux.
 
-Sur le téléphone, TV Slim parle à votre téléviseur, et à rien d'autre ; sa clé ADB est chiffrée par
-le magasin de clés d'Android. Le scanner de QR codes est celui de Google, fourni par les services
+Sur le téléphone, TV Slim parle à votre téléviseur, et à GitHub pour cette seule application du
+téléviseur — une fois par lancement, joint à un téléviseur ou à une box, et pour la télécharger si
+vous le demandez ; sa clé ADB est chiffrée par le magasin de clés d'Android. Le scanner de QR codes est celui de Google, fourni par les services
 Google Play.
 
 ## Soutenir le projet
