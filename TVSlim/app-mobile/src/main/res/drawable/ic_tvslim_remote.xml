@@ -1,24 +1,7 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path
-        android:fillColor="#101418"
-        android:pathData="M0,0h108v108h-108z" />
-    <!-- Écran de téléviseur -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#7FD1AE"
-        android:strokeWidth="5"
-        android:pathData="M18,24h58a4,4 0 0 1 4,4v30a4,4 0 0 1 -4,4h-58a4,4 0 0 1 -4,-4v-30a4,4 0 0 1 4,-4z" />
-    <!-- Téléphone compagnon, qui commande le téléviseur -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#8AB4F8"
-        android:strokeWidth="5"
-        android:pathData="M70,64h18a4,4 0 0 1 4,4v22a4,4 0 0 1 -4,4h-18a4,4 0 0 1 -4,-4v-22a4,4 0 0 1 4,-4z" />
-    <path
-        android:fillColor="#8AB4F8"
-        android:pathData="M75,86h8v3h-8z" />
-</vector>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône de l'application, la même sur le téléphone, le téléviseur et Windows. Produit par outils/logo.py : ne pas retoucher à la main. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_logo_fond" />
+    <foreground android:drawable="@drawable/ic_logo_premier_plan" />
+    <monochrome android:drawable="@drawable/ic_logo_monochrome" />
+</adaptive-icon>

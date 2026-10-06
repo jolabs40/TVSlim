@@ -87,7 +87,8 @@ class GardienDerive @Inject constructor(
             PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(contexte, CANAL)
-            .setSmallIcon(R.drawable.ic_tvslim)
+            // Une silhouette : de l'icône de l'application, Android ne garderait qu'un carré blanc.
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(contexte.getString(R.string.drift_title))
             .setContentText(resume(derive, catalogue))
             .setStyle(NotificationCompat.BigTextStyle().bigText(resume(derive, catalogue)))
