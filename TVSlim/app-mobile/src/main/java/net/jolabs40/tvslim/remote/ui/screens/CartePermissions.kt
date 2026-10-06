@@ -12,7 +12,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -20,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.ActionsPermissions
+import net.jolabs40.tvslim.remote.ui.EtatApplications
 import net.jolabs40.tvslim.remote.ui.EtatPermissions
 
 /**
@@ -28,11 +37,25 @@ import net.jolabs40.tvslim.remote.ui.EtatPermissions
  * L'état lu est affiché avant toute action : savoir qu'une permission est déjà accordée, ou
  * qu'elle n'est même pas demandée au manifeste, évite d'envoyer une commande pour rien.
  *
- * Deux champs à saisir, sans raccourcis ni préremplissage, comme sous Windows (demande du
- * 2026-09-14) : un exemple en filigrane dit ce qu'on attend.
+ * Deux champs, comme sous Windows. Le paquet se tape, ou se choisit parmi les applications du
+ * téléviseur — nom d'abord, paquet ensuite (2026-10-06) ; une fois lu, ce que l'application déclare
+ * s'affiche, et un appui remplit le champ Permission. Pas de raccourcis génériques : les puces retirées
+ * le 2026-09-14 ne reviennent pas, seule la liste propre à l'application s'affiche.
  */
 @Composable
-fun CartePermissions(etat: EtatPermissions, actions: ActionsPermissions) {
+fun CartePermissions(etat: EtatPermissions, applications: EtatApplications, actions: ActionsPermissions) {
+    var choix by remember { mutableStateOf(false) }
+    if (choix) {
+        ChoixApplicationDialogue(
+            applications = applications,
+            onCharger = actions.onChargerApplications,
+            onChoisir = { paquet ->
+                choix = false
+                actions.onChoisirPaquet(paquet)
+            },
+            onFermer = { choix = false },
+        )
+    }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -53,6 +76,11 @@ fun CartePermissions(etat: EtatPermissions, actions: ActionsPermissions) {
                 value = etat.paquet,
                 onValueChange = actions.onPaquet,
                 label = { Text(stringResource(R.string.permissions_package)) },
+                trailingIcon = {
+                    IconButton(onClick = { choix = true }) {
+                        Icon(Icons.Filled.Apps, contentDescription = stringResource(R.string.permissions_choose))
+                    }
+                },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -67,6 +95,9 @@ fun CartePermissions(etat: EtatPermissions, actions: ActionsPermissions) {
             )
 
             EtatLu(etat)
+            etat.lues?.takeIf { etat.aJour && it.paquetTrouve }?.let { lues ->
+                PermissionsDeclarees(lues = lues, onChoisir = actions.onPermission)
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -96,6 +127,8 @@ fun CartePermissions(etat: EtatPermissions, actions: ActionsPermissions) {
 @Composable
 private fun EtatLu(etat: EtatPermissions) {
     if (!etat.aJour) return
+    // Une application choisie dans la liste est lue avant qu'une permission soit saisie : rien à en dire encore.
+    if (etat.permission.isBlank() && !etat.paquetIntrouvable) return
 
     val (texte, couleur) = when {
         etat.paquetIntrouvable ->

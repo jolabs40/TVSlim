@@ -71,6 +71,7 @@ fun ConnexionScreen(
     onArreterRecherche: () -> Unit,
     onConnecterA: (net.jolabs40.tvslim.remote.adb.AppareilDecouvert) -> Unit,
     actionsPermissions: ActionsPermissions,
+    etatApplications: net.jolabs40.tvslim.remote.ui.EtatApplications,
     etatApplicationTv: net.jolabs40.tvslim.remote.ui.EtatApplicationTvUi,
     actionsApplicationTv: net.jolabs40.tvslim.remote.ui.ActionsApplicationTv,
     onChoisirApk: () -> Unit,
@@ -144,7 +145,7 @@ fun ConnexionScreen(
                 occupe = etat.permissions.lecture || etat.installation.occupee ||
                     etat.commande.enCours || etat.shizuku.enCours,
             ) {
-                CartePermissions(etat = etat.permissions, actions = actionsPermissions)
+                CartePermissions(etat = etat.permissions, applications = etatApplications, actions = actionsPermissions)
                 CarteInstallation(etat = etat.installation, onChoisir = onChoisirApk)
                 CarteCommande(etat = etat.commande, actions = actionsCommande)
                 CarteShizuku(etat = etat.shizuku, actions = actionsShizuku)

@@ -64,6 +64,7 @@ import net.jolabs40.tvslim.windows.ui.ActionsApplicationTv
 import net.jolabs40.tvslim.windows.ui.ActionsCommande
 import net.jolabs40.tvslim.windows.ui.ActionsPermissions
 import net.jolabs40.tvslim.windows.ui.EtatApp
+import net.jolabs40.tvslim.windows.ui.EtatApplications
 import net.jolabs40.tvslim.windows.ui.EtatApplicationTvUi
 import net.jolabs40.tvslim.windows.ui.composants.CarteSection
 import net.jolabs40.tvslim.windows.ui.composants.DeuxColonnes
@@ -96,6 +97,7 @@ fun ConnexionEcran(
     onArreterRecherche: () -> Unit,
     onConnecterA: (AppareilDecouvert) -> Unit,
     actionsPermissions: ActionsPermissions,
+    etatApplications: EtatApplications,
     etatApplicationTv: EtatApplicationTvUi,
     actionsApplicationTv: ActionsApplicationTv,
     onChoisirApk: () -> Unit,
@@ -128,7 +130,7 @@ fun ConnexionEcran(
                 )
             },
             droite = {
-                CartePermissions(etat = etat.permissions, actions = actionsPermissions)
+                CartePermissions(etat = etat.permissions, applications = etatApplications, actions = actionsPermissions)
                 CarteInstallation(etat = etat.installation, onChoisir = onChoisirApk)
                 CarteCommande(etat = etat.commande, actions = actionsCommande)
             },

@@ -42,6 +42,10 @@ data class ActionsPermissions(
     val onLire: () -> Unit,
     val onAccorder: () -> Unit,
     val onRetirer: () -> Unit,
+    /** Une application choisie dans la liste du téléviseur. */
+    val onChoisirPaquet: (String) -> Unit,
+    /** La liste n'est pas encore lue : celle de l'onglet Applications sert ici. */
+    val onChargerApplications: () -> Unit,
 )
 
 /**

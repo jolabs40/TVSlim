@@ -84,6 +84,8 @@ fun RemoteApp() {
     val soutienVisible by modele.soutien.visible.collectAsStateWithLifecycle()
     val etatCapture by modele.capture.etat.collectAsStateWithLifecycle()
     val etatApplicationTv by modele.applicationTv.etat.collectAsStateWithLifecycle()
+    // Aussi hors de l'onglet Applications : le choix d'une application, dans les permissions, s'en sert.
+    val etatApplicationsGlobal by modele.applications.etat.collectAsStateWithLifecycle()
     val contexte = LocalContext.current
     val navigation = rememberNavController()
     val pileCourante by navigation.currentBackStackEntryAsState()
@@ -212,7 +214,10 @@ fun RemoteApp() {
                             onLire = modele.permissions::lire,
                             onAccorder = modele.permissions::accorder,
                             onRetirer = modele.permissions::retirer,
+                            onChoisirPaquet = modele.permissions::choisirPaquet,
+                            onChargerApplications = modele.applications::charger,
                         ),
+                        etatApplications = etatApplicationsGlobal,
                         etatApplicationTv = etatApplicationTv,
                         actionsApplicationTv = ActionsApplicationTv(
                             onLire = modele.applicationTv::lire,

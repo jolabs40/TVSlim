@@ -539,4 +539,19 @@
     <string name="tvapp_error_sdk">La version d'Android de ce téléviseur est trop ancienne pour l'application TV.</string>
     <string name="tvapp_error_tv">Le téléviseur ne répond plus.</string>
     <string name="tvapp_error_install">Le téléviseur a refusé l'installation : %1$s</string>
+
+    <!-- Permissions : choisir une application, et ce qu'elle déclare -->
+    <string name="permissions_choose">Choisir une application</string>
+    <string name="permissions_choose_title">Applications du téléviseur</string>
+    <string name="permissions_choose_hint">Les applications du menu et celles que vous avez installées. Tout autre paquet peut toujours se taper.</string>
+    <string name="permissions_choose_search">Rechercher par nom ou paquet</string>
+    <string name="permissions_choose_loading">Lecture des applications… %1$d sur %2$d</string>
+    <string name="permissions_choose_loading_start">Lecture des applications…</string>
+    <string name="permissions_choose_none">Aucune application ne correspond.</string>
+    <string name="permissions_declared_title">Permissions que demande cette application</string>
+    <string name="permissions_declared_none">Cette application ne demande aucune permission.</string>
+    <string name="permissions_declared_granted">accordée</string>
+    <string name="permissions_declared_not_granted">non accordée</string>
+    <string name="permissions_declared_show_granted">Afficher aussi les %1$d déjà accordées</string>
+    <string name="permissions_declared_hide_granted">Masquer les accordées</string>
 </resources>

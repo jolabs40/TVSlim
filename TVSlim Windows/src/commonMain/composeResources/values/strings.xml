@@ -539,4 +539,19 @@
     <string name="tvapp_error_sdk">This television's Android version is too old for the TV app.</string>
     <string name="tvapp_error_tv">The television no longer answers.</string>
     <string name="tvapp_error_install">The television refused the installation: %1$s</string>
+
+    <!-- Permissions : choisir une application, et ce qu'elle déclare -->
+    <string name="permissions_choose">Choose an app</string>
+    <string name="permissions_choose_title">Apps on the television</string>
+    <string name="permissions_choose_hint">Apps in the menu and the ones you installed. Any other package can still be typed.</string>
+    <string name="permissions_choose_search">Search by name or package</string>
+    <string name="permissions_choose_loading">Reading the apps… %1$d of %2$d</string>
+    <string name="permissions_choose_loading_start">Reading the apps…</string>
+    <string name="permissions_choose_none">No app matches.</string>
+    <string name="permissions_declared_title">Permissions this app requests</string>
+    <string name="permissions_declared_none">This app requests no permission.</string>
+    <string name="permissions_declared_granted">granted</string>
+    <string name="permissions_declared_not_granted">not granted</string>
+    <string name="permissions_declared_show_granted">Also show the %1$d already granted</string>
+    <string name="permissions_declared_hide_granted">Hide the granted ones</string>
 </resources>

@@ -52,6 +52,12 @@ class PilotePermissions(
         it.copy(paquet = valeur.trim(), lues = null, paquetLu = "", modeAppOp = "")
     }
 
+    /** Une application choisie dans la liste : son paquet, puis ce qu'elle déclare, lu aussitôt. */
+    fun choisirPaquet(paquet: String) {
+        majPaquet(paquet)
+        lire()
+    }
+
     /** Changer de permission périme le mode lu : il ne vaut que pour l'app-op de la précédente. */
     fun majPermission(valeur: String) = _etat.update {
         it.copy(permission = valeur.trim(), modeAppOp = "")

@@ -218,7 +218,7 @@ private fun LigneApplication(
 
 /** L'icône lue sur l'appareil, ou le robot d'Android tant qu'elle ne l'est pas. */
 @Composable
-private fun IconeApplication(application: ApplicationAppareil, taille: Int) {
+internal fun IconeApplication(application: ApplicationAppareil, taille: Int) {
     val image: ImageBitmap? = remember(application.paquet, application.icone) {
         application.icone?.let { runCatching { ImageSkia.makeFromEncoded(it).toComposeImageBitmap() }.getOrNull() }
     }

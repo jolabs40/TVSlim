@@ -1,5 +1,7 @@
 package net.jolabs40.tvslim.windows.ui
 
+import net.jolabs40.tvslim.windows.ui.ecrans.CartePermissions
+import net.jolabs40.tvslim.device.PermissionsPaquet
 import net.jolabs40.tvslim.applicationtv.PublicationTv
 import net.jolabs40.tvslim.applicationtv.SituationTv
 import androidx.compose.foundation.layout.Arrangement
@@ -222,7 +224,7 @@ class PlancheLogosTest {
         )
         rendre("19-decouverte-marques", 1280, 640, cadre = false) {
             ConnexionEcran(
-                decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}),
+                decouverte, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}, {}, {}), EtatApplications(),
                 EtatApplicationTvUi(), ActionsApplicationTv({}, {}, {}), {},
                 ActionsCommande({}, {}, {}),
             )
@@ -350,7 +352,7 @@ class PlancheLogosTest {
         )
         rendre("25-televiseur-installation", 1280, 1100, cadre = false) {
             ConnexionEcran(
-                joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}),
+                joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}, {}, {}), EtatApplications(),
                 // La carte de l'application TV, absente du téléviseur, la 1.1.0 publiée.
                 EtatApplicationTvUi(
                     situation = SituationTv(
@@ -605,6 +607,25 @@ class PlancheLogosTest {
             ),
         )
         rendre("49-accueil-telephone", 720, 300) { CarteAccueil(pixel, {}, {}, {}) }
+
+        // Permissions : l'application choisie dans la liste, et ce qu'elle déclare (2026-10-06).
+        val permissionsLues = EtatPermissions(
+            paquet = "net.jolabs40.tvslim",
+            lues = PermissionsPaquet(
+                paquetTrouve = true,
+                demandees = setOf(
+                    "android.permission.WRITE_SECURE_SETTINGS",
+                    "android.permission.POST_NOTIFICATIONS",
+                    "android.permission.RECEIVE_BOOT_COMPLETED",
+                    "android.permission.QUERY_ALL_PACKAGES",
+                ),
+                accordees = setOf("android.permission.RECEIVE_BOOT_COMPLETED", "android.permission.QUERY_ALL_PACKAGES"),
+            ),
+            paquetLu = "net.jolabs40.tvslim",
+        )
+        rendre("50-permissions-declarees", 620, 640) {
+            CartePermissions(permissionsLues, EtatApplications(), ActionsPermissions({}, {}, {}, {}, {}, {}, {}))
+        }
 
         // Le symbole de Ko-fi de la barre du haut, en clair et en sombre.
         rendre("50-bouton-soutien", 120, 80) { BoutonSoutien {} }

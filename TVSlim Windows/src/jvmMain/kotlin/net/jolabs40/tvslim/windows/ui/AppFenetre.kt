@@ -292,6 +292,8 @@ fun AppFenetre(
             onLire = pilote.permissions::lire,
             onAccorder = pilote.permissions::accorder,
             onRetirer = pilote.permissions::retirer,
+            onChoisirPaquet = pilote.permissions::choisirPaquet,
+            onChargerApplications = pilote.applications::charger,
         )
     }
     val actionsCommande = remember(pilote) {
@@ -379,6 +381,7 @@ fun AppFenetre(
                             onArreterRecherche = pilote::arreterRecherche,
                             onConnecterA = pilote::connecterA,
                             actionsPermissions = actionsPermissions,
+                            etatApplications = etatApplications,
                             etatApplicationTv = etatApplicationTv,
                             actionsApplicationTv = actionsApplicationTv,
                             onChoisirApk = { choisirApk(titreApk)?.let(pilote.configuration::choisirApk) },

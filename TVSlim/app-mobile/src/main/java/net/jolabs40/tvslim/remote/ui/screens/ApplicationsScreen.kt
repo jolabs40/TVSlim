@@ -175,9 +175,9 @@ private fun Etiquettes(application: ApplicationAppareil) {
     }
 }
 
-/** L'icône lue sur l'appareil, ou le robot d'Android tant qu'elle ne l'est pas. */
+/** L'icône lue sur l'appareil, ou le robot d'Android tant qu'elle ne l'est pas. Le choix d'une application, dans les permissions, s'en sert aussi. */
 @Composable
-private fun IconeApplication(application: ApplicationAppareil, taille: Int) {
+internal fun IconeApplication(application: ApplicationAppareil, taille: Int) {
     val image: ImageBitmap? = remember(application.paquet, application.icone) {
         application.icone?.let { octets -> BitmapFactory.decodeByteArray(octets, 0, octets.size)?.asImageBitmap() }
     }
