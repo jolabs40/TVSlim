@@ -149,6 +149,10 @@ class PiloteApp(
     /** Le guet du retour d'un téléviseur qu'on vient de redémarrer. */
     private var redemarrage: Job? = null
 
+    /** Les lectures d'avance de la connexion, et la seconde session qui les porte : une à la fois. */
+    private var prechargement: Job? = null
+    private var sessionSeconde: ClientAdb? = null
+
     /** La recherche sur le réseau ne tourne que pendant qu'on regarde l'écran de connexion. */
     private var veille: Job? = null
 
@@ -223,6 +227,7 @@ class PiloteApp(
                 preferences.retenir(adresse.hote, adresse.port)
                 ouvrirJournal(adresse.hote)
                 rafraichir()
+                precharger()
             }
         }
     }
@@ -246,12 +251,14 @@ class PiloteApp(
             if (client.connecter(lues.dernierHote, lues.dernierPort, discret = true)) {
                 ouvrirJournal(lues.dernierHote)
                 rafraichir()
+                precharger()
             }
         }
     }
 
     fun deconnecter() {
         deconnexionVolontaire = true
+        arreterPrechargement()
         client.deconnecter()
         listOf(reprise, suiviJournal).forEach { it?.cancel() }
         configuration.oublier()
@@ -432,21 +439,75 @@ class PiloteApp(
     /** Lit la répartition de la mémoire. Séparé du rafraîchissement : la commande est lourde. */
     fun rafraichirMemoire() {
         if (!_etat.value.connecte) return
-        viewModelScope.launch {
-            _etat.update { it.copy(chargement = true) }
-            val memoire = lecteur.memoire()
-            _etat.update { it.copy(chargement = false, memoire = memoire, lectureMemoireTentee = true) }
+        viewModelScope.launch { lireMemoire(lecteur) }
+    }
+
+    /** Lit l'occupation du stockage, à part comme la mémoire. */
+    fun rafraichirStockage() {
+        if (!_etat.value.connecte) return
+        viewModelScope.launch { lireStockage(lecteur) }
+    }
+
+    /**
+     * Une lecture de la mémoire à la fois, qu'elle vienne de l'onglet ou de la connexion : `dumpsys meminfo` tient
+     * six secondes sur la TCL, l'onglet ouvert pendant la lecture d'avance l'attend plutôt que de la refaire.
+     */
+    private suspend fun lireMemoire(source: LecteurDistant) {
+        if (_etat.value.memoireEnLecture) return
+        _etat.update { it.copy(memoireEnLecture = true) }
+        try {
+            val memoire = source.memoire()
+            _etat.update { it.copy(memoire = memoire, lectureMemoireTentee = true) }
+        } finally {
+            _etat.update { it.copy(memoireEnLecture = false) }
         }
     }
 
-    /** Lit l'occupation du stockage, à la demande comme la mémoire : seul son onglet en a besoin. */
-    fun rafraichirStockage() {
-        if (!_etat.value.connecte) return
-        viewModelScope.launch {
-            _etat.update { it.copy(chargement = true) }
-            val stockage = lecteur.stockage()
-            _etat.update { it.copy(chargement = false, stockage = stockage, lectureStockageTentee = true) }
+    private suspend fun lireStockage(source: LecteurDistant) {
+        if (_etat.value.stockageEnLecture) return
+        _etat.update { it.copy(stockageEnLecture = true) }
+        try {
+            val stockage = source.stockage()
+            _etat.update { it.copy(stockage = stockage, lectureStockageTentee = true) }
+        } finally {
+            _etat.update { it.copy(stockageEnLecture = false) }
         }
+    }
+
+    /**
+     * Tout lire dès la connexion — applications, mémoire, stockage — par une seconde session ADB : la principale
+     * reste libre pour ce qu'on demande pendant ce temps, et l'onglet qu'on ouvre trouve sa lecture faite, ou en
+     * cours, au lieu de la lancer. Seul ce qui manque est lu. Le même geste que sur le téléphone.
+     *
+     * Les applications d'abord : rapides une fois les icônes en cache, et attendues aussi par le choix d'une
+     * application dans les permissions privilégiées.
+     */
+    private fun precharger() {
+        val precedent = prechargement
+        arreterPrechargement()
+        prechargement = viewModelScope.launch {
+            // Le précédent rend d'abord ses drapeaux : sa session fermée, il ne tarde pas.
+            precedent?.join()
+            val seconde = client.ouvrirSeconde() ?: return@launch
+            sessionSeconde = seconde
+            try {
+                applications.precharger(seconde)
+                val lecteurSecond = LecteurDistant(seconde)
+                if (!_etat.value.memoire.renseignee) lireMemoire(lecteurSecond)
+                if (!_etat.value.stockage.renseignee) lireStockage(lecteurSecond)
+            } finally {
+                seconde.deconnecter()
+                if (sessionSeconde === seconde) sessionSeconde = null
+            }
+        }
+    }
+
+    /** Fermer la seconde session est ce qui interrompt la lecture en cours : annuler la tâche n'y suffirait pas. */
+    private fun arreterPrechargement() {
+        prechargement?.cancel()
+        prechargement = null
+        sessionSeconde?.deconnecter()
+        sessionSeconde = null
     }
 
     /** Arrête les processus d'une application, sans rien changer à son état d'installation. */
@@ -538,6 +599,7 @@ class PiloteApp(
             if (revenu) {
                 ouvrirJournal(hote)
                 rafraichir()
+                precharger()
                 afficher(texte(Res.string.msg_reboot_back))
             } else {
                 afficher(texte(Res.string.msg_reboot_not_back))
@@ -574,6 +636,9 @@ class PiloteApp(
     }
 
     private fun afficher(message: MessageUi) = _etat.update { it.copy(message = message) }
+
+    /** La seconde session ne survit pas à la fenêtre. */
+    override fun onCleared() = arreterPrechargement()
 
     private companion object {
         const val MAX_ECHECS = 4

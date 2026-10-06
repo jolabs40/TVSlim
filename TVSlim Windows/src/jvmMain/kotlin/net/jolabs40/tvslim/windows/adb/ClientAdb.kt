@@ -83,10 +83,14 @@ class ClientAdb(
     private var session: Dadb? = null
 
     /** Le dernier téléviseur joint volontairement : c'est vers lui que va toute reprise. */
+    @Volatile
     private var cible: Pair<String, Int>? = null
 
     /** Quand la dernière reprise a échoué, pour ne pas la retenter à chaque commande. */
     private var dernierEchecReprise = 0L
+
+    /** Faux pour une seconde session ([ouvrirSeconde]) : rompue, elle ne se rouvre pas. */
+    private var repriseAutorisee = true
 
     /**
      * Ouvre la connexion et attend que le téléviseur l'accepte. [discret] sert aux tentatives que
@@ -128,6 +132,28 @@ class ClientAdb(
                 }
             }
         }
+    }
+
+    /**
+     * Une seconde session vers le même téléviseur, pour les lectures longues lancées d'avance à la connexion —
+     * applications, `dumpsys meminfo`, stockage : la session principale reste libre pendant ce temps pour ce que
+     * la personne demande. La clé est déjà autorisée, rien ne s'affiche sur le téléviseur.
+     *
+     * Elle ne se rouvre jamais d'elle-même : une lecture d'avance qui échoue se refait à la demande, par la
+     * principale. La fermer ([deconnecter]) revient à qui l'a ouverte — c'est aussi ce qui interrompt une lecture
+     * en cours. Null sans téléviseur joint, ou s'il ne répond pas.
+     */
+    suspend fun ouvrirSeconde(): ClientAdb? {
+        val (hote, port) = cible ?: return null
+        val seconde = ClientAdb(depotCles).apply { repriseAutorisee = false }
+        var ouverte = false
+        try {
+            ouverte = seconde.connecter(hote, port, discret = true)
+        } finally {
+            // Annulée en route, la connexion a pu aboutir quand même : on ne la laisse pas ouverte.
+            if (!ouverte) seconde.deconnecter()
+        }
+        return seconde.takeIf { ouverte }
     }
 
     fun deconnecter() {
@@ -487,6 +513,7 @@ class ClientAdb(
      * paquets sur un téléviseur qu'on vient d'éteindre tenterait quatre-vingts reconnexions.
      */
     private suspend fun reprendre(): Boolean {
+        if (!repriseAutorisee) return false
         val (hote, port) = cible ?: return false
         val maintenant = System.currentTimeMillis()
         if (maintenant - dernierEchecReprise < REPOS_APRES_ECHEC_MS) return false

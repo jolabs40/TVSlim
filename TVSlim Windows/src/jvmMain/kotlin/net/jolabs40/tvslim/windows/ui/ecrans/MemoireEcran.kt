@@ -170,7 +170,7 @@ private fun MemoireVive(
             CarteGain(mesures = etat.mesures, onRedefinirReference = onRedefinirReference)
             CarteMemoire(
                 memoire = memoire,
-                chargement = etat.chargement,
+                chargement = etat.memoireEnLecture,
                 tentee = etat.lectureMemoireTentee,
                 onActualiser = onActualiser,
             )
@@ -293,7 +293,7 @@ private fun Stockage(etat: EtatApp, onActualiser: () -> Unit) {
         ) {
             CarteStockage(
                 stockage = stockage,
-                chargement = etat.chargement,
+                chargement = etat.stockageEnLecture,
                 tentee = etat.lectureStockageTentee,
                 onActualiser = onActualiser,
             )

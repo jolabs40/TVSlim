@@ -84,7 +84,10 @@ data class EtatRemote(
     val recherche: String = "",
     val filtre: Filtre = Filtre.TOUS,
     val memoire: RepartitionMemoire = RepartitionMemoire(),
+    /** Une lecture de la mémoire est en cours, lancée par l'onglet ou d'avance à la connexion. */
+    val memoireEnLecture: Boolean = false,
     val stockage: RepartitionStockage = RepartitionStockage(),
+    val stockageEnLecture: Boolean = false,
     val permissions: EtatPermissions = EtatPermissions(),
     val installation: EtatInstallation = EtatInstallation(),
     val commande: EtatCommande = EtatCommande(),

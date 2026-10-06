@@ -97,21 +97,32 @@ class PiloteApplications(
         if (!etatRemote().connecte) return afficher(contexte.getString(R.string.msg_connect_first))
         if (_etat.value.chargement) return
         _etat.update { it.copy(chargement = true, avancee = null) }
-        portee.launch {
-            val lecteur = LecteurApplications(client, client, { runCatching { contexte.assets.open(LecteurApplications.CHEMIN_RESSOURCE) }.getOrNull() }, cache)
+        portee.launch { lire(client, signaler = true) }
+    }
+
+    /**
+     * La même lecture, lancée d'avance à la connexion par la seconde session : rien si l'onglet a déjà lu ou lit, et
+     * un échec ne se dit pas — personne n'a rien demandé, l'onglet relira de lui-même.
+     */
+    suspend fun precharger(seconde: ClientAdb) {
+        if (_etat.value.lue || _etat.value.chargement) return
+        _etat.update { it.copy(chargement = true, avancee = null) }
+        lire(seconde, signaler = false)
+    }
+
+    private suspend fun lire(session: ClientAdb, signaler: Boolean) {
+        try {
+            val lecteur = LecteurApplications(session, session, { runCatching { contexte.assets.open(LecteurApplications.CHEMIN_RESSOURCE) }.getOrNull() }, cache)
             val resultat = lecteur.lire { applications, fait, total ->
                 _etat.update { it.copy(applications = applications, avancee = if (fait < total) fait to total else null) }
             }
             when (resultat) {
-                is ResultatLecture.Lues -> _etat.update {
-                    it.copy(applications = resultat.applications, lue = true, chargement = false, avancee = null)
-                }
-
-                is ResultatLecture.Echec -> {
-                    _etat.update { it.copy(chargement = false, avancee = null) }
-                    afficher(messageLecture(resultat))
-                }
+                is ResultatLecture.Lues -> _etat.update { it.copy(applications = resultat.applications, lue = true) }
+                is ResultatLecture.Echec -> if (signaler) afficher(messageLecture(resultat))
             }
+        } finally {
+            // Interrompue par une déconnexion aussi : l'onglet ne doit pas attendre une lecture qui ne viendra plus.
+            _etat.update { it.copy(chargement = false, avancee = null) }
         }
     }
 

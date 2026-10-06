@@ -1,19 +1,18 @@
 package net.jolabs40.tvslim.remote.ui
 
-import net.jolabs40.tvslim.device.Redemarrage
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.delay
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import net.jolabs40.tvslim.catalog.CatalogueRepository
 import net.jolabs40.tvslim.catalog.EntreePaquet
 import net.jolabs40.tvslim.catalog.Profil
@@ -22,6 +21,8 @@ import net.jolabs40.tvslim.commande.ConsoleAdb
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 import net.jolabs40.tvslim.device.LecteurDistant
+import net.jolabs40.tvslim.device.Redemarrage
+import net.jolabs40.tvslim.device.RepartitionMemoire
 import net.jolabs40.tvslim.device.RepartitionStockage
 import net.jolabs40.tvslim.device.paquetsInconnus
 import net.jolabs40.tvslim.installation.InstallationApk
@@ -145,6 +146,10 @@ class RemoteViewModel @Inject constructor(
     /** Le guet du retour d'un téléviseur qu'on vient de redémarrer. */
     private var redemarrage: Job? = null
 
+    /** Les lectures d'avance de la connexion, et la seconde session qui les porte : une à la fois. */
+    private var prechargement: Job? = null
+    private var sessionSeconde: ClientAdb? = null
+
     /** La découverte mDNS ne tourne que pendant qu'on regarde l'écran de connexion. */
     private var veille: Job? = null
 
@@ -233,6 +238,7 @@ class RemoteViewModel @Inject constructor(
                 preferences.retenir(hote, port)
                 ouvrirJournal(hote)
                 rafraichir()
+                precharger()
             }
         }
     }
@@ -249,7 +255,10 @@ class RemoteViewModel @Inject constructor(
         // Connecté, mais sans rien de lu : la lecture précédente a été coupée par la mise en veille du
         // téléphone. On relit plutôt que de laisser une fiche vide.
         if (_etat.value.connecte) {
-            if (_etat.value.infos.marque.isBlank() && _etat.value.infos.modele.isBlank()) rafraichir()
+            if (_etat.value.infos.marque.isBlank() && _etat.value.infos.modele.isBlank()) {
+                rafraichir()
+                precharger()
+            }
             return
         }
         // Pendant un redémarrage, c'est son guet qui se reconnecte : pas de course entre les deux.
@@ -261,6 +270,7 @@ class RemoteViewModel @Inject constructor(
             if (client.connecter(hote, port, discret = true)) {
                 ouvrirJournal(hote)
                 rafraichir()
+                precharger()
             }
         }
     }
@@ -280,6 +290,7 @@ class RemoteViewModel @Inject constructor(
         afficher(motif.ifBlank { contexte.getString(R.string.msg_scan_cancelled) })
 
     fun deconnecter() {
+        arreterPrechargement()
         client.deconnecter()
         configuration.oublier()
         reprise?.cancel()
@@ -299,6 +310,7 @@ class RemoteViewModel @Inject constructor(
                 infos = InfosAppareil.VIDE,
                 journal = emptyList(),
                 mesures = HistoriqueMesures(),
+                memoire = RepartitionMemoire(),
                 stockage = RepartitionStockage(),
             )
         }
@@ -458,21 +470,75 @@ class RemoteViewModel @Inject constructor(
     /** Lit la répartition de la mémoire. Séparé du rafraîchissement : la commande est lourde. */
     fun rafraichirMemoire() {
         if (!_etat.value.connecte) return
-        viewModelScope.launch {
-            _etat.update { it.copy(chargement = true) }
-            val memoire = lecteur.memoire()
-            _etat.update { it.copy(chargement = false, memoire = memoire) }
+        viewModelScope.launch { lireMemoire(lecteur) }
+    }
+
+    /** Lit l'occupation du stockage, à part comme la mémoire. */
+    fun rafraichirStockage() {
+        if (!_etat.value.connecte) return
+        viewModelScope.launch { lireStockage(lecteur) }
+    }
+
+    /**
+     * Une lecture de la mémoire à la fois, qu'elle vienne de l'onglet ou de la connexion : `dumpsys meminfo` tient
+     * six secondes sur la TCL, l'onglet ouvert pendant la lecture d'avance l'attend plutôt que de la refaire.
+     */
+    private suspend fun lireMemoire(source: LecteurDistant) {
+        if (_etat.value.memoireEnLecture) return
+        _etat.update { it.copy(memoireEnLecture = true) }
+        try {
+            val memoire = source.memoire()
+            _etat.update { it.copy(memoire = memoire) }
+        } finally {
+            _etat.update { it.copy(memoireEnLecture = false) }
         }
     }
 
-    /** Lit l'occupation du stockage, à la demande comme la mémoire : seul son onglet en a besoin. */
-    fun rafraichirStockage() {
-        if (!_etat.value.connecte) return
-        viewModelScope.launch {
-            _etat.update { it.copy(chargement = true) }
-            val stockage = lecteur.stockage()
-            _etat.update { it.copy(chargement = false, stockage = stockage) }
+    private suspend fun lireStockage(source: LecteurDistant) {
+        if (_etat.value.stockageEnLecture) return
+        _etat.update { it.copy(stockageEnLecture = true) }
+        try {
+            val stockage = source.stockage()
+            _etat.update { it.copy(stockage = stockage) }
+        } finally {
+            _etat.update { it.copy(stockageEnLecture = false) }
         }
+    }
+
+    /**
+     * Tout lire dès la connexion — applications, mémoire, stockage — par une seconde session ADB : la principale
+     * reste libre pour ce qu'on demande pendant ce temps, et l'onglet qu'on ouvre trouve sa lecture faite, ou en
+     * cours, au lieu de la lancer. Seul ce qui manque est lu ; un échec ne se dit pas, l'onglet relira à la demande.
+     *
+     * Les applications d'abord : rapides une fois les icônes en cache, et attendues aussi par le choix d'une
+     * application dans les permissions privilégiées.
+     */
+    private fun precharger() {
+        val precedent = prechargement
+        arreterPrechargement()
+        prechargement = viewModelScope.launch {
+            // Le précédent rend d'abord ses drapeaux : sa session fermée, il ne tarde pas.
+            precedent?.join()
+            val seconde = client.ouvrirSeconde() ?: return@launch
+            sessionSeconde = seconde
+            try {
+                applications.precharger(seconde)
+                val lecteurSecond = LecteurDistant(seconde)
+                if (!_etat.value.memoire.renseignee) lireMemoire(lecteurSecond)
+                if (!_etat.value.stockage.renseignee) lireStockage(lecteurSecond)
+            } finally {
+                seconde.deconnecter()
+                if (sessionSeconde === seconde) sessionSeconde = null
+            }
+        }
+    }
+
+    /** Fermer la seconde session est ce qui interrompt la lecture en cours : annuler la tâche n'y suffirait pas. */
+    private fun arreterPrechargement() {
+        prechargement?.cancel()
+        prechargement = null
+        sessionSeconde?.deconnecter()
+        sessionSeconde = null
     }
 
     /** Arrête les processus d'une application, sans rien changer à son état d'installation. */
@@ -562,6 +628,7 @@ class RemoteViewModel @Inject constructor(
             if (revenu) {
                 ouvrirJournal(hote)
                 rafraichir()
+                precharger()
                 afficher(contexte.getString(R.string.msg_reboot_back))
             } else {
                 afficher(contexte.getString(R.string.msg_reboot_not_back))
@@ -582,6 +649,8 @@ class RemoteViewModel @Inject constructor(
         relevees.charger()
         mesures = relevees
 
+        // Ce qu'on avait lu de la mémoire et du stockage date d'une autre session, peut-être d'un autre téléviseur.
+        _etat.update { it.copy(memoire = RepartitionMemoire(), stockage = RepartitionStockage()) }
         suiviJournal = viewModelScope.launch {
             launch {
                 ouvert.actions.collect { actions -> _etat.update { it.copy(journal = actions) } }
@@ -593,6 +662,9 @@ class RemoteViewModel @Inject constructor(
     }
 
     private fun afficher(texte: String) = _etat.update { it.copy(message = texte) }
+
+    /** La seconde session ne survit pas à l'écran : la principale, partagée, reste ouverte. */
+    override fun onCleared() = arreterPrechargement()
 
     private companion object {
         const val MAX_ECHECS = 4

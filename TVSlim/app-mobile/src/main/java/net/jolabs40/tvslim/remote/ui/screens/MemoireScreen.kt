@@ -127,7 +127,7 @@ fun MemoireScreen(
                                 )
                             }
 
-                            Button(onClick = onActualiser, enabled = !etat.chargement) {
+                            Button(onClick = onActualiser, enabled = !etat.memoireEnLecture) {
                                 Text(stringResource(R.string.action_refresh))
                             }
                         }
@@ -160,7 +160,7 @@ fun MemoireScreen(
                 item {
                     CarteStockage(
                         stockage = stockage,
-                        chargement = etat.chargement,
+                        chargement = etat.stockageEnLecture,
                         onActualiser = onActualiserStockage,
                     )
                 }

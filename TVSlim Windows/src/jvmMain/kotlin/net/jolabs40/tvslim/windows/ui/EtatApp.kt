@@ -89,9 +89,12 @@ data class EtatApp(
     val memoire: RepartitionMemoire = RepartitionMemoire(),
     /** Une lecture de la mémoire a abouti ou échoué : « lecture en cours » ne dure pas au-delà. */
     val lectureMemoireTentee: Boolean = false,
+    /** Une lecture de la mémoire est en cours, lancée par l'onglet ou d'avance à la connexion. */
+    val memoireEnLecture: Boolean = false,
     val stockage: RepartitionStockage = RepartitionStockage(),
     /** Comme pour la mémoire : un échec de lecture se dit, au lieu d'un « lecture en cours » sans fin. */
     val lectureStockageTentee: Boolean = false,
+    val stockageEnLecture: Boolean = false,
     val permissions: EtatPermissions = EtatPermissions(),
     val installation: EtatInstallation = EtatInstallation(),
     val commande: EtatCommande = EtatCommande(),
