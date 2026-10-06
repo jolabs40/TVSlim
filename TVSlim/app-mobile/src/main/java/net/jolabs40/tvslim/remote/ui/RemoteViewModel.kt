@@ -1,5 +1,8 @@
 package net.jolabs40.tvslim.remote.ui
 
+import net.jolabs40.tvslim.device.Redemarrage
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.delay
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -139,6 +142,9 @@ class RemoteViewModel @Inject constructor(
     /** Une reconnexion silencieuse à la fois, sinon le retour à l'écran en lancerait une chaque fois. */
     private var reprise: Job? = null
 
+    /** Le guet du retour d'un téléviseur qu'on vient de redémarrer. */
+    private var redemarrage: Job? = null
+
     /** La découverte mDNS ne tourne que pendant qu'on regarde l'écran de connexion. */
     private var veille: Job? = null
 
@@ -240,7 +246,14 @@ class RemoteViewModel @Inject constructor(
      * banal — rien ne s'affiche : la personne n'a rien demandé.
      */
     fun reprendreConnexion() {
-        if (_etat.value.connecte || reprise?.isActive == true) return
+        // Connecté, mais sans rien de lu : la lecture précédente a été coupée par la mise en veille du
+        // téléphone. On relit plutôt que de laisser une fiche vide.
+        if (_etat.value.connecte) {
+            if (_etat.value.infos.marque.isBlank() && _etat.value.infos.modele.isBlank()) rafraichir()
+            return
+        }
+        // Pendant un redémarrage, c'est son guet qui se reconnecte : pas de course entre les deux.
+        if (reprise?.isActive == true || _etat.value.redemarrage) return
         reprise = viewModelScope.launch {
             val hote = _etat.value.hoteSaisi.ifBlank { preferences.dernierHote() }
             if (hote.isBlank()) return@launch
@@ -306,6 +319,12 @@ class RemoteViewModel @Inject constructor(
                 paquetsSurveilles = catalogue.entrees.map { it.paquet },
                 paquetsDAccueil = paquetsDAccueil,
             )
+            // Une lecture coupée en route — l'application mise en veille par Android, la session tombée — rend
+            // une photographie vide : elle ne remplace pas ce qu'on savait déjà (relevé le 2026-10-06).
+            if (photo.infos.marque.isBlank() && photo.infos.modele.isBlank()) {
+                _etat.update { it.copy(chargement = false) }
+                return@launch
+            }
             val selection = _etat.value.selection.map { it.entree.paquet }.toSet()
 
             // Le modèle vient d'être lu : on le retient pour nommer l'appareil la prochaine fois.
@@ -385,6 +404,7 @@ class RemoteViewModel @Inject constructor(
             is Confirmation.Restauration -> reactiver(demande.paquets)
             is Confirmation.Reinjection -> configuration.reinjecter(demande.plan)
             is Confirmation.Installation -> configuration.installerApk(demande.apk)
+            Confirmation.Redemarrage -> redemarrer()
             null -> Unit
         }
         annulerConfirmation()
@@ -516,6 +536,39 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
+    /** Redémarrer le téléviseur : une confirmation d'abord, qui dit ce que ça interrompt. */
+    fun demanderRedemarrage() = _etat.update { it.copy(confirmation = Confirmation.Redemarrage) }
+
+    /**
+     * L'ordre part une seule fois (`Redemarrage`, dans le noyau), la session est fermée proprement, puis on
+     * guette le retour du téléviseur pour s'y reconnecter sans rien demander : la carte de dérive dira
+     * ensuite si le redémarrage a défait quelque chose.
+     */
+    private fun redemarrer() {
+        val journalActif = journal ?: return
+        val hote = _etat.value.connexion.hote
+        val port = _etat.value.connexion.port
+        if (redemarrage?.isActive == true) return
+        redemarrage = viewModelScope.launch {
+            Redemarrage(client, journalActif).redemarrer()
+            deconnecter()
+            _etat.update { it.copy(redemarrage = true) }
+            delay(ATTENTE_REDEMARRAGE_MS)
+            val revenu = withTimeoutOrNull(DELAI_RETOUR_MS) {
+                while (!client.connecter(hote, port, discret = true)) delay(PAS_RETOUR_MS)
+                true
+            } ?: false
+            _etat.update { it.copy(redemarrage = false) }
+            if (revenu) {
+                ouvrirJournal(hote)
+                rafraichir()
+                afficher(contexte.getString(R.string.msg_reboot_back))
+            } else {
+                afficher(contexte.getString(R.string.msg_reboot_not_back))
+            }
+        }
+    }
+
     private suspend fun ouvrirJournal(hote: String) {
         suiviJournal?.cancel()
         val cle = cleDeFichier(hote)
@@ -543,5 +596,10 @@ class RemoteViewModel @Inject constructor(
 
     private companion object {
         const val MAX_ECHECS = 4
+
+        /** Un téléviseur met plus de vingt secondes à rouvrir ADB : inutile de frapper avant. */
+        const val ATTENTE_REDEMARRAGE_MS = 20_000L
+        const val DELAI_RETOUR_MS = 180_000L
+        const val PAS_RETOUR_MS = 5_000L
     }
 }

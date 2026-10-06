@@ -1,5 +1,7 @@
 package net.jolabs40.tvslim.remote.ui.screens
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -62,6 +64,7 @@ fun ConnexionScreen(
     onConnecter: () -> Unit,
     onDeconnecter: () -> Unit,
     onActualiser: () -> Unit,
+    onRedemarrer: () -> Unit,
     onScan: (String) -> Unit,
     onEchecScan: (String) -> Unit,
     onInstallerLauncher: (String) -> Unit,
@@ -133,6 +136,7 @@ fun ConnexionScreen(
             AppareilConnecte(
                 etat = etat,
                 onDeconnecter = onDeconnecter,
+                onRedemarrer = onRedemarrer,
                 // Actualiser relit aussi l'application TV : elle a pu changer sur le téléviseur.
                 onActualiser = { onActualiser(); if (televiseur) actionsApplicationTv.onLire() },
             )
@@ -151,6 +155,20 @@ fun ConnexionScreen(
                 CarteShizuku(etat = etat.shizuku, actions = actionsShizuku)
             }
             return@Column
+        }
+
+        // Le téléviseur redémarre sur demande : on dit qu'on guette son retour, sans rien demander.
+        if (etat.redemarrage) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CircularProgressIndicator()
+                    Text(text = stringResource(R.string.reboot_in_progress), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
         }
 
         // Le plus court des chemins quand il aboutit : l'appareil s'annonce, on le touche.
@@ -338,20 +356,26 @@ fun ConnexionScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AppareilConnecte(
     etat: EtatRemote,
     onDeconnecter: () -> Unit,
+    onRedemarrer: () -> Unit,
     onActualiser: () -> Unit,
 ) {
-    Row(
+    // Trois boutons ne tiennent pas toujours sur une ligne de téléphone : celui qui déborde passe
+    // dessous, entier, plutôt que de voir son texte coupé en deux.
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         OutlinedButton(onClick = onDeconnecter) {
             Text(stringResource(R.string.connection_disconnect))
         }
         Button(onClick = onActualiser) { Text(stringResource(R.string.action_refresh)) }
+        OutlinedButton(onClick = onRedemarrer) { Text(stringResource(R.string.device_reboot)) }
         if (etat.chargement) CircularProgressIndicator()
     }
 

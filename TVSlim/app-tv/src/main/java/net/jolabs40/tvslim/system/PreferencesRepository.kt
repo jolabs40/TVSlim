@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -55,6 +56,19 @@ class PreferencesRepository @Inject constructor(
         }
     }
 
+    /**
+     * Réserve l'allumage [numero] (`Settings.Global.BOOT_COUNT`) : vrai pour le premier qui le demande,
+     * faux ensuite — le gardien ne travaille qu'une fois par allumage, quelle que soit la porte.
+     */
+    suspend fun prendreAllumage(numero: Int): Boolean {
+        var libre = false
+        contexte.magasin.edit {
+            libre = it[CLE_ALLUMAGE] != numero
+            it[CLE_ALLUMAGE] = numero
+        }
+        return libre
+    }
+
     /** Ce que la dernière mise à jour système a défait, tant que rien ne l'a repris. */
     val derive: Flow<DeriveDemarrage?> = contexte.magasin.data.map { donnees ->
         DeriveDemarrage(
@@ -77,6 +91,7 @@ class PreferencesRepository @Inject constructor(
 
     private companion object {
         val CLE_GARDIEN = booleanPreferencesKey("gardien_demarrage")
+        val CLE_ALLUMAGE = intPreferencesKey("allumage_traite")
         val CLE_EMPREINTE = stringPreferencesKey("photo_empreinte")
         val CLE_DESACTIVES = stringSetPreferencesKey("photo_desactives")
         val CLE_ACCUEIL = stringPreferencesKey("photo_accueil")

@@ -460,4 +460,13 @@
     <string name="permissions_declared_not_granted">non accordée</string>
     <string name="permissions_declared_show_granted">Afficher aussi les %1$d déjà accordées</string>
     <string name="permissions_declared_hide_granted">Masquer les accordées</string>
+
+    <!-- Redémarrer le téléviseur -->
+    <string name="device_reboot">Redémarrer</string>
+    <string name="confirm_reboot_title">Redémarrer le téléviseur ?</string>
+    <string name="confirm_reboot_body">Le téléviseur redémarre, en une minute environ : ce qui passe à l\'écran s\'interrompt. TV Slim se reconnecte tout seul à son retour.</string>
+    <string name="confirm_reboot_warning">Sur certains téléviseurs, le débogage réseau doit être réactivé après un redémarrage.</string>
+    <string name="reboot_in_progress">Le téléviseur redémarre. TV Slim se reconnecte dès qu\'il revient…</string>
+    <string name="msg_reboot_back">Le téléviseur a redémarré, et TV Slim s\'y est reconnecté.</string>
+    <string name="msg_reboot_not_back">Le téléviseur n\'est pas revenu sur le réseau. Rallumez-le s\'il est éteint ; s\'il est allumé, le débogage réseau doit peut-être être réactivé.</string>
 </resources>

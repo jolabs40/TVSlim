@@ -87,6 +87,21 @@
             </intent-filter>
         </receiver>
         <!--
+            Le service de démarrage que lance StartLight à l'allumage : une activité invisible, la seule
+            porte que le gestionnaire de démarrage de TCL laisse ouverte à une application tierce.
+        -->
+        <activity
+            android:name=".system.PassageActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="net.jolabs40.startlight.action.SERVICE_DEMARRAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <!--
             Le téléphone ou le PC allume le gardien juste après avoir installé l'application. Réservé à
             qui détient WRITE_SECURE_SETTINGS : le shell d'ADB, aucune application du téléviseur.
         -->

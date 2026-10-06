@@ -200,6 +200,7 @@ fun RemoteApp() {
                         onConnecter = modele::connecter,
                         onDeconnecter = modele::deconnecter,
                         onActualiser = modele::rafraichir,
+                        onRedemarrer = modele::demanderRedemarrage,
                         onScan = modele::appliquerScan,
                         onEchecScan = modele::signalerEchecScan,
                         onInstallerLauncher = modele.configuration::installerLauncher,

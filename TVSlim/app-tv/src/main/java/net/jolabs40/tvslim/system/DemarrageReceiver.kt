@@ -3,13 +3,11 @@ package net.jolabs40.tvslim.system
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import net.jolabs40.tvslim.catalog.CatalogueRepository
 import javax.inject.Inject
 
 /**
@@ -18,57 +16,27 @@ import javax.inject.Inject
  * Certains réglages reviennent à leur valeur d'usine à **chaque redémarrage** —
  * `low_power_standby_enabled` au premier chef, qui rend l'appareil injoignable en réseau
  * pendant la veille. Aucun compagnon mobile ne peut corriger cela : il n'est pas là au
- * démarrage. Ce récepteur, si.
+ * démarrage. Ce récepteur, si — là où le fabricant laisse passer BOOT_COMPLETED. Sur une TCL, qui le
+ * filtre, c'est StartLight qui prend le relais, par [PassageActivity] ; [GardienDemarrage] ne travaille
+ * qu'une fois par allumage, quelle que soit la porte.
  *
  * Il repose sur `WRITE_SECURE_SETTINGS`, accordée une seule fois par ADB, qui survit aux
- * redémarrages.
- *
- * Il guette aussi la **dérive** : ce qu'une mise à jour système a défait depuis l'allumage précédent
- * — cf. [GardienDerive].
+ * redémarrages. Il guette aussi la **dérive** — cf. [GardienDerive].
  */
 @AndroidEntryPoint
 class DemarrageReceiver : BroadcastReceiver() {
 
-    @Inject lateinit var preferences: PreferencesRepository
-
-    @Inject lateinit var reglages: ReglagesSysteme
-
-    @Inject lateinit var catalogue: CatalogueRepository
-
-    @Inject lateinit var derive: GardienDerive
+    @Inject lateinit var gardien: GardienDemarrage
 
     override fun onReceive(contexte: Context, intention: Intent) {
         if (intention.action != Intent.ACTION_BOOT_COMPLETED) return
         val relais = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
-                if (!preferences.gardienActifMaintenant()) return@launch
-                // D'abord constater, ensuite réappliquer : la photo de l'allumage ne doit pas dépendre
-                // d'une permission d'écriture qu'elle n'utilise pas.
-                runCatching { derive.verifier() }
-                    .onSuccess { constat -> constat?.let { Log.i(TAG, "Dérive après mise à jour : $it") } }
-                    .onFailure { Log.w(TAG, "Dérive non vérifiée", it) }
-                if (!reglages.ecritureDirectePossible()) {
-                    Log.w(TAG, "WRITE_SECURE_SETTINGS absente : réglages non réappliqués.")
-                    return@launch
-                }
-                catalogue.catalogue().reglages
-                    .filter { it.reappliquerAuDemarrage }
-                    .forEach { reglage ->
-                        val erreur = reglages.ecrire(reglage, reglage.valeurOptimisee)
-                        if (erreur == null) {
-                            Log.i(TAG, "${reglage.cle} remis à ${reglage.valeurOptimisee}")
-                        } else {
-                            Log.w(TAG, "${reglage.cle} : $erreur")
-                        }
-                    }
+                gardien.auDemarrage("BOOT_COMPLETED")
             } finally {
                 relais.finish()
             }
         }
-    }
-
-    private companion object {
-        const val TAG = "TVSlim/Demarrage"
     }
 }

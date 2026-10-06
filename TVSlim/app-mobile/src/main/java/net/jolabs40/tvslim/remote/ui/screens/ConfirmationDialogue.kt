@@ -51,6 +51,7 @@ fun ConfirmationDialogue(
                         is Confirmation.Reinjection ->
                             if (confirmation.derive) R.string.confirm_drift_title else R.string.confirm_reinject_title
                         is Confirmation.Installation -> R.string.confirm_install_title
+                        Confirmation.Redemarrage -> R.string.confirm_reboot_title
                     },
                 ),
             )
@@ -106,6 +107,15 @@ fun ConfirmationDialogue(
 
                     is Confirmation.Reinjection -> Reinjection(confirmation.plan, confirmation.derive)
                     is Confirmation.Installation -> ApercuInstallation(confirmation.apk)
+                    Confirmation.Redemarrage -> {
+                        Text(text = stringResource(R.string.confirm_reboot_body), style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = stringResource(R.string.confirm_reboot_warning),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
                 }
             }
         },

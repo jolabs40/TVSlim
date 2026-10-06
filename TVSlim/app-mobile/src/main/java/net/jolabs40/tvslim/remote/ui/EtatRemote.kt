@@ -50,6 +50,9 @@ sealed interface Confirmation {
 
     /** Installation d'un APK : l'application qui arrive, sa version, et ce qu'elle remplace. */
     data class Installation(val apk: ApkChoisi) : Confirmation
+
+    /** Redémarrer le téléviseur : ce que ça interrompt, et ce qui peut ne pas revenir. */
+    data object Redemarrage : Confirmation
 }
 
 @Immutable
@@ -65,6 +68,8 @@ data class EtatRemote(
     val hoteSaisi: String = "",
     val portSaisi: String = PORT_ADB_PAR_DEFAUT.toString(),
     val connexion: ConnexionUi = ConnexionUi(),
+    /** Le téléviseur redémarre : on guette son retour pour s'y reconnecter. */
+    val redemarrage: Boolean = false,
     val chargement: Boolean = false,
     val progression: Progression? = null,
     val catalogue: Catalogue = Catalogue(),

@@ -460,4 +460,13 @@
     <string name="permissions_declared_not_granted">not granted</string>
     <string name="permissions_declared_show_granted">Also show the %1$d already granted</string>
     <string name="permissions_declared_hide_granted">Hide the granted ones</string>
+
+    <!-- Redémarrer le téléviseur -->
+    <string name="device_reboot">Restart</string>
+    <string name="confirm_reboot_title">Restart the television?</string>
+    <string name="confirm_reboot_body">The television restarts, in about a minute: what is on screen stops. TV Slim reconnects by itself when it comes back.</string>
+    <string name="confirm_reboot_warning">On some televisions, network debugging has to be turned on again after a restart.</string>
+    <string name="reboot_in_progress">The television is restarting. TV Slim reconnects as soon as it is back…</string>
+    <string name="msg_reboot_back">The television has restarted, and TV Slim is connected to it again.</string>
+    <string name="msg_reboot_not_back">The television has not come back on the network. Turn it on if it is off; if it is on, network debugging may have to be turned on again.</string>
 </resources>
