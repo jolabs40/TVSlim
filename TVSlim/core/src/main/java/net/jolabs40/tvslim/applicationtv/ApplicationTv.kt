@@ -164,8 +164,10 @@ class ApplicationTv(
 
         // Lancée une fois, elle quitte l'état « arrêtée » où Android laisse une application jamais
         // ouverte — et qui ne reçoit pas BOOT_COMPLETED : sans ce lancement, le gardien dormirait.
+        // Seulement si elle y est : une mise à jour garde l'application hors de cet état, et l'ouvrir
+        // au premier plan couperait pour rien ce que regarde le téléviseur.
         surEtape(EtapeTv.Gardien)
-        executeur.executer("am start -n $PAQUET/.MainActivity")
+        if (arretee(executeur.executer(COMMANDE_ETAT).sortie)) executeur.executer("am start -n $PAQUET/.MainActivity")
         val gardien = executeur.executer(COMMANDE_GARDIEN).sortie.contains("result=$GARDIEN_ACTIVE")
         return ResultatTv.Reussi(version, autorisee, gardien)
     }
@@ -199,6 +201,22 @@ class ApplicationTv(
         const val ACTION_GARDIEN = "net.jolabs40.tvslim.action.ACTIVER_GARDIEN"
         const val GARDIEN_ACTIVE = 1
         const val COMMANDE_GARDIEN = "am broadcast -a $ACTION_GARDIEN -n $PAQUET/.system.ActivationGardienReceiver"
+
+        /** L'état de l'application pour chaque profil : `User 0: … stopped=false notLaunched=false …`. */
+        const val COMMANDE_ETAT = "dumpsys package $PAQUET | grep -E '^ +User 0:'"
+
+        /**
+         * Vrai si l'application est « arrêtée » dans le profil principal — jamais ouverte, ou arrêtée de force.
+         * Seul le profil 0 compte : le second profil d'une TCL, jamais ouvert, la dit arrêtée à jamais. Illisible,
+         * on la tient pour arrêtée : la lancer pour rien ne coûte qu'un écran, ne pas la lancer coûterait le gardien.
+         */
+        fun arretee(sortie: String): Boolean {
+            val ligne = sortie.lineSequence()
+                .map { it.trim() }
+                .firstOrNull { it.startsWith("User 0:") && "stopped=" in it }
+                ?: return true
+            return "stopped=true" in ligne || "notLaunched=true" in ligne
+        }
 
         private const val NOM_LOCAL = "tvslim-tv.apk"
 

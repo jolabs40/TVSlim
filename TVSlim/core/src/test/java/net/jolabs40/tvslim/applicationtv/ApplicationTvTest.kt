@@ -31,6 +31,8 @@ class ApplicationTvTest {
      */
     private class Televiseur(
         var installee: Boolean = false,
+        /** Déjà ouverte une fois : Android ne la tient plus pour « arrêtée », et une mise à jour n'y change rien. */
+        var lancee: Boolean = false,
         private val sdk: Int = 34,
         private val reponseGardien: String = "Broadcasting: Intent { … }\nBroadcast completed: result=1",
     ) : ExecuteurCommande, InstallateurApk {
@@ -44,6 +46,8 @@ class ApplicationTvTest {
                 commande.startsWith("getprop ro.build.version.sdk;") ->
                     if (installee) ResultatShell(0, "$sdk\n    versionCode=10000 minSdk=26\n    versionName=1.0.0") else ResultatShell(1, "$sdk\n")
                 commande == "getprop ro.build.version.sdk" -> ResultatShell(0, "$sdk\n")
+                commande == ApplicationTv.COMMANDE_ETAT ->
+                    if (installee) ResultatShell(0, "    User 0: ceDataInode=1 installed=true stopped=${!lancee} notLaunched=${!lancee} enabled=0\n    User 0:") else ResultatShell(1, "")
                 commande.startsWith("dumpsys package ${ApplicationTv.PAQUET} | grep") ->
                     if (installee) ResultatShell(0, "    versionCode=10000 minSdk=26\n    versionName=1.0.0") else ResultatShell(1, "")
                 commande == "dumpsys package ${ApplicationTv.PAQUET}" -> ResultatShell(0, dumpsys())
@@ -52,6 +56,10 @@ class ApplicationTvTest {
                     ResultatShell(0, "")
                 }
                 commande.startsWith("am broadcast") -> ResultatShell(0, reponseGardien)
+                commande.startsWith("am start") -> {
+                    lancee = true
+                    ResultatShell(0, "")
+                }
                 else -> ResultatShell(0, "")
             }
         }
@@ -200,5 +208,38 @@ class ApplicationTvTest {
         assertEquals(0, github.telechargements)
         assertTrue(tv.envois.isEmpty())
         assertEquals(EtatApplicationTv.A_JOUR, application(tv).situation(disponible = null).etat)
+    }
+
+    @Test
+    fun `une mise a jour n'ouvre pas l'application deja lancee - le televiseur garde son programme`() = runTest {
+        val tv = Televiseur(installee = true, lancee = true)
+
+        val resultat = application(tv).installer()
+
+        assertEquals(ResultatTv.Reussi("1.1.0", autorisee = true, gardien = true), resultat)
+        assertEquals(1, tv.envois.size)
+        assertTrue("Rien ne passe au premier plan : ${tv.commandes}", tv.commandes.none { it.startsWith("am start") })
+        assertTrue(tv.commandes.any { it.startsWith("am broadcast") })
+    }
+
+    @Test
+    fun `autoriser une application deja lancee ne l'ouvre pas non plus`() = runTest {
+        val tv = Televiseur(installee = true, lancee = true)
+        application(tv).autoriser("1.0.0")
+        assertTrue(tv.commandes.none { it.startsWith("am start") })
+    }
+
+    @Test
+    fun `seul le profil principal dit si l'application est arretee`() {
+        // Relevé sur la TCL le 2026-10-06 : le second profil, jamais ouvert, la dit arrêtée.
+        val tcl = """
+            |    User 0: ceDataInode=1332869 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false
+            |    User 10: ceDataInode=0 installed=true hidden=false suspended=false distractionFlags=0 stopped=true notLaunched=true enabled=0 instant=false virtual=false
+            |    User 0:
+        """.trimMargin()
+        assertFalse(ApplicationTv.arretee(tcl))
+        assertTrue(ApplicationTv.arretee("    User 0: ceDataInode=1 installed=true stopped=true notLaunched=true enabled=0"))
+        assertTrue("Jamais ouverte, même non arrêtée de force", ApplicationTv.arretee("    User 0: installed=true stopped=false notLaunched=true"))
+        assertTrue("Illisible : on la lance, comme avant", ApplicationTv.arretee(""))
     }
 }
