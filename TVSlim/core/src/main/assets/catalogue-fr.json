@@ -13,6 +13,7 @@
     "bloatware_nvidia": "Applications NVIDIA",
     "bloatware_xiaomi": "Applications Xiaomi",
     "bloatware_philips": "Applications Philips",
+    "bloatware_sony": "Applications Sony",
     "expert": "Réservé aux experts",
     "appareil": "Applications de l'appareil (hors catalogue)"
   },
@@ -39,7 +40,7 @@
     }
   },
   "entrees": {
-    "com.tcl.waterfall.overseas": { "nom": "Recommandations TCL", "description": "Moteur de recommandations et de publicités TCL sur l'écran d'accueil." },
+    "com.tcl.waterfall.overseas": { "nom": "Recommandations TCL", "description": "Moteur de recommandations et de publicités TCL sur l'écran d'accueil.", "effetDeBord": "Un démarrage en boucle signalé sur une TCL 55P635 européenne (firmware V8-R51AT01-LF1V107). Désactivé sans souci ailleurs, la 65C89K comprise." },
     "com.tcl.channelplus": { "nom": "Channel+", "description": "Chaînes gratuites TCL financées par la publicité." },
     "com.tcl.messagebox": { "nom": "Notifications TCL", "description": "Notifications promotionnelles du constructeur." },
     "com.tcl.logkit": { "nom": "LogKit", "description": "Collecte et remontée de journaux vers TCL." },
@@ -100,7 +101,7 @@
     "com.tcl.t_solo": { "nom": "Écoute privée", "description": "Écoute au casque Bluetooth.", "effetDeBord": "Supprime l'écoute privée au casque Bluetooth." },
     "com.tcl.hearaid": { "nom": "Aide auditive", "description": "Aide auditive, haut-parleurs sans fil et loupe de texte.", "effetDeBord": "Fonction d'accessibilité : à conserver si elle est utilisée." },
 
-    "com.google.android.tungsten.setupwraith": { "nom": "Assistant de configuration Google TV", "description": "Sa RecoveryActivity est déclarée en priorité 1 sur category.HOME : sans sa désactivation, couper l'accueil Google donne la main à cet écran de récupération au lieu du launcher tiers.", "effetDeBord": "À réactiver avant toute remise à zéro d'usine." },
+    "com.google.android.tungsten.setupwraith": { "nom": "Assistant de configuration Google TV", "description": "Sa RecoveryActivity est déclarée en priorité 1 sur category.HOME : sans sa désactivation, couper l'accueil Google donne la main à cet écran de récupération au lieu du launcher tiers.", "effetDeBord": "À réactiver avant toute remise à zéro d'usine. Sur les Sony BRAVIA, le désactiver casserait le réglage du volume." },
     "com.google.android.apps.tv.launcherx": { "nom": "Écran d'accueil Google TV", "description": "Rangées de recommandations, bandeaux sponsorisés et onglets boutique. Google lui attribue priority=2 sur category.HOME, ce qui écrase la préférence utilisateur : le désactiver est la seule façon d'imposer un launcher tiers.", "effetDeBord": "Sans launcher tiers actif, le téléviseur démarre sur un écran vide." },
 
     "com.tcl.ttvs": { "nom": "Services T-Cast et mises à jour", "description": "Porte les mises à jour du micrologiciel et T-Cast, au prix d'une télémétrie embarquée (BIService, IdentifierService, AwarenessService).", "effetDeBord": "Plus de mises à jour du micrologiciel par voie hertzienne." },
@@ -176,7 +177,24 @@
     "ru.ivi.client": { "nom": "ivi", "description": "Service de streaming russe." },
     "org.droidtv.astrahdplus": { "nom": "HD+", "description": "Application de l'offre satellite HD+ (Allemagne).", "effetDeBord": "À garder si vous êtes abonné à HD+." },
     "org.droidtv.m7opapp": { "nom": "Application opérateur M7", "description": "Application des offres satellite M7 (Canal Digitaal, TV Vlaanderen, Skylink…).", "effetDeBord": "À garder si vous êtes abonné à l'une d'elles." },
-    "com.mediatek.partner.airplay_sys": { "nom": "AirPlay (système)", "description": "Récepteur AirPlay d'usine, pour diffuser depuis un iPhone ou un Mac.", "effetDeBord": "AirPlay depuis un appareil Apple ne fonctionne plus." }
+    "com.mediatek.partner.airplay_sys": { "nom": "AirPlay (système)", "description": "Récepteur AirPlay d'usine, pour diffuser depuis un iPhone ou un Mac.", "effetDeBord": "AirPlay depuis un appareil Apple ne fonctionne plus." },
+    "com.sony.dtv.promos": { "nom": "Offres Sony", "description": "Offres promotionnelles de Sony affichées sur le téléviseur." },
+    "com.sony.dtv.sonyselect": { "nom": "Sony Select", "description": "Rangée d'applications et de services suggérés par Sony sur l'écran d'accueil, qui renvoie vers le Play Store." },
+    "com.sony.dtv.discovery": { "nom": "Sony Discovery", "description": "Recommandations de contenus de Sony, l'une des sources des rangées de l'écran d'accueil." },
+    "com.sony.dtv.sonybugreportsys": { "nom": "Rapports de Sony", "description": "Recueille les journaux système et les rapports de plantage de Sony, et les envoie." },
+    "com.sony.dtv.notificationcenter": { "nom": "Notifications Sony", "description": "Notifications qui mettent en avant les applications de Sony. Les autres applications gardent les leurs." },
+    "com.google.android.tvrecommendations": { "nom": "Recommandations Android TV", "description": "Alimente les rangées de recommandations de l'écran d'accueil d'Android TV.", "effetDeBord": "Les rangées de recommandations de l'écran d'accueil restent vides." },
+    "com.google.android.tv.bugreportsender": { "nom": "Envoi des rapports d'erreur", "description": "Envoie à Google les rapports d'erreur du téléviseur." },
+    "com.sony.dtv.demomode": { "nom": "Mode démo magasin", "description": "Mode de démonstration des téléviseurs exposés en magasin." },
+    "com.sony.dtv.b2b.hotelmode": { "nom": "Mode hôtel", "description": "Réglages professionnels des téléviseurs installés dans les hôtels. Inutile à la maison." },
+    "com.sony.dtv.seeds.iot": { "nom": "Commande par enceinte connectée", "description": "Permet à une enceinte connectée, comme Alexa, de piloter le téléviseur.", "effetDeBord": "Une enceinte connectée ne peut plus piloter le téléviseur." },
+    "com.sony.dtv.imanual": { "nom": "i-Manual", "description": "Mode d'emploi intégré. Le même mode d'emploi se trouve sur le site de Sony." },
+    "com.sony.dtv.smarthelp": { "nom": "Aide Sony", "description": "Aide et conseils intégrés pour utiliser le téléviseur." },
+    "com.sony.dtv.calibrationmonitor": { "nom": "Calman for BRAVIA", "description": "Calibrage de l'image avec Calman. Utile seulement avec un matériel de calibrage." },
+    "com.sony.dtv.smartmediaapp": { "nom": "Lecteur multimédia Sony", "description": "Lit les photos et les vidéos d'une clé USB ou du réseau local.", "effetDeBord": "Les fichiers d'une clé USB ne s'ouvrent plus sans un autre lecteur, comme VLC ou Kodi." },
+    "com.sony.dtv.osat.music": { "nom": "Lecteur de musique Sony", "description": "Lit vos propres fichiers de musique." },
+    "com.sony.dtv.hbbtvlauncher": { "nom": "HbbTV", "description": "Services interactifs des chaînes en Europe (bouton rouge, replay), YouView au Royaume-Uni.", "effetDeBord": "Les services interactifs des chaînes reçues par antenne, câble ou satellite disparaissent." },
+    "com.vewd.core.integration.dia": { "nom": "Navigateur Vewd", "description": "Navigateur web intégré au téléviseur.", "effetDeBord": "Certains services interactifs des chaînes (HbbTV) peuvent cesser de fonctionner." }
   },
   "proteges": {
     "com.tcl.suspension": "Menu Entrées / Source de la télécommande.",
@@ -237,7 +255,9 @@
     "org.droidtv.ui.strings": "Textes partagés du système.",
     "org.droidtv.ui.strings2": "Textes partagés du système.",
     "com.mediatek.tis": "Service des entrées TV.",
-    "com.mediatek.dtv.tvinput.dvbtuner": "Tuner numérique (DVB)."
+    "com.mediatek.dtv.tvinput.dvbtuner": "Tuner numérique (DVB).",
+    "com.sony.dtv.tvx": "Cœur du téléviseur Sony : entrées, HDMI et télévision en direct.",
+    "com.sony.dtv.braviasyncservice": "BRAVIA Sync (HDMI-CEC) : une seule télécommande pour la console, la box et la barre de son."
   },
   "launchers": {
     "net.jolabs40.startlight": {

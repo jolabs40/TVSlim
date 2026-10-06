@@ -24,7 +24,7 @@
       "id": "constructeur",
       "nom": "Manufacturer apps",
       "description": "Gallery, media player, dashboard and other in-house apps that are rarely used.",
-      "categories": ["bloatware_tcl", "bloatware_nvidia", "bloatware_xiaomi", "bloatware_philips"]
+      "categories": ["bloatware_tcl", "bloatware_nvidia", "bloatware_xiaomi", "bloatware_philips", "bloatware_sony"]
     },
     {
       "id": "accueil",
@@ -45,11 +45,12 @@
     { "id": "bloatware_nvidia", "nom": "NVIDIA apps" },
     { "id": "bloatware_xiaomi", "nom": "Xiaomi apps" },
     { "id": "bloatware_philips", "nom": "Philips apps" },
+    { "id": "bloatware_sony", "nom": "Sony apps" },
     { "id": "expert", "nom": "Experts only" },
     { "id": "appareil", "nom": "Apps on this device (not in the catalogue)" }
   ],
   "entrees": [
-    { "paquet": "com.tcl.waterfall.overseas", "nom": "TCL recommendations", "description": "TCL recommendation and advertising engine on the home screen.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "TCL" },
+    { "paquet": "com.tcl.waterfall.overseas", "nom": "TCL recommendations", "description": "TCL recommendation and advertising engine on the home screen.", "categorie": "pub_telemetrie", "risque": "faible", "effetDeBord": "One reported boot loop on a European TCL 55P635 (firmware V8-R51AT01-LF1V107). Disabled without trouble elsewhere, the 65C89K included.", "marque": "TCL" },
     { "paquet": "com.tcl.channelplus", "nom": "Channel+", "description": "Free TCL channels funded by advertising.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "TCL" },
     { "paquet": "com.tcl.messagebox", "nom": "TCL notifications", "description": "Promotional notifications from the manufacturer.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "TCL" },
     { "paquet": "com.tcl.logkit", "nom": "LogKit", "description": "Collects logs and sends them to TCL.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "TCL" },
@@ -110,7 +111,7 @@
     { "paquet": "com.tcl.t_solo", "nom": "Private listening", "description": "Listening through Bluetooth headphones.", "categorie": "bloatware_tcl", "risque": "faible", "effetDeBord": "Removes private listening through Bluetooth headphones.", "marque": "TCL" },
     { "paquet": "com.tcl.hearaid", "nom": "Hearing aid", "description": "Hearing aid, wireless speakers and text magnifier.", "categorie": "bloatware_tcl", "risque": "moyen", "effetDeBord": "Accessibility feature: keep it if it is used.", "marque": "TCL" },
 
-    { "paquet": "com.google.android.tungsten.setupwraith", "nom": "Google TV setup wizard", "description": "Its RecoveryActivity is declared at priority 1 on category.HOME: without disabling it, cutting the Google home screen hands over to that recovery screen instead of the third-party launcher.", "categorie": "accueil", "risque": "eleve", "ordre": 1, "requiertLauncherTiers": true, "effetDeBord": "Re-enable before any factory reset.", "marque": "Google" },
+    { "paquet": "com.google.android.tungsten.setupwraith", "nom": "Google TV setup wizard", "description": "Its RecoveryActivity is declared at priority 1 on category.HOME: without disabling it, cutting the Google home screen hands over to that recovery screen instead of the third-party launcher.", "categorie": "accueil", "risque": "eleve", "ordre": 1, "requiertLauncherTiers": true, "effetDeBord": "Re-enable before any factory reset. On Sony BRAVIA sets, disabling it is reported to break volume control.", "marque": "Google" },
     { "paquet": "com.google.android.apps.tv.launcherx", "nom": "Google TV home screen", "description": "Recommendation rows, sponsored banners and store tabs. Google gives it priority=2 on category.HOME, which overrides the user preference: disabling it is the only way to impose a third-party launcher.", "categorie": "accueil", "risque": "eleve", "ordre": 2, "tailleMo": 122, "requiertLauncherTiers": true, "effetDeBord": "With no third-party launcher enabled, the television boots to an empty screen.", "marque": "Google" },
 
     { "paquet": "com.tcl.ttvs", "nom": "T-Cast and update services", "description": "Carries firmware updates and T-Cast, at the cost of embedded telemetry (BIService, IdentifierService, AwarenessService).", "categorie": "expert", "risque": "eleve", "tailleMo": 58, "effetDeBord": "No more over-the-air firmware updates.", "marque": "TCL" },
@@ -186,7 +187,24 @@
     { "paquet": "ru.ivi.client", "nom": "ivi", "description": "Russian streaming service.", "categorie": "streaming", "risque": "aucun", "marque": "Third party", "eprouve": false },
     { "paquet": "org.droidtv.astrahdplus", "nom": "HD+", "description": "Operator app of the HD+ satellite package (Germany).", "categorie": "streaming", "risque": "aucun", "effetDeBord": "Keep it if you subscribe to HD+.", "marque": "Philips", "eprouve": false },
     { "paquet": "org.droidtv.m7opapp", "nom": "M7 operator app", "description": "Operator app of the M7 satellite packages (Canal Digitaal, TV Vlaanderen, Skylink…).", "categorie": "streaming", "risque": "aucun", "effetDeBord": "Keep it if you subscribe to one of them.", "marque": "Philips", "eprouve": false },
-    { "paquet": "com.mediatek.partner.airplay_sys", "nom": "AirPlay (system)", "description": "Factory AirPlay receiver, to stream from an iPhone or a Mac.", "categorie": "airplay", "risque": "faible", "effetDeBord": "AirPlay from Apple devices stops.", "marque": "MediaTek", "eprouve": false }
+    { "paquet": "com.mediatek.partner.airplay_sys", "nom": "AirPlay (system)", "description": "Factory AirPlay receiver, to stream from an iPhone or a Mac.", "categorie": "airplay", "risque": "faible", "effetDeBord": "AirPlay from Apple devices stops.", "marque": "MediaTek", "eprouve": false },
+    { "paquet": "com.sony.dtv.promos", "nom": "Sony offers", "description": "Promotional offers from Sony shown on the television.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.sonyselect", "nom": "Sony Select", "description": "Sony's row of suggested apps and services on the home screen, which sends you to the Play Store.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.discovery", "nom": "Sony Discovery", "description": "Sony content recommendations, one of the sources of the home screen rows.", "categorie": "pub_telemetrie", "risque": "faible", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.sonybugreportsys", "nom": "Sony log reporting", "description": "Collects Sony system logs and crash reports and sends them.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.notificationcenter", "nom": "Sony notifications", "description": "Notifications that promote apps from the Sony ecosystem. Other apps keep their notifications.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.google.android.tvrecommendations", "nom": "Android TV recommendations", "description": "Feeds the recommendation rows of the Android TV home screen.", "categorie": "pub_telemetrie", "risque": "faible", "effetDeBord": "Recommendation rows on the home screen stay empty.", "marque": "Google", "eprouve": false },
+    { "paquet": "com.google.android.tv.bugreportsender", "nom": "Bug report sender", "description": "Sends the television's bug reports to Google.", "categorie": "pub_telemetrie", "risque": "aucun", "marque": "Google", "eprouve": false },
+    { "paquet": "com.sony.dtv.demomode", "nom": "Store demo mode", "description": "Demo mode of televisions on display in shops.", "categorie": "demo_magasin", "risque": "aucun", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.b2b.hotelmode", "nom": "Hotel mode", "description": "Professional settings for televisions installed in hotels. No use at home.", "categorie": "demo_magasin", "risque": "aucun", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.seeds.iot", "nom": "Smart speaker control", "description": "Lets a smart speaker, such as Alexa, control the television.", "categorie": "assistants", "risque": "faible", "effetDeBord": "A smart speaker can no longer control the television.", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.imanual", "nom": "i-Manual", "description": "Built-in user manual. The same manual is available on Sony's website.", "categorie": "bloatware_sony", "risque": "aucun", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.smarthelp", "nom": "Sony help", "description": "Built-in help and tips for using the television.", "categorie": "bloatware_sony", "risque": "aucun", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.calibrationmonitor", "nom": "Calman for BRAVIA", "description": "Picture calibration with Calman. Only useful with calibration equipment.", "categorie": "bloatware_sony", "risque": "faible", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.smartmediaapp", "nom": "Sony media player", "description": "Plays photos and videos from a USB drive or the home network.", "categorie": "bloatware_sony", "risque": "faible", "effetDeBord": "Files on a USB drive no longer open without another player, such as VLC or Kodi.", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.osat.music", "nom": "Sony music player", "description": "Plays your own music files.", "categorie": "bloatware_sony", "risque": "faible", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.sony.dtv.hbbtvlauncher", "nom": "HbbTV", "description": "Interactive services of broadcast channels in Europe (red button, replay), YouView in the UK.", "categorie": "bloatware_sony", "risque": "moyen", "effetDeBord": "Interactive services of antenna, cable and satellite channels disappear.", "marque": "Sony", "eprouve": false },
+    { "paquet": "com.vewd.core.integration.dia", "nom": "Vewd browser", "description": "Web browser built into the television.", "categorie": "inutile_tv", "risque": "moyen", "effetDeBord": "Some interactive broadcast services (HbbTV) may stop working.", "marque": "Third party", "eprouve": false }
   ],
   "proteges": [
     { "paquet": "com.tcl.suspension", "raison": "Inputs / Source menu on the remote." },
@@ -247,7 +265,9 @@
     { "paquet": "org.droidtv.ui.strings", "raison": "Shared system texts." },
     { "paquet": "org.droidtv.ui.strings2", "raison": "Shared system texts." },
     { "paquet": "com.mediatek.tis", "raison": "TV input service." },
-    { "paquet": "com.mediatek.dtv.tvinput.dvbtuner", "raison": "Digital tuner (DVB)." }
+    { "paquet": "com.mediatek.dtv.tvinput.dvbtuner", "raison": "Digital tuner (DVB)." },
+    { "paquet": "com.sony.dtv.tvx", "raison": "Sony TV core: inputs, HDMI and live TV." },
+    { "paquet": "com.sony.dtv.braviasyncservice", "raison": "BRAVIA Sync (HDMI-CEC): one remote for the console, box and soundbar." }
   ],
   "launchers": [
     {
