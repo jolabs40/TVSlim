@@ -14,14 +14,22 @@ replaced by the name written in plain text.
 
 ## Startlight Launcher
 
-`launcher_startlight.png` is the icon of Startlight Launcher, made by the author of TV Slim.
+`launcher_startlight.png` is the icon of Startlight Launcher, made by the author of TV Slim. The footer of
+[tvslim.app](https://tvslim.app) shows the Startlight monogram of startlightlauncher.com, by the same author.
 
 ## Ko-fi
 
 `kofi_symbol.png` is the Ko-fi symbol, shown on the button that opens TV Slim's Ko-fi page. It is
 taken from Ko-fi's brand assets (`storage.ko-fi.com/cdn/brandasset/v2/kofi_symbol.png`), resized to
 24 dp wide with no other change, one file per screen density (`drawable-mdpi` to `drawable-xxxhdpi`
-in both places above). Ko-fi is a trademark of Ko-fi Labs Limited.
+in both places above). The website tvslim.app uses the same image (`site/public/logos/kofi-symbol.png`, the
+96-pixel file) in its top bar, its footer and its download page. Ko-fi is a trademark of Ko-fi Labs Limited.
+
+## GitHub
+
+The footer of tvslim.app shows the GitHub mark next to the link to the repository. It is the `mark-github`
+icon of GitHub's [Octicons](https://github.com/primer/octicons) (MIT licence), drawn in the text colour.
+GitHub is a trademark of GitHub, Inc.
 
 ## Launcher icons — `launcher_*.png`
 
@@ -79,10 +87,15 @@ connecté et les launchers qui y sont installés. TV Slim n'est affilié à aucu
 des développeurs cités ci-dessus, qui n'approuvent ni ne parrainent l'application ; chaque marque
 appartient à son propriétaire.
 
-- **Startlight Launcher** : icône de l'auteur de TV Slim.
+- **Startlight Launcher** : icône de l'auteur de TV Slim ; le pied de page de tvslim.app montre le monogramme
+  du site de Startlight, du même auteur.
 - **Ko-fi** : le symbole de Ko-fi, sur le bouton qui ouvre la page Ko-fi de TV Slim, pris dans les
   ressources de marque de Ko-fi et ramené à 24 dp de large sans autre modification, un fichier par
-  densité d'écran. Ko-fi est une marque de Ko-fi Labs Limited.
+  densité d'écran. Le site tvslim.app reprend la même image (le fichier de 96 pixels) dans sa barre du
+  haut, son pied de page et sa page de téléchargement. Ko-fi est une marque de Ko-fi Labs Limited.
+- **GitHub** : dans le pied de page de tvslim.app, la marque de GitHub devant le lien vers le dépôt — l'icône
+  `mark-github` des Octicons de GitHub (licence MIT), dans la couleur du texte. GitHub est une marque de
+  GitHub, Inc.
 - **Launchers** : l'icône de chaque application, ramenée à 128 px, prise sur sa fiche Google Play,
   dans son APK ou dans son dépôt officiel (détail dans le premier tableau). Elle reste la propriété de
   son développeur et, pour un projet libre, sous la licence de ce projet.

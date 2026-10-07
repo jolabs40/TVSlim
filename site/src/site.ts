@@ -27,7 +27,7 @@ export const url = (lang: Lang, p: string) => SITE + path(lang, p);
 export const ui = {
   en: {
     skip: 'Skip to content',
-    nav: { download: 'Download', guide: 'Setup guide', packages: 'Packages', github: 'GitHub' },
+    nav: { download: 'Download', guide: 'Setup guide', packages: 'Packages', github: 'GitHub', kofi: 'Support TV Slim on Ko-fi' },
     switchTo: 'Français',
     footer: {
       tagline: 'Free, open-source debloater for Android TV and Google TV.',
@@ -48,7 +48,7 @@ export const ui = {
   },
   fr: {
     skip: 'Aller au contenu',
-    nav: { download: 'Télécharger', guide: 'Guide', packages: 'Paquets', github: 'GitHub' },
+    nav: { download: 'Télécharger', guide: 'Guide', packages: 'Paquets', github: 'GitHub', kofi: 'Soutenir TV Slim sur Ko-fi' },
     switchTo: 'English',
     footer: {
       tagline: 'Outil de débloat libre et gratuit pour Android TV et Google TV.',

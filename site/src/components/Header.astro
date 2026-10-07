@@ -1,6 +1,7 @@
 ---
 import Logo from './Logo.astro';
-import { path, ui, REPO, type Lang } from '../site';
+import SymboleKofi from './SymboleKofi.astro';
+import { path, ui, REPO, KOFI, type Lang } from '../site';
 
 interface Props {
   lang: Lang;
@@ -29,6 +30,8 @@ const liens = [
       ))}
       <a href={REPO} rel="noopener">{t.nav.github}</a>
       <a class="lang" href={path(autre, page)} hreflang={autre} lang={autre}>{t.switchTo}</a>
+      <!-- La tasse seule, comme dans la barre du haut des applications : le libellé est pour les lecteurs d'écran et la bulle. -->
+      <a class="kofi" href={KOFI} rel="noopener" aria-label={t.nav.kofi} title={t.nav.kofi}><SymboleKofi taille={26} /></a>
     </nav>
   </div>
 </header>
@@ -44,4 +47,6 @@ const liens = [
   nav a:hover, nav a[aria-current='page'] { color: var(--ink); }
   nav a[aria-current='page'] { box-shadow: inset 0 -2px 0 var(--mint); }
   .lang { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px !important; }
+  .kofi { display: inline-grid; place-items: center; padding: 6px !important; border-radius: 10px; transition: background-color 0.15s, transform 0.15s; }
+  .kofi:hover, .kofi:focus-visible { background: rgb(255 255 255 / 0.07); transform: translateY(-1px); }
 </style>

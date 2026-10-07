@@ -1,0 +1,10 @@
+---
+// Le symbole de Ko-fi, tel que le montrent les applications : le fichier de ses ressources de marque, sans
+// teinte ni retouche (NOTICE-LOGOS.md). La tasse est plus large que haute : 96 × 77.
+interface Props {
+  /** Largeur affichée, en pixels. */
+  taille?: number;
+}
+const { taille = 24 } = Astro.props;
+---
+<img src="/logos/kofi-symbol.png" width={taille} height={Math.round((taille * 77) / 96)} alt="" decoding="async" />

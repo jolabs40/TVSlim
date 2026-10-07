@@ -1,7 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
+import SymboleKofi from '../components/SymboleKofi.astro';
 import { publications, fichier, mo } from '../data/releases';
-import { path, RELEASES, ANDROID_RELEASES, CERT_SHA256, REPO, type Lang } from '../site';
+import { path, RELEASES, ANDROID_RELEASES, CERT_SHA256, REPO, KOFI, type Lang } from '../site';
 
 interface Props {
   lang: Lang;
@@ -39,13 +40,16 @@ const t = fr
       remoteT: 'TV Slim Remote, l’application du téléphone',
       remoteD: 'Ouvrez le fichier sur le téléphone, et autorisez votre navigateur ou votre gestionnaire de fichiers à installer des applications quand Android le demande.',
       tvT: 'L’application du téléviseur (facultative)',
-      tvD: 'Elle affiche un QR code que le téléphone scanne pour se connecter, et garde le téléviseur joignable sur le réseau pendant la veille. Installez-la depuis TV Slim lui-même, avec Installer une application.',
+      tvD: 'Elle affiche un QR code que le téléphone scanne pour se connecter, et garde le téléviseur joignable sur le réseau pendant la veille. Installez-la depuis TV Slim lui-même : sur l’onglet Téléviseur, la carte « TV Slim sur le téléviseur » l’installe depuis GitHub, en un bouton.',
       certP: 'Les deux APK sont signés par la même clé, dont le certificat a pour SHA-256 :',
       certNote: 'apksigner verify --print-certs l’affiche ; SHA256SUMS.txt liste les fichiers.',
       sums: 'Empreintes SHA-256',
       all: 'Toutes les versions',
       next: 'Ensuite : préparer le téléviseur',
       fallback: 'Voir la page des publications',
+      kofiT: 'TV Slim est gratuit, et le restera.',
+      kofiP: 'S’il vous a rendu service, vous pouvez m’offrir un café sur Ko-fi.',
+      kofiB: 'M’offrir un café',
     }
   : {
       title: 'Download TV Slim for Windows and Android',
@@ -68,13 +72,16 @@ const t = fr
       remoteT: 'TV Slim Remote, the phone app',
       remoteD: 'Open the file on the phone, and allow your browser or file manager to install apps when Android asks.',
       tvT: 'The TV app (optional)',
-      tvD: 'It shows a QR code the phone scans to connect, and keeps the TV reachable on the network during standby. Install it from TV Slim itself, with Install an application.',
+      tvD: 'It shows a QR code the phone scans to connect, and keeps the TV reachable on the network during standby. Install it from TV Slim itself: on the Television tab, the “TV Slim on the television” card installs it from GitHub, in one click.',
       certP: 'Both APKs are signed with the same key, whose certificate SHA-256 is:',
       certNote: 'apksigner verify --print-certs shows it; SHA256SUMS.txt lists the files.',
       sums: 'SHA-256 checksums',
       all: 'All releases',
       next: 'Next: prepare the television',
       fallback: 'See the releases page',
+      kofiT: 'TV Slim is free, and will stay that way.',
+      kofiP: 'If it has been useful to you, you can buy me a coffee on Ko-fi.',
+      kofiB: 'Buy me a coffee',
     };
 ---
 <Base lang={lang} page="/download/" current="download" title={`${t.title} | TV Slim`} description={t.description}>
@@ -136,6 +143,16 @@ const t = fr
         </article>
       </div>
 
+      <!-- Un don, sans rien en échange : rien ne s'y débloque (.claude/rules/soutien.md). -->
+      <aside class="card soutien">
+        <SymboleKofi taille={48} />
+        <div class="texte">
+          <p><strong>{t.kofiT}</strong></p>
+          <p class="muted">{t.kofiP}</p>
+        </div>
+        <a class="btn btn-ghost" href={KOFI} rel="noopener"><SymboleKofi taille={22} /> {t.kofiB}</a>
+      </aside>
+
       <p class="foot">
         <a href={RELEASES}>{t.all}</a> · <a href={REPO}>GitHub</a> · <a href={path(lang, '/guide/')}>{t.next} →</a>
       </p>
@@ -152,5 +169,8 @@ const t = fr
   .files .pkg { display: block; margin-top: 4px; font-size: 13px; }
   .small { font-size: 14.5px; }
   .links { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 15px; }
+  .soutien { margin-top: 20px; padding: 20px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; }
+  .soutien .texte { flex: 1 1 260px; display: grid; gap: 4px; }
+  .soutien .btn { display: inline-flex; align-items: center; gap: 10px; }
   .foot { margin-top: 28px; }
 </style>
