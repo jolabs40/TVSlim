@@ -298,6 +298,8 @@
     <string name="about_open_source">Code ouvert : chacun peut lire le code, recompiler l'application et vérifier ce qu'elle fait.</string>
     <string name="about_website">Site web : tvslim.app</string>
     <string name="about_website_url">https://tvslim.app/fr/</string>
+    <string name="about_contact">Contact : %1$s</string>
+    <string name="about_contact_address">support@tvslim.app</string>
     <string name="about_source">Voir le code source</string>
     <string name="about_license">Licence : %1$s</string>
     <string name="about_data_folder">Ouvrir le dossier des données</string>

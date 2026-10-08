@@ -272,6 +272,12 @@ itself: the button opens your browser.
 
 A star on this repository helps other people find TV Slim, too.
 
+## Contact
+
+A question, a problem, a television that does not behave as described: write to
+**[support@tvslim.app](mailto:support@tvslim.app)**. Bugs and new devices can also go through the
+[GitHub issues](https://github.com/jolabs40/TVSlim/issues).
+
 ## Uninstall
 
 *Settings → Apps → TV Slim → Uninstall*. Logs stay in `%APPDATA%\TVSlim`, in case something has to

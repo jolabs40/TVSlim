@@ -54,6 +54,7 @@ import net.jolabs40.tvslim.windows.InfosApp
 import net.jolabs40.tvslim.windows.adb.EtatConnexion
 import net.jolabs40.tvslim.windows.maj.PiloteMisesAJour
 import net.jolabs40.tvslim.windows.ressources.Res
+import net.jolabs40.tvslim.windows.ressources.about_contact_address
 import net.jolabs40.tvslim.windows.ressources.about_title
 import net.jolabs40.tvslim.windows.ressources.about_website_url
 import net.jolabs40.tvslim.windows.ressources.app_name
@@ -267,6 +268,7 @@ fun AppFenetre(
     }
 
     val siteWeb = stringResource(Res.string.about_website_url)
+    val contact = stringResource(Res.string.about_contact_address)
     if (aPropos) {
         AProposDialogue(
             etat = etatMaj,
@@ -276,6 +278,7 @@ fun AppFenetre(
             onInstaller = misesAJour::installer,
             // Dans la langue de l'application : la page anglaise est à la racine, la française sous /fr/.
             onSite = { ouvrirLien(siteWeb) },
+            onContact = { ouvrirLien("mailto:$contact") },
             onSource = { ouvrirLien("https://github.com/${InfosApp.DEPOT_GITHUB}") },
             onSoutenir = { ouvrirLien(InvitationSoutien.LIEN) },
             onDossier = ouvrirDossierDonnees,

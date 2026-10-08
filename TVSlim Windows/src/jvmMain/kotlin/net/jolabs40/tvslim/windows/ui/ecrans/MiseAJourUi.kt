@@ -43,6 +43,8 @@ import net.jolabs40.tvslim.windows.maj.ModeDistribution
 import net.jolabs40.tvslim.windows.maj.PhaseMiseAJour
 import net.jolabs40.tvslim.windows.ressources.Res
 import net.jolabs40.tvslim.windows.ressources.about_close
+import net.jolabs40.tvslim.windows.ressources.about_contact
+import net.jolabs40.tvslim.windows.ressources.about_contact_address
 import net.jolabs40.tvslim.windows.ressources.about_data_folder
 import net.jolabs40.tvslim.windows.ressources.about_description
 import net.jolabs40.tvslim.windows.ressources.about_license
@@ -54,6 +56,7 @@ import net.jolabs40.tvslim.windows.ressources.about_website
 import net.jolabs40.tvslim.windows.ressources.app_name
 import net.jolabs40.tvslim.windows.ressources.baseline_folder_open_24
 import net.jolabs40.tvslim.windows.ressources.baseline_language_24
+import net.jolabs40.tvslim.windows.ressources.baseline_mail_24
 import net.jolabs40.tvslim.windows.ressources.baseline_open_in_new_24
 import net.jolabs40.tvslim.windows.ressources.baseline_system_update_24
 import net.jolabs40.tvslim.windows.ressources.ic_tvslim
@@ -171,7 +174,10 @@ fun BanniereMiseAJour(
     }
 }
 
-/** Version, licence, site, code source, page de soutien, dossier des données — et le réglage des mises à jour. */
+/**
+ * Version, licence, site, contact, code source, page de soutien, dossier des données — et le réglage des mises à
+ * jour.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AProposDialogue(
@@ -181,6 +187,7 @@ fun AProposDialogue(
     onVerificationAuto: (Boolean) -> Unit,
     onInstaller: () -> Unit,
     onSite: () -> Unit,
+    onContact: () -> Unit,
     onSource: () -> Unit,
     onSoutenir: () -> Unit,
     onDossier: () -> Unit,
@@ -213,6 +220,11 @@ fun AProposDialogue(
                         Icon(painterResource(Res.drawable.baseline_language_24), null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(Res.string.about_website))
+                    }
+                    TextButton(onClick = onContact) {
+                        Icon(painterResource(Res.drawable.baseline_mail_24), null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(Res.string.about_contact, stringResource(Res.string.about_contact_address)))
                     }
                     TextButton(onClick = onSource) {
                         Icon(painterResource(Res.drawable.baseline_open_in_new_24), null, Modifier.size(18.dp))

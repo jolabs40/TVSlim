@@ -478,6 +478,8 @@
     <string name="about_license">Licence: %1$s</string>
     <string name="about_website">Website: tvslim.app</string>
     <string name="about_website_url">https://tvslim.app/</string>
+    <string name="about_contact">Contact: %1$s</string>
+    <string name="about_contact_address" translatable="false">support@tvslim.app</string>
     <string name="about_source">View the source code</string>
     <string name="about_support">Support TV Slim</string>
     <string name="about_close">Close</string>

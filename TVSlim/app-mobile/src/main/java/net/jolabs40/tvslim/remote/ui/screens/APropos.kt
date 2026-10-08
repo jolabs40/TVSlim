@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,13 +39,14 @@ fun BoutonAPropos(onOuvrir: () -> Unit) {
 }
 
 /**
- * Version, licence, site, code source et soutien — la fenêtre « À propos » de Windows, sans ce qui n'y concerne que
- * l'ordinateur (dossier des données, mises à jour). Le site s'ouvre dans la langue de l'application.
+ * Version, licence, site, contact, code source et soutien — la fenêtre « À propos » de Windows, sans ce qui n'y
+ * concerne que l'ordinateur (dossier des données, mises à jour). Le site s'ouvre dans la langue de l'application.
  */
 @Composable
 fun AProposDialogue(onFermer: () -> Unit) {
     val liens = LocalUriHandler.current
     val site = stringResource(R.string.about_website_url)
+    val contact = stringResource(R.string.about_contact_address)
     AlertDialog(
         onDismissRequest = onFermer,
         icon = {
@@ -74,6 +76,12 @@ fun AProposDialogue(onFermer: () -> Unit) {
                         Icon(Icons.Filled.Language, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.about_website))
+                    }
+                    // Sans messagerie sur le téléphone, rien ne s'ouvre : l'adresse reste lisible sur le bouton.
+                    TextButton(onClick = { runCatching { liens.openUri("mailto:$contact") } }) {
+                        Icon(Icons.Filled.Mail, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.about_contact, contact))
                     }
                     TextButton(onClick = { runCatching { liens.openUri(CODE_SOURCE) } }) {
                         Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))

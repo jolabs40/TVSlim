@@ -478,6 +478,7 @@
     <string name="about_license">Licence : %1$s</string>
     <string name="about_website">Site web : tvslim.app</string>
     <string name="about_website_url">https://tvslim.app/fr/</string>
+    <string name="about_contact">Contact : %1$s</string>
     <string name="about_source">Voir le code source</string>
     <string name="about_support">Soutenir TV Slim</string>
     <string name="about_close">Fermer</string>

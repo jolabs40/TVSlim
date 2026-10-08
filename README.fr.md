@@ -291,6 +291,12 @@ pour de bon. L'application ne contacte jamais Ko-fi elle-même : le bouton ouvre
 
 Une étoile sur ce dépôt aide aussi d'autres personnes à trouver TV Slim.
 
+## Contact
+
+Une question, un problème, un téléviseur qui ne se comporte pas comme décrit : écrivez à
+**[support@tvslim.app](mailto:support@tvslim.app)**. Les bugs et les nouveaux appareils peuvent aussi
+passer par les [issues GitHub](https://github.com/jolabs40/TVSlim/issues).
+
 ## Désinstaller
 
 *Paramètres → Applications → TV Slim → Désinstaller*. Les journaux restent dans `%APPDATA%\TVSlim`,

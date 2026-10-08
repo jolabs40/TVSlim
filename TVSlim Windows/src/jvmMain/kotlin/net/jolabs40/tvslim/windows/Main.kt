@@ -178,11 +178,13 @@ fun main() {
     }
 }
 
-/** N'ouvre que des liens HTTPS, dans le navigateur de la personne. */
+/** N'ouvre que des liens HTTPS, dans le navigateur de la personne, et une adresse `mailto:`, dans sa messagerie. */
 private fun ouvrirLien(lien: String) {
-    if (!lien.startsWith("https://")) return
+    val courriel = lien.startsWith("mailto:")
+    if (!lien.startsWith("https://") && !courriel) return
     thread(isDaemon = true, name = "ouverture-lien") {
-        runCatching { Desktop.getDesktop().browse(URI(lien)) }
+        // Sans messagerie installée, rien ne s'ouvre : l'adresse reste lisible sur le bouton.
+        runCatching { if (courriel) Desktop.getDesktop().mail(URI(lien)) else Desktop.getDesktop().browse(URI(lien)) }
             .onFailure { Traces.avertir(TAG, "Lien non ouvert", it) }
     }
 }

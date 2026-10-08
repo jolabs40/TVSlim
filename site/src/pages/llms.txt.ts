@@ -3,7 +3,7 @@
 import type { APIRoute } from 'astro';
 import { catalogue, nomMarque, ORDRE_MARQUES } from '../data/catalogue';
 import { publications } from '../data/releases';
-import { SITE, REPO, STARTLIGHT, KOFI } from '../site';
+import { SITE, REPO, STARTLIGHT, KOFI, CONTACT } from '../site';
 
 export const GET: APIRoute = async () => {
   const cat = catalogue('en');
@@ -33,6 +33,7 @@ Key facts:
 ## Links
 - Source code and releases: ${REPO}
 - Support: ${KOFI}
+- Contact: ${CONTACT}
 `;
   return new Response(texte, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 };

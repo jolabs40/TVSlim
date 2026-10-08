@@ -298,6 +298,8 @@
     <string name="about_open_source">Open source: anyone can read the code, rebuild the application and check what it does.</string>
     <string name="about_website">Website: tvslim.app</string>
     <string name="about_website_url">https://tvslim.app/</string>
+    <string name="about_contact">Contact: %1$s</string>
+    <string name="about_contact_address">support@tvslim.app</string>
     <string name="about_source">View the source code</string>
     <string name="about_license">Licence: %1$s</string>
     <string name="about_data_folder">Open the data folder</string>

@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { REPO, type Lang } from '../site';
+import { REPO, CONTACT, type Lang } from '../site';
 
 interface Props {
   lang: Lang;
@@ -19,7 +19,7 @@ const t = fr
         ['Le soutien', 'L’application ne contacte jamais Ko-fi elle-même : le bouton ouvre votre navigateur.'],
         ['Ce site', 'tvslim.app ne dépose aucun cookie, ne mesure pas son audience et ne charge rien d’un service tiers : les polices et les images sont servies par le site lui-même. Comme tout hébergeur, Infomaniak, en Suisse, tient les journaux techniques habituels de son serveur. Les boutons de téléchargement mènent à GitHub.'],
       ],
-      contact: 'Une question ? Ouvrez une discussion sur GitHub.',
+      contact: ['Une question ? Écrivez à ', ', ou ', 'ouvrez une discussion sur GitHub', '.'],
     }
   : {
       title: 'Privacy | TV Slim',
@@ -32,7 +32,7 @@ const t = fr
         ['Support', 'The app never contacts Ko-fi itself: the button opens your browser.'],
         ['This site', 'tvslim.app sets no cookies, measures no audience and loads nothing from a third-party service: fonts and images are served by the site itself. Like any host, Infomaniak, in Switzerland, keeps the usual technical logs of its server. The download buttons lead to GitHub.'],
       ],
-      contact: 'A question? Open a discussion on GitHub.',
+      contact: ['A question? Write to ', ', or ', 'open a discussion on GitHub', '.'],
     };
 ---
 <Base lang={lang} page="/privacy/" current="privacy" title={t.title} description={t.description}>
@@ -46,7 +46,9 @@ const t = fr
           <p>{texte}</p>
         </div>
       ))}
-      <p><a href={`${REPO}/issues`} rel="noopener">{t.contact}</a></p>
+      <p>
+        {t.contact[0]}<a href={`mailto:${CONTACT}`}>{CONTACT}</a>{t.contact[1]}<a href={`${REPO}/issues`} rel="noopener">{t.contact[2]}</a>{t.contact[3]}
+      </p>
     </div>
   </section>
 </Base>

@@ -2,7 +2,7 @@
 import Logo from './Logo.astro';
 import MarqueGithub from './MarqueGithub.astro';
 import SymboleKofi from './SymboleKofi.astro';
-import { path, ui, REPO, KOFI, STARTLIGHT, type Lang } from '../site';
+import { path, ui, REPO, KOFI, STARTLIGHT, CONTACT, type Lang } from '../site';
 
 interface Props {
   lang: Lang;
@@ -34,6 +34,14 @@ const t = ui[lang];
         </a>
       </li>
       <li><a href={KOFI} rel="noopener"><span class="ico"><SymboleKofi taille={20} /></span>{t.footer.support}</a></li>
+      <li>
+        <a href={`mailto:${CONTACT}`}>
+          <span class="ico">
+            <!-- Material Icons « mail » (Apache 2.0). -->
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
+          </span>{CONTACT}
+        </a>
+      </li>
       <li>
         <a href={STARTLIGHT} rel="noopener">
           <span class="ico">

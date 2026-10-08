@@ -12,6 +12,8 @@ export const RELEASES = `${REPO}/releases`;
 export const ANDROID_RELEASES = `${REPO}/releases?q=android&expanded=true`;
 export const ISSUE_DEVICE = `${REPO}/issues/new?template=nouvel-appareil.yml`;
 export const KOFI = 'https://ko-fi.com/jolabs40';
+/** L'adresse de contact, la même que dans « À propos » des deux applications. */
+export const CONTACT = 'support@tvslim.app';
 export const STARTLIGHT = 'https://startlightlauncher.com';
 export const OG_IMAGE = `${SITE}/og.png`;
 /** L'éditeur, le même @id sur tvslim.app et startlightlauncher.com : les deux sites parlent du même. */
