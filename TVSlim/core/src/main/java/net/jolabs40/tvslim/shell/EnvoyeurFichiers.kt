@@ -3,21 +3,20 @@ package net.jolabs40.tvslim.shell
 import java.io.InputStream
 
 /**
- * Écriture d'un fichier sur le téléviseur, comme `adb push` : par le protocole de synchronisation d'ADB, et
- * non par le shell — un film de plusieurs gigaoctets n'entre pas dans une ligne de commande.
+ * Writes a file to the TV like `adb push`, over the ADB sync protocol rather than the shell: a multi-gigabyte
+ * video does not fit in a command line.
  *
- * À part d'[ExecuteurCommande] pour la même raison qu'[InstallateurApk] : un envoi ne se rejoue pas dans le
- * dos de la personne. La connexion ADB de chaque application implémente les trois.
+ * Separate from [ExecuteurCommande] for the same reason as [InstallateurApk]: a transfer must never be replayed
+ * behind the user's back. Each app's ADB connection implements all three.
  */
 interface EnvoyeurFichiers {
     /**
-     * Écrit [source] dans [chemin], qui est remplacé s'il existe. [source] est refermé ensuite, quoi qu'il
-     * arrive. [taille] ne sert qu'à suivre l'envoi — 0 quand on l'ignore — et [date] est en millisecondes.
-     * [annule] est consulté à chaque bloc : vrai, l'envoi s'arrête là.
+     * Writes [source] to [chemin], replacing any existing file, and always closes [source]. [taille] is only
+     * for progress (0 when unknown); [date] is in milliseconds. [annule] is checked on every block.
      *
-     * Renvoie le code 0 quand le téléviseur a tout reçu ; son refus en code 1, tel qu'il l'a écrit
-     * (`couldn't create file: Permission denied`) ; [ResultatShell.indisponible] quand la connexion a lâché,
-     * ou que l'envoi a été annulé.
+     * Returns code 0 when the TV received everything, code 1 with the TV's own message when it refused
+     * (`couldn't create file: Permission denied`), or [ResultatShell.indisponible] when the connection dropped
+     * or the transfer was cancelled.
      */
     suspend fun envoyer(
         source: InputStream,

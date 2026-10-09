@@ -29,7 +29,7 @@ data class ActionJournal(
     val message: String = "",
 )
 
-/** Paquets que ces actions laissent désactivés, dans l'ordre inverse d'application. */
+/** Packages these actions leave disabled, in reverse order of application. */
 fun List<ActionJournal>.paquetsDesactives(): List<String> {
     val etat = LinkedHashMap<String, Boolean>()
     filter { it.reussi }.forEach { action ->
@@ -42,16 +42,15 @@ fun List<ActionJournal>.paquetsDesactives(): List<String> {
     return etat.keys.toList().reversed()
 }
 
-/** Le composant du dernier écran d'accueil que ces actions ont posé, s'il y en a un. */
+/** Component of the last home screen these actions set, if any. */
 fun List<ActionJournal>.dernierAccueil(): String? =
     lastOrNull { it.reussi && it.type == TypeAction.ACCUEIL }?.cible
 
 /**
- * Journal des interventions : c'est lui qui rend l'opération réversible. Chaque action y est
- * consignée avec la commande exacte qui l'annule, à l'image du journal Markdown tenu à la main
- * lors de la première intervention.
+ * Action journal, which is what makes the debloat reversible: each action is recorded with the exact
+ * command that undoes it.
  *
- * Un journal par téléviseur : le compagnon en tient un pour la TCL, un autre pour la Shield.
+ * One journal per TV: the companion keeps one for the TCL and another for the Shield.
  */
 class JournalRepository(
     private val fichier: File,
@@ -86,10 +85,10 @@ class JournalRepository(
         }
     }
 
-    /** Paquets actuellement désactivés d'après le journal, dans l'ordre inverse d'application. */
+    /** Packages currently disabled according to the journal, in reverse order of application. */
     fun paquetsADesactivationActive(): List<String> = _actions.value.paquetsDesactives()
 
-    /** Commandes d'annulation des réglages modifiés, la plus récente l'emportant. */
+    /** Undo commands for changed settings; the most recent one per setting wins. */
     fun annulationsDesReglages(): Map<String, String> {
         val restauration = LinkedHashMap<String, String>()
         _actions.value.filter { it.reussi && it.type == TypeAction.REGLAGE }.forEach { action ->
@@ -99,12 +98,9 @@ class JournalRepository(
     }
 
     /**
-     * Commandes qui rendent leurs permissions aux applications, la plus récente l'emportant.
-     * Les app-ops y figurent aussi : une permission accompagnée d'un app-op ne se rend
-     * complètement qu'en remettant les deux.
-     *
-     * Même principe que pour les réglages : c'est la dernière décision prise sur une cible qui
-     * compte, pas l'historique complet.
+     * Commands that restore app permissions; as for settings, the most recent one per target wins.
+     * App-ops are included: a permission paired with an app-op is only fully restored by resetting
+     * both.
      */
     fun annulationsDesPermissions(): Map<String, String> {
         val concernees = setOf(TypeAction.PERMISSION, TypeAction.APP_OP)
@@ -122,7 +118,7 @@ class JournalRepository(
         }
     }
 
-    /** Écrit un rapport Markdown lisible dans [cible] et renvoie son chemin. */
+    /** Writes a readable Markdown report to [cible] and returns its path. */
     suspend fun exporterMarkdown(cible: File, entete: String): String = withContext(Dispatchers.IO) {
         val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.FRANCE)
         val texte = buildString {
@@ -134,7 +130,7 @@ class JournalRepository(
             appendLine("|---|---|---|---|---|")
             _actions.value.forEach { action ->
                 val resultat = if (action.reussi) "OK" else "ÉCHEC : ${action.message}"
-                // Une installation n'a pas de commande d'annulation : ce serait un `pm uninstall`.
+                // An installation has no undo command: it would be a `pm uninstall`.
                 val annulation = action.commandeAnnulation.takeIf { it.isNotBlank() }?.let { "`$it`" } ?: "—"
                 appendLine(
                     "| ${format.format(Date(action.horodatage))} | ${action.type} | " +

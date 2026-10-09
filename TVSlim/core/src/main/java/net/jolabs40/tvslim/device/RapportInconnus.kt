@@ -7,8 +7,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * Ce qu'on relit du téléviseur au moment d'exporter l'inventaire. Chaque partie peut manquer — un Android
- * trop ancien, une lecture qui échoue — sans empêcher l'inventaire : ses cases disent alors « — ».
+ * What is read from the TV when exporting the inventory. Any part may be missing (Android too old, a failed
+ * read) without blocking the inventory; its cells then show a dash.
  */
 data class ReleveInconnus(
     val indices: Map<String, IndicesPaquet> = emptyMap(),
@@ -18,11 +18,9 @@ data class ReleveInconnus(
 )
 
 /**
- * L'inventaire des paquets inconnus, en Markdown : de quoi compléter le catalogue, joint à un message ou
- * à une issue. Chaque paquet y porte ce qu'ADB en dit — d'où il vient, sous quelle identité il tourne, ce
- * qu'il déclare au système, ce qu'il occupe —, de quoi juger s'il est prudent d'y toucher avant de le
- * décrire. Suivent les entrées du catalogue que l'appareil porte déjà : ce qui, décrit ailleurs, vaut aussi
- * chez ce constructeur. Rien de personnel n'y figure : l'appareil, son firmware, des noms de paquets.
+ * Markdown inventory of unknown packages, to attach to an issue for extending the catalogue: what ADB reports
+ * for each (origin, UID, declarations, memory, storage), then the catalogue entries already on the device.
+ * Nothing personal: device, firmware, package names.
  */
 object RapportInconnus {
 
@@ -34,7 +32,7 @@ object RapportInconnus {
         inconnus: List<PaquetInconnu>,
         application: String,
         releve: ReleveInconnus = ReleveInconnus(),
-        /** Chaque entrée du catalogue et son état sur l'appareil ; les absentes sont écartées. */
+        /** Each catalogue entry and its state on the device; absent ones are skipped. */
         duCatalogue: Map<EntreePaquet, EtatPaquet> = emptyMap(),
         horodatage: Long = System.currentTimeMillis(),
     ): String = buildString {
@@ -116,7 +114,7 @@ object RapportInconnus {
         }
     }
 
-    /** Ce qui a pu être lu, et ce qui ne l'a pas été : une case « — » ne dit pas la même chose dans les deux cas. */
+    /** What could be read and what could not: a dash in a cell means something different in each case. */
     private fun lectures(releve: ReleveInconnus): String {
         val parties = listOf(
             "indices ADB" to releve.indices.isNotEmpty(),
@@ -129,7 +127,7 @@ object RapportInconnus {
         return lues.ifEmpty { "la seule liste des paquets" } + if (manquees.isEmpty()) "" else " ; illisible : $manquees"
     }
 
-    /** « produit `G08_4K_GB`, langue d'usine en-GB, empreinte `TCL/…` » : seulement ce qui a pu être lu. */
+    /** Product, factory language and fingerprint, only those that could be read. */
     private fun firmware(firmware: Firmware): String = listOfNotNull(
         firmware.produit.takeIf { it.isNotEmpty() }?.let { "produit `$it`" },
         firmware.langueUsine.takeIf { it.isNotEmpty() }?.let { "langue d'usine $it" },

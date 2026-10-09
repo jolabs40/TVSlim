@@ -38,16 +38,11 @@ import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.EtatRemote
 import java.util.Locale
 
-/** Ce que l'onglet montre : la mémoire vive, ou le stockage interne. */
 private enum class VueMemoire { VIVE, STOCKAGE }
 
 /**
- * Mémoire vive et stockage, d'un interrupteur.
- *
- * C'est le pendant du débloat : la liste des paquets dit ce qui est installé, celle-ci dit ce
- * qui coûte réellement. Sur un téléviseur à 2,45 Go, l'écart entre les deux est tout le sujet —
- * une application désactivée ne pèse rien, une application anodine qui tourne en fond peut
- * peser cent mégaoctets. Le stockage répond à l'autre question : ce qui occupe la place.
+ * RAM and storage, behind a toggle. The package list shows what is installed; this shows what it actually costs.
+ * A disabled app weighs nothing, while a harmless-looking background app can take 100 MB of a 2.45 GB TV.
  */
 @Composable
 fun MemoireScreen(
@@ -70,7 +65,6 @@ fun MemoireScreen(
 
     var vue by rememberSaveable { mutableStateOf(VueMemoire.VIVE) }
 
-    // Première visite : on lit sans attendre qu'on le demande.
     LaunchedEffect(etat.connexion.hote) {
         if (!etat.memoire.renseignee) onActualiser()
     }
@@ -80,11 +74,10 @@ fun MemoireScreen(
 
     val memoire = etat.memoire
     val stockage = etat.stockage
-    // Les centaines de paquets système de quelques Ko n'apprennent rien : on liste à partir d'un Mo.
+    // Hundreds of system packages weigh a few kB each: list only from 1 MB up.
     val applications = stockage.applications.filter { it.totalOctets >= UN_MO }
 
-    // Tout défile ensemble : sur un téléphone, deux cartes fixes ne laisseraient presque rien
-    // à la liste, qui est pourtant le cœur de cet écran.
+    // Everything scrolls together: on a phone, two fixed cards would leave the list almost no room.
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item {
             ChoixVue(vue = vue, onVue = { vue = it })
@@ -181,7 +174,7 @@ fun MemoireScreen(
                     )
                 }
 
-                // Les barres se comparent à la plus lourde : rapportées à 50 Go, toutes seraient vides.
+                // Bars are relative to the largest app: against the whole disk they would all look empty.
                 val reference = applications.firstOrNull()?.totalOctets ?: 1L
                 items(applications, key = { it.paquet }) { application ->
                     VueApplication(
@@ -196,7 +189,6 @@ fun MemoireScreen(
     }
 }
 
-/** Mémoire vive ou stockage : le même interrupteur que les filtres de l'onglet Paquets. */
 @Composable
 private fun ChoixVue(vue: VueMemoire, onVue: (VueMemoire) -> Unit) {
     SingleChoiceSegmentedButtonRow(
@@ -209,7 +201,7 @@ private fun ChoixVue(vue: VueMemoire, onVue: (VueMemoire) -> Unit) {
                 selected = vue == choix,
                 onClick = { onVue(choix) },
                 shape = SegmentedButtonDefaults.itemShape(index = rang, count = VueMemoire.entries.size),
-                // Sans coche, comme les filtres de l'onglet Paquets : la couleur suffit à désigner la vue.
+                // No checkmark, like the Packages tab filters: the color marks the selection.
                 icon = {},
             ) {
                 Text(
@@ -241,7 +233,7 @@ private fun CarteStockage(stockage: RepartitionStockage, chargement: Boolean, on
                 Ligne(stringResource(R.string.memory_used), taille(stockage.utiliseKo * 1024))
                 Ligne(stringResource(R.string.memory_free), taille(stockage.libreKo * 1024))
 
-                // La répartition par nature, quand Android la donne.
+                // Breakdown by type, when Android reports one.
                 val detail = listOf(
                     R.string.storage_apps to stockage.applicationsOctets,
                     R.string.storage_app_data to stockage.donneesOctets,
@@ -358,7 +350,6 @@ private fun VueProcessus(
     }
 }
 
-/** Une barre proportionnelle : plus parlante qu'un nombre isolé. */
 @Composable
 private fun Jauge(valeur: Long, total: Long) {
     val fraction = if (total > 0) (valeur.toFloat() / total).coerceIn(0f, 1f) else 0f
@@ -394,7 +385,6 @@ private fun Ligne(libelle: String, valeur: String) {
 
 private fun mo(kilooctets: Long): String = "${kilooctets / 1024} Mo"
 
-/** En gigaoctets avec une décimale à partir d'un Go, en mégaoctets en dessous. */
 @Composable
 private fun taille(octets: Long): String =
     if (octets >= UN_GO) {

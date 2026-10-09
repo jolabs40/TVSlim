@@ -1,6 +1,6 @@
 package net.jolabs40.tvslim.device
 
-/** Une application et ce qu'elle occupe sur le stockage interne, en octets. */
+/** An app and the internal storage it uses, in bytes. */
 data class StockageApplication(
     val paquet: String,
     val applicationOctets: Long,
@@ -11,10 +11,10 @@ data class StockageApplication(
 }
 
 /**
- * Occupation du stockage interne, telle que la rapporte `dumpsys diskstats`.
+ * Internal storage usage as reported by `dumpsys diskstats`.
  *
- * L'espace libre et total se lit à l'instant ; la part de chaque application vient de la dernière
- * estimation d'Android, qui la recalcule environ une fois par jour — une tendance, pas un relevé.
+ * Free and total space are current. Per-app sizes come from Android's last estimate, recomputed about once
+ * a day, so they can be stale.
  */
 data class RepartitionStockage(
     val totalKo: Long = 0,
@@ -27,7 +27,7 @@ data class RepartitionStockage(
     val audioOctets: Long = 0,
     val telechargementsOctets: Long = 0,
     val autresOctets: Long = 0,
-    /** De la plus lourde à la plus légère. */
+    /** Largest first. */
     val applications: List<StockageApplication> = emptyList(),
 ) {
     val renseignee: Boolean get() = totalKo > 0
@@ -35,8 +35,8 @@ data class RepartitionStockage(
 }
 
 /**
- * Lit la sortie de `dumpsys diskstats`, suivie de celle de `df` pour les appareils qui ne donnent pas
- * la ligne « Data-Free ». Relevé sur la TCL le 2026-09-13 :
+ * Parses `dumpsys diskstats` output, followed by `df` output for devices without a `Data-Free` line.
+ * Sample from the TCL:
  *
  *     Data-Free: 45111156K / 51170024K total = 88% free
  *     App Size: 2664341504
@@ -45,7 +45,7 @@ data class RepartitionStockage(
  */
 object LectureStockage {
 
-    /** Sépare la sortie de `dumpsys diskstats` de celle de `df`. */
+    /** Separates `dumpsys diskstats` output from `df` output. */
     const val MARQUEUR_DF = "@@TVSLIM_DF"
 
     fun interpreter(sortie: String): RepartitionStockage {
@@ -85,8 +85,8 @@ object LectureStockage {
             audioOctets = taille("Audio Size"),
             telechargementsOctets = taille("Downloads Size"),
             autresOctets = taille("Other Size"),
-            // Des listes parallèles : si leurs longueurs divergent, les associer attribuerait à une
-            // application la taille d'une autre. Mieux vaut ne rien lister.
+            // Parallel lists: if their lengths differ, pairing them would give one app another's
+            // size, so list nothing.
             applications = if (paquets.isNotEmpty() && applications.size == paquets.size) {
                 paquets.mapIndexed { rang, paquet ->
                     StockageApplication(
@@ -102,7 +102,7 @@ object LectureStockage {
         )
     }
 
-    /** « /dev/block/dm-27  51170024 5911412 45111156  12% /data » : disponible et total, en Ko. */
+    /** `/dev/block/dm-27  51170024 5911412 45111156  12% /data`: available and total, in KB. */
     private fun df(lignes: List<String>): Pair<Long, Long>? = lignes
         .map { it.split(ESPACES) }
         .firstOrNull { it.size >= 6 && it[1].toLongOrNull() != null && it[3].toLongOrNull() != null }

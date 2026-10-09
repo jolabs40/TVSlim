@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!--
-        Seule permission nécessaire : ouvrir une socket TCP vers le téléviseur, sur le réseau
-        local. Le compagnon ne demande ni stockage, ni localisation, ni comptes.
-    -->
+    <!-- The only permission needed: a TCP socket to the TV on the local network. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -25,7 +22,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Partage d'une capture d'écran avant Android 10 ; à partir de là, la galerie suffit. -->
+        <!-- Shares screenshots before Android 10; from Android 10 on, the gallery is enough. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.captures"

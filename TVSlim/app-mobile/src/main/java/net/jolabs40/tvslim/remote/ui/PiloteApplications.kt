@@ -25,11 +25,11 @@ import net.jolabs40.tvslim.remote.adb.EtatConnexion
 import net.jolabs40.tvslim.soutien.InvitationSoutien
 import java.io.File
 
-/** Ce qu'on s'apprête à faire d'une application, soumis à confirmation. */
+/** An app action awaiting confirmation. */
 sealed interface ConfirmationApplication {
     val application: ApplicationAppareil
 
-    /** Par le moteur, avec ses garde-fous : [entree] est celle du catalogue, effets de bord compris. */
+    /** Goes through the engine and its safeguards; [entree] is the catalogue entry, side effects included. */
     data class Desactivation(override val application: ApplicationAppareil, val entree: EntreePaquet) : ConfirmationApplication
 
     data class Desinstallation(override val application: ApplicationAppareil) : ConfirmationApplication
@@ -37,16 +37,16 @@ sealed interface ConfirmationApplication {
 
 data class EtatApplications(
     val applications: List<ApplicationAppareil> = emptyList(),
-    /** Une lecture a abouti : l'onglet n'en relance pas une de lui-même. */
+    /** A read succeeded; the tab does not start another one by itself. */
     val lue: Boolean = false,
     val chargement: Boolean = false,
-    /** Noms et icônes lus, sur le nombre à lire ; `null` hors de cette étape. */
+    /** Names and icons read so far, out of the total; null outside that step. */
     val avancee: Pair<Int, Int>? = null,
     val recherche: String = "",
-    /** L'application dont on a ouvert les actions. */
+    /** App whose action sheet is open. */
     val choisie: ApplicationAppareil? = null,
     val confirmation: ConfirmationApplication? = null,
-    /** Le paquet dont une action est en cours : ses boutons attendent. */
+    /** Package with an action in progress; its buttons are disabled. */
     val occupee: String? = null,
 ) {
     val affichees: List<ApplicationAppareil> by lazy {
@@ -60,8 +60,8 @@ data class EtatApplications(
 }
 
 /**
- * L'onglet Applications du compagnon : les applications du menu et celles que la personne a installées, avec leur nom
- * et leur icône (`LecteurApplications`, dans le noyau), et ce qu'on en fait — les mêmes règles que sous Windows.
+ * Apps tab: launcher apps and user-installed apps with their names and icons (the core's `LecteurApplications`),
+ * and their actions. Same rules as the Windows app.
  */
 class PiloteApplications(
     private val contexte: Context,
@@ -71,7 +71,7 @@ class PiloteApplications(
     private val etatRemote: () -> EtatRemote,
     private val moteur: () -> MoteurDebloat?,
     journal: () -> JournalRepository?,
-    /** L'onglet Paquets se relit après une désactivation faite d'ici. */
+    /** Reloads the Packages tab after a disable done here. */
     private val rafraichirPaquets: () -> Unit,
     private val remercier: () -> Unit,
 ) {
@@ -83,7 +83,7 @@ class PiloteApplications(
     private val actions = ActionsApplications(client, journal)
 
     init {
-        // Ce qu'on a lu appartient à l'appareil : se déconnecter, ou en joindre un autre, l'oublie.
+        // What was read belongs to that device: forget it on disconnect or when connecting to another one.
         portee.launch {
             client.connexion
                 .map { if (it.etat == EtatConnexion.DECONNECTE) "" else it.hote }
@@ -101,8 +101,8 @@ class PiloteApplications(
     }
 
     /**
-     * La même lecture, lancée d'avance à la connexion par la seconde session : rien si l'onglet a déjà lu ou lit, et
-     * un échec ne se dit pas — personne n'a rien demandé, l'onglet relira de lui-même.
+     * Same read, prefetched on connect through the second session. Skipped if the tab has read or is reading;
+     * failures are silent since the tab will read again on its own.
      */
     suspend fun precharger(seconde: ClientAdb) {
         if (_etat.value.lue || _etat.value.chargement) return
@@ -121,7 +121,7 @@ class PiloteApplications(
                 is ResultatLecture.Echec -> if (signaler) afficher(messageLecture(resultat))
             }
         } finally {
-            // Interrompue par une déconnexion aussi : l'onglet ne doit pas attendre une lecture qui ne viendra plus.
+            // Also on disconnect, so the tab does not wait for a read that will never finish.
             _etat.update { it.copy(chargement = false, avancee = null) }
         }
     }
@@ -137,7 +137,7 @@ class PiloteApplications(
 
     fun choisir(application: ApplicationAppareil?) = _etat.update { it.copy(choisie = application) }
 
-    /** L'entrée du catalogue qui permet de la désactiver, si elle y est et n'est pas protégée. */
+    /** Returns the catalogue entry that allows disabling the app, if it exists and is not protected. */
     fun entreeDesactivable(application: ApplicationAppareil): EntreePaquet? {
         val catalogue = etatRemote().catalogue
         if (catalogue.estProtege(application.paquet)) return null
@@ -205,7 +205,7 @@ class PiloteApplications(
         }
     }
 
-    /** Une action à la fois ; vrai rendu par [bloc], la liste et l'onglet Paquets se relisent. */
+    /** One action at a time. If [bloc] returns true, the list and the Packages tab are reloaded. */
     private fun agir(application: ApplicationAppareil, bloc: suspend () -> Boolean) {
         if (_etat.value.occupee != null) return
         _etat.update { it.copy(occupee = application.paquet, choisie = null) }

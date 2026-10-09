@@ -8,7 +8,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Ce que la mise à jour accepte de proposer — et surtout ce qu'elle refuse. */
+/** Which releases the updater offers, and above all which it refuses. */
 class ChoixPublicationTest {
 
     private val depot = "jolabs40/TVSlim"
@@ -38,7 +38,7 @@ class ChoixPublicationTest {
     }
 
     @Test
-    fun `les versions se comparent nombre par nombre, pas comme du texte`() {
+    fun `versions compare number by number, not as text`() {
         assertTrue(Version.lire("1.10.0")!! > Version.lire("1.9.9")!!)
         assertEquals(Version(2, 0, 13), Version.lire(" 2.0.13 "))
         listOf("1.2", "1.2.3.4", "v1.2.3", "1.2.3-beta", "", "a.b.c").forEach {
@@ -47,7 +47,7 @@ class ChoixPublicationTest {
     }
 
     @Test
-    fun `la plus haute version Windows est retenue, les publications Android sont ignorees`() {
+    fun `the highest Windows version is picked and Android releases are ignored`() {
         val maj = ChoixPublication.choisir(
             listOf(
                 publication("windows-v1.1.0"),
@@ -66,13 +66,13 @@ class ChoixPublicationTest {
     }
 
     @Test
-    fun `rien quand la version en cours est deja la plus recente`() {
+    fun `nothing when the running version is already the latest`() {
         assertNull(ChoixPublication.choisir(listOf(publication("windows-v1.2.0")), Version(1, 2, 0), depot))
         assertNull(ChoixPublication.choisir(listOf(publication("windows-v1.2.0")), Version(1, 3, 0), depot))
     }
 
     @Test
-    fun `brouillons et preversions ne sont jamais proposes`() {
+    fun `drafts and prereleases are never offered`() {
         val publications = listOf(
             publication("windows-v2.0.0", draft = true),
             publication("windows-v1.5.0", prerelease = true),
@@ -82,7 +82,7 @@ class ChoixPublicationTest {
     }
 
     @Test
-    fun `une publication sans signature n'est pas proposee`() {
+    fun `a release without a signature is not offered`() {
         val tag = "windows-v1.2.0"
         val sansSignature = publication(tag, fichiers = listOf(fichier("TVSlim-Windows-1.2.0.msi", tag)))
 
@@ -90,7 +90,7 @@ class ChoixPublicationTest {
     }
 
     @Test
-    fun `un fichier heberge ailleurs que sur le depot est refuse`() {
+    fun `a file hosted outside the repository is rejected`() {
         val tag = "windows-v1.2.0"
         val detourne = publication(
             tag,
@@ -113,7 +113,7 @@ class ChoixPublicationTest {
     }
 
     @Test
-    fun `la reponse de l'API GitHub se lit, champs inconnus compris`() {
+    fun `the GitHub API response parses, unknown fields included`() {
         val reponse = """
             [{"url":"https://api.github.com/repos/jolabs40/TVSlim/releases/1","tag_name":"windows-v1.0.1",
               "name":"TV Slim 1.0.1","draft":false,"prerelease":false,

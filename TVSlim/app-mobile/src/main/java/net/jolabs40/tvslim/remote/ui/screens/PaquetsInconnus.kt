@@ -33,13 +33,10 @@ import net.jolabs40.tvslim.device.OriginePaquet
 import net.jolabs40.tvslim.device.PaquetInconnu
 import net.jolabs40.tvslim.remote.R
 
-/** Le vert du robot Android : il se lit sur les deux thèmes. */
+/** Android robot green, readable in both themes. */
 private val VERT_ANDROID = Color(0xFF3DDC84)
 
-/**
- * D'où vient un paquet, devant son nom : le robot pour Android, l'usine pour le constructeur de
- * l'appareil (ou de sa puce), une grille pour le reste.
- */
+/** Package origin: robot for Android, factory for the device (or chip) maker, grid for anything else. */
 @Composable
 fun IconeOrigine(origine: OriginePaquet, modifier: Modifier = Modifier, taille: Dp = 18.dp) {
     Icon(
@@ -68,16 +65,16 @@ private fun libelleOrigine(origine: OriginePaquet): String = stringResource(
 )
 
 /**
- * Sous le catalogue, les paquets livrés avec le téléviseur qu'il ne décrit pas : regroupés par éditeur
- * (« org.droidtv »), chacun avec son origine devinée. En lecture seule — un paquet système inconnu peut
- * porter le tuner ou la télécommande —, mais la liste s'exporte, pour compléter le catalogue, et se propose
- * à lui par le formulaire GitHub quand un paquet du constructeur y figure.
+ * Preinstalled packages the catalogue does not describe, grouped by publisher (`org.droidtv`) with a guessed origin.
+ *
+ * Read-only, since an unknown system package may drive the tuner or the remote. The list can be exported, and
+ * proposed through the GitHub form when it holds a maker package.
  */
 fun LazyListScope.sectionInconnus(
     affiches: List<PaquetInconnu>,
     total: Int,
     onExporter: () -> Unit,
-    /** Null quand aucun paquet du constructeur n'échappe au catalogue : rien qui vaille une proposition. */
+    /** Null when the catalogue misses no maker package, so there is nothing worth proposing. */
     onProposer: (() -> Unit)?,
 ) {
     item(key = "inconnus-entete") {
@@ -125,7 +122,7 @@ private fun EnteteInconnus(affiches: Int, total: Int, onExporter: () -> Unit, on
                 }
             }
         }
-        // Deux boutons côte à côte se partagent la largeur du téléphone ; seul, l'export garde la sienne.
+        // Two buttons share the phone's width; alone, the export button keeps its own.
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val partage = if (onProposer != null) Modifier.weight(1f) else Modifier
             OutlinedButton(

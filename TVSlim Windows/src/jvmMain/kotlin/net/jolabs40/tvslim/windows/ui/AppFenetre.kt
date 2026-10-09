@@ -111,7 +111,7 @@ import org.jetbrains.compose.resources.stringResource
 import java.io.File
 import java.net.URI
 
-/** Les six onglets du compagnon, dans le même ordre et avec les mêmes icônes. */
+/** Same tabs, order and icons as the Android companion. */
 enum class Onglet(val titre: StringResource, val icone: DrawableResource) {
     TELEVISEUR(Res.string.tab_connection, Res.drawable.baseline_cast_24),
     PAQUETS(Res.string.tab_packages, Res.drawable.baseline_inventory_2_24),
@@ -121,18 +121,15 @@ enum class Onglet(val titre: StringResource, val icone: DrawableResource) {
     JOURNAL(Res.string.tab_log, Res.drawable.baseline_history_24),
 }
 
-/**
- * La fenêtre : un rail d'onglets à gauche — la barre du bas d'un téléphone, couchée sur le côté —
- * le bandeau de mise à jour en haut, et chaque retour d'action dans la même bannière en bas.
- */
+/** Main window. The left rail stands in for the phone's bottom navigation bar. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun AppFenetre(
     pilote: PiloteApp,
     misesAJour: PiloteMisesAJour,
-    /** Capture, miroir et vidéo de l'écran du téléviseur. */
+    /** Screenshot, mirroring and screen recording. */
     ecran: PiloteEcran,
-    /** Où scrcpy arrive quand il faut le télécharger : dit dans la fenêtre qui le propose. */
+    /** Where scrcpy gets downloaded; shown in the download prompt. */
     dossierScrcpy: File,
     onglet: Onglet,
     onOnglet: (Onglet) -> Unit,
@@ -143,9 +140,9 @@ fun AppFenetre(
     choisirApk: (titre: String) -> File?,
     choisirFichiers: (titre: String) -> List<File>,
     choisirDossier: (titre: String) -> File?,
-    /** « Enregistrer sous », ouvert sur Téléchargements, pour un fichier copié du téléviseur. */
+    /** Save dialog, opened on Downloads, for a file copied from the TV. */
     choisirDestinationFichier: (nomPropose: String, titre: String) -> File?,
-    /** Le dossier qui recevra un dossier copié du téléviseur, choisi depuis Téléchargements. */
+    /** Picks, starting in Downloads, the folder that receives a folder copied from the TV. */
     choisirDestinationDossier: (titre: String) -> File?,
     ouvrirDossier: (File) -> Unit,
 ) {
@@ -167,13 +164,12 @@ fun AppFenetre(
     val titreDossier = stringResource(Res.string.files_pick_folder)
     val titreDestinationFichier = stringResource(Res.string.files_pick_destination_file)
     val titreDestinationDossier = stringResource(Res.string.files_pick_destination_folder)
-    // Le titre de la fenêtre de scrcpy : c'est par lui qu'on la reconnaît dans la barre des tâches.
+    // Names the scrcpy window so it can be found in the taskbar.
     val nomTv = etat.infos.nomAffiche.ifBlank { etat.connexion.hote }
     val titreMiroir = stringResource(Res.string.scrcpy_window_mirror, nomTv)
 
-    // Un APK glissé depuis l'Explorateur, n'importe où dans la fenêtre : la carte d'installation n'est pas
-    // forcément à l'écran quand on a le fichier sous la main. Le voile dit où il va partir. Sur l'onglet
-    // Fichiers, tout ce qu'on glisse — fichiers et dossiers, APK compris — part dans le dossier affiché.
+    // Drops are accepted anywhere in the window, since the install card may not be on screen. On the Files
+    // tab everything dropped (APKs included) is uploaded to the current folder; elsewhere it is an APK to install.
     var survol by remember { mutableStateOf(false) }
     val ongletCourant by rememberUpdatedState(onglet)
     val depot = remember(pilote) {
@@ -206,8 +202,7 @@ fun AppFenetre(
         }
     }
 
-    // Une session ADB ne survit pas à la veille du téléviseur. Au retour sur la fenêtre — sortie de
-    // la barre des tâches — on retente le dernier téléviseur sans rien demander.
+    // ADB sessions do not survive TV standby: silently retry the last TV when the window is restored.
     val proprietaire = LocalLifecycleOwner.current
     DisposableEffect(proprietaire) {
         val observateur = LifecycleEventObserver { _, evenement ->
@@ -217,7 +212,6 @@ fun AppFenetre(
         onDispose { proprietaire.lifecycle.removeObserver(observateur) }
     }
 
-    // Chaque retour d'action passe par la même bannière, puis est consommé.
     LaunchedEffect(etat.message) {
         val message = etat.message ?: return@LaunchedEffect
         val texte = message.rediger()
@@ -276,7 +270,7 @@ fun AppFenetre(
             onVerifier = { misesAJour.verifier() },
             onVerificationAuto = misesAJour::majVerificationAuto,
             onInstaller = misesAJour::installer,
-            // Dans la langue de l'application : la page anglaise est à la racine, la française sous /fr/.
+            // Localized URL: English site at the root, French under /fr/.
             onSite = { ouvrirLien(siteWeb) },
             onContact = { ouvrirLien("mailto:$contact") },
             onSource = { ouvrirLien("https://github.com/${InfosApp.DEPOT_GITHUB}") },
@@ -417,7 +411,7 @@ fun AppFenetre(
                                 choisirFichierExport(pilote.configuration.nomExportInconnus(), titreInconnus)
                                     ?.let { pilote.configuration.exporterInconnus(it) }
                             },
-                            // Le même export, puis le formulaire du catalogue dans le navigateur.
+                            // Same export, then opens the catalogue submission form in the browser.
                             onProposerInconnus = {
                                 choisirFichierExport(pilote.configuration.nomExportInconnus(), titreInconnus)
                                     ?.let { pilote.configuration.exporterInconnus(it, puisOuvrir = ouvrirLien) }
@@ -531,7 +525,7 @@ private fun actionsFichiers(
     }
 }
 
-/** Où en est la connexion, lisible de n'importe quel onglet. */
+/** Connection status, shown on every tab. */
 @Composable
 private fun PastilleConnexion(etat: EtatApp) {
     val connexion = etat.connexion

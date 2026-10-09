@@ -30,8 +30,8 @@ import net.jolabs40.tvslim.remote.fichiers.nomDuDossier
 import net.jolabs40.tvslim.soutien.InvitationSoutien
 
 /**
- * Ce qu'on a choisi sur le téléphone, en attente du dossier du téléviseur où le déposer : des documents un à un,
- * ou un dossier entier ([arbre]). [nom] est celui qu'on montre — du document quand il est seul, du dossier.
+ * Items picked on the phone, waiting for a destination folder on the TV: individual documents or a whole
+ * folder ([arbre]). [nom] is the name shown (the first document's, or the folder's).
  */
 data class EnvoiEnAttente(
     val documents: List<Uri> = emptyList(),
@@ -43,22 +43,21 @@ data class EnvoiEnAttente(
 }
 
 /**
- * L'onglet Fichiers : l'explorateur du noyau, partagé avec Windows, et ce que le téléphone y ajoute — les
- * documents désignés dans le sélecteur d'Android, et les mots pour dire ce qui s'est passé.
+ * Files tab: the core's file explorer (shared with Windows) plus the phone-specific parts, picking documents
+ * with the Android picker and turning results into messages.
  *
- * Sur le téléphone, on choisit d'abord **quoi** envoyer, puis **où** : ce qui a été désigné attend
- * ([enAttente]) qu'on ouvre le dossier de destination et qu'on l'envoie. Naviguer d'abord, puis « Envoyer
- * ici », ne disait pas qu'on était en train de choisir une destination (remarque de l'utilisateur, 2026-10-04).
+ * On the phone the user picks what to send first, then where: the selection waits in [enAttente] until the
+ * destination folder is opened and the upload confirmed. Browsing first did not make it clear that a
+ * destination was being chosen.
  *
- * Vit à côté du [RemoteViewModel], comme les permissions et la configuration : il n'en partage que la portée
- * et la bannière.
+ * Shares only the coroutine scope and the banner with [RemoteViewModel].
  */
 class PiloteFichiers(
     private val contexte: Context,
     client: ClientAdb,
     private val portee: CoroutineScope,
     private val afficher: (String) -> Unit,
-    /** Un envoi arrivé au bout : le bandeau de soutien peut se montrer. */
+    /** Called after a completed upload; may show the support banner. */
     private val remercier: () -> Unit,
 ) {
 
@@ -71,8 +70,8 @@ class PiloteFichiers(
     val enAttente: StateFlow<EnvoiEnAttente?> = _enAttente.asStateFlow()
 
     init {
-        // Ce qu'on a lu appartient au téléviseur : se déconnecter, ou en joindre un autre, l'oublie. Une reprise
-        // sur le même téléviseur, non. Ce qu'on s'apprêtait à envoyer aussi : la destination n'existe plus.
+        // Forget what was read, and any pending upload, on disconnect or when switching TVs. A reconnect to the
+        // same TV keeps it.
         portee.launch {
             client.connexion
                 .map { if (it.etat == EtatConnexion.DECONNECTE) "" else it.hote }
@@ -85,7 +84,6 @@ class PiloteFichiers(
         }
     }
 
-    /** Des documents choisis un à un, qui attendent leur dossier de destination. */
     fun choisirDocuments(documents: List<Uri>) {
         if (documents.isEmpty()) return
         portee.launch {
@@ -94,7 +92,7 @@ class PiloteFichiers(
         }
     }
 
-    /** Un dossier entier, sous-dossiers compris, qui attend le sien. */
+    /** Picks a whole folder, subfolders included. */
     fun choisirDossier(arbre: Uri) {
         portee.launch {
             val nom = withContext(Dispatchers.IO) { nomDuDossier(contexte, arbre) }
@@ -103,8 +101,8 @@ class PiloteFichiers(
     }
 
     /**
-     * Le dossier affiché est la destination : ce qui attend s'examine, puis se confirme. Rien ne se perd d'ici
-     * là — une confirmation refusée, ou un dossier qui ne convient pas, ramène au choix de la destination.
+     * Uses the displayed folder as destination: the pending items are examined, then confirmed. A declined
+     * confirmation or an unsuitable folder returns to choosing the destination, keeping the selection.
      */
     fun envoyerIci() {
         val attente = _enAttente.value ?: return
@@ -120,7 +118,6 @@ class PiloteFichiers(
         _enAttente.value = null
     }
 
-    /** L'envoi part : ce qui attendait est servi. */
     fun confirmer() {
         _enAttente.value = null
         explorateur.confirmer()
@@ -143,10 +140,10 @@ class PiloteFichiers(
             IssueCreation.ECHEC -> contexte.getString(R.string.files_folder_failed, creation.detail)
         }
 
-        // Les échecs en détail restent dans la carte de l'onglet : une bannière de téléphone n'a que deux lignes.
+        // Per-file failures stay in the tab's card: a phone banner only has two lines.
         is SignalFichiers.Depot -> bilan(resultat)
 
-        // Copier et supprimer ne s'offrent encore que sous Windows ; le noyau, partagé, sait déjà les dire.
+        // Copy and delete are only offered on Windows so far, but the shared core can report them.
         is SignalFichiers.ContenuIllisible -> when (refus) {
             RefusLecture.INTROUVABLE -> contexte.getString(R.string.files_content_not_found, nom)
             RefusLecture.REFUSE -> contexte.getString(R.string.files_content_denied, nom)

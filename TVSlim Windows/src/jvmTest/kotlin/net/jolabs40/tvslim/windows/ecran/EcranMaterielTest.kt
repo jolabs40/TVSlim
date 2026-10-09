@@ -18,15 +18,14 @@ import java.io.File
 import java.nio.file.Files
 
 /**
- * L'écran d'un vrai téléviseur. La capture et la vidéo passent par la clé de l'application, comme dans TV Slim : la
- * vidéo s'enregistre six secondes sur le téléviseur, se copie, puis s'efface — rien n'y reste. L'essai de scrcpy
- * télécharge la version épinglée depuis GitHub, ouvre le miroir, puis ferme sa fenêtre comme on le ferait à la
- * souris.
+ * Screen of a real TV. Screenshot and video use the app's key, as in TV Slim: the video records for six seconds on
+ * the TV, is copied, then deleted, leaving nothing behind. The scrcpy test downloads the pinned release from GitHub,
+ * opens the mirror, then closes its window the way a user would.
  *
  *     ./gradlew jvmTest --tests "*EcranMaterielTest*" '-Pmateriel=192.168.2.135' --rerun
  *     ./gradlew jvmTest --tests "*EcranMaterielTest*" '-Pmateriel=192.168.2.135' -Pscrcpy=1 --rerun
  *
- * Le second ouvre une fenêtre scrcpy sur le bureau pendant l'essai.
+ * The second one opens a scrcpy window on the desktop during the test.
  */
 class EcranMaterielTest {
 
@@ -34,7 +33,7 @@ class EcranMaterielTest {
     private val sortie = File(System.getProperty("tvslim.captures") ?: "build/captures")
 
     @Test
-    fun `la capture rend un PNG de l'ecran du televiseur`() = runBlocking<Unit> {
+    fun `the screenshot returns a PNG of the TV screen`() = runBlocking<Unit> {
         assumeTrue("-Pmateriel=<adresse> pour essayer sur un vrai téléviseur", hote != null)
         val client = ClientAdb(DepotCles(Emplacements.windows().cles))
         assertTrue("Connexion à $hote : ${client.connexion.value}", client.connecter(hote!!))
@@ -48,7 +47,7 @@ class EcranMaterielTest {
             sortie.mkdirs()
             File(sortie, "ecran-materiel.png").writeBytes(resultat.png)
 
-            // La session sert encore après une lecture binaire.
+            // The session still works after a binary read.
             assertEquals(0, client.executer("echo apres").code)
         } finally {
             client.deconnecter()
@@ -56,7 +55,7 @@ class EcranMaterielTest {
     }
 
     @Test
-    fun `la video s'enregistre sur le televiseur, se copie, puis s'efface`() = runBlocking<Unit> {
+    fun `the video records on the TV, is copied, then deleted`() = runBlocking<Unit> {
         assumeTrue("-Pmateriel=<adresse> pour essayer sur un vrai téléviseur", hote != null)
         val client = ClientAdb(DepotCles(Emplacements.windows().cles))
         assertTrue("Connexion à $hote : ${client.connexion.value}", client.connecter(hote!!))
@@ -66,7 +65,7 @@ class EcranMaterielTest {
             println("Démarrage : $demarrage")
             assertTrue(demarrage.toString(), demarrage is Demarrage.Lance)
 
-            // La session de TV Slim reste libre pendant l'enregistrement : l'enregistreur est détaché.
+            // The TV Slim session stays free while recording: the recorder is detached.
             Thread.sleep(3_000)
             assertEquals(0, client.executer("echo pendant").code)
             assertEquals(true, enregistrement.vivant())
@@ -84,7 +83,7 @@ class EcranMaterielTest {
             println("Copie de $taille octets en ${System.currentTimeMillis() - debut} ms : $copie")
             assertTrue(copie.toString(), copie.reussi)
             assertEquals(taille, video.length())
-            // SIGINT a laissé l'enregistreur écrire l'index « moov » : la vidéo se lit jusqu'au bout.
+            // SIGINT lets the recorder write the "moov" index, so the video plays to the end.
             assertTrue("vidéo sans index", String(video.readBytes(), Charsets.ISO_8859_1).contains("moov"))
 
             enregistrement.nettoyer()
@@ -95,13 +94,13 @@ class EcranMaterielTest {
     }
 
     @Test
-    fun `scrcpy se telecharge, ouvre le miroir, et se ferme proprement`() = runBlocking<Unit> {
+    fun `scrcpy downloads, opens the mirror, and closes cleanly`() = runBlocking<Unit> {
         assumeTrue("-Pmateriel=<adresse> -Pscrcpy=1", hote != null && System.getProperty("tvslim.scrcpy") != null)
         val dossier = Files.createTempDirectory("tvslim-scrcpy").toFile()
         try {
-            // Le vrai fichier de la publication : son empreinte est vérifiée en chemin.
+            // The actual release file; its checksum is verified on the way.
             val exe = InstallationScrcpy(ClientGithub("Genymobile/scrcpy", "essai"), dossier).installer { }
-            // La copie téléchargée passe avant toute autre, et sa version suffit.
+            // The downloaded copy wins over any other, and its version is recent enough.
             assertEquals(exe.canonicalFile, LocalisationScrcpy(dossier).trouver()?.canonicalFile)
 
             val session = SessionScrcpy.lancer(exe, ArgumentsScrcpy.miroir(hote!!, 5555, "TV Slim - essai"))

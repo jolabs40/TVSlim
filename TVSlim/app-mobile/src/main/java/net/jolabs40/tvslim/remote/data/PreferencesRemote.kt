@@ -19,7 +19,7 @@ import javax.inject.Singleton
 
 private val Context.magasin: DataStore<Preferences> by preferencesDataStore(name = "tvslim-remote")
 
-/** Dernier téléviseur joint, pour ne pas ressaisir son adresse à chaque fois — et où en est le bandeau de soutien. */
+/** Remembers the last TV address, known device names and the support banner state. */
 @Singleton
 class PreferencesRemote @Inject constructor(
     @ApplicationContext private val contexte: Context,
@@ -31,9 +31,8 @@ class PreferencesRemote @Inject constructor(
         contexte.magasin.data.first()[CLE_PORT] ?: PORT_ADB_PAR_DEFAUT
 
     /**
-     * Retient comment s'appelle l'appareil à cette adresse. Le service ADB ne publie qu'un
-     * numéro de série ; une fois connecté une première fois, on connaît son modèle, autant
-     * s'en servir pour les fois suivantes.
+     * Remembers the device name at this address. The mDNS ADB service only publishes a serial number, but the
+     * model is known after the first connection.
      */
     suspend fun retenirNom(hote: String, nom: String) {
         if (hote.isBlank() || nom.isBlank()) return

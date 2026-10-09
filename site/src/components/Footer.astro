@@ -22,13 +22,12 @@ const t = ui[lang];
       <li><a href={path(lang, '/packages/')}>{t.nav.packages}</a></li>
       <li><a href={path(lang, '/privacy/')}>{t.footer.privacy}</a></li>
     </ul>
-    <!-- Les liens vers l'extérieur, chacun précédé de son logo. -->
     <ul class="ailleurs">
       <li><a href={REPO} rel="noopener"><span class="ico"><MarqueGithub taille={20} /></span>GitHub</a></li>
       <li>
         <a href={`${REPO}/blob/main/LICENSE`} rel="noopener">
           <span class="ico">
-            <!-- Material Icons « balance » (Apache 2.0). -->
+            <!-- Material Icons "balance" (Apache 2.0). -->
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M13 7.83c.85-.3 1.53-.98 1.83-1.83H18l-3 7c0 1.66 1.57 3 3.5 3s3.5-1.34 3.5-3l-3-7h2V4h-6.17C14.42 2.83 13.31 2 12 2S9.58 2.83 9.17 4H3v2h2l-3 7c0 1.66 1.57 3 3.5 3S9 14.66 9 13L6 6h3.17c.3.85.98 1.53 1.83 1.83V19H2v2h20v-2h-9V7.83zM20.37 13h-3.74l1.87-4.36L20.37 13zM7.37 13H3.63L5.5 8.64 7.37 13zM12 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" /></svg>
           </span>{t.footer.license}
         </a>
@@ -37,7 +36,7 @@ const t = ui[lang];
       <li>
         <a href={`mailto:${CONTACT}`}>
           <span class="ico">
-            <!-- Material Icons « mail » (Apache 2.0). -->
+            <!-- Material Icons "mail" (Apache 2.0). -->
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
           </span>{CONTACT}
         </a>
@@ -45,7 +44,7 @@ const t = ui[lang];
       <li>
         <a href={STARTLIGHT} rel="noopener">
           <span class="ico">
-            <!-- Le monogramme du site de Startlight, sans son fond, le trait épaissi pour rester lisible si petit. -->
+            <!-- Startlight website monogram without its background, stroke thickened to stay legible this small. -->
             <svg viewBox="61.4 91.6 38.9 19.7" width="22" height="11" aria-hidden="true"><path fill="none" stroke="#FFC107" stroke-width="2.1" stroke-linejoin="round" d="m 80.848691,93.059319 h 8.952942 V 104.8493 h 9.092468 v 4.9997 H 84.33685 V 98.059016 h -4.710693 c -3.21466,-0.062 -3.509216,0.48835 -2.106201,1.65106 2.511475,2.201414 3.743958,4.340824 3.697449,6.418214 -0.04651,2.07739 -1.27899,3.31763 -3.697449,3.72071 H 62.869688 v -4.9997 h 9.255249 c 2.193665,0.062 2.472717,-0.55037 0.837158,-1.8371 -2.69751,-2.48047 -3.844727,-4.759404 -3.44165,-6.836791 0.403076,-2.07739 1.674316,-3.11609 3.81372,-3.11609 h 10.348206" /></svg>
           </span>Startlight Launcher
         </a>
@@ -66,7 +65,7 @@ const t = ui[lang];
   ul a:hover { color: var(--blue); }
   .ailleurs { gap: 10px; }
   .ailleurs a { display: inline-flex; align-items: center; gap: 10px; }
-  /* Une case de même largeur pour chaque logo : les libellés restent alignés. */
+  /* Fixed-width slot per logo keeps the labels aligned. */
   .ico { width: 22px; display: inline-grid; place-items: center; flex: none; color: var(--muted); }
   .ico img { border-radius: 4px; }
   .ailleurs a:hover .ico { color: inherit; }

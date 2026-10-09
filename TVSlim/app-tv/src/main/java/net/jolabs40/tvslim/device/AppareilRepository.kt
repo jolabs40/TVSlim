@@ -12,11 +12,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Lecture locale de l'état du téléviseur, par `PackageManager` — la contrepartie du
- * `LecteurDistant` du noyau, qui fait le même travail par commandes shell depuis le compagnon.
+ * Reads the TV's state locally through `PackageManager`. The core's `LecteurDistant` does the same
+ * over shell commands from the companion.
  *
- * Tout est en lecture seule : cette application n'a plus aucun privilège d'écriture sur les
- * paquets. Le débloat se pilote depuis le compagnon mobile.
+ * Read-only: this app has no write privilege on packages. Debloating is driven from the phone.
  */
 @Singleton
 class AppareilRepository @Inject constructor(
@@ -52,7 +51,7 @@ class AppareilRepository @Inject constructor(
         EtatPaquet.ABSENT
     }
 
-    /** Paquet de l'écran d'accueil actuellement retenu par le système. */
+    /** Package of the home screen the system currently resolves. */
     fun accueilActuel(): String {
         val intention = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
         return gestionnaire.resolveActivity(intention, PackageManager.MATCH_DEFAULT_ONLY)
@@ -67,8 +66,8 @@ class AppareilRepository @Inject constructor(
             .filter { it.activityInfo.packageName !in paquetsDAccueil }
             .filter { it.activityInfo.packageName != contexte.packageName }
             .filter { it.activityInfo.enabled }
-            // FallbackHome répond aussi à category.HOME mais n'affiche qu'un écran vide au
-            // démarrage : le compter comme un remplaçant laisserait couper l'accueil d'usine.
+            // FallbackHome also answers category.HOME but only shows a blank screen at boot. Counting
+            // it as a replacement would allow disabling the stock launcher.
             .filter { it.priority >= 0 && !it.activityInfo.name.contains("FallbackHome", true) }
             .map { resolution ->
                 LauncherInstalle(

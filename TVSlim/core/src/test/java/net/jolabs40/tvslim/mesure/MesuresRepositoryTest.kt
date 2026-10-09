@@ -30,7 +30,7 @@ class MesuresRepositoryTest {
     )
 
     @Test
-    fun `la premiere mesure devient la reference et ne bouge plus`() = runTest {
+    fun `the first measurement becomes the baseline and never moves`() = runTest {
         val depot = MesuresRepository(fichier())
         depot.charger()
 
@@ -46,14 +46,14 @@ class MesuresRepositoryTest {
     }
 
     @Test
-    fun `le gain se relit apres redemarrage de l application`() = runTest {
+    fun `the gain is read back after the app restarts`() = runTest {
         val cible = fichier()
         val premiere = MesuresRepository(cible)
         premiere.charger()
         premiere.enregistrer(mesure(horodatage = 1_000, desactives = 0, libre = 400))
         premiere.enregistrer(mesure(horodatage = 2_000, desactives = 56, libre = 900))
 
-        // Une autre session, le lendemain : c'est tout l'intérêt de persister la référence.
+        // A later session: the reason the baseline is persisted.
         val seconde = MesuresRepository(cible)
         seconde.charger()
 
@@ -62,7 +62,7 @@ class MesuresRepositoryTest {
     }
 
     @Test
-    fun `une seule mesure ne se compare a rien`() = runTest {
+    fun `a single measurement has nothing to compare to`() = runTest {
         val depot = MesuresRepository(fichier())
         depot.charger()
         depot.enregistrer(mesure(horodatage = 1_000))
@@ -72,18 +72,18 @@ class MesuresRepositoryTest {
     }
 
     @Test
-    fun `une photographie vide n est pas enregistree`() = runTest {
+    fun `an empty snapshot is not recorded`() = runTest {
         val depot = MesuresRepository(fichier())
         depot.charger()
 
-        // Téléviseur injoignable : la lecture renvoie des zéros, qui écraseraient la référence.
+        // An unreachable TV reads as all zeros, which would overwrite the baseline.
         depot.enregistrer(Mesure(horodatage = 9_000, 0, 0, 0, 0))
 
         assertTrue(depot.historique.value.reference == null)
     }
 
     @Test
-    fun `une perte de memoire s affiche telle quelle`() = runTest {
+    fun `a memory loss is shown as is`() = runTest {
         val depot = MesuresRepository(fichier())
         depot.charger()
         depot.enregistrer(mesure(horodatage = 1_000, libre = 900))
@@ -93,7 +93,7 @@ class MesuresRepositoryTest {
     }
 
     @Test
-    fun `redefinir la reference repart de l etat courant`() = runTest {
+    fun `resetting the baseline starts from the current state`() = runTest {
         val depot = MesuresRepository(fichier())
         depot.charger()
         depot.enregistrer(mesure(horodatage = 1_000, desactives = 0))

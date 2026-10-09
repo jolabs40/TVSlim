@@ -12,8 +12,8 @@ import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 
 /**
- * L'enregistrement sur le téléviseur, contre un téléviseur simulé : ce qu'on lui demande, dans quel ordre, et ce
- * qu'on en conclut. Le vrai `screenrecord` a été éprouvé sur la TCL (Windows, `EcranMaterielTest`).
+ * On-TV recording against a fake TV: commands sent, their order, and the outcome. The real `screenrecord` is
+ * covered on the TCL by `EcranMaterielTest` (Windows).
  */
 class EnregistrementTvTest {
 
@@ -30,10 +30,9 @@ class EnregistrementTvTest {
             Set the maximum recording time, in seconds.  Default / maximum is 180.
     """.trimIndent()
 
-    /** Un téléviseur réduit à ce que l'enregistrement lui demande. */
     private class Televiseur(
         val aide: ResultatShell,
-        /** Faux : l'enregistreur meurt aussitôt lancé. */
+        /** False: the recorder dies right after launch. */
         val demarre: Boolean = true,
         var taille: Long = 4_000_000,
     ) : ExecuteurCommande, RecepteurFichiers {
@@ -74,7 +73,7 @@ class EnregistrementTvTest {
     }
 
     @Test
-    fun `sous Android 14, l'enregistreur part detache et sans limite`() = runTest {
+    fun `on Android 14 the recorder starts detached and without a time limit`() = runTest {
         val tv = Televiseur(ResultatShell(0, aide14))
 
         val demarrage = EnregistrementTv(tv, tv).demarrer()
@@ -83,14 +82,14 @@ class EnregistrementTvTest {
         val lancement = tv.commandes.single { it.contains("setsid") }
         assertTrue(lancement, lancement.contains("--time-limit 0"))
         assertTrue(lancement, lancement.contains(EnregistrementTv.VIDEO))
-        // Une commande rejouée ne lance pas un second enregistreur sur le même fichier.
+        // A replayed command must not start a second recorder on the same file.
         assertTrue(lancement, lancement.contains("echo deja"))
-        // Ce qu'une session précédente aurait laissé est arrêté et effacé d'abord.
+        // Leftovers from a previous session are stopped and deleted first.
         assertTrue(tv.commandes.indexOfFirst { it.startsWith("p=") && it.contains("rm -f") } < tv.commandes.indexOf(lancement))
     }
 
     @Test
-    fun `avant Android 14, trois minutes au plus`() = runTest {
+    fun `before Android 14 recording is capped at three minutes`() = runTest {
         val tv = Televiseur(ResultatShell(0, aide11))
 
         assertEquals(Demarrage.Lance(limiteS = 180), EnregistrementTv(tv, tv).demarrer())
@@ -98,7 +97,7 @@ class EnregistrementTvTest {
     }
 
     @Test
-    fun `sans screenrecord, rien n'est lance`() = runTest {
+    fun `without screenrecord nothing is started`() = runTest {
         val tv = Televiseur(ResultatShell(127, "/system/bin/sh: screenrecord: inaccessible or not found"))
 
         val demarrage = EnregistrementTv(tv, tv).demarrer()
@@ -108,7 +107,7 @@ class EnregistrementTvTest {
     }
 
     @Test
-    fun `un enregistreur mort aussitot dit pourquoi`() = runTest {
+    fun `a recorder that dies right away reports why`() = runTest {
         val tv = Televiseur(ResultatShell(0, aide14), demarre = false)
 
         val demarrage = EnregistrementTv(tv, tv).demarrer()
@@ -120,7 +119,7 @@ class EnregistrementTvTest {
     }
 
     @Test
-    fun `une connexion perdue se dit comme telle`() = runTest {
+    fun `a lost connection is reported as such`() = runTest {
         val tv = Televiseur(ResultatShell.indisponible("Aucun téléviseur connecté."))
 
         assertEquals(
@@ -130,7 +129,7 @@ class EnregistrementTvTest {
     }
 
     @Test
-    fun `l'arret passe par SIGINT, puis la video se copie et s'efface`() = runTest {
+    fun `stopping sends SIGINT, then the video is copied and deleted`() = runTest {
         val tv = Televiseur(ResultatShell(0, aide14))
         val enregistrement = EnregistrementTv(tv, tv)
         enregistrement.demarrer()
@@ -149,7 +148,7 @@ class EnregistrementTvTest {
     }
 
     @Test
-    fun `un enregistrement sans fichier n'est pas copie`() = runTest {
+    fun `a recording without a file is not copied`() = runTest {
         val tv = Televiseur(ResultatShell(0, aide14), taille = 0)
         val enregistrement = EnregistrementTv(tv, tv)
         enregistrement.demarrer()

@@ -7,11 +7,10 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * Traces techniques, dans un fichier qu'on peut joindre à un signalement de problème.
+ * Technical log, in a file that can be attached to a bug report.
  *
- * Même règle que sur Android : l'**événement** est toujours consigné, le **détail** — adresse du
- * téléviseur, commande envoyée, paquets visés — seulement quand on le demande. Une trace n'a pas
- * à tenir l'inventaire d'un téléviseur.
+ * Same rule as on Android: events are always logged, details (TV address, command sent, target packages) only
+ * when [detaillees] is on, so the log does not hold an inventory of the TV.
  */
 object Traces {
 
@@ -21,10 +20,7 @@ object Traces {
     @Volatile
     private var fichier: File? = null
 
-    /**
-     * Vrai en développement — lancée par Gradle, l'application ne passe pas par le lanceur
-     * jpackage — ou quand on le demande explicitement avec `-Dtvslim.traces=detaillees`.
-     */
+    /** True in development (no jpackage launcher, i.e. run from Gradle) or with `-Dtvslim.traces=detaillees`. */
     val detaillees: Boolean =
         System.getProperty("jpackage.app-path") == null ||
             System.getProperty("tvslim.traces") == "detaillees"
@@ -44,7 +40,7 @@ object Traces {
             append(LocalDateTime.now().format(horloge)).append(' ').append(niveau).append(' ')
             append(etiquette).append(" — ").append(message)
             if (erreur != null) {
-                // La pile seulement en détail : le message d'une exception réseau porte l'adresse.
+                // Stack trace only in detailed mode: network exception messages contain the address.
                 if (detaillees) {
                     append('\n').append(StringWriter().also { erreur.printStackTrace(PrintWriter(it)) })
                 } else {
@@ -66,5 +62,5 @@ object Traces {
     }
 }
 
-/** Le détail d'une trace, ou rien : voir [Traces.detaillees]. */
+/** Returns the detail suffix, or nothing unless [Traces.detaillees]. */
 internal fun detail(texte: String): String = if (Traces.detaillees) " : $texte" else ""

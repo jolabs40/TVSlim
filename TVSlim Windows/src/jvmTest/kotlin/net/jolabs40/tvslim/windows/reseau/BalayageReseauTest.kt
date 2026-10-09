@@ -9,11 +9,11 @@ import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.ServerSocket
 
-/** Ce que le balayage sonde — et surtout ce qu'il ne sonde pas. */
+/** What the network scan probes, and above all what it does not. */
 class BalayageReseauTest {
 
     @Test
-    fun `un reseau domestique en 24 donne ses 253 autres hotes`() {
+    fun `a home network with prefix 24 yields its 253 other hosts`() {
         val hotes = hotesVoisins("192.168.2.10", 24)
 
         assertEquals(253, hotes.size)
@@ -24,7 +24,7 @@ class BalayageReseauTest {
     }
 
     @Test
-    fun `un reseau plus large n'est parcouru que sur la tranche de l'ordinateur`() {
+    fun `a wider network is only scanned within the computer's own 24-bit block`() {
         val hotes = hotesVoisins("10.20.30.40", 16)
 
         assertEquals(253, hotes.size)
@@ -32,13 +32,13 @@ class BalayageReseauTest {
     }
 
     @Test
-    fun `un petit sous-reseau reste dans ses bornes`() {
+    fun `a small subnet stays within its bounds`() {
         assertEquals(listOf("192.168.2.130"), hotesVoisins("192.168.2.129", 30))
         assertTrue(hotesVoisins("192.168.2.129", 31).isEmpty())
     }
 
     @Test
-    fun `rien n'est sonde hors du reseau local`() {
+    fun `nothing outside the local network is probed`() {
         assertTrue(hotesVoisins("8.8.8.8", 24).isEmpty())
         assertTrue(hotesVoisins("127.0.0.1", 8).isEmpty())
         assertTrue(hotesVoisins("169.254.10.20", 16).isEmpty())
@@ -46,7 +46,7 @@ class BalayageReseauTest {
     }
 
     @Test
-    fun `le balayage ne rend que les hotes dont le port repond`() = runTest {
+    fun `the scan only returns hosts whose port answers`() = runTest {
         val repondent = setOf("192.168.2.135", "192.168.2.193")
         val balayage = BalayageReseau(sonder = { hote, _, _ -> hote in repondent })
         val carte = InterfaceLocale(
@@ -59,7 +59,7 @@ class BalayageReseauTest {
     }
 
     @Test
-    fun `un port qui ecoute se detecte, un port ferme non`() {
+    fun `a listening port is detected, a closed one is not`() {
         ServerSocket(0, 1, InetAddress.getLoopbackAddress()).use { serveur ->
             assertTrue(portOuvert("127.0.0.1", serveur.localPort, 500))
         }
@@ -68,7 +68,7 @@ class BalayageReseauTest {
     }
 
     @Test
-    fun `les adaptateurs virtuels sont ecartes`() {
+    fun `virtual adapters are skipped`() {
         listOf(
             "vEthernet (WSL (Hyper-V firewall))",
             "VirtualBox Host-Only Ethernet Adapter",

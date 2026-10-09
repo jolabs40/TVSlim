@@ -21,13 +21,10 @@ import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.ActionsApplicationTv
 import net.jolabs40.tvslim.remote.ui.EtatApplicationTvUi
 
-/**
- * L'application TV Slim du téléviseur : à quoi elle sert, où elle en est, et un seul bouton pour
- * l'installer, la mettre à jour ou lui rendre son autorisation.
- */
+/** The TV app's status, with a single button to install it, update it or grant its permission again. */
 @Composable
 fun CarteApplicationTv(etat: EtatApplicationTvUi, hote: String, actions: ActionsApplicationTv) {
-    // Relue à chaque téléviseur : la carte ne s'affiche que face à un téléviseur ou une box.
+    // Re-read for each device. The card is only shown for a TV or a box.
     LaunchedEffect(hote) { actions.onLire() }
 
     Card(modifier = Modifier.fillMaxWidth()) {

@@ -37,17 +37,13 @@ import net.jolabs40.tvslim.remote.ui.ActionsShizuku
 import net.jolabs40.tvslim.remote.ui.EtatShizuku
 
 /**
- * Relance le service Shizuku du téléviseur, qui meurt à chaque extinction.
+ * Restarts the TV's Shizuku service, which dies at every power-off.
  *
- * ⚠️ **Shizuku n'est pas le canal de TV Slim** — le § 1 l'a écarté au profit du compagnon ADB,
- * dont l'autorisation survit aux redémarrages. Cette carte rend un service aux **autres**
- * applications du téléviseur, celles qui en dépendent et qu'aucun geste sur place ne peut
- * réveiller : le service tient les privilèges du shell, donc rien de ce qui tourne sur le
- * téléviseur ne saurait le relancer.
+ * TV Slim itself does not use Shizuku: its ADB authorization survives reboots. The card is for other TV apps that
+ * depend on it, since the service runs with shell privileges and nothing on the TV can restart it.
  *
- * ⚠️ **Un bouton, aucune saisie.** La chaîne est une constante du noyau : contrairement à la
- * carte « Commande ADB », il n'y a rien à taper ici, donc rien à contrôler. La sortie brute
- * reste à l'écran — c'est elle qui donne le pid, et un refus mérite d'être relu.
+ * One button, no input: the command is a core constant, so unlike the ADB command card there is nothing to check.
+ * The raw output stays on screen, as it carries the pid or the refusal.
  */
 @Composable
 fun CarteShizuku(etat: EtatShizuku, actions: ActionsShizuku) {
@@ -83,12 +79,8 @@ fun CarteShizuku(etat: EtatShizuku, actions: ActionsShizuku) {
 }
 
 /**
- * Ce que la relance a rendu.
- *
- * ⚠️ **Le code de retour ne suffit pas à dire que c'est parti.** Le starter rend 0 même quand il
- * renonce ; c'est sa sortie qui annonce le pid ([RelanceShizuku.demarre]). Un `0` muet vaut donc
- * un échec, et le dire autrement enverrait chercher la panne dans l'application qui attend
- * Shizuku.
+ * Exit code 0 does not mean it started: the starter returns 0 even when it gives up. Only its output announces the
+ * pid ([RelanceShizuku.demarre]), so a silent `0` counts as a failure.
  */
 @Composable
 private fun Bilan(echange: EchangeCommande) {

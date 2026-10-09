@@ -7,14 +7,14 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-/** Comment l'application a été obtenue : ce qui décide de ce qu'une mise à jour peut faire. */
+/** How the app was distributed, which decides what an update may do. */
 enum class ModeDistribution { INSTALLEE, PORTABLE, DEVELOPPEMENT }
 
 data class Distribution(val mode: ModeDistribution, val executable: File?) {
     companion object {
         /**
-         * Le lanceur jpackage renseigne `jpackage.app-path` ; lancée par Gradle, l'application n'en a
-         * pas. La version portable porte un fichier `app/portable`, ajouté à l'archive par la CI.
+         * The jpackage launcher sets `jpackage.app-path`; a Gradle run does not. The portable build has an
+         * `app/portable` marker file added to the archive by CI.
          */
         fun detecter(): Distribution {
             val chemin = System.getProperty("jpackage.app-path")
@@ -30,18 +30,15 @@ data class Distribution(val mode: ModeDistribution, val executable: File?) {
 }
 
 /**
- * Télécharge, vérifie et installe une nouvelle version.
+ * Downloads, verifies and installs a new version.
  *
- * L'installateur est un MSI « par utilisateur » : il remplace l'ancienne version sans droits
- * d'administrateur ni fenêtre UAC — mais pas des fichiers en cours d'utilisation. Un relais attend
- * donc la fermeture de l'application, lance l'installation, puis rouvre TV Slim.
+ * The installer is a per-user MSI: it replaces the old version without admin rights or UAC, but cannot replace
+ * files in use. A relay process waits for the app to exit, runs the install, then restarts TV Slim.
  *
- * ⚠️ Ce relais ne peut pas être un simple processus enfant. Le lanceur jpackage fait tourner
- * l'application dans un *job* Windows à fermeture fatale (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`) :
- * tout ce qu'elle démarre meurt avec elle, relais compris. Éprouvé le 2026-09-13 sur l'application
- * installée, puis dans un job reproduit à l'identique : un enfant meurt, un processus créé par WMI
- * survit, dans la session de la personne. Le relais naît donc par WMI ; à défaut, l'Explorateur
- * ouvre l'installateur, lui aussi hors du job.
+ * The relay cannot be a plain child process. The jpackage launcher runs the app in a Windows job object with
+ * `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, so everything it starts dies with it. Tested on the installed app and in
+ * a replica job: a child dies, a process created through WMI survives in the user's session. The relay is
+ * therefore created through WMI; as a fallback, Explorer opens the installer, also outside the job.
  */
 class InstallateurMiseAJour(
     private val dossier: File,
@@ -52,8 +49,8 @@ class InstallateurMiseAJour(
     class SignatureInvalide : IOException("signature invalide")
 
     /**
-     * Télécharge l'installateur et sa signature, puis vérifie. Un fichier dont la signature ne
-     * correspond pas est supprimé aussitôt : il n'est jamais exécuté.
+     * Downloads the installer and its signature, then verifies it. A file with a bad signature is deleted at once
+     * and never executed.
      */
     suspend fun preparer(
         maj: MiseAJourDisponible,
@@ -61,7 +58,7 @@ class InstallateurMiseAJour(
         surVerification: () -> Unit,
     ): File = withContext(Dispatchers.IO) {
         dossier.mkdirs()
-        // Les restes d'une tentative précédente ne servent plus à rien.
+        // Clean up leftovers from a previous attempt.
         dossier.listFiles()
             ?.filter { it.name.endsWith(".msi") || it.name.endsWith(".part") }
             ?.forEach { it.delete() }
@@ -78,26 +75,26 @@ class InstallateurMiseAJour(
         msi
     }
 
-    /** Lance l'installation hors du job de l'application. L'appelant doit quitter juste après. */
+    /** Starts the install outside the app's job object. The caller must exit right after. */
     fun installerPuisRelancer(msi: File, executable: File?) {
         if (lancerRelais(processusAAttendre(), msi, executable)) return
-        // Repli : l'Explorateur ouvre l'installateur lui-même, hors du job. L'installation passe
-        // alors par son interface habituelle, et TV Slim se rouvre à la main.
+        // Fallback: Explorer opens the installer outside the job. The install then shows its normal UI and
+        // TV Slim is not restarted automatically.
         Traces.avertir(TAG, "Relais WMI indisponible : installation confiée à l'Explorateur")
         runCatching { ProcessBuilder("explorer.exe", msi.absolutePath).start() }
             .onFailure { Traces.avertir(TAG, "Explorateur indisponible", it) }
     }
 
     companion object {
-        /** Un installateur de TV Slim pèse moins de cent mégaoctets ; au-delà, quelque chose cloche. */
+        /** A TV Slim installer is under 100 MB; anything much larger is wrong. */
         const val TAILLE_MAXIMALE = 400L * 1024 * 1024
 
         private const val TAG = "MiseAJour"
         private const val DELAI_LANCEMENT_S = 30L
 
         /**
-         * L'application **et** son lanceur : jpackage fait tourner la JVM dans un processus enfant du
-         * `TV Slim.exe` qu'on a ouvert, et ce parent tient l'exécutable que le MSI doit remplacer.
+         * Returns the app and its launcher: jpackage runs the JVM as a child of `TV Slim.exe`, and that parent
+         * holds the executable the MSI must replace.
          */
         fun processusAAttendre(): List<Long> {
             val courant = ProcessHandle.current()
@@ -108,7 +105,7 @@ class InstallateurMiseAJour(
             return listOfNotNull(courant.pid(), lanceur?.pid())
         }
 
-        /** Fait créer le relais par WMI, et dit si Windows l'a accepté. */
+        /** Creates the relay through WMI; returns whether Windows accepted it. */
         fun lancerRelais(pids: List<Long>, msi: File, executable: File?): Boolean = runCatching {
             val journal = File(msi.parentFile, "relais-lancement.log")
             val lancement = ProcessBuilder(commandeLancement(scriptRelais(pids, msi, executable)))
@@ -126,10 +123,10 @@ class InstallateurMiseAJour(
         }
 
         /**
-         * Le relais, en PowerShell : attend la fin de l'application et de son lanceur, installe en
-         * silence, note le code de `msiexec`, relance. Les chemins passent en littéraux entre
-         * apostrophes ; aucun guillemet double — ni Java ni la ligne de commande transmise par WMI
-         * ne les rendraient intacts. `[char]34` les produit une fois dans PowerShell.
+         * PowerShell relay script: waits for the app and its launcher to exit, installs with `/passive`, logs the
+         * `msiexec` exit code, restarts the app. Paths are single-quoted literals. No double quotes anywhere:
+         * neither Java nor the WMI command line pass them through intact, so `[char]34` produces them in
+         * PowerShell.
          */
         fun scriptRelais(pids: List<Long>, msi: File, executable: File?): String {
             val journal = File(msi.parentFile, "installation.log")
@@ -146,9 +143,9 @@ class InstallateurMiseAJour(
         }
 
         /**
-         * Ce que l'application exécute : un PowerShell éphémère — lui mourra avec elle, peu importe —
-         * qui demande à WMI de créer le relais, et rend le code de retour de WMI (0 : créé).
-         * Le script du relais y est un littéral : ses apostrophes sont donc doublées une seconde fois.
+         * Command the app runs: a short-lived PowerShell (it may die with the app) that asks WMI to create the
+         * relay and exits with WMI's return value (0 means created). The relay script is a literal inside it, so
+         * its single quotes are doubled a second time.
          */
         fun commandeLancement(scriptRelais: String): List<String> {
             val ligne = "powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -Command $scriptRelais"

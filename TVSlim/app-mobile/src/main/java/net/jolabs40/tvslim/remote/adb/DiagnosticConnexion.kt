@@ -7,16 +7,15 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
 /**
- * Traduit un échec de connexion en cause compréhensible. Identique à celui de la version Windows.
+ * Maps a connection failure to a user-facing cause. Same logic as the Windows client.
  *
- * L'ordre compte, et il a été appris sur la TCL : dadb enveloppe **tout** échec de poignée de main
- * dans `AdbConnectException`, y compris l'attente d'une autorisation qu'on n'a pas encore acceptée
- * (« Connection handshake failed », causée par « Read timed out »). Se fier à cette seule
- * enveloppe ferait dire « injoignable » d'un téléviseur qui attend simplement qu'on accepte.
+ * Order matters (seen on the TCL): dadb wraps every handshake failure in `AdbConnectException`,
+ * including a pending authorization prompt ("Connection handshake failed" caused by "Read timed out").
+ * Trusting the wrapper alone would report a TV that is waiting for the user as unreachable.
  *
- * - « Connect timed out » : rien ne répond à cette adresse ;
- * - « Read timed out » : la connexion est ouverte, le téléviseur attend qu'on accepte sa demande ;
- * - fin de flux ou connexion réinitialisée pendant la poignée de main : il l'a refusée.
+ * - "Connect timed out": nothing answers at this address.
+ * - "Read timed out": connected, the TV is waiting for the user to accept the prompt.
+ * - End of stream or reset during the handshake: the TV refused.
  */
 internal fun diagnostiquer(erreur: Throwable, delaiDepasse: Boolean = false): ProblemeConnexion {
     if (delaiDepasse) return ProblemeConnexion.DELAI

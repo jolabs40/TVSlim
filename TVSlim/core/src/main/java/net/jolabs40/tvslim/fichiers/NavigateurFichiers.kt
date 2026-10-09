@@ -10,18 +10,15 @@ enum class IssueCreation { CREE, NOM_INVALIDE, EXISTE, ECHEC }
 data class CreationDossier(val issue: IssueCreation, val nom: String, val detail: String = "")
 
 /**
- * Parcourt les dossiers du téléviseur, y dépose des fichiers, les copie vers l'ordinateur et les efface : ce que
- * font `adb shell ls`, `adb push`, `adb pull` et `adb shell rm`, sans ordinateur pour le compagnon et sans
- * `adb.exe` pour Windows.
+ * Browses TV folders, uploads files, copies them to the PC and deletes them, like `adb shell ls`, `adb push`,
+ * `adb pull` and `adb shell rm`, without a PC for the companion or `adb.exe` for Windows.
  *
- * Les droits sont ceux du shell d'ADB : le stockage partagé (`/sdcard`, `Android/data` compris), les volumes
- * amovibles et `/data/local/tmp`. Le reste se lit parfois, ne s'écrit jamais — et c'est le téléviseur qui le
- * dit, fichier par fichier, plutôt qu'une liste tenue ici qui finirait par mentir. Une seule exception : un
- * stockage entier ne s'efface pas d'un bloc (`InventaireDossier`).
+ * Runs with the ADB shell's permissions: shared storage (`/sdcard`, `Android/data` included), removable volumes
+ * and `/data/local/tmp`. Elsewhere the TV refuses file by file; no list is kept here, it would go stale. The one
+ * exception: a whole storage root is never deleted (`InventaireDossier`).
  *
- * Rien de tout cela ne va au journal : aucun réglage n'est touché, et une suppression ne s'annule pas.
- *
- * [recepteur] manque au compagnon, qui ne copie rien vers le téléphone.
+ * Nothing here is journaled (no setting changes, and deletes cannot be undone). The companion passes no
+ * [recepteur]: it copies nothing to the phone.
  */
 class NavigateurFichiers(
     private val executeur: ExecuteurCommande,
@@ -29,7 +26,7 @@ class NavigateurFichiers(
     private val recepteur: RecepteurFichiers? = null,
 ) {
 
-    /** Une lecture, rejouée sans risque après une rupture : elle passe par le chemin ordinaire. */
+    /** A read, safe to replay after a disconnect, so it goes through the regular command path. */
     suspend fun lister(chemin: String): LectureDossier {
         val normal = CheminDistant.normaliser(chemin)
         return LecteurDossier.lire(normal, executeur.executer(LecteurDossier.commande(normal)))
@@ -41,8 +38,8 @@ class NavigateurFichiers(
     }
 
     /**
-     * Ce que donnerait l'envoi de [lot] dans [destination], sans rien envoyer : les noms d'abord, puis le
-     * dossier, relu à l'instant — celui qu'on regarde a pu changer depuis.
+     * Checks what uploading [lot] into [destination] would do, without sending anything: names first, then
+     * the folder, re-read now since it may have changed since it was displayed.
      */
     suspend fun examiner(lot: LotLocal, destination: String): ExamenDepot {
         if (lot.vide) return ExamenDepot.Refuse(RefusDepot.VIDE)
@@ -62,11 +59,10 @@ class NavigateurFichiers(
     }
 
     /**
-     * Envoie un plan confirmé. Les dossiers d'abord, vides compris, puis les fichiers un à un.
+     * Uploads a confirmed plan: folders first (empty ones included), then files one by one.
      *
-     * Un fichier refusé n'arrête pas les suivants : le refus d'Android est noté, et l'envoi continue. Une
-     * connexion perdue, si : rien ne passerait plus. [annule] est consulté entre deux fichiers, et pendant
-     * chacun.
+     * A rejected file does not stop the others: Android's refusal is recorded and the upload goes on. A lost
+     * connection does stop it. [annule] is checked between files and during each one.
      */
     suspend fun deposer(
         plan: PlanDepot,
@@ -77,7 +73,7 @@ class NavigateurFichiers(
         val total = plan.lot.taille
         val bilan = ResultatDepot(plan.destination, envoyes = 0, nombre = fichiers.size)
 
-        // `mkdir -p` ne se plaint pas de ce qui existe déjà, et se rejoue donc sans risque après une rupture.
+        // `mkdir -p` ignores existing folders, so it is safe to replay after a disconnect.
         val dossiers = plan.lot.dossiersACreer.map { CheminDistant.joindre(plan.destination, it) }
         for (lot in enLots(dossiers)) {
             val creation = executeur.executer("mkdir -p $lot")
@@ -98,7 +94,7 @@ class NavigateurFichiers(
             val source = try {
                 fichier.ouvrir()
             } catch (erreur: Exception) {
-                // Un fichier illisible sur place — verrouillé, effacé depuis le choix — n'arrête pas les autres.
+                // A local file that cannot be read (locked, deleted since it was picked) does not stop the others.
                 echecs += EchecDepot(fichier.chemin, erreur.message ?: erreur.javaClass.simpleName)
                 partis += fichier.taille
                 continue
@@ -121,14 +117,14 @@ class NavigateurFichiers(
                     interrompu = true,
                 )
 
-                // Vide quand le téléviseur refuse sans un mot : chaque application le dit alors dans sa langue.
+                // Empty when the TV refuses without a message; each app then shows its own localized text.
                 else -> echecs += EchecDepot(fichier.chemin, reponse.sortie)
             }
         }
         return bilan.copy(envoyes = envoyes, echecs = echecs)
     }
 
-    /** Un dossier vide, dans [parent]. Un nom déjà pris est signalé plutôt que confondu avec un succès. */
+    /** Creates an empty folder in [parent]. An existing name is reported rather than treated as success. */
     suspend fun creerDossier(parent: String, nom: String): CreationDossier {
         val propre = nom.trim()
         if (!CheminDistant.nomValide(propre)) return CreationDossier(IssueCreation.NOM_INVALIDE, propre)
@@ -142,8 +138,8 @@ class NavigateurFichiers(
     }
 
     /**
-     * Prépare la copie de [entree], vue dans [dossier], vers [cible] sous le nom [nom]. Un fichier n'a rien à
-     * lire de plus ; un dossier se lit à toute profondeur, pour savoir ce qui arrivera et combien cela pèse.
+     * Prepares copying [entree], seen in [dossier], to [cible] as [nom]. A file needs nothing more; a folder
+     * is listed recursively to know what will arrive and how big it is.
      */
     suspend fun preparerRapatriement(
         dossier: String,
@@ -173,16 +169,16 @@ class NavigateurFichiers(
             )
 
             is LectureInventaire.Illisible -> ExamenRapatriement.Illisible(lue.refus, lue.motif)
-            // Seule la lecture qui précède une suppression monte la garde : ce cas ne se présente pas ici.
+            // Only the listing before a delete runs the guard, so this cannot happen here.
             LectureInventaire.Protege -> ExamenRapatriement.Illisible(RefusLecture.ECHEC)
         }
     }
 
     /**
-     * Copie un plan vers l'ordinateur : les dossiers d'abord, vides compris, puis les fichiers un à un.
+     * Copies a plan to the PC: folders first (empty ones included), then files one by one.
      *
-     * Comme pour un dépôt, un fichier refusé — par le téléviseur ou par le disque — n'arrête pas les suivants, une
-     * connexion perdue si. Un fichier n'arrive dans la cible qu'entier : arrêté ou coupé, il n'y laisse rien.
+     * As with uploads, a file rejected by the TV or by the disk does not stop the others; a lost connection
+     * does. A file only reaches the target complete: if stopped or cut off, it leaves nothing behind.
      */
     suspend fun rapatrier(
         plan: PlanRapatriement,
@@ -197,7 +193,7 @@ class NavigateurFichiers(
             try {
                 plan.cible.creerDossier(dossier)
             } catch (erreur: Exception) {
-                // Un dossier que le disque refuse ne recevrait rien de ce qu'il devait contenir.
+                // A folder the disk refuses would receive none of its contents.
                 return bilan.copy(echecs = listOf(EchecDepot(dossier, motif(erreur))))
             }
         }
@@ -213,7 +209,7 @@ class NavigateurFichiers(
             val ecriture = try {
                 plan.cible.ecrire(fichier.local)
             } catch (erreur: Exception) {
-                // Un fichier que le disque refuse — dossier protégé, nom impossible — n'arrête pas les autres.
+                // A file the disk refuses (protected folder, impossible name) does not stop the others.
                 echecs += EchecDepot(fichier.local, motif(erreur))
                 recus += fichier.taille
                 continue
@@ -241,7 +237,7 @@ class NavigateurFichiers(
         return bilan.copy(envoyes = copies, echecs = echecs)
     }
 
-    /** Le fichier arrivé prend sa place ; un disque qui s'y refuse — fichier ouvert ailleurs — vaut un refus. */
+    /** Moves the received file into place; a disk refusal (file open elsewhere) counts as a failure. */
     private fun valider(ecriture: EcritureLocale, date: Long): ResultatShell = try {
         ecriture.valider(date)
         ResultatShell(0, "")
@@ -250,9 +246,8 @@ class NavigateurFichiers(
     }
 
     /**
-     * Ce qu'effacerait la suppression de [entree], vue dans [dossier]. Un dossier se lit d'abord, à toute
-     * profondeur, pour que la confirmation dise ce qu'il contient — et le refus tombe dès ici s'il s'agit d'un
-     * stockage entier.
+     * Prepares deleting [entree], seen in [dossier]. A folder is listed recursively so the confirmation can say
+     * what it holds, and a whole storage root is rejected right here.
      */
     suspend fun preparerSuppression(dossier: String, entree: EntreeDistante): ExamenSuppression {
         val chemin = CheminDistant.joindre(CheminDistant.normaliser(dossier), entree.nom)
@@ -276,7 +271,7 @@ class NavigateurFichiers(
         }
     }
 
-    /** Efface un plan confirmé. Ce que le téléviseur refuse reste en place, et sa réponse dit quoi. */
+    /** Deletes a confirmed plan. Whatever the TV refuses stays in place, and its answer says what. */
     suspend fun supprimer(plan: PlanSuppression): SuppressionEntree {
         val reponse = executeur.executer(InventaireDossier.commandeSuppression(plan.chemin, plan.nature))
         return InventaireDossier.suppression(plan.nom, reponse)
@@ -285,8 +280,8 @@ class NavigateurFichiers(
     private fun motif(erreur: Exception): String = erreur.message ?: erreur.javaClass.simpleName
 
     /**
-     * Des chemins cités, regroupés en commandes de longueur raisonnable : la commande voyage dans le nom du
-     * service ADB qu'on ouvre, et un vieil `adbd` le limite à quatre kilo-octets.
+     * Groups quoted paths into commands of reasonable length: the command travels in the name of the ADB
+     * service being opened, which old `adbd` versions limit to 4 KB.
      */
     private fun enLots(chemins: List<String>): List<String> {
         val lots = mutableListOf<String>()
@@ -304,7 +299,7 @@ class NavigateurFichiers(
     }
 
     private companion object {
-        /** Au-delà, la liste des noms en cause ne servirait plus à rien dans un message. */
+        /** Beyond this, listing the offending names in a message stops being useful. */
         const val NOMS_MAX = 5
 
         const val LONGUEUR_MAX = 3_500

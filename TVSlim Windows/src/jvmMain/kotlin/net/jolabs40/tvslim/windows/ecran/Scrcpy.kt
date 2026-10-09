@@ -11,9 +11,8 @@ import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 
 /**
- * La version de scrcpy que TV Slim télécharge pour le miroir quand aucune n'est installée, et l'empreinte publiée avec elle
- * (`SHA256SUMS.txt` de la publication v4.1 de Genymobile/scrcpy). Changer de version, c'est changer les trois
- * ensemble.
+ * scrcpy version downloaded for mirroring when none is installed, with its published hash (`SHA256SUMS.txt` of
+ * the Genymobile/scrcpy v4.1 release). Update version, folder, URL and hash together.
  */
 object ScrcpyEpingle {
     const val VERSION = "4.1"
@@ -21,26 +20,22 @@ object ScrcpyEpingle {
     const val URL = "https://github.com/Genymobile/scrcpy/releases/download/v4.1/scrcpy-win64-v4.1.zip"
     const val SHA256 = "5b12172b3264b2889f4583ee64752ce832e29bc8b1089dca81093459697165db"
 
-    /** 11,3 Mo publiés : au-delà de 20, ce n'est pas le fichier attendu. */
+    /** The published zip is 11.3 MB; anything over 20 MB is not the expected file. */
     const val TAILLE_MAX = 20_000_000L
 
-    /** La plus ancienne qui comprenne `--no-audio` (2.0). */
+    /** Oldest version that supports `--no-audio`. */
     val VERSION_MINIMALE = 2 to 0
 }
 
-/**
- * Les arguments du miroir. Le son reste sur le téléviseur (`--no-audio`) : on regarde l'écran sur le PC, on écoute
- * dans la pièce. La vidéo, elle, ne passe pas par scrcpy (`EnregistrementTv`, dans le noyau).
- */
+/** scrcpy arguments. Audio stays on the TV (`--no-audio`); recording goes through `EnregistrementTv`, not scrcpy. */
 object ArgumentsScrcpy {
     fun miroir(hote: String, port: Int, titre: String): List<String> =
         listOf("--tcpip=$hote:$port", "--window-title=$titre", "--no-audio")
 }
 
 /**
- * Où trouver scrcpy : la copie que TV Slim a téléchargée, puis le PATH, puis une installation par winget. Une
- * version trop ancienne pour les options passées est ignorée — mieux vaut proposer la version épinglée qu'un
- * échec obscur au lancement.
+ * Finds scrcpy: the copy TV Slim downloaded, then PATH, then a winget install. Versions too old for our options
+ * are skipped, so the pinned version is offered instead of an obscure launch failure.
  */
 class LocalisationScrcpy(
     private val dossierTelecharge: File,
@@ -73,7 +68,7 @@ class LocalisationScrcpy(
             return version.first > majeure || (version.first == majeure && version.second >= mineure)
         }
 
-        /** « scrcpy 4.1 <https://github.com/Genymobile/scrcpy> » → 4 to 1. */
+        /** `scrcpy 4.1 <https://github.com/Genymobile/scrcpy>` gives 4 to 1. */
         fun lireLigneVersion(sortie: String): Pair<Int, Int>? =
             Regex("""scrcpy\s+(\d+)\.(\d+)""").find(sortie)?.let { it.groupValues[1].toInt() to it.groupValues[2].toInt() }
 
@@ -86,12 +81,12 @@ class LocalisationScrcpy(
     }
 }
 
-/** L'archive téléchargée ne correspond pas à l'empreinte publiée : elle est effacée, rien n'est installé. */
+/** The downloaded archive does not match the published hash; it is deleted and nothing is installed. */
 class EmpreinteInattendue : IOException("empreinte SHA-256 inattendue")
 
 /**
- * Télécharge scrcpy depuis la publication GitHub de Genymobile, vérifie l'empreinte, puis décompresse dans
- * `%LOCALAPPDATA%\TVSlim\scrcpy`. Rien n'apparaît sous le nom final tant que tout n'a pas réussi.
+ * Downloads scrcpy from Genymobile's GitHub release, checks the hash and unzips into `%LOCALAPPDATA%\TVSlim\scrcpy`.
+ * Nothing appears under the final name until every step succeeded.
  */
 class InstallationScrcpy(private val github: ClientGithub, private val dossier: File) {
 
@@ -116,7 +111,7 @@ class InstallationScrcpy(private val github: ClientGithub, private val dossier: 
             while (true) {
                 val entree = zip.nextEntry ?: break
                 val cible = File(provisoire, entree.name).canonicalFile
-                // Une entrée en « ../ » ne sort pas du dossier d'extraction.
+                // Zip slip: reject entries that escape the extraction folder.
                 if (!cible.path.startsWith(racine.path + File.separator)) throw IOException("entrée refusée : ${entree.name}")
                 if (entree.isDirectory) {
                     cible.mkdirs()
@@ -126,7 +121,7 @@ class InstallationScrcpy(private val github: ClientGithub, private val dossier: 
                 }
             }
         }
-        // L'archive range tout sous « scrcpy-win64-v4.1/ » ; une archive sans dossier serait prise telle quelle.
+        // The archive nests everything under `scrcpy-win64-v4.1/`; a flat archive is taken as is.
         val contenu = File(provisoire, ScrcpyEpingle.DOSSIER).takeIf { File(it, "scrcpy.exe").isFile } ?: provisoire
         if (!File(contenu, "scrcpy.exe").isFile) throw IOException("scrcpy.exe absent de l'archive")
         val final = File(dossier, ScrcpyEpingle.DOSSIER)

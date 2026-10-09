@@ -78,15 +78,13 @@ import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import org.jetbrains.compose.resources.stringResource
 import java.util.Locale
 
-/** Ce que l'onglet montre : la mémoire vive, ou le stockage interne. */
 private enum class VueMemoire { VIVE, STOCKAGE }
 
 /**
- * Mémoire vive et stockage, d'un interrupteur.
+ * RAM and storage, behind a toggle.
  *
- * Le pendant du débloat : la liste des paquets dit ce qui est installé, celle-ci ce qui coûte
- * réellement — en mémoire vive ce qui tourne, en stockage ce qui occupe la place. Sur un bureau,
- * chaque liste a sa propre colonne au lieu de défiler sous les cartes.
+ * The package list shows what is installed; this shows what it actually costs (what runs in RAM, what
+ * takes space in storage). On a desktop each list gets its own column instead of scrolling under the cards.
  */
 @Composable
 fun MemoireEcran(
@@ -103,7 +101,7 @@ fun MemoireEcran(
 
     var vue by remember { mutableStateOf(VueMemoire.VIVE) }
 
-    // Première visite sur ce téléviseur : on lit sans attendre qu'on le demande.
+    // First visit for this TV: read without waiting to be asked.
     LaunchedEffect(etat.connexion.hote) {
         if (!etat.memoire.renseignee) onActualiser()
     }
@@ -124,11 +122,11 @@ fun MemoireEcran(
     }
 }
 
-/** Mémoire vive ou stockage : le même interrupteur que les filtres de l'onglet Paquets. */
+/** RAM or storage toggle, same style as the Packages tab filters. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChoixVue(vue: VueMemoire, onVue: (VueMemoire) -> Unit, modifier: Modifier = Modifier) {
-    // Largeur fixe et sans coche, comme les filtres : sinon « Mémoire vive » passe sur deux lignes.
+    // Fixed width and no check mark, like the filters; otherwise the RAM label wraps onto two lines.
     SingleChoiceSegmentedButtonRow(modifier = modifier.width(360.dp)) {
         VueMemoire.entries.forEachIndexed { rang, choix ->
             SegmentedButton(
@@ -147,7 +145,7 @@ private fun ChoixVue(vue: VueMemoire, onVue: (VueMemoire) -> Unit, modifier: Mod
     }
 }
 
-// --- Mémoire vive ---------------------------------------------------------------------------
+// --- RAM ------------------------------------------------------------------------------------
 
 @Composable
 private fun MemoireVive(
@@ -224,8 +222,8 @@ private fun CarteMemoire(
                 if (memoire.zramKo > 0) LigneValeur(stringResource(Res.string.memory_zram), mo(memoire.zramKo))
             }
 
-            // Le compagnon affiche « lecture en cours » indéfiniment quand la lecture échoue :
-            // ici, l'échec se dit, et « Actualiser » retente.
+            // The companion shows "reading" forever when the read fails; here the failure is reported
+            // and Refresh retries.
             chargement || !tentee -> TexteSecondaire(stringResource(Res.string.memory_reading))
             else -> Text(
                 text = stringResource(Res.string.memory_unavailable),
@@ -272,14 +270,14 @@ private fun VueProcessus(
 @Composable
 private fun mo(kilooctets: Long): String = stringResource(Res.string.memory_mb, kilooctets / 1024)
 
-// --- Stockage -------------------------------------------------------------------------------
+// --- Storage --------------------------------------------------------------------------------
 
 @Composable
 private fun Stockage(etat: EtatApp, onActualiser: () -> Unit) {
     val stockage = etat.stockage
-    // Les centaines de paquets système de quelques Ko n'apprennent rien : on liste à partir d'un Mo.
+    // Hundreds of system packages weigh a few kB and say nothing: list from 1 MB up.
     val applications = stockage.applications.filter { it.totalOctets >= UN_MO }
-    // Les barres se comparent à la plus lourde : rapportées à 50 Go, toutes seraient vides.
+    // Bars scale to the largest app; relative to 50 GB they would all look empty.
     val reference = applications.firstOrNull()?.totalOctets ?: 1L
 
     Row(modifier = Modifier.fillMaxSize()) {
@@ -349,7 +347,7 @@ private fun CarteStockage(
                 LigneValeur(stringResource(Res.string.memory_used), taille(stockage.utiliseKo * 1024))
                 LigneValeur(stringResource(Res.string.memory_free), taille(stockage.libreKo * 1024))
 
-                // La répartition par nature, quand Android la donne.
+                // Breakdown by type, when Android provides it.
                 val detail = listOf(
                     Res.string.storage_apps to stockage.applicationsOctets,
                     Res.string.storage_app_data to stockage.donneesOctets,
@@ -414,7 +412,7 @@ private fun VueApplication(application: StockageApplication, nomConnu: String?, 
     }
 }
 
-/** En gigaoctets avec une décimale à partir d'un Go, en mégaoctets en dessous. */
+/** Gigabytes with one decimal from 1 GB up, megabytes below. */
 @Composable
 private fun taille(octets: Long): String =
     if (octets >= UN_GO) {

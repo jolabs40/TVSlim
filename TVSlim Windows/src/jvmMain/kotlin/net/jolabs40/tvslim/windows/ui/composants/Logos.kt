@@ -55,11 +55,10 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 /**
- * Les logos des launchers, par l'identifiant que leur donne le catalogue partagé.
+ * Launcher logos, keyed by their id in the shared catalogue.
  *
- * Noms et paquets vivent dans le catalogue ; les images sont des ressources de chaque application.
- * Un identifiant sans logo retombe sur une icône neutre : un launcher inconnu reste montré,
- * simplement sans sa marque.
+ * Names and packages live in the catalogue; images are resources of each app. An id without a logo falls
+ * back to a neutral icon, so an unknown launcher is still shown.
  */
 val LOGOS_LAUNCHERS: Map<String, DrawableResource> = mapOf(
     "startlight" to Res.drawable.launcher_startlight,
@@ -77,8 +76,8 @@ val LOGOS_LAUNCHERS: Map<String, DrawableResource> = mapOf(
 )
 
 /**
- * Les logos des fabricants : dix de téléviseurs, cinq de box (Xiaomi est des deux). Thomson, Nokia et
- * Skyworth sont reconnus sans logo, et s'écrivent en toutes lettres sur leur plaque.
+ * Maker logos: ten TV brands, five box brands (Xiaomi is both). Thomson, Nokia and Skyworth are recognized
+ * without a logo and spelled out on their plate.
  */
 val LOGOS_FABRICANTS: Map<Fabricant, DrawableResource> = mapOf(
     Fabricant.TCL to Res.drawable.marque_tcl,
@@ -97,7 +96,7 @@ val LOGOS_FABRICANTS: Map<Fabricant, DrawableResource> = mapOf(
     Fabricant.FREEBOX to Res.drawable.marque_freebox,
 )
 
-/** L'icône d'un launcher, arrondie comme sur le téléviseur. */
+/** Launcher icon, rounded as on the TV. */
 @Composable
 fun LogoLauncher(id: String?, taille: Dp = 40.dp, modifier: Modifier = Modifier) {
     val forme = RoundedCornerShape(taille * 0.22f)
@@ -124,9 +123,8 @@ fun LogoLauncher(id: String?, taille: Dp = 40.dp, modifier: Modifier = Modifier)
 }
 
 /**
- * La marque d'un appareil, sur une plaque claire : les lettrages noirs — Sony, NVIDIA, Amazon —
- * disparaîtraient sur le thème sombre, et la plaque garde la même tenue partout. Une marque reconnue sans logo s'y
- * écrit en toutes lettres.
+ * Device brand on a white plate, because black lettering (Sony, NVIDIA, Amazon) would vanish on the dark
+ * theme. A brand without a logo is spelled out.
  */
 @Composable
 fun PlaqueMarque(fabricant: Fabricant, hauteur: Dp = 32.dp, modifier: Modifier = Modifier) {

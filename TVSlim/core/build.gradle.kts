@@ -5,8 +5,8 @@ plugins {
 }
 
 android {
-    // Le namespace ne sert qu'aux ressources : les classes gardent leurs packages d'origine
-    // (net.jolabs40.tvslim.catalog, .journal, .device…), ce qui évite de toucher aux imports.
+    // The namespace only serves resources; classes keep their original packages
+    // (net.jolabs40.tvslim.catalog, .journal, .device...) so imports stay unchanged.
     namespace = "net.jolabs40.tvslim.core"
     compileSdk = 36
 
@@ -29,7 +29,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
-    // Pas de Hilt ici : le noyau reste instanciable à la main, chaque application le fournit.
+    // No Hilt: the core stays instantiable by hand, and each app provides it.
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

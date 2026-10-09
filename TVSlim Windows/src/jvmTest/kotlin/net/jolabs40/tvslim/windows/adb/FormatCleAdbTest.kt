@@ -9,9 +9,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 /**
- * Le dépôt de clés reconstruit la paire ADB en mémoire, à partir d'octets déchiffrés. Cela suppose
- * de savoir relire ce que dadb écrit — du PEM aujourd'hui, rien ne le garantit d'une version à
- * l'autre. Même vérification que sur le compagnon Android, sur la même bibliothèque.
+ * The key store rebuilds the ADB pair in memory from decrypted bytes, so it must parse what dadb writes: PEM
+ * today, with no guarantee across versions. Same check as on the Android companion, same library.
  */
 class FormatCleAdbTest {
 
@@ -19,7 +18,7 @@ class FormatCleAdbTest {
     val dossier = TemporaryFolder()
 
     @Test
-    fun `la cle privee ecrite par dadb se relit en PKCS8`() {
+    fun `the private key written by dadb reads back as PKCS8`() {
         val privee = dossier.newFile("adbkey")
         val publique = dossier.newFile("adbkey.pub")
         AdbKeyPair.generate(privee, publique)
@@ -33,7 +32,7 @@ class FormatCleAdbTest {
     }
 
     @Test
-    fun `la paire se reconstruit en memoire sans repasser par le disque`() {
+    fun `the pair is rebuilt in memory without going back to disk`() {
         val privee = dossier.newFile("adbkey")
         val publique = dossier.newFile("adbkey.pub")
         AdbKeyPair.generate(privee, publique)
@@ -43,7 +42,7 @@ class FormatCleAdbTest {
     }
 
     @Test
-    fun `le DER reconstruit est identique a celui encode dans le PEM`() {
+    fun `the rebuilt DER matches the one encoded in the PEM`() {
         val privee = dossier.newFile("adbkey")
         val publique = dossier.newFile("adbkey.pub")
         AdbKeyPair.generate(privee, publique)
@@ -53,7 +52,7 @@ class FormatCleAdbTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun `un PEM vide est refuse plutot que de produire une cle muette`() {
+    fun `an empty PEM is rejected instead of producing a blank key`() {
         derDepuisPem("-----BEGIN PRIVATE KEY-----\n-----END PRIVATE KEY-----\n")
     }
 }

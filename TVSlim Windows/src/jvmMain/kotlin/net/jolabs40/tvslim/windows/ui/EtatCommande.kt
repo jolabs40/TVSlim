@@ -3,20 +3,19 @@ package net.jolabs40.tvslim.windows.ui
 import androidx.compose.runtime.Immutable
 import net.jolabs40.tvslim.commande.EchangeCommande
 
-/** Ce que la carte « Commande ADB » affiche. */
+/** State of the "ADB command" card. */
 @Immutable
 data class EtatCommande(
     val saisie: String = "",
     val enCours: Boolean = false,
-    /** La dernière commande envoyée et sa sortie, qui restent à l'écran jusqu'à la suivante. */
+    /** Last command and its output, kept on screen until the next one. */
     val derniere: EchangeCommande? = null,
-    /** Les commandes envoyées, la plus récente d'abord, sans doublon. */
+    /** Sent commands, most recent first, without duplicates. */
     val historique: List<String> = emptyList(),
-    /** Le rang rappelé par ↑ dans [historique] ; -1 tant qu'on tape. */
+    /** Index in [historique] recalled with Up; -1 while typing. */
     val rappel: Int = -1,
 )
 
-/** Les callbacks de la carte, groupés comme ceux des permissions. */
 data class ActionsCommande(
     val onSaisie: (String) -> Unit,
     val onEnvoyer: () -> Unit,
@@ -24,8 +23,8 @@ data class ActionsCommande(
 )
 
 /**
- * ↑ remonte vers les commandes plus anciennes, ↓ redescend ; passé la plus récente, le champ se vide,
- * comme dans un terminal. ↓ sans rien avoir rappelé ne touche pas à ce qu'on tape.
+ * Shell-style history: Up goes to older commands, Down to newer ones and clears the field past the most
+ * recent. Down does nothing to the current input if nothing was recalled.
  */
 fun EtatCommande.avecRappel(plusAncienne: Boolean): EtatCommande {
     if (historique.isEmpty() || (!plusAncienne && rappel < 0)) return this
@@ -33,7 +32,7 @@ fun EtatCommande.avecRappel(plusAncienne: Boolean): EtatCommande {
     return if (rang < 0) copy(saisie = "", rappel = -1) else copy(saisie = historique[rang], rappel = rang)
 }
 
-/** Retient une commande envoyée, en tête de l'historique. */
+/** Puts a sent command at the top of the history. */
 fun EtatCommande.avecEnvoi(commande: String): EtatCommande = copy(
     historique = (listOf(commande) + historique.filterNot { it == commande }).take(HISTORIQUE_MAX),
     rappel = -1,

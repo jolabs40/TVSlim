@@ -10,15 +10,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Lecture et écriture des réglages système du téléviseur.
+ * Reads and writes the TV's system settings.
  *
- * Une seule voie, et c'est voulu : l'écriture directe, permise par `WRITE_SECURE_SETTINGS`
- * accordée une fois par ADB
- * (`adb shell pm grant net.jolabs40.tvslim android.permission.WRITE_SECURE_SETTINGS`).
- *
- * C'est la seule permission qui **survit aux redémarrages**, donc la seule qui permette au
- * gardien de démarrage de faire son travail — un compagnon absent ne peut rien réappliquer
- * au démarrage du téléviseur.
+ * Writes go directly through `WRITE_SECURE_SETTINGS`, granted once over ADB
+ * (`adb shell pm grant net.jolabs40.tvslim android.permission.WRITE_SECURE_SETTINGS`). It is the only such
+ * permission that survives reboots, which is what lets the boot guard work without the phone.
  */
 @Singleton
 class ReglagesSysteme @Inject constructor(
@@ -38,7 +34,7 @@ class ReglagesSysteme @Inject constructor(
         }
     }.getOrNull()
 
-    /** Applique une valeur. Renvoie un message d'erreur, ou `null` en cas de succès. */
+    /** Writes a value. Returns an error message, or `null` on success. */
     fun ecrire(reglage: ReglageSysteme, valeur: String): String? {
         if (!ecritureDirectePossible()) {
             return "Autorisation d'écriture des réglages non accordée."

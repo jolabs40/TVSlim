@@ -104,7 +104,6 @@ fun PaquetsScreen(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         )
 
-        // Tous, actifs ou désactivés : un seul interrupteur à trois positions plutôt que trois puces.
         SingleChoiceSegmentedButtonRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -115,7 +114,7 @@ fun PaquetsScreen(
                     selected = etat.filtre == choix,
                     onClick = { onFiltre(choix) },
                     shape = SegmentedButtonDefaults.itemShape(index = rang, count = Filtre.entries.size),
-                    // Sans coche : trois libellés et leurs compteurs tiennent à peine sur un téléphone.
+                    // No checkmark: three labels with their counts barely fit on a phone.
                     icon = {},
                 ) {
                     Text(
@@ -132,7 +131,7 @@ fun PaquetsScreen(
             }
         }
 
-        // Un téléphone, une tablette : le catalogue n'est pas écrit pour eux, et aucun profil n'y agit.
+        // Phones and tablets: the catalogue is not written for them, so profiles are disabled.
         val pourLeCatalogue = etat.infos.typeAppareil.pourLeCatalogue
         if (!pourLeCatalogue) {
             Text(
@@ -166,8 +165,7 @@ fun PaquetsScreen(
             }
         }
 
-        // La configuration — launcher et paquets — se sauvegarde et se réinjecte à côté des profils :
-        // une sauvegarde est un profil qu'on s'est fait soi-même.
+        // Save and restore sit next to the profiles: a saved configuration (launcher and packages) is a custom profile.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -218,7 +216,7 @@ fun PaquetsScreen(
                     },
                 )
             }
-            // Après le catalogue, ce qu'il ne connaît pas : montré, jamais proposé à la désactivation.
+            // Packages unknown to the catalogue: shown, never offered for disabling.
             if (etat.inconnus.isNotEmpty()) {
                 sectionInconnus(
                     affiches = inconnus,
@@ -274,7 +272,7 @@ private fun VuePaquet(ligne: LignePaquet, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            // Décrit d'après un inventaire envoyé : il se coche à la main, jamais par un profil.
+            // Described from a submitted inventory: checked by hand only, never by a profile.
             if (!ligne.entree.eprouve) {
                 Text(
                     text = stringResource(R.string.packages_untested),

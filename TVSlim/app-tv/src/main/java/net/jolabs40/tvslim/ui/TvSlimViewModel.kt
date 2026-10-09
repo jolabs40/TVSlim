@@ -27,7 +27,7 @@ import net.jolabs40.tvslim.system.accueilsUsine
 import net.jolabs40.tvslim.system.nomDuLauncher
 import javax.inject.Inject
 
-/** Une entrée du catalogue et son état sur ce téléviseur. Lecture seule. */
+/** A catalogue entry and its state on this TV. Read-only. */
 data class LignePaquetTv(
     val entree: EntreePaquet,
     val etat: EtatPaquet,
@@ -40,7 +40,7 @@ data class LigneReglage(
     val optimise: Boolean get() = valeurActuelle == reglage.valeurOptimisee
 }
 
-/** La dérive, nommée pour l'écran : noms du catalogue plutôt que paquets. */
+/** Drift for display, with catalogue names instead of package names. */
 data class DeriveAffichee(
     val rallumes: List<String>,
     val accueilPerdu: String?,
@@ -54,11 +54,11 @@ data class EtatUi(
     val contact: PointDeContact = PointDeContact(),
     val reglages: List<LigneReglage> = emptyList(),
     val paquets: List<LignePaquetTv> = emptyList(),
-    /** Ce que la dernière mise à jour système a défait et que rien n'a repris — cf. `GardienDerive`. */
+    /** What the last system update undid and is not fixed yet (see `GardienDerive`). */
     val derive: DeriveAffichee? = null,
     val message: String? = null,
 ) {
-    /** Entrées du catalogue réellement installées ici : les autres n'ont rien à montrer. */
+    /** Catalogue entries actually installed on this TV. */
     val paquetsPresents: List<LignePaquetTv>
         get() = paquets.filter { it.etat != EtatPaquet.ABSENT }
 
@@ -66,9 +66,8 @@ data class EtatUi(
 }
 
 /**
- * État partagé par les deux écrans. Depuis que le débloat se pilote depuis le compagnon
- * mobile, cette application ne fait plus que deux choses : montrer l'état du téléviseur et
- * tenir les réglages système qui doivent survivre aux redémarrages.
+ * State shared by all screens. Debloating is driven from the phone, so this app only shows the TV's state
+ * and keeps the system settings that must survive reboots.
  */
 @HiltViewModel
 class TvSlimViewModel @Inject constructor(
@@ -124,8 +123,8 @@ class TvSlimViewModel @Inject constructor(
     }
 
     /**
-     * Ce qui reste de la dernière dérive, le téléviseur relu : ce que le téléphone ou le PC a repris
-     * depuis ne compte plus, et un rapport entièrement repris s'efface.
+     * What is left of the last drift after rereading the TV. Anything the phone or PC fixed since is
+     * dropped, and a fully fixed report is cleared.
      */
     private suspend fun deriveRestante(
         catalogue: Catalogue,
@@ -160,7 +159,7 @@ class TvSlimViewModel @Inject constructor(
     fun definirGardien(actif: Boolean) {
         viewModelScope.launch {
             preferences.definirGardien(actif)
-            // La première photo, tout de suite : sans elle, la première mise à jour passerait inaperçue.
+            // First snapshot right away, or the first system update would go unnoticed.
             if (actif) withContext(Dispatchers.IO) { runCatching { gardienDerive.verifier() } }
             if (actif && !reglagesSysteme.ecritureDirectePossible()) {
                 afficher(

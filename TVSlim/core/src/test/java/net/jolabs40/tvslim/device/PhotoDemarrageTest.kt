@@ -5,22 +5,19 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/**
- * Le gardien compare deux allumages. Il ne doit parler qu'après une mise à jour système, et seulement de
- * ce qu'elle a défait.
- */
+/** The guardian compares two boots and only reports after a system update, and only what it undid. */
 class PhotoDemarrageTest {
 
     private val usines = setOf(SETUPWRAITH, LAUNCHERX)
 
-    /** La TCL de l'utilisateur la veille : publicité et Google TV coupés, Startlight en accueil. */
+    /** The TCL the day before: ads and Google TV disabled, Startlight as home. */
     private val veille = PhotoDemarrage(
         empreinte = "TCL/G08_4K_GB/14:20251205",
         desactives = setOf("com.tcl.pub", SETUPWRAITH, LAUNCHERX),
         accueil = STARTLIGHT,
     )
 
-    /** Après la mise à jour : tout est revenu, Google TV a repris l'accueil. */
+    /** After the update: everything is back and Google TV is home again. */
     private val apresMiseAJour = PhotoDemarrage(
         empreinte = "TCL/G08_4K_GB/14:20260312",
         desactives = emptySet(),
@@ -29,20 +26,20 @@ class PhotoDemarrageTest {
     private val tousActifs = setOf("com.tcl.pub", "com.tcl.demo", SETUPWRAITH, LAUNCHERX)
 
     @Test
-    fun `le premier allumage ne fait que poser la reference`() {
+    fun `the first boot only sets the baseline`() {
         assertNull(apresMiseAJour.deriveDepuis(null, tousActifs, usines))
     }
 
     @Test
-    fun `sans mise a jour systeme rien n'a derive`() {
-        // Le même firmware : un paquet rallumé l'a été depuis le téléphone, c'est un choix.
+    fun `without a system update nothing has drifted`() {
+        // Same firmware: a re-enabled package was turned on from the phone, on purpose.
         val memeFirmware = apresMiseAJour.copy(empreinte = veille.empreinte)
 
         assertNull(memeFirmware.deriveDepuis(veille, tousActifs, usines))
     }
 
     @Test
-    fun `une mise a jour qui rallume tout et rend l'accueil a Google TV`() {
+    fun `an update that re-enables everything and gives home back to Google TV`() {
         val derive = apresMiseAJour.deriveDepuis(veille, tousActifs, usines)
 
         assertEquals(listOf("com.tcl.pub", LAUNCHERX, SETUPWRAITH).sorted(), derive?.rallumes)
@@ -50,7 +47,7 @@ class PhotoDemarrageTest {
     }
 
     @Test
-    fun `une mise a jour qui ne defait rien ne dit rien`() {
+    fun `an update that undoes nothing reports nothing`() {
         val sage = veille.copy(empreinte = apresMiseAJour.empreinte)
         val actifs = tousActifs - veille.desactives
 
@@ -58,7 +55,7 @@ class PhotoDemarrageTest {
     }
 
     @Test
-    fun `un paquet retire par la mise a jour n'est pas rallume`() {
+    fun `a package removed by the update is not reported as re-enabled`() {
         val actifs = tousActifs - "com.tcl.pub"
         val derive = apresMiseAJour.deriveDepuis(veille, actifs, usines)
 
@@ -66,7 +63,7 @@ class PhotoDemarrageTest {
     }
 
     @Test
-    fun `un accueil d'usine avant la mise a jour n'est pas perdu`() {
+    fun `a factory home before the update is not lost`() {
         val surGoogleTv = veille.copy(accueil = LAUNCHERX)
         val derive = apresMiseAJour.deriveDepuis(surGoogleTv, tousActifs, usines)
 
@@ -74,16 +71,16 @@ class PhotoDemarrageTest {
     }
 
     @Test
-    fun `le selecteur d'Android compte comme un accueil retombe`() {
+    fun `the Android chooser counts as a home that fell back`() {
         val selecteur = apresMiseAJour.copy(accueil = "android")
 
         assertEquals(STARTLIGHT, selecteur.deriveDepuis(veille, tousActifs, usines)?.accueilPerdu)
     }
 
     @Test
-    fun `ce qui a ete repris depuis ne reste pas`() {
+    fun `what has been fixed since does not remain`() {
         val derive = DeriveDemarrage(rallumes = listOf("com.tcl.pub", LAUNCHERX), accueilPerdu = STARTLIGHT)
-        // Le téléphone a recoupé Google TV et rendu l'accueil à Startlight ; la publicité reste allumée.
+        // The phone disabled Google TV again and restored Startlight; the ads package is still on.
         val restant = derive.restant(actifs = setOf("com.tcl.pub"), accueil = STARTLIGHT, accueilsUsine = usines)
 
         assertEquals(listOf("com.tcl.pub"), restant.rallumes)

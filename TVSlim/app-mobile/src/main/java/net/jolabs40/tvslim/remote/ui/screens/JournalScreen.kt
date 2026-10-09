@@ -33,8 +33,7 @@ fun JournalScreen(
     onExporter: () -> Unit,
     onAnnulerAction: (ActionJournal) -> Unit,
 ) {
-    // Un SimpleDateFormat est coûteux à construire, et la liste inversée était recopiée
-    // en entier : deux allocations à chaque recomposition, pour un résultat identique.
+    // Remembered: a SimpleDateFormat is costly to build, and the reversed list would be copied on every recomposition.
     val format = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()) }
     val recentes = remember(etat.journal) { etat.journal.asReversed() }
 
@@ -103,7 +102,7 @@ private fun VueAction(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            // L'accueil se nomme dans la langue de l'écran ; le libellé écrit au journal ne sert qu'à l'export.
+            // Home changes are labeled in the UI language; the label stored in the log is only for export.
             val libelle = if (action.type == TypeAction.ACCUEIL) stringResource(R.string.journal_home) else action.libelle
             Text(
                 text = "$libelle — ${action.cible}",
@@ -124,13 +123,13 @@ private fun VueAction(
                 },
             )
         }
-        // Une installation n'a pas de commande d'annulation : l'horodatage reste seul.
+        // An install has no undo command, so only the timestamp remains.
         Text(
             text = listOf(horodatage, action.commandeAnnulation).filter { it.isNotBlank() }.joinToString(" · "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        // Chaque ligne porte déjà sa commande d'annulation : autant pouvoir la jouer seule.
+        // Each entry carries its own undo command, so it can be replayed alone.
         if (annulable) {
             TextButton(onClick = onAnnuler, modifier = Modifier.padding(top = 4.dp)) {
                 Text(stringResource(R.string.journal_undo_one))

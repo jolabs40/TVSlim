@@ -11,14 +11,13 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 /**
- * Un dossier du disque, où arrive ce qu'on copie du téléviseur.
+ * Local folder receiving files copied from the TV.
  *
- * Android admet dans un nom ce que Windows refuse — `:`, `?`, `"`, un point final, `CON` —, et de tels noms
- * existent : une capture horodatée porte souvent des `:`. Chaque étape du chemin passe donc par [nomWindows]
- * plutôt que de laisser l'écriture échouer.
+ * Android allows names Windows rejects (`:`, `?`, `"`, a trailing dot, `CON`), and timestamped screenshots often
+ * contain `:`. Each path segment goes through [nomWindows] instead of letting the write fail.
  *
- * Un fichier s'écrit à côté de sa place, sous le suffixe [SUFFIXE_PROVISOIRE], et ne la prend qu'entier : arrêter
- * une copie ne laisse ni fichier tronqué, ni fichier précédent écrasé.
+ * A file is written next to its target with [SUFFIXE_PROVISOIRE] and renamed only once complete, so a stopped
+ * copy leaves neither a truncated file nor an overwritten previous one.
  */
 class CibleDisque(private val racine: File) : CibleLocale {
 
@@ -39,10 +38,10 @@ class CibleDisque(private val racine: File) : CibleLocale {
 
     override fun ecrire(chemin: String): EcritureLocale {
         val cible = fichier(chemin)
-        // Remplacer un dossier vide par un fichier, Files.move le ferait sans rien dire.
+        // Files.move would silently replace an empty folder with the file.
         if (cible.isDirectory) throw IOException("Un dossier porte déjà ce nom : ${cible.path}")
         val provisoire = File(cible.parentFile, cible.name + SUFFIXE_PROVISOIRE)
-        // FileOutputStream dit pourquoi il refuse, dans la langue de Windows : « (Accès refusé) ».
+        // FileOutputStream's error message is in the Windows display language.
         return EcritureDisque(cible, provisoire, FileOutputStream(provisoire).buffered(TAMPON))
     }
 
@@ -62,7 +61,7 @@ class CibleDisque(private val racine: File) : CibleLocale {
             try {
                 Files.move(provisoire.toPath(), cible.toPath(), StandardCopyOption.REPLACE_EXISTING)
             } catch (erreur: FileSystemException) {
-                // Le plus souvent, le fichier à remplacer est ouvert dans une autre application.
+                // Usually the target file is open in another application.
                 throw IOException(erreur.reason ?: "Remplacement impossible : ${cible.path}", erreur)
             }
             valide = true
@@ -82,13 +81,13 @@ class CibleDisque(private val racine: File) : CibleLocale {
 
         private const val INTERDITS = "<>:\"/\\|?*"
 
-        /** Les noms de périphériques de Windows, avec ou sans extension : `NUL.txt` n'est pas un fichier non plus. */
+        /** Windows device names, reserved with or without an extension (`NUL.txt` too). */
         private val RESERVES = setOf("CON", "PRN", "AUX", "NUL") +
             (1..9).flatMap { listOf("COM$it", "LPT$it") } + listOf("COM¹", "COM²", "COM³", "LPT¹", "LPT²", "LPT³")
 
         /**
-         * Un nom que Windows accepte : chaque caractère interdit devient `_`, le point et l'espace finaux — que
-         * Windows ôterait sans prévenir — tombent, et un nom de périphérique prend un `_` devant.
+         * Returns a name Windows accepts: forbidden and control characters become `_`, trailing dots and spaces
+         * (which Windows would strip silently) are removed, and device names get a `_` prefix.
          */
         fun nomWindows(nom: String): String {
             val propre = nom

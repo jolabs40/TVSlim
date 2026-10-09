@@ -1,18 +1,17 @@
-"""Dessine le logo de TV Slim et en tire chaque fichier qui le porte.
+"""Draws the TV Slim logo and generates every file that carries it.
 
-Un téléviseur sans antenne, posé sur un pied central ; sur l'écran, six applications. Les deux en
-trop, rouge et jaune, se désintègrent en pixels ; il reste le vert menthe et le bleu de TV Slim.
-Grille de 108, comme les vecteurs Android. Sous 24 px, une version simplifiée prend le relais :
-quatre tuiles et un cadre épais, que les pixels d'un .ico peuvent encore porter.
+A TV without antenna on a central stand, with six apps on screen. The two extra ones, red and
+yellow, disintegrate into pixels, leaving TV Slim's mint green and blue. 108 grid, like Android
+vectors. Below 24 px a simplified version takes over: four tiles and a thick frame, which .ico
+pixels can still render.
 
     pip install pillow fonttools uharfbuzz
     python outils/logo.py
 
-La police du nom (Outfit, licence OFL) n'est utile qu'à la bannière du téléviseur : elle est
-téléchargée depuis le dépôt Google Fonts et vérifiée par son empreinte, ou lue là où --police le dit.
+The name font (Outfit, OFL) is only needed for the TV banner. It is downloaded from the Google Fonts
+repository and checked against its SHA-256, or read from the path given with --police.
 
-Tous les fichiers ci-dessous sont produits ici : les retoucher à la main, c'est les perdre au
-prochain passage.
+Every file written below is generated: hand edits are lost on the next run.
 """
 
 from __future__ import annotations
@@ -46,7 +45,7 @@ SURECHANTILLONNAGE = 8
 
 @dataclass(frozen=True)
 class Forme:
-    """Un rectangle arrondi ou un polygone, dans les coordonnées de sa vue."""
+    """A rounded rectangle or a polygon, in viewport coordinates."""
 
     nature: str
     x: float = 0
@@ -72,14 +71,14 @@ def poly(points, remplissage) -> Forme:
 
 @dataclass(frozen=True)
 class Geometrie:
-    cadre: tuple            # x, y, w, h, rayon, épaisseur du trait
+    cadre: tuple            # x, y, w, h, radius, stroke width
     tuiles_x: tuple
     tuiles_y: tuple
-    tuile: tuple            # w, h, rayon
-    carte: tuple            # couleur de chaque tuile, ligne par ligne
+    tuile: tuple            # w, h, radius
+    carte: tuple            # color of each tile, row by row
     cou: tuple
-    socle: tuple            # x, y, w, h, rayon
-    pixels: bool            # la poussière ne tient qu'en grand
+    socle: tuple            # x, y, w, h, radius
+    pixels: bool            # pixel dust only fits at large sizes
     part_restante: float
 
 
@@ -107,8 +106,8 @@ PETITE = Geometrie(
     part_restante=0.45,
 )
 
-# Ce qui reste d'une tuile qui se désintègre : une colonne de pixels par tranche, de moins en moins
-# pleine et de plus en plus transparente, puis trois miettes qui s'envolent vers la droite.
+# What is left of a disintegrating tile: one column of pixels per slice, sparser and more
+# transparent each time, then three crumbs drifting off to the right.
 PIXELS_GARDES = ((1, 1, 0, 1), (0, 1, 1, 0), (1, 0, 0, 0))
 PIXELS_OPACITE = (0.9, 0.6, 0.35)
 MIETTES = ((3.05, 0.3, 0.45, 0.3), (3.4, 1.6, 0.38, 0.2), (3.2, 2.8, 0.32, 0.15))
@@ -121,7 +120,7 @@ def palette(mono: bool) -> dict:
 
 
 def marque(petite: bool = False, mono: bool = False) -> list[Forme]:
-    """Le téléviseur seul, sans fond, dans la grille de 108."""
+    """The TV alone, without background, on the 108 grid."""
     g = PETITE if petite else GRANDE
     p = palette(mono)
     x, y, w, h, r, e = g.cadre
@@ -169,23 +168,23 @@ def transformer(formes: list[Forme], echelle: float, dx: float, dy: float) -> li
 
 
 def icone_pleine(petite: bool = False) -> list[Forme]:
-    """Le carré arrondi de Windows, de GitHub et des aperçus."""
+    """The rounded square used for Windows, GitHub and link previews."""
     return [rect(0, 0, 108, 108, 24, FOND)] + marque(petite)
 
 
 def premier_plan_adaptatif(mono: bool = False) -> list[Forme]:
-    """Une icône adaptative ne montre que les 72 du centre, sous un masque rond ou arrondi : le
-    téléviseur tient dans le cercle de 66 que garantit Android."""
+    """An adaptive icon only shows the central 72 units under a round or rounded mask, so the TV
+    fits in the 66-unit circle Android guarantees."""
     echelle = 0.62
     return transformer(marque(mono=mono), echelle, 54 - 54 * echelle, 54 - 53 * echelle)
 
 
 # --------------------------------------------------------------------------------------------
-# Le nom, pour la bannière : des tracés, puisqu'un vecteur Android ne sait pas écrire.
+# The name, for the banner: drawn as paths, since an Android vector cannot render text.
 
 @dataclass
 class Mot:
-    chemins: list = field(default_factory=list)   # (pathData, couleur)
+    chemins: list = field(default_factory=list)   # (pathData, color)
 
 
 def police_outfit(chemin: str | None) -> Path:
@@ -204,8 +203,8 @@ def police_outfit(chemin: str | None) -> Path:
 
 
 def ecrire_nom(police: Path, morceaux: list[tuple[str, str]], taille: float, x: float, ligne_de_base: float) -> Mot:
-    """Met en forme le texte entier (crénage « TV » compris), puis rend chaque glyphe dans la couleur
-    du morceau d'où il vient."""
+    """Shapes the whole text, so the "TV" kerning applies, then renders each glyph in the color of
+    the run it came from."""
     import uharfbuzz as hb
     from fontTools.pens.svgPathPen import SVGPathPen
     from fontTools.pens.transformPen import TransformPen
@@ -246,7 +245,7 @@ def ecrire_nom(police: Path, morceaux: list[tuple[str, str]], taille: float, x: 
 
 
 # --------------------------------------------------------------------------------------------
-# Écritures
+# Output
 
 def nombre(n: float) -> str:
     texte = f"{n:.3f}".rstrip("0").rstrip(".")
@@ -275,7 +274,7 @@ def chemin(f: Forme) -> str:
 def vecteur_android(formes: list[Forme], largeur: int, hauteur: int, vue_l: int, vue_h: int, note: str) -> str:
     lignes = [
         '<?xml version="1.0" encoding="utf-8"?>',
-        f"<!-- {note} Produit par outils/logo.py : ne pas retoucher à la main. -->",
+        f"<!-- {note} Generated by outils/logo.py, do not edit by hand. -->",
         '<vector xmlns:android="http://schemas.android.com/apk/res/android"',
         f'    android:width="{largeur}dp"',
         f'    android:height="{hauteur}dp"',
@@ -311,7 +310,7 @@ def svg(formes: list[Forme], vue_l: int, vue_h: int, titre: str) -> str:
 def adaptative(note: str) -> str:
     return (
         '<?xml version="1.0" encoding="utf-8"?>\n'
-        f"<!-- {note} Produit par outils/logo.py : ne pas retoucher à la main. -->\n"
+        f"<!-- {note} Generated by outils/logo.py, do not edit by hand. -->\n"
         '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
         '    <background android:drawable="@drawable/ic_logo_fond" />\n'
         '    <foreground android:drawable="@drawable/ic_logo_premier_plan" />\n'
@@ -321,7 +320,7 @@ def adaptative(note: str) -> str:
 
 
 def dessiner(formes: list[Forme], cote: int, vue: int = 108):
-    """Rend les formes au pixel près pour le .ico : suréchantillonné, puis réduit."""
+    """Rasterizes the shapes for the .ico: supersampled, then downscaled."""
     from PIL import Image, ImageDraw
 
     grand = cote * SURECHANTILLONNAGE
@@ -338,7 +337,7 @@ def dessiner(formes: list[Forme], cote: int, vue: int = 108):
         if f.nature == "poly":
             trace.polygon([(x * k, y * k) for x, y in f.points], fill=rgba(f.remplissage, f.opacite))
         else:
-            # Un trait SVG est centré sur le tracé ; celui de Pillow est intérieur à la boîte.
+            # An SVG stroke is centered on the path; Pillow draws it inside the box.
             demi = f.epaisseur / 2 if f.trait else 0
             boite = [(f.x - demi) * k, (f.y - demi) * k, (f.x + f.w + demi) * k, (f.y + f.h + demi) * k]
             rayon = min(f.r + demi, (f.w + 2 * demi) / 2, (f.h + 2 * demi) / 2) * k
@@ -375,36 +374,36 @@ def main() -> None:
     ecrire("docs/logo/tvslim.svg", svg(icone_pleine(), 108, 108, "TV Slim"))
     ecrire("docs/logo/tvslim-petit.svg", svg(icone_pleine(petite=True), 108, 108, "TV Slim, 24 px et moins"))
 
-    fond = vecteur_android([rect(0, 0, 108, 108, 0, FOND)], 108, 108, 108, 108, "Fond de l'icône adaptative.")
+    fond = vecteur_android([rect(0, 0, 108, 108, 0, FOND)], 108, 108, 108, 108, "Adaptive icon background.")
     plan = vecteur_android(premier_plan_adaptatif(), 108, 108, 108, 108,
-                           "Premier plan de l'icône adaptative : le téléviseur, dans le cercle de 66.")
+                           "Adaptive icon foreground: the TV, inside the 66 dp safe circle.")
     mono = vecteur_android(premier_plan_adaptatif(mono=True), 108, 108, 108, 108,
-                           "Couche monochrome, pour les icônes à thème d'Android 13 : seule son opacité compte.")
+                           "Monochrome layer for Android 13 themed icons: only its alpha matters.")
     for module, icone in (("app-mobile", "ic_tvslim_remote"), ("app-tv", "ic_tvslim")):
         res = f"TVSlim/{module}/src/main/res/drawable"
-        ecrire(f"{res}/{icone}.xml", adaptative("Icône de l'application, la même sur le téléphone, le téléviseur et Windows."))
+        ecrire(f"{res}/{icone}.xml", adaptative("App icon, the same on the phone, the TV and Windows."))
         ecrire(f"{res}/ic_logo_fond.xml", fond)
         ecrire(f"{res}/ic_logo_premier_plan.xml", plan)
         ecrire(f"{res}/ic_logo_monochrome.xml", mono)
 
-    # Dans l'application elle-même, un vecteur ordinaire : Compose n'affiche pas une icône adaptative.
+    # Inside the app, a plain vector: Compose cannot display an adaptive icon.
     ecrire("TVSlim/app-mobile/src/main/res/drawable/ic_logo.xml",
-           vecteur_android(icone_pleine(), 108, 108, 108, 108, "Le logo dans la barre du haut du téléphone."))
+           vecteur_android(icone_pleine(), 108, 108, 108, 108, "Logo for the phone app's top bar."))
 
-    # La notification du gardien : Android n'en garde que la silhouette, d'où la version blanche,
-    # dessinée en petit (quatre tuiles), à 24 dp.
+    # The guardian's notification: Android only keeps the silhouette, hence the white version, drawn
+    # small (four tiles) at 24 dp.
     silhouette = transformer(marque(petite=True, mono=True), 24 / 108, 0, 0)
     ecrire("TVSlim/app-tv/src/main/res/drawable/ic_notification.xml",
-           vecteur_android(silhouette, 24, 24, 24, 24, "Petite icône des notifications : une silhouette blanche."))
+           vecteur_android(silhouette, 24, 24, 24, 24, "Notification small icon: a white silhouette."))
 
     nom = ecrire_nom(police_outfit(options.police), [("TV", CADRE), (" Slim", NOM)], 42, 152, 107)
     banniere = [rect(0, 0, 320, 180, 0, FOND)] + transformer(marque(), 1.22, 88 - 54 * 1.22, 92 - 53 * 1.22)
     banniere += [Forme("chemin", remplissage=couleur, chemin=d) for d, couleur in nom.chemins]
     ecrire("TVSlim/app-tv/src/main/res/drawable/tv_banner.xml",
-           vecteur_android(banniere, 320, 180, 320, 180, "Bannière Android TV, 320 × 180 : le logo et son nom."))
+           vecteur_android(banniere, 320, 180, 320, 180, "Android TV banner, 320x180: logo and name."))
 
     ecrire("TVSlim Windows/src/commonMain/composeResources/drawable/ic_tvslim.xml",
-           vecteur_android(icone_pleine(), 108, 108, 108, 108, "Icône de TV Slim pour Windows : fenêtre et « À propos »."))
+           vecteur_android(icone_pleine(), 108, 108, 108, 108, "TV Slim icon for Windows: window and About dialog."))
 
     images = [dessiner(icone_pleine(petite=cote <= 24), cote) for cote in TAILLES_ICO]
     ico = RACINE / "TVSlim Windows/packaging/tvslim.ico"
@@ -414,7 +413,7 @@ def main() -> None:
     print("  TVSlim Windows/packaging/tvslim-256.png")
     dessiner(icone_pleine(), 512).save(RACINE / "docs/logo/tvslim-512.png")
     print("  docs/logo/tvslim-512.png")
-    # Pour le site : un raccourci sur l'écran d'un téléphone veut un carré plein, le système l'arrondit.
+    # For the website: a phone home screen shortcut wants a full square, the system rounds it.
     dessiner([rect(0, 0, 108, 108, 0, FOND)] + marque(), 180).save(RACINE / "docs/logo/tvslim-carre-180.png")
     print("  docs/logo/tvslim-carre-180.png")
 

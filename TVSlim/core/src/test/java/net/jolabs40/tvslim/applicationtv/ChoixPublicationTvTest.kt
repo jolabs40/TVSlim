@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Le choix, dans la réponse de GitHub, de l'APK du téléviseur à installer. */
+/** Picking the TV APK to install from the GitHub releases response. */
 class ChoixPublicationTvTest {
 
     private fun publication(
@@ -20,7 +20,7 @@ class ChoixPublicationTvTest {
     private fun reponse(vararg publications: String) = "[${publications.joinToString(",")}]"
 
     @Test
-    fun `la plus haute version Android est retenue, pas la plus recente publication`() {
+    fun `the highest Android version wins, not the latest release`() {
         val choisie = ChoixPublicationTv.choisir(
             reponse(
                 publication("windows-v1.6.0", listOf("TVSlim-Windows-1.6.0.msi")),
@@ -37,7 +37,7 @@ class ChoixPublicationTvTest {
     }
 
     @Test
-    fun `brouillons, preversions et publications sans APK TV sont ignores`() {
+    fun `drafts, prereleases and releases without a TV APK are ignored`() {
         val choisie = ChoixPublicationTv.choisir(
             reponse(
                 publication("android-v1.3.0", listOf("TVSlim-TV-1.3.0.apk"), brouillon = true),
@@ -50,7 +50,7 @@ class ChoixPublicationTvTest {
     }
 
     @Test
-    fun `un lien qui ne mene pas aux telechargements du depot est refuse`() {
+    fun `a link outside the repository downloads is rejected`() {
         val ailleurs = reponse(publication("android-v1.1.0", listOf("TVSlim-TV-1.1.0.apk")) { "https://example.com/$it" })
         val detour = reponse(
             publication("android-v1.1.0", listOf("TVSlim-TV-1.1.0.apk")) {
@@ -64,14 +64,14 @@ class ChoixPublicationTvTest {
     }
 
     @Test
-    fun `une reponse illisible ou vide ne donne rien`() {
+    fun `an unreadable or empty response yields nothing`() {
         assertNull(ChoixPublicationTv.choisir("{\"message\":\"API rate limit exceeded\"}"))
         assertNull(ChoixPublicationTv.choisir("[]"))
         assertNull(ChoixPublicationTv.choisir("pas du JSON"))
     }
 
     @Test
-    fun `le versionCode suit la formule du build`() {
+    fun `the versionCode follows the build formula`() {
         assertEquals(10000L, ChoixPublicationTv.versionCode(1, 0, 0))
         assertEquals(10100L, ChoixPublicationTv.versionCode(1, 1, 0))
         assertEquals(20305L, ChoixPublicationTv.versionCode(2, 3, 5))

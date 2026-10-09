@@ -1,4 +1,4 @@
-// Le favicon est le logo lui-même, tel que outils/logo.py le dessine — en petit, sa version simplifiée.
+// The favicon is the small-size simplified logo drawn by outils/logo.py.
 import type { APIRoute } from 'astro';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

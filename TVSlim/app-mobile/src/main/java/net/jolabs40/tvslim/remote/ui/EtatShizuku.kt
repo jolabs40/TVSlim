@@ -4,10 +4,8 @@ import androidx.compose.runtime.Immutable
 import net.jolabs40.tvslim.commande.EchangeCommande
 
 /**
- * Ce que la carte « Shizuku » affiche.
- *
- * Le bilan de la dernière relance reste à l'écran : la sortie du starter dit le
- * pid obtenu, et un refus mérite d'être relu.
+ * State of the "Shizuku" card. The last restart's output stays on screen: the starter prints the new pid,
+ * and a failure is worth reading.
  */
 @Immutable
 data class EtatShizuku(
@@ -15,7 +13,6 @@ data class EtatShizuku(
     val derniere: EchangeCommande? = null,
 )
 
-/** Le callback de la carte, groupé comme ceux des autres. */
 data class ActionsShizuku(
     val onRelancer: () -> Unit,
 )

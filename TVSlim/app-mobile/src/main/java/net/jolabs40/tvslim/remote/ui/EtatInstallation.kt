@@ -7,28 +7,26 @@ import net.jolabs40.tvslim.installation.ResultatInstallation
 import net.jolabs40.tvslim.remote.R
 import java.util.Locale
 
-/** Où en est l'installation d'un APK. */
 sealed interface PhaseInstallation {
-    /** Copie du fichier, lecture de son manifeste et du téléviseur, avant la confirmation. */
+    /** Copying the file, reading its manifest and the TV, before confirmation. */
     data object Examen : PhaseInstallation
 
     data class Envoi(val envoye: Long, val total: Long) : PhaseInstallation
 
-    /** Tout est parti : Android vérifie l'application et l'installe. */
+    /** Upload done; Android is verifying and installing the package. */
     data object Installation : PhaseInstallation
 }
 
-/** Ce que la carte « Installer une application » affiche. */
+/** State of the "Install an app" card. */
 @Immutable
 data class EtatInstallation(
     val phase: PhaseInstallation? = null,
-    /** Le bilan de la dernière installation, qui reste lisible une fois la bannière passée. */
+    /** Outcome of the last install, still readable after the banner is gone. */
     val derniere: ResultatInstallation? = null,
 ) {
     val occupee: Boolean get() = phase != null
 }
 
-/** Un refus d'Android, dit dans la langue de la personne. */
 @StringRes
 fun CauseEchec.ressource(): Int = when (this) {
     CauseEchec.SIGNATURE_DIFFERENTE -> R.string.apk_cause_signature
@@ -44,5 +42,5 @@ fun CauseEchec.ressource(): Int = when (this) {
     CauseEchec.AUTRE -> R.string.apk_cause_other
 }
 
-/** Des octets en mégaoctets, à une décimale et à la façon de la langue : « 48,3 » en français. */
+/** Formats bytes as megabytes with one decimal, using the locale's separator ("48,3" in French). */
 fun megaoctets(octets: Long): String = String.format(Locale.getDefault(), "%.1f", octets / 1_000_000.0)

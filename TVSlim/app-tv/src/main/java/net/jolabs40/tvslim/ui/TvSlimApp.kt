@@ -32,14 +32,13 @@ object Routes {
 
 @Composable
 fun TvSlimApp() {
-    // Un seul ViewModel, tenu au niveau de l'activité : les deux écrans partagent la même
-    // photographie du téléviseur.
+    // One activity-scoped ViewModel so all screens share the same reading of the TV.
     val modele: TvSlimViewModel = hiltViewModel()
     val etat by modele.etat.collectAsStateWithLifecycle()
     val navigation = rememberNavController()
 
-    // Le gardien prévient d'une dérive par une notification : la permission se demande en l'activant,
-    // c'est là qu'on comprend pourquoi. Refusée, il garde le rapport pour l'écran d'accueil.
+    // The guard reports drift by notification, so the permission is requested when it is turned on, where
+    // the reason is obvious. If denied, the report still shows on the home screen.
     val demandeNotifications = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { }

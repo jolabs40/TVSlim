@@ -6,10 +6,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** La lecture d'un dossier : la commande, et sa réponse telle que la TCL la rend (relevée le 2026-10-03). */
+/** Folder listing: the command, and its output as captured on the TCL. */
 class LectureDossierTest {
 
-    /** Extrait de `/` sur la TCL : des dossiers, des liens vers des dossiers, et `d`, un lien vers `/sdcard`. */
+    /** Excerpt of `/` on the TCL: folders, links to folders, and `d`, a link to `/sdcard`. */
     private val racineTcl = """
         E|41ed|27|1230768000|acct
         E|a1a4|11|1230768000|bin
@@ -22,19 +22,19 @@ class LectureDossierTest {
     """.trimIndent()
 
     @Test
-    fun `un lien vers un dossier se parcourt comme un dossier`() {
+    fun `a link to a folder is browsed like a folder`() {
         val entrees = LecteurDossier.entrees(racineTcl).associateBy { it.nom }
 
         assertEquals(NatureEntree.DOSSIER, entrees.getValue("bin").nature)
         assertTrue(entrees.getValue("bin").lien)
         assertEquals(NatureEntree.DOSSIER, entrees.getValue("data").nature)
         assertFalse(entrees.getValue("data").lien)
-        // Un lien dont la cible n'est pas un dossier — ou n'existe pas — reste un fichier.
+        // A link whose target is not a folder, or does not exist, stays a file.
         assertEquals(NatureEntree.FICHIER, entrees.getValue("init.environ.rc").nature)
     }
 
     @Test
-    fun `les dossiers d'abord, puis les fichiers, sans egard a la casse`() {
+    fun `folders come first, then files, ignoring case`() {
         val sortie = """
             E|81b0|1412089|1789490078|rest.mp4
             E|45f8|4096|1751999274|Movies
@@ -50,7 +50,7 @@ class LectureDossierTest {
     }
 
     @Test
-    fun `taille et date se lisent, la date en millisecondes`() {
+    fun `size and date are read, the date in milliseconds`() {
         val video = LecteurDossier.entrees("E|81b0|1412089|1789490078|rest.mp4").single()
 
         assertEquals(NatureEntree.FICHIER, video.nature)
@@ -59,14 +59,14 @@ class LectureDossierTest {
     }
 
     @Test
-    fun `un nom garde ses espaces et ses barres verticales`() {
+    fun `a name keeps its spaces and vertical bars`() {
         val entree = LecteurDossier.entrees("E|81b0|10|1|Film | partie 2 .mkv").single()
 
         assertEquals("Film | partie 2 .mkv", entree.nom)
     }
 
     @Test
-    fun `ce qui n'est ni un dossier ni un fichier est dit autre, et les lignes etrangeres sont ignorees`() {
+    fun `anything neither folder nor file is other, and stray lines are ignored`() {
         val sortie = """
             stat: '.*': No such file or directory
             E|21b6|0|1|null
@@ -79,7 +79,7 @@ class LectureDossierTest {
     }
 
     @Test
-    fun `les codes de la commande disent introuvable, refuse ou echec`() {
+    fun `the command exit codes mean not found, denied or failed`() {
         assertEquals(LectureDossier.Introuvable("/x"), LecteurDossier.lire("/x", ResultatShell(2, "")))
         assertEquals(LectureDossier.Refusee("/data"), LecteurDossier.lire("/data", ResultatShell(3, "")))
         assertEquals(
@@ -90,7 +90,7 @@ class LectureDossierTest {
     }
 
     @Test
-    fun `le chemin entre cite dans la commande`() {
+    fun `the path is quoted in the command`() {
         val commande = LecteurDossier.commande("/sdcard/l'été")
 
         assertTrue(commande.startsWith("[ -d '/sdcard/l'\\''été' ] || exit 2; cd '/sdcard/l'\\''été' "))
@@ -98,13 +98,13 @@ class LectureDossierTest {
     }
 
     @Test
-    fun `les volumes amovibles sont tout ce que storage porte d'autre`() {
+    fun `removable volumes are everything else under storage`() {
         assertEquals(listOf("1234-ABCD"), LecteurDossier.volumes("emulated\nself\n1234-ABCD\n"))
         assertEquals(emptyList<String>(), LecteurDossier.volumes("emulated\nself"))
     }
 
     @Test
-    fun `les volumes s'inserent entre les dossiers communs et les dossiers techniques`() {
+    fun `volumes go between the common folders and the technical ones`() {
         val natures = Raccourci.avecVolumes(listOf("1234-ABCD")).map { it.nature }
 
         assertEquals(

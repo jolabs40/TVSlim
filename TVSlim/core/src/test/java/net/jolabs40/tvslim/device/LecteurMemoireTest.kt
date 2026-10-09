@@ -9,11 +9,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Lecture de la mémoire.
- *
- * La sortie utilisée ici est celle relevée sur la Shield : ses séparateurs de milliers, ses
- * suffixes en kilo-octets et ses processus système au nom sans point, qui ne doivent pas se
- * voir proposer un bouton « Arrêter ».
+ * Memory reading, on output taken from the Shield: thousands separators, `K` suffixes, and system
+ * processes with dotless names, which must not get a Stop button.
  */
 class LecteurMemoireTest {
 
@@ -41,7 +38,7 @@ class LecteurMemoireTest {
     """.trimIndent()
 
     @Test
-    fun `les totaux sont lus malgre les separateurs de milliers`() = runTest {
+    fun `totals are read despite thousands separators`() = runTest {
         val memoire = LecteurDistant(ExecuteurFixe(sortieShield)).memoire()
 
         assertTrue(memoire.renseignee)
@@ -53,7 +50,7 @@ class LecteurMemoireTest {
     }
 
     @Test
-    fun `les processus sont classes du plus gourmand au moins gourmand`() = runTest {
+    fun `processes are sorted from heaviest to lightest`() = runTest {
         val memoire = LecteurDistant(ExecuteurFixe(sortieShield)).memoire()
 
         assertEquals(6, memoire.processus.size)
@@ -66,16 +63,16 @@ class LecteurMemoireTest {
     }
 
     @Test
-    fun `la section OOM n'est pas confondue avec la liste des processus`() = runTest {
+    fun `the OOM section is not mistaken for the process list`() = runTest {
         val memoire = LecteurDistant(ExecuteurFixe(sortieShield)).memoire()
 
-        // « 183,873K: Native » appartient au second tableau : le compter ferait un doublon.
+        // `183,873K: Native` belongs to the second table; counting it would duplicate an entry.
         assertEquals(1, memoire.processus.count { it.kilooctets == 183_873L })
         assertTrue(memoire.processus.none { it.nom == "Native" })
     }
 
     @Test
-    fun `seuls les processus applicatifs peuvent etre arretes`() = runTest {
+    fun `only app processes can be stopped`() = runTest {
         val memoire = LecteurDistant(ExecuteurFixe(sortieShield)).memoire()
         fun processus(nom: String) = memoire.processus.first { it.nom == nom }
 
@@ -89,17 +86,17 @@ class LecteurMemoireTest {
     }
 
     @Test
-    fun `un processus secondaire renvoie au paquet qui le porte`() = runTest {
+    fun `a secondary process maps to the package that owns it`() = runTest {
         val memoire = LecteurDistant(ExecuteurFixe(sortieShield)).memoire()
         val arrierePlan = memoire.processus.first { it.nom == "com.android.vending:background" }
 
-        // On arrête « com.android.vending », pas « com.android.vending:background ».
+        // Force-stop targets `com.android.vending`, not `com.android.vending:background`.
         assertEquals("com.android.vending", arrierePlan.paquet)
         assertTrue(arrierePlan.estUneApplication)
     }
 
     @Test
-    fun `une lecture en echec ne renvoie pas de chiffres inventes`() = runTest {
+    fun `a failed read returns no made-up figures`() = runTest {
         val memoire = LecteurDistant(ExecuteurFixe("", code = 1)).memoire()
 
         assertFalse(memoire.renseignee)

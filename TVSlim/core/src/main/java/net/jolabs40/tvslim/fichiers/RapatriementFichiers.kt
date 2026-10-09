@@ -4,63 +4,63 @@ import java.io.Closeable
 import java.io.OutputStream
 
 /**
- * Où arrivent les fichiers copiés depuis le téléviseur : un dossier du disque, sous Windows. Les chemins sont
- * relatifs à ce dossier et séparés par `/` ; c'est la cible qui les adapte à son système de fichiers — un nom
- * d'Android peut porter un `:` que Windows refuse.
+ * Destination for files copied from the TV: a local folder on Windows. Paths are relative to it and
+ * `/`-separated; the target adapts them to its file system (an Android name may contain a `:` that Windows
+ * rejects).
  */
 interface CibleLocale {
-    /** Un chemin de la cible tel qu'on le montre : « C:\Users\…\Downloads\Films ». Vide : la cible elle-même. */
+    /** Display form of a target path, e.g. `C:\Users\...\Downloads\Movies`. Empty means the target itself. */
     fun decrire(chemin: String = ""): String
 
     fun existe(chemin: String): Boolean
 
-    /** Crée [chemin] et ses parents ; un dossier qui existe déjà n'est pas une erreur. */
+    /** Creates [chemin] and its parents; an existing folder is not an error. */
     fun creerDossier(chemin: String)
 
-    /** Ouvre l'écriture de [chemin]. Rien ne remplace ce qui s'y trouve avant [EcritureLocale.valider]. */
+    /** Opens [chemin] for writing. Nothing replaces the existing file before [EcritureLocale.valider]. */
     fun ecrire(chemin: String): EcritureLocale
 }
 
 /**
- * Un fichier en cours d'écriture, provisoire tant qu'il n'est pas validé. Une copie arrêtée ou coupée ne laisse
- * donc ni fichier tronqué, ni fichier précédent écrasé : refermer sans valider efface ce qui était arrivé.
+ * A file being written, temporary until validated. A stopped or cut-off copy leaves neither a truncated file
+ * nor an overwritten previous one: closing without validating deletes what arrived.
  */
 interface EcritureLocale : Closeable {
     val flux: OutputStream
 
-    /** Tout est arrivé : le fichier prend sa place — et celle d'un fichier du même nom —, daté de [date] (ms, 0 si inconnue). */
+    /** Moves the complete file into place, replacing any file of that name, dated [date] (ms, 0 if unknown). */
     fun valider(date: Long)
 }
 
-/** Un fichier à copier : où il est sur le téléviseur, où il arrive dans la cible. */
+/** A file to copy: its path on the TV and its path in the target. */
 data class FichierDistant(val distant: String, val local: String, val taille: Long, val date: Long)
 
-/** Une copie vers l'ordinateur, prête à partir. */
+/** A copy to the PC, ready to start. */
 data class PlanRapatriement(
-    /** Ce qu'on copie, sur le téléviseur : un fichier, ou un dossier et tout ce qu'il contient. */
+    /** What is copied from the TV: a file, or a folder with everything in it. */
     val source: String,
     val cible: CibleLocale,
-    /** Ce qui arrive dans la cible : le nom du fichier, ou celui du dossier où va le reste. */
+    /** Name in the target: the file's name, or the folder that receives the rest. */
     val nom: String,
     val dossier: Boolean,
     val fichiers: List<FichierDistant>,
-    /** Les dossiers à créer dans la cible, vides compris, parents d'abord. */
+    /** Folders to create in the target, empty ones included, parents first. */
     val dossiers: List<String> = emptyList(),
-    /** [nom] existe déjà dans la cible : un dossier y sera complété, ses fichiers du même nom remplacés. */
+    /** [nom] already exists in the target: a folder is merged and same-name files are replaced. */
     val existant: Boolean = false,
 ) {
     val taille: Long get() = fichiers.sumOf { it.taille }
 
-    /** Là où tout arrive, pour le dire : le dossier copié, ou celui qui reçoit le fichier. */
+    /** Display form of where things arrive: the copied folder, or the folder receiving the file. */
     val destination: String get() = cible.decrire(if (dossier) nom else "")
 }
 
-/** Pourquoi le contenu d'un dossier du téléviseur ne s'est pas lu. */
+/** Why the contents of a TV folder could not be read. */
 enum class RefusLecture { INTROUVABLE, REFUSE, ECHEC }
 
 sealed interface ExamenRapatriement {
     data class Pret(val plan: PlanRapatriement) : ExamenRapatriement
 
-    /** [motif] : ce qu'ont répondu la connexion ou le téléviseur, pour [RefusLecture.ECHEC]. */
+    /** [motif]: the raw answer from the connection or the TV, for [RefusLecture.ECHEC]. */
     data class Illisible(val refus: RefusLecture, val motif: String = "") : ExamenRapatriement
 }

@@ -70,7 +70,6 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.skia.Image as ImageSkia
 
-/** Ce que l'onglet Applications demande au pilote. */
 class ActionsApplicationsUi(
     val onCharger: () -> Unit,
     val onRecherche: (String) -> Unit,
@@ -81,13 +80,13 @@ class ActionsApplicationsUi(
     val onDesinstaller: (ApplicationAppareil) -> Unit,
     val onConfirmer: () -> Unit,
     val onAnnuler: () -> Unit,
-    /** L'entrée du catalogue qui permet de désactiver une application ; `null` : elle ne se désactive pas d'ici. */
+    /** Catalogue entry that allows disabling an app; `null` if it cannot be disabled from here. */
     val desactivable: (ApplicationAppareil) -> EntreePaquet?,
 )
 
 /**
- * L'onglet Applications : chaque application du menu et chaque application installée, avec son icône et son nom, et
- * quatre actions. La première lecture se lance d'elle-même ; les noms et les icônes arrivent au fil de l'eau.
+ * Applications tab: launcher apps and user-installed apps, with icon, name and four actions. The first read
+ * starts by itself; names and icons fill in as they arrive.
  */
 @Composable
 fun ApplicationsEcran(connecte: Boolean, etat: EtatApplications, actions: ActionsApplicationsUi) {
@@ -216,7 +215,7 @@ private fun LigneApplication(
     }
 }
 
-/** L'icône lue sur l'appareil, ou le robot d'Android tant qu'elle ne l'est pas. */
+/** Icon read from the device, or the Android robot until it arrives. */
 @Composable
 internal fun IconeApplication(application: ApplicationAppareil, taille: Int) {
     val image: ImageBitmap? = remember(application.paquet, application.icone) {

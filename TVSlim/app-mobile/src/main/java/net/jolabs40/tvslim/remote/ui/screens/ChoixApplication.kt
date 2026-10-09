@@ -34,9 +34,8 @@ import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.EtatApplications
 
 /**
- * Le choix d'une application du téléviseur, pour la carte des permissions : le nom d'abord, le paquet
- * ensuite, avec l'icône. La liste est celle de l'onglet Applications — le menu et ce que la personne a
- * installé —, lue au premier besoin et gardée en cache. Un autre paquet se tape toujours à la main.
+ * App picker for the permissions card. Uses the Applications tab's list (launcher apps and user-installed ones),
+ * loaded on first use and cached. Any other package can still be typed by hand.
  */
 @Composable
 fun ChoixApplicationDialogue(
@@ -123,11 +122,7 @@ fun ChoixApplicationDialogue(
     )
 }
 
-/**
- * Les permissions que l'application lue demande dans son manifeste : celles qui restent à accorder
- * d'abord, les autres sur demande. Un appui remplit le champ Permission. Ce n'est pas une liste de
- * raccourcis toute faite : c'est ce que cette application-là déclare.
- */
+/** Permissions declared in the app's manifest, ungranted first, granted ones on request. A tap fills the field. */
 @Composable
 fun PermissionsDeclarees(lues: PermissionsPaquet, onChoisir: (String) -> Unit) {
     var toutes by rememberSaveable(lues) { mutableStateOf(false) }

@@ -6,27 +6,25 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 
 /**
- * Ce que la bannière du bas annonce.
+ * A snackbar message, resolved to text only when displayed so it follows the UI language.
  *
- * Les phrases vivent dans les ressources, donc traduites : le pilote ne décrit que *quoi* dire, et
- * la mise en mots se fait à l'affichage. Seuls les textes que l'application n'a pas écrits — la
- * sortie d'une commande, un motif du moteur — passent tels quels.
+ * Text the app did not write (command output, raw TV replies) is passed through untranslated.
  */
 sealed interface MessageUi {
 
-    /** Une phrase des ressources. Un argument peut être lui-même un [MessageUi], rédigé d'abord. */
+    /** A string resource. An argument may itself be a [MessageUi], resolved first. */
     data class Texte(
         val ressource: StringResource,
         val arguments: List<Any> = emptyList(),
     ) : MessageUi
 
-    /** Ce que le téléviseur ou le moteur a répondu : on ne traduit pas ce qu'on n'a pas écrit. */
+    /** Raw reply from the TV or the engine, shown as is. */
     data class Brut(val texte: String) : MessageUi
 
-    /** Plusieurs phrases, une par ligne ; les vides sont sautées. */
+    /** One message per line; blank ones are skipped. */
     data class Lignes(val lignes: List<MessageUi>) : MessageUi
 
-    /** Bilan d'un lot : « 12 sur 14 réussis », puis les premiers échecs, un par ligne. */
+    /** Batch result: "12 of 14 succeeded", then the first failures, one per line. */
     data class Bilan(
         val succes: Int,
         val total: Int,

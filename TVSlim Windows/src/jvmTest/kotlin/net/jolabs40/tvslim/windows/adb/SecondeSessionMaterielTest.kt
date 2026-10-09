@@ -12,9 +12,8 @@ import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 /**
- * La seconde session du préchargement sur un vrai téléviseur : `dumpsys meminfo` y tourne pendant que la principale
- * répond sans l'attendre ; la fermer interrompt une commande en cours, et elle ne se rouvre pas d'elle-même. Rien
- * n'est écrit sur le téléviseur :
+ * The preload's second session on a real TV: `dumpsys meminfo` runs on it while the main session keeps answering;
+ * closing it interrupts a running command, and it does not reopen by itself. Read-only:
  *
  *     ./gradlew jvmTest --tests "*SecondeSessionMaterielTest*" '-Pmateriel=192.168.2.135' --rerun
  */
@@ -23,7 +22,7 @@ class SecondeSessionMaterielTest {
     private val hote: String? = System.getProperty("tvslim.materiel")
 
     @Test
-    fun `la seconde session lit pendant que la principale repond, et se ferme sans retour`() = runBlocking<Unit> {
+    fun `the second session reads while the main one answers, and stays closed once closed`() = runBlocking<Unit> {
         assumeTrue("-Pmateriel=<adresse> pour essayer sur un vrai téléviseur", hote != null)
         val client = ClientAdb(DepotCles(Emplacements.windows().cles))
         assertTrue("Connexion à $hote : ${client.connexion.value}", client.connecter(hote!!))
@@ -32,7 +31,7 @@ class SecondeSessionMaterielTest {
             assertNotNull("La seconde session doit s'ouvrir sans nouvelle autorisation", seconde)
             seconde!!
 
-            // Une lecture lourde sur la seconde, des allers-retours sur la principale pendant ce temps.
+            // A heavy read on the second session, round trips on the main one meanwhile.
             val debut = System.currentTimeMillis()
             val lourde = async(Dispatchers.IO) { seconde.executer("dumpsys meminfo") }
             val latences = mutableListOf<Long>()
@@ -51,7 +50,7 @@ class SecondeSessionMaterielTest {
             assertTrue(latences.size >= 3)
             assertTrue("La principale ne doit pas attendre la seconde : $latences", latences.max() < 1_500)
 
-            // Fermée pendant une commande : celle-ci rend la main aussitôt, et la session ne se rouvre pas.
+            // Closed during a command: the command returns at once and the session does not reopen.
             val longue = async(Dispatchers.IO) { seconde.executer("sleep 20; echo fin") }
             delay(500)
             val fermeture = System.currentTimeMillis()

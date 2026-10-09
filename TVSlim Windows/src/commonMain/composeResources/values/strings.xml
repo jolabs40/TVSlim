@@ -324,7 +324,7 @@
     <string name="update_whats_new">What's new</string>
     <string name="update_portable">Portable version: download the new archive and replace this folder with it.</string>
     <string name="update_dev">Development build: automatic updates are disabled.</string>
-    <!-- Onglet Fichiers -->
+    <!-- Files tab -->
     <string name="files_not_connected">Connect to a television to browse its files.</string>
     <string name="shortcut_internal">Internal storage</string>
     <string name="shortcut_downloads">Downloads</string>
@@ -458,7 +458,7 @@
     <string name="closing_title">Finishing the video</string>
     <string name="closing_text">TV Slim copies the video from the television, then closes.</string>
 
-    <!-- Hors téléviseur -->
+    <!-- Non-TV devices -->
     <string name="device_type_phone">Phone</string>
     <string name="device_type_tablet">Tablet</string>
     <string name="packages_not_tv">This device is not a television: TV Slim's catalogue describes televisions, so profiles are off. A package can still be disabled by hand, and re-enabled from the log.</string>
@@ -495,7 +495,7 @@
     <string name="apps_read_helper_refused">The helper that reads names and icons did not answer as expected: %1$s</string>
     <string name="apps_read_connection">The device did not answer: %1$s</string>
 
-    <!-- Ce que le moteur dit d'une action (MotifMoteur) -->
+    <!-- Engine outcomes (MotifMoteur) -->
     <string name="engine_absent">Package not on this television.</string>
     <string name="engine_already_disabled">Already disabled.</string>
     <string name="engine_unexplained">Failed, with no answer from the television.</string>
@@ -513,7 +513,7 @@
     <string name="files_refused_silent">refused by the television</string>
     <string name="files_refused_silent_line">%1$s: refused by the television</string>
 
-    <!-- L'application TV Slim du téléviseur, installée depuis GitHub -->
+    <!-- TV Slim's TV app, installed from GitHub -->
     <string name="tvapp_title">TV Slim on the television</string>
     <string name="tvapp_body">Optional. It keeps the television reachable during standby, warns you when a system update undid your changes, and shows a code that TV Slim Remote, on a phone, scans to connect.</string>
     <string name="tvapp_reading">Reading the television…</string>
@@ -544,7 +544,7 @@
     <string name="tvapp_error_tv">The television no longer answers.</string>
     <string name="tvapp_error_install">The television refused the installation: %1$s</string>
 
-    <!-- Permissions : choisir une application, et ce qu'elle déclare -->
+    <!-- Permissions: app picker and declared permissions -->
     <string name="permissions_choose">Choose an app</string>
     <string name="permissions_choose_title">Apps on the television</string>
     <string name="permissions_choose_hint">Apps in the menu and the ones you installed. Any other package can still be typed.</string>
@@ -559,7 +559,7 @@
     <string name="permissions_declared_show_granted">Also show the %1$d already granted</string>
     <string name="permissions_declared_hide_granted">Hide the granted ones</string>
 
-    <!-- Redémarrer le téléviseur -->
+    <!-- Reboot the TV -->
     <string name="device_reboot">Restart</string>
     <string name="confirm_reboot_title">Restart the television?</string>
     <string name="confirm_reboot_body">The television restarts, in about a minute: what is on screen stops. TV Slim reconnects by itself when it comes back.</string>

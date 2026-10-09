@@ -6,13 +6,10 @@ import net.jolabs40.tvslim.moteur.NatureNom
 import net.jolabs40.tvslim.moteur.ResultatAction
 import net.jolabs40.tvslim.remote.R
 
-/**
- * Ce qu'une action a donné, en mots : le motif du moteur s'il en a un, rédigé depuis les ressources, sinon ce
- * que le téléviseur a répondu, tel quel.
- */
+/** Describes an action's outcome: the engine's reason from resources if any, otherwise the TV's raw output. */
 fun ResultatAction.texte(contexte: Context): String = motif?.rediger(contexte) ?: message
 
-/** Met un [MotifMoteur] dans la langue de l'appareil : le noyau, partagé avec Windows, n'écrit aucune phrase. */
+/** Localizes a [MotifMoteur]; the core, shared with Windows, contains no user-facing text. */
 fun MotifMoteur.rediger(contexte: Context): String = when (this) {
     MotifMoteur.PaquetAbsent -> contexte.getString(R.string.engine_absent)
     MotifMoteur.DejaDesactive -> contexte.getString(R.string.engine_already_disabled)

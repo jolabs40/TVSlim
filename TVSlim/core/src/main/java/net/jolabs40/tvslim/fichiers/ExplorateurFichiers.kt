@@ -8,23 +8,23 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Ce que l'onglet Fichiers montre, dans les deux applications. */
+/** State of the Files tab, shared by both apps. */
 data class EtatExplorateur(
     val chemin: String = DOSSIER_DE_DEPART,
-    /** La dernière lecture de [chemin] ; aucune tant qu'on n'y est pas encore entré. */
+    /** Last listing of [chemin]; null until the folder has been opened. */
     val lecture: LectureDossier? = null,
     val chargement: Boolean = false,
     val raccourcis: List<Raccourci> = Raccourci.avecVolumes(emptyList()),
-    /** Ce qu'on a choisi se lit, puis le dossier se relit : la confirmation vient après. */
+    /** Reading the picked items, then re-reading the folder; confirmation comes next. */
     val examen: Boolean = false,
     val confirmation: PlanDepot? = null,
-    /** Un envoi, ou une copie vers l'ordinateur : [AvanceeDepot.sens] le dit. */
+    /** An upload, or a copy to the PC ([AvanceeDepot.sens] tells which). */
     val avancee: AvanceeDepot? = null,
-    /** Le bilan du dernier envoi ou de la dernière copie, qui reste lisible une fois la bannière passée. */
+    /** Result of the last upload or copy, still readable once the banner is gone. */
     val dernier: ResultatDepot? = null,
-    /** Un dossier du téléviseur se lit en entier avant d'être copié ou effacé : la confirmation dit ce qu'il contient. */
+    /** A TV folder is listed in full before being copied or deleted, so the confirmation can say what it holds. */
     val inventaire: Boolean = false,
-    /** La copie d'un dossier, en attente de confirmation ; celle d'un fichier part aussitôt choisie. */
+    /** Folder copy awaiting confirmation; a single file copy starts as soon as it is picked. */
     val rapatriement: PlanRapatriement? = null,
     val suppression: PlanSuppression? = null,
     val effacement: Boolean = false,
@@ -35,41 +35,41 @@ data class EtatExplorateur(
     val envoiEnCours: Boolean get() = avancee != null
 
     /**
-     * Une opération à la fois : examen, confirmation, envoi, copie et suppression se suivent sans se chevaucher —
-     * effacer le dossier où arrive un envoi, par exemple.
+     * One operation at a time: checking, confirming, uploading, copying and deleting never overlap (deleting
+     * the folder an upload is writing to, for example).
      */
     val occupe: Boolean
         get() = examen || inventaire || confirmation != null || rapatriement != null || suppression != null ||
             effacement || envoiEnCours
 }
 
-/** Ce que chaque application dit à la personne, dans sa langue. */
+/** Events each app turns into a localized message. */
 sealed interface SignalFichiers {
     data object Occupe : SignalFichiers
 
     data class Refus(val refus: RefusDepot, val noms: List<String>) : SignalFichiers
 
-    /** Ce qu'on a choisi ne se lit pas sur place : dossier protégé, fichier disparu. */
+    /** The picked local items cannot be read (protected folder, file gone). */
     data class LectureLocaleEchouee(val motif: String) : SignalFichiers
 
     data class Creation(val creation: CreationDossier) : SignalFichiers
 
-    /** Un envoi, ou une copie vers l'ordinateur ([ResultatDepot.sens]). */
+    /** An upload, or a copy to the PC ([ResultatDepot.sens]). */
     data class Depot(val resultat: ResultatDepot) : SignalFichiers
 
-    /** Le contenu du dossier [nom] ne s'est pas lu : rien n'a été copié ni effacé. */
+    /** The contents of folder [nom] could not be read; nothing was copied or deleted. */
     data class ContenuIllisible(val nom: String, val refus: RefusLecture, val motif: String) : SignalFichiers
 
     data class Suppression(val suppression: SuppressionEntree) : SignalFichiers
 }
 
 /**
- * L'onglet Fichiers, sans son écran : où l'on est, ce qu'on y lit, l'envoi ou la copie en cours, ce qu'on va
- * effacer. Partagé par le compagnon et par Windows, qui n'y ajoutent que la façon de choisir des fichiers — et
- * leur destination sur le disque — et les mots pour le dire.
+ * The Files tab without its UI: current folder, its listing, the transfer in progress, what is about to be
+ * deleted. Shared by the companion and Windows, which only add how files are picked (and their destination on
+ * disk) and the wording.
  *
- * Une lecture qui revient après qu'on est passé ailleurs est ignorée ; un envoi suit son cours pendant qu'on
- * parcourt d'autres dossiers — ses commandes et les lectures se partagent la même connexion, chacune son tour.
+ * A listing that comes back after the user moved elsewhere is ignored. An upload keeps running while the user
+ * browses other folders; its commands and the listings take turns on the same connection.
  */
 class ExplorateurFichiers(
     private val navigateur: NavigateurFichiers,
@@ -82,11 +82,11 @@ class ExplorateurFichiers(
 
     private val annulation = AtomicBoolean(false)
 
-    /** Change à chaque [oublier] : ce qui revient d'avant appartient à un autre téléviseur. */
+    /** Bumped by each [oublier]: results from an earlier generation belong to another TV. */
     @Volatile
     private var generation = 0
 
-    /** À l'arrivée sur l'onglet : le dossier courant et les volumes, s'ils n'ont pas encore été lus. */
+    /** On entering the tab: reads the current folder and the volumes if not read yet. */
     fun demarrer() {
         val courant = _etat.value
         if (courant.lecture == null && !courant.chargement) {
@@ -98,7 +98,7 @@ class ExplorateurFichiers(
     fun ouvrir(chemin: String) {
         val cible = CheminDistant.normaliser(chemin)
         val tour = generation
-        // Relire le même dossier garde ce qu'on y voyait jusqu'à la réponse ; en changer le vide aussitôt.
+        // Reloading the same folder keeps the old listing until the answer; another folder clears it at once.
         _etat.update { it.copy(chemin = cible, chargement = true, lecture = if (it.chemin == cible) it.lecture else null) }
         portee.launch {
             val lue = navigateur.lister(cible)
@@ -110,16 +110,15 @@ class ExplorateurFichiers(
         _etat.value.parent?.let(::ouvrir)
     }
 
-    /** Relit le dossier et les volumes : une clé USB a pu arriver entre-temps. */
+    /** Reloads the folder and the volumes, since a USB drive may have been plugged in. */
     fun actualiser() {
         ouvrir(_etat.value.chemin)
         lireRaccourcis()
     }
 
     /**
-     * Examine ce que [preparer] rassemble — fichiers choisis, dossier parcouru — pour l'envoyer dans le dossier
-     * courant. La lecture sur place peut prendre du temps, et échouer : elle se fait ici, sous l'indicateur
-     * d'examen.
+     * Checks what [preparer] gathers (picked files, a walked folder) for upload into the current folder.
+     * Reading local files can be slow and can fail, so it runs here under the checking indicator.
      */
     fun examiner(preparer: suspend () -> LotLocal) {
         if (_etat.value.occupe) return signaler(SignalFichiers.Occupe)
@@ -162,18 +161,18 @@ class ExplorateurFichiers(
             if (tour != generation) return@launch
             _etat.update { it.copy(avancee = null, dernier = resultat) }
             signaler(SignalFichiers.Depot(resultat))
-            // Ce qu'on vient de déposer apparaît, si l'on regarde encore là.
+            // Shows the new files if the user is still in that folder.
             if (_etat.value.chemin == plan.destination) ouvrir(plan.destination)
         }
     }
 
-    /** Arrête l'envoi ou la copie au prochain bloc ; le fichier entamé n'est gardé ni d'un côté ni de l'autre. */
+    /** Stops the upload or copy at the next block; the partial file is kept on neither side. */
     fun annulerEnvoi() = annulation.set(true)
 
     /**
-     * Copie [entree], prise dans le dossier courant, vers [cible] sous le nom [nom]. Un fichier part aussitôt :
-     * la fenêtre « Enregistrer sous » a tenu lieu de confirmation, et demandé s'il fallait en remplacer un. Un
-     * dossier se lit d'abord, puis attend [confirmerRapatriement] : il peut peser des gigaoctets.
+     * Copies [entree] from the current folder to [cible] as [nom]. A file starts right away: the Save As
+     * dialog served as confirmation and already asked about overwriting. A folder is listed first and waits
+     * for [confirmerRapatriement], since it may weigh gigabytes.
      */
     fun rapatrier(entree: EntreeDistante, cible: CibleLocale, nom: String) {
         if (_etat.value.occupe) return signaler(SignalFichiers.Occupe)
@@ -218,7 +217,7 @@ class ExplorateurFichiers(
         }
     }
 
-    /** Prépare l'effacement de [entree], prise dans le dossier courant : rien ne s'efface sans [confirmerSuppression]. */
+    /** Prepares deleting [entree] from the current folder; nothing is deleted before [confirmerSuppression]. */
     fun demanderSuppression(entree: EntreeDistante) {
         if (_etat.value.occupe) return signaler(SignalFichiers.Occupe)
         val dossier = _etat.value.chemin
@@ -247,7 +246,7 @@ class ExplorateurFichiers(
             if (tour != generation) return@launch
             _etat.update { it.copy(effacement = false) }
             signaler(SignalFichiers.Suppression(issue))
-            // Relu même après un échec : un dossier à moitié effacé montre ce qui reste.
+            // Reloaded even after a failure: a partly deleted folder shows what is left.
             val parent = CheminDistant.parent(plan.chemin)
             if (parent != null && _etat.value.chemin == parent) ouvrir(parent)
         }
@@ -266,7 +265,7 @@ class ExplorateurFichiers(
         }
     }
 
-    /** À la déconnexion, ou en passant à un autre téléviseur : rien de ce qu'on a lu ne vaut pour le suivant. */
+    /** On disconnect or when switching TVs: nothing read so far applies to the next one. */
     fun oublier() {
         generation++
         annulation.set(true)

@@ -1,5 +1,4 @@
-// Le sitemap, avec pour chaque page son double dans l'autre langue (hreflang) : Google relie ainsi
-// la fiche anglaise et la fiche française d'un même paquet.
+// Sitemap with hreflang alternates, so Google links the English and French pages of each package.
 import type { APIRoute } from 'astro';
 import { tousLesPaquets } from '../data/catalogue';
 import { url, LANGS } from '../site';

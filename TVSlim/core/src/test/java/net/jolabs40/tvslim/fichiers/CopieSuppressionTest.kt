@@ -17,13 +17,10 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
-/** Copier vers l'ordinateur, effacer du téléviseur : ce qui part, ce qui arrive, ce qui s'arrête et ce qu'on refuse. */
+/** Copying from the TV to the computer, and deleting on the TV. */
 class CopieSuppressionTest {
 
-    /**
-     * Un téléviseur bouchon : des fichiers et leur contenu, une réponse d'inventaire par dossier, et des commandes
-     * de suppression retenues sans rien effacer.
-     */
+    /** Fake TV: file contents, one listing per folder, and delete commands recorded without deleting anything. */
     private class Televiseur(
         private val contenus: Map<String, String> = emptyMap(),
         private val inventaires: Map<String, ResultatShell> = emptyMap(),
@@ -56,7 +53,7 @@ class CopieSuppressionTest {
             if (chemin == coupeA) return ResultatShell.indisponible("Connection reset")
             if (chemin in refuses) return ResultatShell(1, "open failed: Permission denied")
             val contenu = contenus[chemin] ?: return ResultatShell(1, "open failed: No such file or directory")
-            // Une partie, puis le reste : ce qui n'est pas validé ne doit jamais arriver.
+            // Bytes are written before the outcome is known: nothing unvalidated may land on disk.
             destination.write(contenu.toByteArray())
             surRecu(contenu.length.toLong())
             recus += chemin
@@ -64,7 +61,7 @@ class CopieSuppressionTest {
         }
     }
 
-    /** Un dossier du disque, en mémoire : seul ce qui est validé y arrive. */
+    /** In-memory local folder: only validated files land in it. */
     private class Disque(
         val existants: Set<String> = emptySet(),
         private val refuses: Set<String> = emptySet(),
@@ -99,7 +96,7 @@ class CopieSuppressionTest {
 
     private val films = EntreeDistante("Films", NatureEntree.DOSSIER, 4096, 0L)
 
-    /** Ce que la TCL rend pour un dossier : `.` d'abord, des sous-dossiers, un vide, des noms à espaces et `|`. */
+    /** What the TCL returns for a folder: `.` first, subfolders, an empty one, names with spaces and `|`. */
     private val inventaireFilms = ResultatShell(
         0,
         """
@@ -114,7 +111,7 @@ class CopieSuppressionTest {
     )
 
     @Test
-    fun `l'inventaire range les dossiers parents d'abord, sans le dossier lui-meme`() {
+    fun `the listing puts parent folders first and leaves out the folder itself`() {
         val inventaire = InventaireDossier.inventaire(inventaireFilms.sortie)
 
         assertEquals(listOf("Séries", "vide", "Séries/Saison 1"), inventaire.dossiers)
@@ -129,7 +126,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `les commandes citent leurs chemins, et seul un dossier monte la garde`() {
+    fun `commands quote their paths, and only a folder gets the storage guard`() {
         assertEquals("rm -f '/sdcard/l'\\''été.mkv'", InventaireDossier.commandeSuppression("/sdcard/l'été.mkv", NatureSuppression.FICHIER))
         assertEquals("rm -f '/data/local/tmp/lien'", InventaireDossier.commandeSuppression("/data/local/tmp/lien", NatureSuppression.LIEN))
 
@@ -143,7 +140,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `un fichier se copie sous le nom choisi, sans rien lire de plus`() = runTest {
+    fun `a file is copied under the chosen name without any extra read`() = runTest {
         val tv = Televiseur(contenus = mapOf("/sdcard/Movies/film.mkv" to "image"))
         val disque = Disque()
         val navigateur = NavigateurFichiers(tv, tv, tv)
@@ -162,7 +159,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `un dossier se lit en entier, puis arrive avec ses dossiers vides`() = runTest {
+    fun `a folder is listed in full, then arrives with its empty folders`() = runTest {
         val tv = Televiseur(
             contenus = mapOf(
                 "/sdcard/Films/bande|annonce.mp4" to "bande-annonce",
@@ -192,7 +189,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `un dossier illisible ne se copie pas`() = runTest {
+    fun `an unreadable folder is not copied`() = runTest {
         val tv = Televiseur(inventaires = mapOf("/data" to ResultatShell(3, "")))
         val navigateur = NavigateurFichiers(tv, tv, tv)
         val data = EntreeDistante("data", NatureEntree.DOSSIER, 4096, 0L)
@@ -205,7 +202,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `un refus du televiseur ou du disque n'arrete pas les suivants, et rien d'inacheve n'arrive`() = runTest {
+    fun `a refusal from the tv or the disk does not stop the next files, and nothing partial arrives`() = runTest {
         val tv = Televiseur(
             contenus = mapOf("/sdcard/a" to "a", "/sdcard/c" to "c", "/sdcard/d" to "d"),
             refuses = setOf("/sdcard/b"),
@@ -231,7 +228,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `une connexion perdue arrete la copie, et annuler aussi`() = runTest {
+    fun `a lost connection stops the copy, and so does cancelling`() = runTest {
         val contenus = mapOf("/sdcard/a" to "a", "/sdcard/b" to "b", "/sdcard/c" to "c")
         val fichiers = listOf("a", "b", "c").map { FichierDistant("/sdcard/$it", it, 1, 0L) }
 
@@ -254,7 +251,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `un dossier refuse par le disque arrete la copie avant le premier fichier`() = runTest {
+    fun `a folder refused by the disk stops the copy before the first file`() = runTest {
         val tv = Televiseur(contenus = mapOf("/sdcard/Films/a" to "a"))
         val disque = Disque(refuses = setOf("Films"))
         val plan = PlanRapatriement(
@@ -269,7 +266,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `la suppression d'un dossier dit ce qu'il contient, celle d'un lien n'emporte que lui`() = runTest {
+    fun `deleting a folder reports its contents, deleting a link removes only the link`() = runTest {
         val tv = Televiseur(inventaires = mapOf("/sdcard/Films" to inventaireFilms))
         val navigateur = NavigateurFichiers(tv, tv)
 
@@ -294,7 +291,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `un stockage entier ne s'efface pas`() = runTest {
+    fun `a whole storage volume cannot be deleted`() = runTest {
         val tv = Televiseur(inventaires = mapOf("/storage/emulated" to ResultatShell(5, "")), reponseRm = ResultatShell(5, ""))
         val navigateur = NavigateurFichiers(tv, tv)
         val emulated = EntreeDistante("emulated", NatureEntree.DOSSIER, 4096, 0L)
@@ -307,7 +304,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `un refus du televiseur se dit tel quel`() = runTest {
+    fun `a refusal from the tv is reported verbatim`() = runTest {
         val tv = Televiseur(reponseRm = ResultatShell(1, "rm: /system/x: Read-only file system"))
 
         val issue = NavigateurFichiers(tv, tv).supprimer(PlanSuppression("/system/x", NatureSuppression.FICHIER))
@@ -317,7 +314,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `l'explorateur copie un fichier aussitot, un dossier apres confirmation`() = runTest {
+    fun `the explorer copies a file at once and a folder after confirmation`() = runTest {
         val tv = Televiseur(
             contenus = mapOf("/sdcard/a.mkv" to "a", "/sdcard/Films/bande|annonce.mp4" to "b", "/sdcard/Films/Séries/Saison 1/e01.mkv" to "e"),
             inventaires = mapOf("/sdcard" to ResultatShell(0, ""), "/sdcard/Films" to inventaireFilms),
@@ -346,7 +343,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `l'explorateur n'efface qu'apres confirmation, puis relit le dossier`() = runTest {
+    fun `the explorer deletes only after confirmation, then reloads the folder`() = runTest {
         val tv = Televiseur(inventaires = mapOf("/sdcard/Films" to inventaireFilms))
         val signaux = mutableListOf<SignalFichiers>()
         val explorateur = ExplorateurFichiers(NavigateurFichiers(tv, tv), this, signaux::add)
@@ -368,7 +365,7 @@ class CopieSuppressionTest {
     }
 
     @Test
-    fun `une suppression refusee d'emblee ne demande rien`() = runTest {
+    fun `a deletion refused upfront asks for nothing`() = runTest {
         val tv = Televiseur(inventaires = mapOf("/sdcard/Android" to ResultatShell(5, "")))
         val signaux = mutableListOf<SignalFichiers>()
         val explorateur = ExplorateurFichiers(NavigateurFichiers(tv, tv), this, signaux::add)

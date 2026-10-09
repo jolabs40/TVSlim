@@ -1,5 +1,5 @@
-// llms.txt : le résumé que lisent les assistants IA, avec les faits et les pages qui comptent.
-// Rien d'affirmé ici qui ne soit sur le site ou dans les README.
+// llms.txt: summary for AI assistants, with the key facts and pages.
+// Claim nothing here that is not on the site or in the READMEs.
 import type { APIRoute } from 'astro';
 import { catalogue, nomMarque, ORDRE_MARQUES } from '../data/catalogue';
 import { publications } from '../data/releases';

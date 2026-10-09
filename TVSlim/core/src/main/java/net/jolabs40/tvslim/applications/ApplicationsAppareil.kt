@@ -15,18 +15,18 @@ import java.io.InputStream
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
 
-/** Une application de l'appareil : du menu, ou installée par la personne. */
+/** An app on the device: either in the launcher menu, or installed by the user. */
 class ApplicationAppareil(
     val paquet: String,
     val versionCode: Long,
-    /** Livrée avec l'appareil — mise à jour comprise. Faux : installée par la personne. */
+    /** Shipped with the device (updates included); false when installed by the user. */
     val systeme: Boolean,
     val active: Boolean,
-    /** L'activité qui l'ouvre (« paquet/.Activité ») ; `null` pour une application sans icône dans le menu. */
+    /** Launch activity (`package/.Activity`), or `null` when the app has no launcher icon. */
     val lancement: String?,
-    /** Son nom affiché ; le paquet tant qu'il n'a pas été lu. */
+    /** Display name; the package name until it has been read. */
     val nom: String,
-    /** Son icône en PNG ; `null` tant qu'elle n'a pas été lue. */
+    /** PNG icon; `null` until it has been read. */
     val icone: ByteArray?,
 ) {
     val lue: Boolean get() = icone != null
@@ -35,10 +35,10 @@ class ApplicationAppareil(
         ApplicationAppareil(paquet, versionCode, systeme, active, lancement, nom, icone)
 }
 
-/** Ce que l'aide a rendu de lisible : le nom et l'icône d'une application. */
+/** Name and icon of an app, as returned by the helper. */
 class DetailsApplication(val nom: String, val icone: ByteArray)
 
-/** Garde noms et icônes d'une lecture à l'autre : une application ne se relit que si sa version a changé. */
+/** Caches names and icons; an app is read again only when its version code changes. */
 interface CacheApplications {
     fun lire(paquet: String, versionCode: Long): DetailsApplication?
 
@@ -46,8 +46,8 @@ interface CacheApplications {
 }
 
 /**
- * Le cache sur le disque, un fichier pour l'icône et un pour le nom, par paquet et par version — devant un cache en
- * mémoire, pour ne relire le disque qu'une fois par session. Rien de grave s'il est effacé : tout se relit.
+ * On-disk cache, one `.png` and one `.nom` file per package and version, fronted by an in-memory cache so the disk
+ * is read once per session. Safe to delete: everything is read again.
  */
 class CacheApplicationsFichiers(private val dossier: File) : CacheApplications {
 
@@ -77,15 +77,15 @@ class CacheApplicationsFichiers(private val dossier: File) : CacheApplications {
     private fun cle(paquet: String, versionCode: Long) = "$paquet@$versionCode"
 }
 
-/** Pourquoi la liste n'a pas pu être lue — chaque application le dit dans sa langue. */
+/** Why the app list could not be read; each app localizes the message. */
 enum class CauseLecture {
-    /** L'aide manque aux ressources de l'application : une build incomplète. */
+    /** The helper is missing from the app's resources (incomplete build). */
     AIDE_ABSENTE,
 
-    /** L'appareil a refusé l'aide, ou la connexion a lâché pendant son envoi. */
+    /** The device rejected the helper, or the connection dropped while pushing it. */
     ENVOI,
 
-    /** L'aide n'a pas répondu comme attendu : `app_process` refusé, autre version. */
+    /** Unexpected helper output: `app_process` refused, or a version mismatch. */
     AIDE_REFUSEE,
 
     CONNEXION,
@@ -98,14 +98,13 @@ sealed interface ResultatLecture {
 }
 
 /**
- * Les applications de l'appareil, avec leur nom et leur icône — ce qu'aucune commande d'ADB ne donne.
+ * Lists the device's apps with their name and icon, which no ADB command provides.
  *
- * Il faut donc le demander à Android lui-même : la petite **aide** (`aide/`, quelques Ko, embarquée dans les
- * ressources) est copiée dans `/data/local/tmp`, lancée par `app_process` avec les droits du shell, comme scrcpy son
- * serveur, puis effacée. Rien n'est installé.
+ * A small helper (`aide/`, a few KB, bundled in the resources) is pushed to `/data/local/tmp`, run with
+ * `app_process` as the shell user (the way scrcpy runs its server), then deleted. Nothing is installed.
  *
- * Deux temps : la liste, rapide (1,6 s sur la TCL) ; puis noms et icônes, par lots, seulement pour ce que le
- * [cache] ne connaît pas — un téléphone de 200 applications demande une demi-minute la première fois.
+ * Two passes: the list (1.6 s on the TCL), then names and icons in batches, only for what [cache] lacks. A phone
+ * with 200 apps takes about 30 s the first time.
  */
 class LecteurApplications(
     private val executeur: ExecuteurCommande,
@@ -115,8 +114,8 @@ class LecteurApplications(
 ) {
 
     /**
-     * Lit la liste, puis complète noms et icônes. [surAvancee] reçoit la liste à chaque étape — d'abord les paquets
-     * seuls, puis de plus en plus de noms et d'icônes —, avec le nombre de détails lus sur le nombre à lire.
+     * Reads the list, then fills in names and icons. [surAvancee] receives the list after each step, with the number
+     * of details read so far and the total to read.
      */
     suspend fun lire(surAvancee: (List<ApplicationAppareil>, fait: Int, total: Int) -> Unit = { _, _, _ -> }): ResultatLecture {
         val octets = runCatching { aide()?.use { it.readBytes() } }.getOrNull()
@@ -156,16 +155,16 @@ class LecteurApplications(
     }
 
     companion object {
-        /** Où l'aide est rangée dans les ressources des deux applications. */
+        /** Helper location in the resources of both apps. */
         const val CHEMIN_RESSOURCE = "aide/tvslim-aide.apk"
         const val CHEMIN_AIDE = "/data/local/tmp/tvslim-aide.apk"
         const val CLASSE_AIDE = "net.jolabs40.tvslim.aide.Aide"
         const val VERSION_AIDE = 1
 
-        /** 96 px : net à 48 dp sur un écran à deux pixels par point, 4 Ko par icône. */
+        /** 96 px: sharp at 48 dp on a 2x screen, about 4 KB per icon. */
         const val TAILLE_ICONE = 96
 
-        /** Assez court pour tenir dans le délai d'une commande, même sur un téléphone lent à charger ses ressources. */
+        /** Small enough to fit in the command timeout, even on a phone slow to load app resources. */
         const val LOT = 12
 
         private val IDENTIFIANT = Regex("""[A-Za-z0-9_.]+""")
@@ -175,7 +174,7 @@ class LecteurApplications(
         internal fun versionReconnue(sortie: String): Boolean =
             sortie.lineSequence().any { it.trim() == "TVSLIM_AIDE $VERSION_AIDE" }
 
-        /** « A paquet versionCode systeme active lancement », une ligne par application ; le reste est ignoré. */
+        /** Parses tab-separated `A package versionCode system enabled launch` lines; other lines are ignored. */
         internal fun lireListe(sortie: String): List<ApplicationAppareil> = sortie.lineSequence()
             .map { it.trimEnd('\r') }
             .filter { it.startsWith("A\t") }
@@ -194,7 +193,7 @@ class LecteurApplications(
             }
             .toList()
 
-        /** « D paquet nom icône » ; une ligne illisible est sautée, son application garde son paquet pour nom. */
+        /** Parses `D package name icon` lines; an unreadable line is skipped and its app keeps the package as name. */
         internal fun lireDetails(sortie: String): Map<String, DetailsApplication> = sortie.lineSequence()
             .map { it.trimEnd('\r') }
             .filter { it.startsWith("D\t") }
@@ -206,7 +205,7 @@ class LecteurApplications(
             }
             .toMap()
 
-        /** Par nom, sans tenir compte de la casse : « YouTube » entre « Wi-Fi » et « Zoom ». */
+        /** Sorts by name, case-insensitively. */
         fun trier(applications: List<ApplicationAppareil>): List<ApplicationAppareil> =
             applications.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.nom })
 
@@ -214,19 +213,19 @@ class LecteurApplications(
     }
 }
 
-/** Ce qu'on fait d'une application depuis l'onglet Applications, hors désactivation — elle passe par le moteur. */
+/** Actions from the Applications tab. Disabling is not here: it goes through the debloat engine. */
 class ActionsApplications(
     private val executeur: ExecuteurCommande,
     private val journal: () -> JournalRepository?,
 ) {
 
-    /** L'ouvre sur l'appareil, comme depuis son menu. */
+    /** Launches the app on the device, as from the launcher. */
     suspend fun ouvrir(application: ApplicationAppareil): ResultatAction {
         val lancement = application.lancement
         if (lancement == null || !COMPOSANT.matches(lancement)) {
             return ResultatAction(application.paquet, application.nom, false, motif = MotifMoteur.AucuneActivite)
         }
-        // Entre apostrophes : un nom d'activité interne porte un « $ », que le shell prendrait pour une variable.
+        // Single-quoted: nested activity class names contain `$`, which the shell would expand.
         val sortie = executeur.executer("am start -n '$lancement'")
         val reussi = sortie.reussi && !sortie.sortie.contains("Error")
         val message = if (reussi) "" else sortie.sortie.trim()
@@ -234,9 +233,8 @@ class ActionsApplications(
     }
 
     /**
-     * Désinstalle une application **que la personne a installée**, relue comme telle à l'instant (`pm list
-     * packages -3`) : un paquet du système ne se désinstalle jamais, ni ici ni ailleurs — le moteur de débloat ne
-     * connaît que `disable-user`. Ne s'annule pas : il faudrait la réinstaller. Consignée au journal.
+     * Uninstalls an app the user installed, re-checked right before with `pm list packages -3`. System packages are
+     * never uninstalled; the debloat engine only uses `disable-user`. Cannot be undone, and is logged to the journal.
      */
     suspend fun desinstaller(application: ApplicationAppareil): ResultatAction {
         val paquet = application.paquet

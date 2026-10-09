@@ -59,11 +59,10 @@ import net.jolabs40.tvslim.windows.ressources.msg_wireless_unsupported
 import java.io.File
 
 /**
- * Pilote de la fenêtre : une connexion ADB, un catalogue, un journal par téléviseur.
+ * Window controller: one ADB connection, one catalogue, one journal per TV.
  *
- * Le pendant de `RemoteViewModel` du compagnon, décision pour décision. Le moteur de débloat vient
- * du noyau partagé et ignore d'où viennent ses privilèges — ici, d'une session ADB ouverte depuis
- * l'ordinateur.
+ * Mirrors the companion's `RemoteViewModel` decision for decision. The debloat engine comes from the
+ * shared core and does not care where its privileges come from (here, an ADB session opened from the PC).
  */
 class PiloteApp(
     private val client: ClientAdb,
@@ -83,7 +82,7 @@ class PiloteApp(
     private var moteur: MoteurDebloat? = null
     private var installationApk: InstallationApk? = null
 
-    /** Les permissions privilégiées ont leur propre pilote : leur état n'a rien à voir avec le débloat. */
+    /** Privileged permissions have their own controller: their state is unrelated to debloating. */
     val permissions = PilotePermissions(
         lecteur = lecteur,
         moteur = { moteur },
@@ -91,13 +90,10 @@ class PiloteApp(
         afficher = ::afficher,
     )
 
-    /** Le bandeau de soutien, après un débloat, un transfert ou une installation qui ont abouti. */
+    /** Support banner, shown after a successful debloat, transfer or install. */
     val soutien = PiloteSoutien(preferences, viewModelScope)
 
-    /**
-     * L'écran d'accueil — fiche du launcher, guet de son installation — et la configuration qu'on
-     * sauvegarde puis réinjecte ont aussi le leur : ils ne partagent que l'état et le moteur.
-     */
+    /** Home screen card (launcher info, install watch) and saved configurations. Shares only state and engine. */
     val configuration = PiloteConfiguration(
         lecteur = lecteur,
         moteur = { moteur },
@@ -112,7 +108,7 @@ class PiloteApp(
         remercier = soutien::remercier,
     )
 
-    /** L'onglet Applications : noms et icônes lus par l'aide, gardés sur le disque ; il suit lui-même la connexion. */
+    /** Applications tab: names and icons read by the helper app, cached on disk. Tracks the connection itself. */
     val applications = PiloteApplications(
         client = client,
         cache = CacheApplicationsFichiers(emplacements.icones),
@@ -125,7 +121,7 @@ class PiloteApp(
         remercier = soutien::remercier,
     )
 
-    /** L'application TV Slim du téléviseur, installée depuis GitHub : son propre pilote, comme les permissions. */
+    /** The TV Slim app on the TV, installed from GitHub. */
     val applicationTv = PiloteApplicationTv(
         client = client,
         lecteur = lecteur,
@@ -137,26 +133,26 @@ class PiloteApp(
         remercier = soutien::remercier,
     )
 
-    /** L'onglet Fichiers : il suit lui-même la connexion, et oublie ce qu'il a lu quand le téléviseur change. */
+    /** Files tab. Tracks the connection itself and forgets what it read when the TV changes. */
     val fichiers = PiloteFichiers(client, viewModelScope, ::afficher, soutien::remercier)
 
-    /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
+    /** One journal subscription at a time, or the previous TV's journal would keep writing. */
     private var suiviJournal: Job? = null
 
-    /** Une reconnexion silencieuse à la fois. */
+    /** One silent reconnection at a time. */
     private var reprise: Job? = null
 
-    /** Le guet du retour d'un téléviseur qu'on vient de redémarrer. */
+    /** Waits for a rebooted TV to come back. */
     private var redemarrage: Job? = null
 
-    /** Les lectures d'avance de la connexion, et la seconde session qui les porte : une à la fois. */
+    /** Connection-time prefetch and the second session it runs on, one at a time. */
     private var prechargement: Job? = null
     private var sessionSeconde: ClientAdb? = null
 
-    /** La recherche sur le réseau ne tourne que pendant qu'on regarde l'écran de connexion. */
+    /** Network discovery only runs while the connection screen is shown. */
     private var veille: Job? = null
 
-    /** Vrai après « Se déconnecter », jusqu'à la prochaine connexion demandée. */
+    /** Set by "Disconnect", cleared by the next connection the user asks for. */
     private var deconnexionVolontaire = false
 
     init {
@@ -167,8 +163,8 @@ class PiloteApp(
             permissions.etat.collect { lues -> _etat.update { it.copy(permissions = lues) } }
         }
         viewModelScope.launch {
-            // Les lectures d'abord, la mise à jour ensuite : `update` rejoue son bloc quand l'un des
-            // `collect` ci-dessus a écrit entre-temps, et une lecture disque rejouée est perdue.
+            // Read before `update`: its block reruns whenever one of the collectors above writes in
+            // between, and disk reads have no place in a block that may run twice.
             val lues = preferences.lire()
             val catalogue = catalogueRepo.catalogue()
             _etat.update {
@@ -182,7 +178,7 @@ class PiloteApp(
         }
     }
 
-    // --- Connexion ------------------------------------------------------------------------
+    // --- Connection -----------------------------------------------------------------------
 
     fun chercherAppareils() {
         if (veille?.isActive == true) return
@@ -196,7 +192,7 @@ class PiloteApp(
         veille = null
     }
 
-    /** Se connecte à un appareil trouvé sur le réseau, sans rien saisir. */
+    /** Connects to a device found by discovery. */
     fun connecterA(appareil: AppareilDecouvert) {
         if (appareil.sansFil) {
             afficher(texte(Res.string.msg_wireless_unsupported))
@@ -218,7 +214,7 @@ class PiloteApp(
             afficher(texte(Res.string.msg_enter_address))
             return
         }
-        // « 192.168.1.20:5555 » collé d'un bloc se range dans ses deux champs.
+        // "192.168.1.20:5555" pasted in one go is split into both fields.
         _etat.update { it.copy(hoteSaisi = adresse.hote, portSaisi = adresse.port.toString()) }
         deconnexionVolontaire = false
         reprise?.cancel()
@@ -233,16 +229,14 @@ class PiloteApp(
     }
 
     /**
-     * Retente le dernier téléviseur joint au retour sur la fenêtre, sans le demander. Une session
-     * ADB ne survit pas à la veille du téléviseur ; en cas d'échec — téléviseur éteint, le cas le
-     * plus banal — rien ne s'affiche : la personne n'a rien demandé.
+     * Silently retries the last TV reached when the window is restored, since ADB sessions do not survive
+     * TV standby. A failure (usually the TV is off) shows nothing: the user did not ask for anything.
      *
-     * Jamais après « Se déconnecter » : c'est un choix, et sur un bureau la fenêtre reprend le
-     * focus à chaque clic — la session se serait rouverte dans le dos à la première occasion.
-     * Jamais non plus vers une adresse seulement tapée : on ne reprend que ce qui a déjà abouti.
+     * Never after "Disconnect": on a desktop the window regains focus on every click, so the session would
+     * reopen behind the user's back. Never to an address that was only typed: only a past success is resumed.
      */
     fun reprendreConnexion() {
-        // Pendant un redémarrage, c'est son guet qui se reconnecte : pas de course entre les deux.
+        // During a reboot, the reboot watcher reconnects; do not race it.
         if (deconnexionVolontaire || _etat.value.connecte || reprise?.isActive == true || _etat.value.redemarrage) return
         if (_etat.value.connexion.etat == EtatConnexion.CONNEXION) return
         reprise = viewModelScope.launch {
@@ -277,8 +271,8 @@ class PiloteApp(
                 infos = InfosAppareil.VIDE,
                 journal = emptyList(),
                 mesures = HistoriqueMesures(),
-                // La mémoire lue appartient au téléviseur quitté : la garder la ferait passer pour
-                // celle du suivant, que l'onglet ne relirait pas.
+                // Otherwise this TV's memory reading would pass for the next TV's, and the tab would
+                // not re-read it.
                 memoire = RepartitionMemoire(),
                 lectureMemoireTentee = false,
                 stockage = RepartitionStockage(),
@@ -295,19 +289,19 @@ class PiloteApp(
             val catalogue = catalogueRepo.catalogue()
             val paquetsDAccueil = catalogue.entrees.filter { it.requiertLauncherTiers }.map { it.paquet }.toSet()
 
-            // Une seule commande pour tout : sur une liaison réseau, chaque aller-retour se paie.
+            // A single command for everything: each round trip is costly over the network.
             val photo = lecteur.photographie(
                 paquetsSurveilles = catalogue.entrees.map { it.paquet },
                 paquetsDAccueil = paquetsDAccueil,
             )
             val selection = _etat.value.selection.map { it.entree.paquet }.toSet()
 
-            // Le modèle vient d'être lu : on le retient pour nommer l'appareil la prochaine fois.
+            // Remember the model name to label the device next time.
             val nom = photo.infos.nomAffiche
             val hote = _etat.value.connexion.hote
             if (nom.isNotBlank()) preferences.retenirNom(hote, nom)
 
-            // Chaque photographie sert aussi de mesure : la première fait référence.
+            // Each snapshot doubles as a measurement; the first one is the baseline.
             mesures?.enregistrer(
                 Mesure(
                     horodatage = System.currentTimeMillis(),
@@ -318,7 +312,7 @@ class PiloteApp(
                 ),
             )
 
-            // Un téléphone ajoute ses applications du menu au catalogue : voir avecApplicationsDuMenu.
+            // On a phone, the app drawer's apps join the catalogue: see avecApplicationsDuMenu.
             val vu = catalogue.avecApplicationsDuMenu(photo.infos, photo.paquetsSysteme, photo.applicationsMenu)
             _etat.update { courant ->
                 courant.copy(
@@ -334,14 +328,14 @@ class PiloteApp(
                             selectionne = entree.paquet in selection && etatPaquet == EtatPaquet.ACTIF,
                         )
                     },
-                    // Ce que le catalogue ne décrit pas : montré à part, sans rien proposer.
+                    // Packages missing from the catalogue: listed apart, no action offered.
                     inconnus = vu.paquetsInconnus(photo.paquetsSysteme, photo.infos.fabricant),
                 )
             }
         }
     }
 
-    // --- Liste des paquets ----------------------------------------------------------------
+    // --- Package list ---------------------------------------------------------------------
 
     fun majRecherche(valeur: String) = _etat.update { it.copy(recherche = valeur) }
 
@@ -357,7 +351,7 @@ class PiloteApp(
 
     // --- Confirmation ---------------------------------------------------------------------
 
-    /** Demande confirmation avant de désactiver : rien ne part tant que ce n'est pas validé. */
+    /** Asks for confirmation before disabling; nothing is sent until confirmed. */
     fun demanderApplication() {
         val courant = _etat.value
         val choisies = courant.selection.map { it.entree }
@@ -427,7 +421,7 @@ class PiloteApp(
         }
     }
 
-    /** Annule une action précise du journal, sans toucher au reste. */
+    /** Undoes a single journal action. */
     fun annulerAction(action: ActionJournal) {
         when (action.type) {
             TypeAction.DESACTIVATION -> reactiver(listOf(action.cible))
@@ -436,21 +430,21 @@ class PiloteApp(
         }
     }
 
-    /** Lit la répartition de la mémoire. Séparé du rafraîchissement : la commande est lourde. */
+    /** Reads the memory breakdown. Kept out of [rafraichir] because the command is heavy. */
     fun rafraichirMemoire() {
         if (!_etat.value.connecte) return
         viewModelScope.launch { lireMemoire(lecteur) }
     }
 
-    /** Lit l'occupation du stockage, à part comme la mémoire. */
+    /** Reads storage usage, kept separate like memory. */
     fun rafraichirStockage() {
         if (!_etat.value.connecte) return
         viewModelScope.launch { lireStockage(lecteur) }
     }
 
     /**
-     * Une lecture de la mémoire à la fois, qu'elle vienne de l'onglet ou de la connexion : `dumpsys meminfo` tient
-     * six secondes sur la TCL, l'onglet ouvert pendant la lecture d'avance l'attend plutôt que de la refaire.
+     * One memory read at a time, from the tab or the prefetch: `dumpsys meminfo` takes six seconds on the TCL,
+     * so a tab opened during the prefetch waits for it instead of starting another.
      */
     private suspend fun lireMemoire(source: LecteurDistant) {
         if (_etat.value.memoireEnLecture) return
@@ -475,18 +469,16 @@ class PiloteApp(
     }
 
     /**
-     * Tout lire dès la connexion — applications, mémoire, stockage — par une seconde session ADB : la principale
-     * reste libre pour ce qu'on demande pendant ce temps, et l'onglet qu'on ouvre trouve sa lecture faite, ou en
-     * cours, au lieu de la lancer. Seul ce qui manque est lu. Le même geste que sur le téléphone.
+     * Reads apps, memory and storage right after connecting, over a second ADB session so the main one stays
+     * free. A tab opened later finds its data ready or loading. Only what is missing is read, as on the phone.
      *
-     * Les applications d'abord : rapides une fois les icônes en cache, et attendues aussi par le choix d'une
-     * application dans les permissions privilégiées.
+     * Apps first: fast once icons are cached, and also needed by the app picker in privileged permissions.
      */
     private fun precharger() {
         val precedent = prechargement
         arreterPrechargement()
         prechargement = viewModelScope.launch {
-            // Le précédent rend d'abord ses drapeaux : sa session fermée, il ne tarde pas.
+            // Let the previous run reset its flags first; its session is closed, so it ends quickly.
             precedent?.join()
             val seconde = client.ouvrirSeconde() ?: return@launch
             sessionSeconde = seconde
@@ -502,7 +494,7 @@ class PiloteApp(
         }
     }
 
-    /** Fermer la seconde session est ce qui interrompt la lecture en cours : annuler la tâche n'y suffirait pas. */
+    /** Closing the second session is what interrupts a running read; cancelling the job is not enough. */
     private fun arreterPrechargement() {
         prechargement?.cancel()
         prechargement = null
@@ -510,7 +502,7 @@ class PiloteApp(
         sessionSeconde = null
     }
 
-    /** Arrête les processus d'une application, sans rien changer à son état d'installation. */
+    /** Kills an app's processes without changing its install state. */
     fun forcerArret(paquet: String) {
         val moteurActif = moteur ?: return
         viewModelScope.launch {
@@ -526,7 +518,7 @@ class PiloteApp(
         }
     }
 
-    /** Nom proposé par la fenêtre d'enregistrement. */
+    /** File name suggested in the save dialog. */
     fun nomExportJournal(): String =
         "TVSlim-${cleDeFichier(_etat.value.connexion.hote.ifBlank { "televiseur" })}.md"
 
@@ -546,7 +538,7 @@ class PiloteApp(
         }
     }
 
-    /** Repart d'une page blanche : l'état actuel devient le « avant ». */
+    /** Makes the current state the new "before" baseline. */
     fun redefinirReference() {
         val actives = mesures ?: return
         viewModelScope.launch {
@@ -571,13 +563,11 @@ class PiloteApp(
         rafraichir()
     }
 
-    /** Redémarrer le téléviseur : une confirmation d'abord, qui dit ce que ça interrompt. */
     fun demanderRedemarrage() = _etat.update { it.copy(confirmation = Confirmation.Redemarrage) }
 
     /**
-     * L'ordre part une seule fois (`Redemarrage`, dans le noyau), la session est fermée proprement, puis on
-     * guette le retour du téléviseur pour s'y reconnecter sans rien demander : la carte de dérive dira
-     * ensuite si le redémarrage a défait quelque chose. Le même geste que sur le téléphone.
+     * Sends the reboot once (`Redemarrage`, in the core), closes the session, then waits for the TV and
+     * reconnects silently. The drift card then shows whether the reboot undid anything. Same as on the phone.
      */
     private fun redemarrer() {
         val journalActif = journal ?: return
@@ -587,7 +577,7 @@ class PiloteApp(
         redemarrage = viewModelScope.launch {
             Redemarrage(client, journalActif).redemarrer()
             deconnecter()
-            // Ce n'est pas un « Se déconnecter » : la reprise ordinaire pourra rouvrir la session ensuite.
+            // Not a user "Disconnect": the normal resume may reopen the session later.
             deconnexionVolontaire = false
             _etat.update { it.copy(redemarrage = true) }
             delay(ATTENTE_REDEMARRAGE_MS)
@@ -637,13 +627,13 @@ class PiloteApp(
 
     private fun afficher(message: MessageUi) = _etat.update { it.copy(message = message) }
 
-    /** La seconde session ne survit pas à la fenêtre. */
+    /** The second session must not outlive the window. */
     override fun onCleared() = arreterPrechargement()
 
     private companion object {
         const val MAX_ECHECS = 4
 
-        /** Un téléviseur met plus de vingt secondes à rouvrir ADB : inutile de frapper avant. */
+        /** A TV takes over twenty seconds to reopen ADB; no point knocking sooner. */
         const val ATTENTE_REDEMARRAGE_MS = 20_000L
         const val DELAI_RETOUR_MS = 180_000L
         const val PAS_RETOUR_MS = 5_000L

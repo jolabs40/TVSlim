@@ -19,8 +19,8 @@ import java.time.Duration
 import kotlin.coroutines.coroutineContext
 
 /**
- * Parle à GitHub, et à lui seul : la liste des publications du dépôt, puis les fichiers qui y
- * sont attachés. HTTPS partout, redirections suivies seulement de HTTPS en HTTPS.
+ * GitHub client for the repository's releases and their assets. HTTPS only; redirects are followed only from
+ * HTTPS to HTTPS.
  */
 class ClientGithub(
     private val depot: String,
@@ -47,7 +47,7 @@ class ClientGithub(
         json.decodeFromString(ListSerializer(PublicationGithub.serializer()), reponse.body())
     }
 
-    /** Un petit fichier texte — une signature — lu en mémoire, borné à [tailleMax] octets. */
+    /** Reads a small text file (a signature) into memory, capped at [tailleMax] bytes. */
     suspend fun texte(url: String, tailleMax: Int = 16 * 1024): String = withContext(Dispatchers.IO) {
         ouvrir(url).use { flux ->
             val tampon = ByteArrayOutputStream()
@@ -57,9 +57,8 @@ class ClientGithub(
     }
 
     /**
-     * Télécharge [url] dans [cible], sans jamais dépasser [tailleMax] : un fichier plus gros que
-     * prévu est abandonné avant d'emplir le disque. Rien n'apparaît sous le nom final tant que le
-     * téléchargement n'est pas complet.
+     * Downloads [url] to [cible], aborting past [tailleMax] bytes so an unexpected file cannot fill the disk.
+     * Nothing appears under the final name until the download is complete.
      */
     suspend fun telecharger(
         url: String,
@@ -108,7 +107,7 @@ class ClientGithub(
             if (recu > tailleMax) throw IOException("fichier trop volumineux")
             sortie.write(tampon, 0, lu)
             if (total > 0) {
-                // Un palier par pour-cent : pas mille recompositions pour un seul téléchargement.
+                // Report once per percent to limit recompositions.
                 val palier = (recu * 100 / total).toInt()
                 if (palier != dernierPalier) {
                     dernierPalier = palier

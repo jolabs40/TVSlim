@@ -10,16 +10,16 @@ import net.jolabs40.tvslim.shell.InstallateurApk
 import net.jolabs40.tvslim.shell.ResultatShell
 import java.io.File
 
-/** La version d'une application déjà présente sur le téléviseur. */
+/** Version of an app already on the TV. */
 data class VersionInstallee(val versionCode: Long, val versionName: String)
 
-/** Ce que l'installation va faire, comparée à ce que le téléviseur porte déjà. */
+/** What the installation will do, compared with what the TV already has. */
 enum class NatureInstallation { NOUVELLE, MISE_A_JOUR, REINSTALLATION, RETROGRADATION }
 
-/** Un APK examiné, prêt à être soumis à confirmation. */
+/** A checked APK, ready for confirmation. */
 data class ApkChoisi(
     val fichier: File,
-    /** Le nom du fichier tel que la personne l'a choisi : sur Android, [fichier] n'en est qu'une copie. */
+    /** File name as picked by the user; on Android, [fichier] is only a copy. */
     val nom: String,
     val taille: Long,
     val manifeste: ManifesteApk,
@@ -34,7 +34,7 @@ data class ApkChoisi(
         }
 }
 
-/** Pourquoi un fichier est écarté avant que rien ne parte. */
+/** Why a file is rejected before anything is sent. */
 enum class RefusApk { PAS_UN_APK, LOT, PAQUET_INVALIDE, ANDROID_TROP_ANCIEN, TELEVISEUR_INJOIGNABLE }
 
 sealed interface ExamenApk {
@@ -43,7 +43,7 @@ sealed interface ExamenApk {
     data class Refuse(val refus: RefusApk, val minSdk: Int? = null, val sdkTeleviseur: Int? = null) : ExamenApk
 }
 
-/** Les refus d'Android les plus courants, pour les dire en clair. Chaque application les rédige. */
+/** The most common Android install failures, so they can be explained plainly. Each app words them. */
 enum class CauseEchec {
     SIGNATURE_DIFFERENTE, RETROGRADATION, ANDROID_TROP_ANCIEN, ARCHITECTURE, ESPACE,
     NON_SIGNE, INCOMPLET, REFUSEE, INVALIDE, CONNEXION, AUTRE,
@@ -54,18 +54,17 @@ sealed interface ResultatInstallation {
 
     data class Reussie(override val apk: ApkChoisi) : ResultatInstallation
 
-    /** [detail] : ce que le téléviseur a répondu, tel quel. */
+    /** [detail]: the TV's raw answer. */
     data class Echouee(override val apk: ApkChoisi, val cause: CauseEchec, val detail: String) : ResultatInstallation
 }
 
 /**
- * Installe sur le téléviseur un APK choisi par la personne — ce que fait `adb install`, sans ordinateur
- * pour le compagnon et sans `adb.exe` pour Windows.
+ * Installs a user-picked APK on the TV, like `adb install`, with no PC needed for the companion and no
+ * `adb.exe` for Windows.
  *
- * Deux temps, comme toute action de TV Slim : [examiner] lit le fichier et le téléviseur sans rien
- * changer, pour que la confirmation dise quelle application arrive et ce qu'elle remplace ; [installer]
- * envoie, puis consigne au journal. Aucune commande d'annulation n'y figure : la seule serait
- * `pm uninstall`, que TV Slim n'envoie jamais.
+ * Two steps, like every TV Slim action: [examiner] reads the file and the TV without changing anything, so
+ * the confirmation can say which app arrives and what it replaces; [installer] sends it, then journals it.
+ * No undo command is recorded: the only one would be `pm uninstall`, which TV Slim never sends.
  */
 class InstallationApk(
     private val executeur: ExecuteurCommande,
@@ -80,16 +79,15 @@ class InstallationApk(
             AnalyseApk.PasUnApk -> ExamenApk.Refuse(RefusApk.PAS_UN_APK)
         }
 
-    /** Confronte un manifeste déjà lu au téléviseur : son Android, et la version qu'il porte déjà. */
+    /** Checks an already-read manifest against the TV: its Android version, and the version installed. */
     internal suspend fun examiner(fichier: File, nom: String, manifeste: ManifesteApk): ExamenApk {
-        // Le paquet part dans une commande, et il vient d'un fichier que n'importe qui a pu fabriquer.
+        // The package name goes into a command and comes from a file anyone could have crafted.
         if (!IDENTIFIANT.matches(manifeste.paquet)) return ExamenApk.Refuse(RefusApk.PAQUET_INVALIDE)
 
         val lecture = executeur.executer(
             "getprop ro.build.version.sdk; dumpsys package ${manifeste.paquet} | grep -E '^ +version(Code|Name)='",
         )
-        // Le code de sortie est celui de grep, qui vaut 1 pour une application absente : seule une
-        // connexion rompue compte ici.
+        // The exit code is grep's, 1 when the app is absent: only a broken connection counts here.
         if (lecture.code < 0) return ExamenApk.Refuse(RefusApk.TELEVISEUR_INJOIGNABLE)
 
         val sdk = lecture.sortie.lineSequence().firstOrNull { it.isNotBlank() }?.trim()?.toIntOrNull()
@@ -114,7 +112,7 @@ class InstallationApk(
     ): ResultatInstallation {
         val sortie = installateur.installer(apk.fichier, surEnvoi)
         val reussie = sortie.reussi && sortie.sortie.contains("Success")
-        // Vide quand le téléviseur n'a rien dit : la cause typée suffit alors à l'écran.
+        // Empty when the TV said nothing; the typed cause is then enough for the UI.
         val detail = sortie.sortie
 
         val version = apk.manifeste.versionName.takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty()
@@ -137,7 +135,7 @@ class InstallationApk(
     }
 
     internal companion object {
-        /** Le shell du téléviseur prend la ligne telle quelle : un nom, et rien d'autre. */
+        /** The TV shell takes the line as is, so only a plain identifier is allowed. */
         private val IDENTIFIANT = Regex("""[A-Za-z0-9_.]+""")
 
         private val VERSION_CODE = Regex("""versionCode=(\d+)""")
@@ -145,8 +143,8 @@ class InstallationApk(
         private val CODE_ANDROID = Regex("""INSTALL_[A-Z_]+""")
 
         /**
-         * La première version lue est celle de l'application en place : `dumpsys` liste ensuite, pour
-         * une application système mise à jour, la version d'usine cachée derrière elle.
+         * The first version found is the installed one: for an updated system app, `dumpsys` then lists
+         * the factory version hidden behind it.
          */
         fun versionInstallee(sortie: String): VersionInstallee? {
             val code = VERSION_CODE.find(sortie)?.groupValues?.get(1)?.toLongOrNull() ?: return null
@@ -170,7 +168,7 @@ class InstallationApk(
                 "INSTALL_PARSE_FAILED_NO_CERTIFICATES" -> CauseEchec.NON_SIGNE
                 "INSTALL_FAILED_MISSING_SPLIT" -> CauseEchec.INCOMPLET
 
-                // Play Protect, une vérification qui n'aboutit pas, ou un refus à la télécommande.
+                // Play Protect, a verification that does not complete, or a refusal on the remote.
                 "INSTALL_FAILED_VERIFICATION_FAILURE",
                 "INSTALL_FAILED_VERIFICATION_TIMEOUT",
                 "INSTALL_FAILED_ABORTED",

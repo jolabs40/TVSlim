@@ -18,8 +18,8 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Quand l'invitation à soutenir TV Slim se montre, et ce qui la mérite. Les deux applications s'en remettent à
- * ces règles : une invitation qui reviendrait chaque jour, ou après un don déclaré, ferait plus de tort que de bien.
+ * When the support invitation shows, and what earns it. Both apps rely on these rules: it must never come back
+ * daily, nor after a declared donation.
  */
 class InvitationSoutienTest {
 
@@ -27,7 +27,7 @@ class InvitationSoutienTest {
     private val depart = 1_790_000_000_000L
 
     @Test
-    fun `la premiere invitation se montre, la suivante attend trente jours`() {
+    fun `the first invitation shows, the next one waits thirty days`() {
         assertTrue(InvitationSoutien.aProposer(MemoireSoutien(), depart))
 
         val montree = MemoireSoutien(derniereInvitation = depart)
@@ -36,7 +36,7 @@ class InvitationSoutienTest {
     }
 
     @Test
-    fun `un don declare tait l'invitation pour toujours`() {
+    fun `a declared donation silences the invitation for good`() {
         val donne = MemoireSoutien(donDeclare = true)
 
         assertFalse(InvitationSoutien.aProposer(donne, depart))
@@ -44,12 +44,12 @@ class InvitationSoutienTest {
     }
 
     @Test
-    fun `une horloge revenue en arriere ne bloque pas l'invitation`() {
+    fun `a clock set backwards does not block the invitation`() {
         assertTrue(InvitationSoutien.aProposer(MemoireSoutien(derniereInvitation = depart), depart - jour))
     }
 
     @Test
-    fun `seul un lot d'actions toutes abouties merite un merci`() {
+    fun `only a batch where every action succeeded earns a thank you`() {
         val ok = ResultatAction("com.tcl.ad", "Publicité", reussi = true)
         val ko = ResultatAction("com.tcl.x", "Refusé", reussi = false, message = "protégé")
 
@@ -59,7 +59,7 @@ class InvitationSoutienTest {
     }
 
     @Test
-    fun `un transfert merite un merci s'il est arrive au bout, dans un sens comme dans l'autre`() {
+    fun `a transfer earns a thank you if it completed, in either direction`() {
         val envoi = ResultatDepot(destination = "/sdcard/Download", envoyes = 3, nombre = 3)
 
         assertTrue(InvitationSoutien.merite(envoi))
@@ -74,7 +74,7 @@ class InvitationSoutienTest {
     }
 
     @Test
-    fun `seule une installation reussie merite un merci`() {
+    fun `only a successful install earns a thank you`() {
         val apk = ApkChoisi(
             fichier = File("HippieTV.apk"),
             nom = "HippieTV.apk",
@@ -88,7 +88,7 @@ class InvitationSoutienTest {
     }
 
     @Test
-    fun `le bandeau se montre, se date, et ne revient pas avant son heure`() {
+    fun `the banner shows, records its date, and does not return before its time`() {
         val magasin = Magasin()
         var maintenant = depart
         val pilote = PiloteSoutien(magasin, CoroutineScope(Dispatchers.Unconfined)) { maintenant }
@@ -108,7 +108,7 @@ class InvitationSoutienTest {
     }
 
     @Test
-    fun `apres un don declare, le bandeau ne revient plus`() {
+    fun `after a declared donation, the banner never returns`() {
         val magasin = Magasin()
         var maintenant = depart
         val pilote = PiloteSoutien(magasin, CoroutineScope(Dispatchers.Unconfined)) { maintenant }

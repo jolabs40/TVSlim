@@ -5,7 +5,7 @@ material3 = "1.9.0"
 lifecycle = "2.11.0"
 coroutines = "1.11.0"
 serialization = "1.11.0"
-# Le même client ADB que le compagnon Android : même bibliothèque, même version.
+# Same ADB client and version as the Android companion.
 dadb = "2.0.0"
 jmdns = "3.6.3"
 jna = "5.19.1"
@@ -22,18 +22,18 @@ compose-material3 = { module = "org.jetbrains.compose.material3:material3", vers
 lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 
-# Dispatchers.Main sur le bureau : la file d'événements Swing.
+# Dispatchers.Main on desktop is the Swing event queue.
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 
-# Client ADB pur Kotlin : ni adb.exe, ni serveur ADB à installer.
+# Pure Kotlin ADB client: no adb.exe or ADB server to install.
 dadb = { module = "dev.mobile:dadb", version.ref = "dadb" }
 
-# Découverte des téléviseurs qui s'annoncent sur le réseau (_adb._tcp, _googlecast._tcp).
+# Discovers TVs that advertise themselves on the network (_adb._tcp, _googlecast._tcp).
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
 
-# DPAPI : la clé ADB dort chiffrée par Windows, lisible par ce seul compte utilisateur.
+# DPAPI: the ADB key is stored encrypted by Windows, readable only by the current user account.
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 
 junit = { module = "junit:junit", version.ref = "junit" }

@@ -1,4 +1,3 @@
-// Aucun plugin appliqué à la racine : chaque module déclare les siens.
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.android) apply false
@@ -7,9 +6,9 @@ plugins {
     alias(libs.plugins.hilt.android) apply false
 }
 
-// La version des deux applications, partagée : versionApp dans gradle.properties, ou -PversionApp= que la
-// CI tire du tag android-vX.Y.Z. Le versionCode en découle, X·10 000 + Y·100 + Z : il croît avec la version
-// tant que Y et Z restent sous 100 — Android refuse une mise à jour dont le versionCode descend.
+// Version shared by both apps: versionApp in gradle.properties, or -PversionApp= that CI takes from the
+// android-vX.Y.Z tag. versionCode is X*10000 + Y*100 + Z, which grows with the version as long as Y and Z
+// stay under 100; Android refuses an update whose versionCode goes down.
 val versionApp = providers.gradleProperty("versionApp").get()
 val (majeur, mineur, correctif) = Regex("""(\d{1,3})\.(\d{1,2})\.(\d{1,2})""").matchEntire(versionApp)?.destructured
     ?: error("versionApp invalide : $versionApp (attendu X.Y.Z, Y et Z sous 100)")

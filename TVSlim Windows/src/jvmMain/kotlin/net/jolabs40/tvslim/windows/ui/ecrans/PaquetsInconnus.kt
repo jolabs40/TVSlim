@@ -33,20 +33,20 @@ import net.jolabs40.tvslim.windows.ui.composants.LegendeOrigines
 import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import org.jetbrains.compose.resources.stringResource
 
-/** La largeur de la colonne des cases, dans la liste du catalogue : les inconnus s'y alignent. */
+/** Width of the checkbox column in the catalogue list, so unknown packages line up with it. */
 private val COLONNE_CASES = 120.dp
 
 /**
- * Sous le catalogue, les paquets livrés avec le téléviseur qu'il ne décrit pas : regroupés par éditeur
- * (« org.droidtv »), chacun avec son origine devinée. En lecture seule — un paquet système inconnu peut
- * porter le tuner ou la télécommande —, mais la liste s'exporte, pour compléter le catalogue, et se propose
- * à lui par le formulaire GitHub quand un paquet du constructeur y figure.
+ * Below the catalogue, preinstalled packages it does not describe, grouped by vendor ("org.droidtv"), each
+ * with its guessed origin. Read-only, since an unknown system package may run the tuner or the remote. The
+ * list can be exported to extend the catalogue, and submitted through the GitHub form when it contains a
+ * maker package.
  */
 fun LazyListScope.sectionInconnus(
     affiches: List<PaquetInconnu>,
     total: Int,
     onExporter: () -> Unit,
-    /** Null quand aucun paquet du constructeur n'échappe au catalogue : rien qui vaille une proposition. */
+    /** Null when no maker package is missing from the catalogue: nothing worth submitting. */
     onProposer: (() -> Unit)?,
 ) {
     item(key = "inconnus-entete") {
@@ -97,7 +97,7 @@ private fun LigneInconnu(inconnu: PaquetInconnu) {
         modifier = Modifier.fillMaxWidth().padding(end = 16.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // La colonne des cases reste vide : il n'y a rien à cocher ici.
+        // The checkbox column stays empty: nothing to select here.
         Spacer(Modifier.width(COLONNE_CASES))
         IconeOrigine(inconnu.origine)
         Text(

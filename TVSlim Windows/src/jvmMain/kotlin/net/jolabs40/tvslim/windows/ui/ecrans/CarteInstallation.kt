@@ -53,11 +53,11 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Installe sur le téléviseur une application qu'on a sous la main, en APK — choisie dans l'Explorateur ou
- * glissée dans la fenêtre. Ce que fait `adb install`, sans `adb.exe`.
+ * Installs an APK on the TV, picked in Explorer or dropped on the window: what `adb install` does, without
+ * `adb.exe`.
  *
- * Le bilan de la dernière installation reste affiché : la bannière passe, et un refus d'Android mérite
- * d'être relu, sa réponse brute comprise.
+ * The last result stays on the card, raw reply included, since the snackbar does not last and an Android
+ * refusal is worth rereading.
  */
 @Composable
 fun CarteInstallation(etat: EtatInstallation, onChoisir: () -> Unit) {
@@ -80,7 +80,7 @@ fun CarteInstallation(etat: EtatInstallation, onChoisir: () -> Unit) {
                 texte = stringResource(Res.string.install_sending, megaoctets(phase.envoye), megaoctets(phase.total)),
                 fraction = if (phase.total > 0) phase.envoye.toFloat() / phase.total else null,
             )
-            // Tout est parti : Android vérifie l'application, et le téléviseur peut demander son avis.
+            // Upload done: Android verifies the app, and the TV may ask for confirmation.
             PhaseInstallation.Installation -> Avancement(stringResource(Res.string.install_installing), fraction = null)
         }
     }
@@ -120,21 +120,20 @@ private fun Bilan(resultat: ResultatInstallation) {
             TexteSecondaire(identite(resultat.apk), petit = true)
             if (resultat is ResultatInstallation.Echouee) {
                 Text(text = stringResource(resultat.cause.ressource()), style = MaterialTheme.typography.bodyMedium)
-                // Vide quand le téléviseur n'a rien répondu : la cause suffit.
+                // Empty when the TV gave no answer; the cause is enough then.
                 if (resultat.detail.isNotBlank()) SelectionContainer { TexteSecondaire(resultat.detail, petit = true) }
             }
         }
     }
 }
 
-/** « net.jolabs40.hippietv · 2.4.0 » */
+/** "net.jolabs40.hippietv · 2.4.0" */
 private fun identite(apk: ApkChoisi): String =
     listOf(apk.manifeste.paquet, apk.manifeste.versionName).filter { it.isNotBlank() }.joinToString(" · ")
 
 /**
- * Ce que montre la fenêtre pendant qu'on y fait glisser un fichier : où il va partir, ou qu'il faut d'abord
- * se connecter. Avec une [destination] — l'onglet Fichiers —, il s'agit d'un dépôt dans ce dossier et non
- * d'une installation.
+ * Overlay shown while a file is dragged over the window: where it will go, or that a connection is needed.
+ * With a [destination] (Files tab), the drop is an upload to that folder, not an install.
  */
 @Composable
 fun VoileDepot(connecte: Boolean, nomTeleviseur: String, destination: String? = null) {

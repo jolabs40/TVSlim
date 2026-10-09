@@ -136,7 +136,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-/** Ce que l'onglet Fichiers demande au pilote. */
 data class ActionsFichiers(
     val onDemarrer: () -> Unit,
     val onOuvrir: (String) -> Unit,
@@ -148,23 +147,23 @@ data class ActionsFichiers(
     val onConfirmer: () -> Unit,
     val onAnnulerConfirmation: () -> Unit,
     val onArreter: () -> Unit,
-    /** Ouvre « Enregistrer sous » pour un fichier, le choix d'un dossier pour un dossier, puis copie. */
+    /** Opens the save dialog for a file or a folder picker for a folder, then copies. */
     val onCopier: (EntreeDistante) -> Unit,
     val onConfirmerCopie: () -> Unit,
     val onAnnulerCopie: () -> Unit,
     val onSupprimer: (EntreeDistante) -> Unit,
     val onConfirmerSuppression: () -> Unit,
     val onAnnulerSuppression: () -> Unit,
-    /** Montre dans l'Explorateur le dossier où est arrivée la dernière copie. */
+    /** Shows in Explorer the folder where the last copy landed. */
     val onOuvrirDossierLocal: (String) -> Unit,
 )
 
 /**
- * Les dossiers du téléviseur, comme dans l'Explorateur : des raccourcis, le fil du chemin, la liste. Ce qu'on
- * glisse dans la fenêtre, ou qu'on choisit par les deux boutons, part dans le dossier affiché.
+ * The TV's folders, Explorer style. Files dropped on the window or picked with the two buttons are uploaded to
+ * the folder shown.
  *
- * Un clic sur un dossier y entre. Un fichier ne s'ouvre pas : le téléviseur n'a rien pour le montrer ici. Copier
- * vers le PC et supprimer se trouvent au survol d'une ligne, et au clic droit.
+ * Clicking a folder enters it. Files do not open, as there is nothing here to display them. Copy to PC and delete
+ * appear on row hover and on right-click.
  */
 @Composable
 fun FichiersEcran(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFichiers) {
@@ -172,7 +171,7 @@ fun FichiersEcran(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFich
         EcranVide(stringResource(Res.string.files_not_connected))
         return
     }
-    // Première visite sur ce téléviseur : le stockage interne se lit sans qu'on le demande.
+    // First visit for this TV: read internal storage without waiting to be asked.
     LaunchedEffect(Unit) { actions.onDemarrer() }
 
     var nouveauDossier by remember { mutableStateOf(false) }
@@ -228,7 +227,7 @@ fun FichiersEcran(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFich
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Un dossier qui ne se lit pas ne reçoit rien : l'examen le refuserait de toute façon.
+                // An unreadable folder accepts nothing; the upload check would refuse it anyway.
                 val ouvert = etat.lecture is LectureDossier.Lue
                 Button(onClick = actions.onEnvoyerFichiers, enabled = ouvert && !etat.occupe) {
                     IconeBouton(Res.drawable.baseline_upload_file_24)
@@ -252,7 +251,7 @@ fun FichiersEcran(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFich
                 etat.effacement -> Avancement(texte = stringResource(Res.string.files_deleting), fraction = null)
                 avancee != null -> Envoi(avancee, actions.onArreter)
                 dernier != null -> {
-                    // Rien d'arrivé, rien à montrer : le dossier n'existe peut-être même pas.
+                    // Nothing arrived, nothing to show: the folder may not even exist.
                     if (dernier.sens == SensTransfert.RECEPTION && dernier.envoyes > 0) {
                         DerniereCopie(dernier, actions.onOuvrirDossierLocal)
                     }
@@ -265,7 +264,7 @@ fun FichiersEcran(connecte: Boolean, etat: EtatExplorateur, actions: ActionsFich
     }
 }
 
-/** Les dossiers qu'on cherche le plus, et les volumes branchés : clé USB, carte SD. */
+/** Most-used folders and mounted volumes (USB drive, SD card). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Raccourcis(etat: EtatExplorateur, onOuvrir: (String) -> Unit) {
@@ -305,7 +304,7 @@ private fun iconeRaccourci(nature: NatureRaccourci): DrawableResource = when (na
     else -> Res.drawable.baseline_folder_24
 }
 
-/** Remonter, le fil du chemin — chaque étape s'ouvre d'un clic —, puis taper un chemin ou relire. */
+/** Up button, clickable breadcrumb, then type a path or refresh. */
 @Composable
 private fun BarreChemin(etat: EtatExplorateur, actions: ActionsFichiers, onAllerA: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -321,7 +320,7 @@ private fun BarreChemin(etat: EtatExplorateur, actions: ActionsFichiers, onAller
         ) {
             etat.etapes.forEachIndexed { rang, etape ->
                 if (rang > 1) TexteSecondaire("›")
-                // Un bouton de texte serait trop large pour « / » : sa largeur minimale écarterait le fil.
+                // A TextButton is too wide for "/": its minimum width would spread out the breadcrumb.
                 Text(
                     text = etape.nom,
                     modifier = Modifier
@@ -360,7 +359,7 @@ private fun Envoi(avancee: AvanceeDepot, onArreter: () -> Unit) {
                     avancee.rang.coerceAtLeast(1),
                     avancee.nombre,
                 ),
-                // Une taille inconnue ne fait pas avancer la barre : on compte alors les fichiers.
+                // An unknown size would not move the bar, so count files instead.
                 fraction = if (avancee.total > 0) {
                     avancee.envoye.toFloat() / avancee.total
                 } else {
@@ -388,7 +387,7 @@ private fun Avancement(texte: String, fraction: Float?) {
     }
 }
 
-/** Où est arrivée la dernière copie, et de quoi l'ouvrir : on ne cherche pas ce qu'on vient de copier. */
+/** Where the last copy landed, with a button to open it. */
 @Composable
 private fun DerniereCopie(resultat: ResultatDepot, onOuvrirDossierLocal: (String) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -404,10 +403,10 @@ private fun DerniereCopie(resultat: ResultatDepot, onOuvrirDossierLocal: (String
     }
 }
 
-/** Ce que le dernier envoi n'a pas déposé, et pourquoi : la bannière passe, la liste reste jusqu'au suivant. */
+/** What the last upload failed to place, and why. Unlike the snackbar, this list stays until the next upload. */
 @Composable
 private fun Echecs(resultat: ResultatDepot) {
-    // Un refus sans un mot du téléviseur se dit dans la langue de l'écran.
+    // A refusal with no message from the TV is worded in the UI language.
     val refuse = stringResource(Res.string.files_refused_silent)
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -456,7 +455,7 @@ private fun Liste(etat: EtatExplorateur, actions: ActionsFichiers) {
                         LigneEntree(
                             entree = entree,
                             date = format.format(Instant.ofEpochMilli(entree.date).atZone(ZoneId.systemDefault())),
-                            // Une opération à la fois : pendant un envoi, une copie ou une suppression, rien ne s'offre.
+                            // One operation at a time: nothing is offered during an upload, copy or delete.
                             actif = !etat.occupe,
                             onOuvrir = { actions.onOuvrir(CheminDistant.joindre(lecture.chemin, entree.nom)) },
                             onCopier = { actions.onCopier(entree) },
@@ -470,7 +469,7 @@ private fun Liste(etat: EtatExplorateur, actions: ActionsFichiers) {
                 )
             }
         }
-        // Une relecture du même dossier garde la liste à l'écran : un trait suffit à dire qu'elle se fait.
+        // Re-reading the same folder keeps the list on screen; a thin progress bar is enough.
         if (etat.chargement && etat.lecture != null) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
         }
@@ -478,8 +477,8 @@ private fun Liste(etat: EtatExplorateur, actions: ActionsFichiers) {
 }
 
 /**
- * Une entrée du dossier. Copier vers le PC et supprimer apparaissent au survol — cent lignes n'ont pas à porter
- * deux cents boutons — et au clic droit, comme dans l'Explorateur.
+ * A folder entry. Copy to PC and delete appear on hover, so a hundred rows do not carry two hundred buttons,
+ * and on right-click, as in Explorer.
  */
 @Composable
 private fun LigneEntree(
@@ -490,13 +489,13 @@ private fun LigneEntree(
     onCopier: () -> Unit,
     onSupprimer: () -> Unit,
 ) {
-    // Un nom qui commence par un point est caché sur Android aussi : il reste là, en retrait.
+    // Dot files are hidden on Android too: still listed, but dimmed.
     val couleur = if (entree.nom.startsWith('.')) {
         MaterialTheme.colorScheme.onSurfaceVariant
     } else {
         MaterialTheme.colorScheme.onSurface
     }
-    // Un tube ou un périphérique ne se copie pas : sa lecture ne finirait jamais.
+    // Pipes and device nodes cannot be copied: reading them would never end.
     val copiable = entree.nature != NatureEntree.AUTRE
     val libelleCopier = stringResource(Res.string.files_copy)
     val libelleSupprimer = stringResource(Res.string.files_delete)
@@ -516,15 +515,15 @@ private fun LigneEntree(
             modifier = Modifier
                 .fillMaxWidth()
                 .hoverable(interactions)
-                // Un fichier ne s'ouvre pas, mais sa ligne s'éclaire au survol comme celle d'un dossier : on voit à
-                // quelle ligne appartiennent les boutons.
+                // Files do not open, but their row highlights on hover like a folder's, to show which row the
+                // buttons belong to.
                 .then(if (entree.dossier) Modifier.clickable(onClick = onOuvrir) else Modifier.indication(interactions, ripple()))
                 .padding(start = 20.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ContenuLigne(entree, date, couleur)
-            // La place reste réservée : la ligne ne bouge pas quand les boutons paraissent.
+            // Space stays reserved so the row does not shift when the buttons appear.
             Row(
                 modifier = Modifier.width(72.dp).height(32.dp),
                 horizontalArrangement = Arrangement.End,
@@ -544,7 +543,7 @@ private fun LigneEntree(
     }
 }
 
-/** Un bouton d'icône de 32 dp, son nom en infobulle : une icône seule ne dit pas toujours ce qu'elle fait. */
+/** 32 dp icon button with its name as a tooltip, since an icon alone is not always clear. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ActionLigne(
@@ -580,7 +579,6 @@ private fun ActionLigne(
     }
 }
 
-/** Icône, nom, lien, taille et date : la ligne telle qu'elle se lit. */
 @Composable
 private fun RowScope.ContenuLigne(entree: EntreeDistante, date: String, couleur: Color) {
     Icon(
@@ -646,5 +644,5 @@ private fun IconeBouton(icone: DrawableResource) {
     Spacer(Modifier.width(8.dp))
 }
 
-/** Au-delà, la carte deviendrait la page : la liste complète n'apprendrait rien de plus. */
+/** Beyond this the card would take over the page, and the full list would add nothing. */
 private const val ECHECS_MAX = 20

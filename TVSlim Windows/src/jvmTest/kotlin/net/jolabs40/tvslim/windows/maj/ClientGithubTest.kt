@@ -16,7 +16,7 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 
-/** Le téléchargement sur un vrai serveur HTTP local : ce qui arrive, et ce qui n'arrive jamais. */
+/** Downloads against a real local HTTP server: what lands, and what never does. */
 class ClientGithubTest {
 
     @get:Rule
@@ -47,12 +47,12 @@ class ClientGithubTest {
     private fun client() = ClientGithub(depot = "jolabs40/TVSlim", versionApp = "test", api = base)
 
     @Test
-    fun `les publications se lisent depuis l'API`() = runTest {
+    fun `releases are read from the API`() = runTest {
         assertEquals("windows-v1.0.1", client().publications().single().tag)
     }
 
     @Test
-    fun `un telechargement complet arrive sous son nom, sans fichier provisoire`() = runTest {
+    fun `a complete download lands under its name, with no temporary file`() = runTest {
         val cible = File(dossier.root, "a.msi")
         var derniere = 0f
 
@@ -64,7 +64,7 @@ class ClientGithubTest {
     }
 
     @Test
-    fun `un fichier plus gros que prevu est abandonne sans rien laisser`() = runTest {
+    fun `a file larger than expected is dropped without leaving anything`() = runTest {
         val cible = File(dossier.root, "a.msi")
 
         val erreur = runCatching { client().telecharger("$base/fichier", cible, tailleMax = 1_000) {} }
@@ -75,7 +75,7 @@ class ClientGithubTest {
     }
 
     @Test
-    fun `une reponse en erreur n'est pas prise pour un fichier`() = runTest {
+    fun `an error response is not mistaken for a file`() = runTest {
         val cible = File(dossier.root, "a.msi")
 
         val erreur = runCatching { client().telecharger("$base/absent", cible, tailleMax = 1_000) {} }

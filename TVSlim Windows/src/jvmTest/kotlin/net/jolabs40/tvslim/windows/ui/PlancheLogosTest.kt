@@ -114,9 +114,9 @@ import java.util.Locale
 import javax.imageio.ImageIO
 
 /**
- * Les logos et les cartes qui les portent, rendus hors écran avec des données fabriquées : aucun
- * téléviseur n'est nécessaire, et tous les cas se voient d'un coup — Startlight absent, installé,
- * aucun launcher tiers ; une Philips qui se déclare « TPV » ; une box. Ne tourne que sur demande :
+ * Renders logos and the cards that show them off screen, with fake data: no TV needed, and every case shows at
+ * once (Startlight missing, installed, no third-party launcher; a Philips reporting itself as "TPV"; a box).
+ * Opt-in:
  *
  *     ./gradlew jvmTest --tests "*PlancheLogosTest*" -Pplanche=1 --rerun
  */
@@ -131,7 +131,7 @@ class PlancheLogosTest {
 
     @OptIn(ExperimentalLayoutApi::class)
     @Test
-    fun `planche des logos et des cartes qui les portent`() {
+    fun `contact sheet of logos and the cards that show them`() {
         assumeTrue("-Pplanche=1 pour produire la planche", System.getProperty("tvslim.planche") != null)
         sortie.mkdirs()
         Locale.setDefault(Locale.FRANCE)
@@ -183,7 +183,7 @@ class PlancheLogosTest {
             }
         }
 
-        // Une Philips se déclare « TPV » : la fiche doit dire Philips. Une Shield est une box.
+        // A Philips reports "TPV" but the card must say Philips. A Shield is a box.
         rendre("17-appareil-philips", 720, 440) {
             CarteAppareil(
                 EtatApp(
@@ -209,7 +209,7 @@ class PlancheLogosTest {
             )
         }
 
-        // Les téléviseurs trouvés : ceux déjà joints une fois portent leur marque.
+        // Discovered TVs: those connected to before show their brand.
         val decouverte = EtatApp(
             catalogue = catalogue,
             decouverte = ResultatDecouverte(
@@ -230,7 +230,7 @@ class PlancheLogosTest {
             )
         }
 
-        // L'accueil d'usine coupé reste listé, et l'accueil en place se lit en grand.
+        // A disabled stock launcher stays listed, and the current launcher is shown large.
         val launcherx = "com.google.android.apps.tv.launcherx"
         val usineCoupee = EtatApp(
             catalogue = catalogue,
@@ -256,7 +256,7 @@ class PlancheLogosTest {
         )
         rendre("21-accueil-usine-seul", 720, 900) { CarteAccueil(usineSeule, {}, {}, {}) }
 
-        // Ce qu'une configuration réinjectée changerait, avant d'y toucher.
+        // What reapplying a configuration would change, shown before anything is touched.
         val plan = PlanReinjection(
             configuration = ConfigurationTv(
                 application = ConfigurationTv.APPLICATION,
@@ -273,7 +273,7 @@ class PlancheLogosTest {
             ConfirmationDialogue(Confirmation.Reinjection(plan), {}, {})
         }
 
-        // L'onglet Mémoire, basculé sur le stockage d'un clic sur le second segment.
+        // Memory tab, switched to storage by clicking the second segment.
         val stockage = EtatApp(
             catalogue = catalogue,
             connexion = ConnexionUi(etat = EtatConnexion.CONNECTE, hote = "192.168.2.135"),
@@ -294,12 +294,12 @@ class PlancheLogosTest {
                 ),
             ),
         )
-        // Le sélecteur fait 360 de large à partir de 20 : le second segment couvre 200 à 380.
+        // The selector is 360 wide starting at 20, so the second segment spans 200 to 380.
         rendre("23-stockage", 1280, 720, cadre = false, clic = Offset(290f, 36f)) {
             MemoireEcran(stockage, {}, {}, {}, {})
         }
 
-        // L'onglet Paquets, liste des profils ouverte d'un clic : le champ est en haut à droite.
+        // Packages tab with the profile list opened by a click; the field is at the top right.
         val lignes = catalogue.entrees.mapIndexed { rang, entree ->
             LignePaquet(entree, if (rang % 5 == 0) EtatPaquet.DESACTIVE else EtatPaquet.ACTIF)
         }
@@ -312,7 +312,7 @@ class PlancheLogosTest {
             PaquetsEcran(paquets, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         }
 
-        // Une ligne du catalogue par origine, puis ce qu'il ignore, rangé par éditeur.
+        // One catalogue row per origin, then the packages the catalogue does not know, grouped by publisher.
         val inconnus = EtatApp(
             catalogue = catalogue,
             connexion = ConnexionUi(etat = EtatConnexion.CONNECTE, hote = "192.168.2.135"),
@@ -335,8 +335,8 @@ class PlancheLogosTest {
             PaquetsEcran(inconnus, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         }
 
-        // L'installation d'un APK : l'onglet Téléviseur joint, un envoi en cours, les deux bilans, la
-        // confirmation d'un retour en arrière et le voile d'un fichier qu'on glisse dans la fenêtre.
+        // APK install: the TV tab while connected, an upload in progress, both outcomes, the downgrade
+        // confirmation, and the overlay shown while a file is dragged over the window.
         val hippie = ApkChoisi(
             fichier = File("HippieTV-2.4.0.apk"),
             nom = "HippieTV-2.4.0.apk",
@@ -353,7 +353,7 @@ class PlancheLogosTest {
         rendre("25-televiseur-installation", 1280, 1100, cadre = false) {
             ConnexionEcran(
                 joint, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, ActionsPermissions({}, {}, {}, {}, {}, {}, {}), EtatApplications(),
-                // La carte de l'application TV, absente du téléviseur, la 1.1.0 publiée.
+                // TV app card: not installed on the TV, 1.1.0 released.
                 EtatApplicationTvUi(
                     situation = SituationTv(
                         disponible = PublicationTv("1.1.0", 10100, "TVSlim-TV-1.1.0.apk", "https://github.com/", 1_300_000),
@@ -384,7 +384,7 @@ class PlancheLogosTest {
             VoileDepot(connecte = true, nomTeleviseur = "TCL Smart TV Pro")
         }
 
-        // La commande libre : une sortie ordinaire, puis une commande qui ne finit pas et que le délai coupe.
+        // Free-form command: a normal output, then a command that never ends and is cut by the timeout.
         rendre("29-commande-adb", 720, 1040) {
             CarteCommande(
                 EtatCommande(
@@ -414,7 +414,7 @@ class PlancheLogosTest {
             )
         }
 
-        // L'onglet Fichiers : un dossier lu, un envoi en cours, sa confirmation, un dossier refusé.
+        // Files tab: a folder listing, an upload in progress, its confirmation, a denied folder.
         val jour = 1_790_000_000_000L
         val films = EtatExplorateur(
             chemin = "/sdcard/Movies",
@@ -487,7 +487,7 @@ class PlancheLogosTest {
             VoileDepot(connecte = true, nomTeleviseur = "TCL Smart TV Pro", destination = "/sdcard/Movies")
         }
 
-        // Copier vers le PC et supprimer : au survol, au clic droit, leurs confirmations, la copie en cours.
+        // Copy to PC and delete: on hover, on right-click, their confirmations, a copy in progress.
         rendre("35-fichiers-survol", 1280, 520, cadre = false, survol = Offset(600f, 330f)) {
             FichiersEcran(connecte = true, etat = films, actions = actions)
         }
@@ -548,15 +548,15 @@ class PlancheLogosTest {
             )
         }
 
-        // Le bandeau de soutien, en haut de la fenêtre, et son lien permanent dans « À propos ».
+        // The support banner at the top of the window, and its permanent link in the About dialog.
         rendre("41-soutien", 1280, 80, cadre = false) { BanniereSoutien(true, {}, {}, {}) }
         rendre("42-soutien-sombre", 1280, 80, sombre = true, cadre = false) { BanniereSoutien(true, {}, {}, {}) }
         rendre("43-a-propos", 900, 760, cadre = false) {
             AProposDialogue(EtatMiseAJour(versionActuelle = "1.4.0"), {}, {}, {}, {}, {}, {}, {}, {}, {})
         }
 
-        // L'écran du téléviseur : les boutons de la barre du haut au repos, puis pendant un miroir, un
-        // enregistrement et un téléchargement ; l'aperçu d'une capture, la proposition de scrcpy, la vidéo.
+        // TV screen: the top bar buttons idle, then during a mirror, a recording and a download; the screenshot
+        // preview, the scrcpy download offer, the recorded video.
         rendre("44-ecran-boutons", 640, 300) {
             val il = System.currentTimeMillis()
             ActionsEcran(EtatEcran(), connecte = true, {}, {}, {}, {}, {})
@@ -592,7 +592,7 @@ class PlancheLogosTest {
             VideoEnregistreeDialogue(File("C:/Users/Camille/Videos/TV Slim/TVSlim-TCL-Smart-TV-Pro-2026-10-04_19-20-02.mp4"), {}, {})
         }
         rendre("48-fermeture-video", 900, 480, cadre = false) { FermetureDialogue(PhaseEnregistrement.Copie(0.55f)) }
-        // Un téléphone joint : seul l'accueil en place, ni recommandation ni accueils d'usine (relevé du Pixel 9a).
+        // A connected phone: only the current launcher, no recommendation or stock launchers (data from a Pixel 9a).
         val pixel = EtatApp(
             catalogue = catalogue,
             infos = InfosAppareil(
@@ -608,7 +608,7 @@ class PlancheLogosTest {
         )
         rendre("49-accueil-telephone", 720, 300) { CarteAccueil(pixel, {}, {}, {}) }
 
-        // Permissions : l'application choisie dans la liste, et ce qu'elle déclare (2026-10-06).
+        // Permissions: the app picked from the list, and what it declares.
         val permissionsLues = EtatPermissions(
             paquet = "net.jolabs40.tvslim",
             lues = PermissionsPaquet(
@@ -627,7 +627,7 @@ class PlancheLogosTest {
             CartePermissions(permissionsLues, EtatApplications(), ActionsPermissions({}, {}, {}, {}, {}, {}, {}))
         }
 
-        // Le symbole de Ko-fi de la barre du haut, en clair et en sombre.
+        // The Ko-fi icon in the top bar, light and dark.
         rendre("50-bouton-soutien", 120, 80) { BoutonSoutien {} }
         rendre("51-bouton-soutien-sombre", 120, 80, sombre = true) { BoutonSoutien {} }
     }

@@ -6,7 +6,7 @@ import net.jolabs40.tvslim.journal.TypeAction
 import net.jolabs40.tvslim.shell.ExecuteurDirect
 import net.jolabs40.tvslim.shell.Interruption
 
-/** Pourquoi une saisie ne part pas. */
+/** Why typed input is not sent. */
 enum class RefusCommande { VIDE, PAS_SHELL, TROP_LONGUE }
 
 sealed interface SaisieCommande {
@@ -15,14 +15,13 @@ sealed interface SaisieCommande {
     data class Refusee(val refus: RefusCommande) : SaisieCommande
 }
 
-/** Une commande, et ce qu'elle a rendu. */
 data class EchangeCommande(
     val commande: String,
     val code: Int?,
     val sortie: String,
     val interruption: Interruption? = null,
     val motif: String = "",
-    /** La longueur de la sortie reçue, avant qu'elle soit tronquée pour l'affichage. */
+    /** Length of the output received, before truncation for display. */
     val longueurRecue: Int = sortie.length,
 ) {
     val reussie: Boolean get() = code == 0
@@ -30,12 +29,11 @@ data class EchangeCommande(
 }
 
 /**
- * La commande ADB libre : ce que les autres cartes ne font pas, tapé à la main.
+ * Free-form `adb shell` command typed by hand.
  *
- * C'est la seule porte de TV Slim qui ne passe par aucun garde-fou, et c'est assumé : une liste noire se
- * contourne (`cmd package uninstall`, `sh -c "…"`), elle ne ferait que donner une fausse assurance. Ce qui
- * reste tenu : la commande part **une seule fois**, jamais rejouée après une rupture ; elle est consignée
- * au journal, sans commande d'annulation ; et l'écran dit qu'elle échappe au reste.
+ * The only path in TV Slim that bypasses every safeguard, on purpose: a blocklist is easy to evade
+ * (`cmd package uninstall`, `sh -c "..."`) and would only give false assurance. Instead the command is sent
+ * once, never replayed after a disconnect, and logged to the journal with no undo command.
  */
 class ConsoleAdb(
     private val executeur: ExecuteurDirect,
@@ -73,24 +71,24 @@ class ConsoleAdb(
     }
 
     companion object {
-        /** Le délai maximal d'une commande libre : au-delà, elle est coupée, et sa sortie rendue. */
+        /** Past this, the command is cut off and the output so far is returned. */
         const val DELAI_MAX_S = 30
 
-        /** Au-delà, la sortie est tronquée pour l'affichage : `dumpsys` écrit à lui seul des centaines de Ko. */
+        /** Output beyond this is truncated for display: `dumpsys` alone prints hundreds of KB. */
         const val SORTIE_MAX = 200_000
 
         const val LONGUEUR_MAX = 4_000
         private const val CIBLE_MAX = 300
         private const val MESSAGE_MAX = 300
 
-        /** `adb`, ses options — celles qui prennent une valeur d'abord — puis `shell`. */
+        /** `adb`, its options (those taking a value first), then `shell`. */
         private val ENVELOPPE = Regex("""^adb(?:\s+-[stHPL]\s+\S+|\s+-\S+)*\s+shell(?:\s+|$)""")
 
         /**
-         * Ce qui partira, ou pourquoi rien ne part. « adb shell pm list packages », collé d'un tutoriel,
-         * perd son enveloppe — `-s <appareil>` compris — et une paire de guillemets qui entourait toute la
-         * commande, que le shell de l'ordinateur aurait retirée. Les autres commandes d'`adb` (`install`,
-         * `push`, `reboot`…) ne passent pas par le shell du téléviseur : refusées.
+         * Returns the command to send, or why nothing is sent. `adb shell pm list packages` pasted from a
+         * tutorial loses its `adb [-s <device>] shell` prefix, and a pair of quotes around the whole command
+         * that the computer's shell would have removed. Other `adb` commands (`install`, `push`, `reboot`...)
+         * do not run in the TV's shell and are rejected.
          */
         fun lire(saisie: String): SaisieCommande {
             val texte = saisie.trim()

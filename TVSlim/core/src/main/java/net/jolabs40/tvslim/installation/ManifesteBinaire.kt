@@ -2,44 +2,41 @@ package net.jolabs40.tvslim.installation
 
 import java.nio.charset.Charset
 
-/** Ce qu'un APK dit de lui-même, lu dans son manifeste. */
+/** What an APK declares about itself in its manifest. */
 data class ManifesteApk(
     val paquet: String,
     val versionCode: Long,
     val versionName: String,
-    /** `null` quand l'APK ne le déclare pas, ou le déclare par le nom de code d'une préversion. */
+    /** `null` when not declared, or declared as a preview codename. */
     val minSdk: Int?,
 )
 
-/** Un élément du XML binaire : son nom, et ses attributs rangés par nom. */
+/** A binary XML element: its name and its attributes by name. */
 internal data class ElementBinaire(val nom: String, val attributs: Map<String, ValeurBinaire>)
 
-/** La valeur d'un attribut : un texte, un entier, ou une référence à une ressource qu'on ne résout pas. */
+/** Attribute value: a string, an integer, or a resource reference that is not resolved. */
 internal data class ValeurBinaire(val texte: String?, val type: Int, val donnee: Int) {
     val entier: Int? get() = if (type in TYPE_ENTIER_DECIMAL..TYPE_ENTIER_HEXADECIMAL) donnee else null
 }
 
 /**
- * Lecteur du manifeste compilé d'un APK — le format « AXML » d'`aapt`, un XML binaire en petit-boutiste.
+ * Reads an APK's compiled manifest (`aapt`'s AXML, little-endian binary XML) to show package, version
+ * and minimum Android before anything is sent to the TV. Uses no SDK tool or Android API, so the
+ * Windows build compiles it as is.
  *
- * Il ne sert qu'à dire, avant d'envoyer quoi que ce soit au téléviseur, quelle application on s'apprête
- * à installer : son paquet, sa version, l'Android qu'elle exige. Aucun outil du SDK n'est nécessaire, et
- * rien d'Android n'est appelé : le build Windows compile ce fichier tel quel.
- *
- * Trois morceaux comptent. La table des chaînes, en UTF-16 pour un manifeste — `aapt2` l'impose, pour les
- * anciens Android — et en UTF-8 pour les autres ressources. La table des identifiants, qui nomme un
- * attribut `android:` même quand un obfuscateur a vidé son nom. Et les débuts d'éléments, avec leurs
- * attributs de vingt octets chacun.
+ * Three chunk types matter: the string pool (UTF-16 in a manifest, as `aapt2` enforces for old Android
+ * versions; UTF-8 elsewhere), the resource ID map (names an `android:` attribute even when an
+ * obfuscator blanked it), and start elements with their 20-byte attributes.
  */
 internal object ManifesteBinaire {
 
-    /** Le manifeste de ces octets, ou `null` s'ils n'en sont pas un — tronqués, ou fabriqués. */
+    /** Parses [octets], or returns `null` if they are not a manifest (truncated or crafted). */
     fun lire(octets: ByteArray): ManifesteApk? {
         val elements = runCatching { elements(octets) }.getOrNull() ?: return null
         val manifeste = elements.firstOrNull { it.nom == "manifest" } ?: return null
         val paquet = manifeste.attributs["package"]?.texte?.takeIf { it.isNotBlank() } ?: return null
 
-        // Deux mots de 32 bits, lus sans signe : versionCodeMajor n'existe que depuis Android 9.
+        // Two unsigned 32-bit words; versionCodeMajor only exists since Android 9.
         val mineur = manifeste.attributs["versionCode"]?.entier?.toLong()?.and(MASQUE_32_BITS) ?: 0L
         val majeur = manifeste.attributs["versionCodeMajor"]?.entier?.toLong()?.and(MASQUE_32_BITS) ?: 0L
         return ManifesteApk(
@@ -50,7 +47,7 @@ internal object ManifesteBinaire {
         )
     }
 
-    /** Tous les débuts d'éléments du document, dans l'ordre. Lève une exception sur un fichier malformé. */
+    /** Returns all start elements of the document, in order. Throws on a malformed file. */
     fun elements(octets: ByteArray): List<ElementBinaire> {
         val lecteur = Octets(octets)
         require(lecteur.u16(0) == TYPE_XML) { "pas un XML binaire" }
@@ -63,7 +60,7 @@ internal object ManifesteBinaire {
             val type = lecteur.u16(position)
             val entete = lecteur.u16(position + 2)
             val taille = lecteur.i32(position + 4)
-            // Une taille nulle ferait tourner la boucle sur place ; une taille trop grande, lire ailleurs.
+            // A zero size would loop forever; an oversized one would read out of bounds.
             require(taille >= TAILLE_ENTETE && position.toLong() + taille <= octets.size) { "morceau malformé" }
             when (type) {
                 TYPE_CHAINES -> chaines = lireChaines(lecteur, position, entete, taille)
@@ -86,7 +83,7 @@ internal object ManifesteBinaire {
         }
     }
 
-    /** Deux longueurs précèdent le texte : en caractères UTF-16, inutile ici, puis en octets. */
+    /** Two lengths precede the text: in UTF-16 characters (unused here), then in bytes. */
     private fun chaineUtf8(lecteur: Octets, debut: Int): String {
         var position = debut + if (lecteur.u8(debut) and 0x80 != 0) 2 else 1
         var longueur = lecteur.u8(position++)
@@ -119,7 +116,7 @@ internal object ManifesteBinaire {
             val brut = lecteur.i32(attribut + 8)
             val type = lecteur.u8(attribut + 15)
             val donnee = lecteur.i32(attribut + 16)
-            // L'identifiant d'abord : il résiste à un nom d'attribut vidé par un obfuscateur.
+            // Resource ID first: it survives an attribute name blanked by an obfuscator.
             val nom = identifiants.getOrNull(indexNom)?.let(NOMS_PAR_IDENTIFIANT::get)
                 ?: chaines.getOrElse(indexNom) { "" }
             val texte = when {
@@ -132,7 +129,7 @@ internal object ManifesteBinaire {
         return ElementBinaire(chaines.getOrElse(lecteur.i32(extension + 4)) { "" }, attributs)
     }
 
-    /** Lecture en petit-boutiste. Un décalage hors du tableau lève une exception, que [lire] rattrape. */
+    /** Little-endian reads. An out-of-range offset throws, and [lire] catches it. */
     private class Octets(private val octets: ByteArray) {
         fun u8(position: Int): Int = octets[position].toInt() and 0xFF
         fun u16(position: Int): Int = u8(position) or (u8(position + 1) shl 8)
@@ -149,7 +146,7 @@ internal object ManifesteBinaire {
     private const val TYPE_CHAINE = 0x03
     private const val MASQUE_32_BITS = 0xFFFFFFFFL
 
-    /** Les attributs `android:` qui nous intéressent, par identifiant de ressource du cadre. */
+    /** The `android:` attributes read here, by framework resource ID. */
     private val NOMS_PAR_IDENTIFIANT = mapOf(
         0x0101021b to "versionCode",
         0x0101021c to "versionName",

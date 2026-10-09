@@ -3,14 +3,12 @@ package net.jolabs40.tvslim.windows.ui
 import net.jolabs40.tvslim.device.PermissionsPaquet
 
 /**
- * Ce que la carte « Permissions » de l'onglet Téléviseur affiche. Identique au compagnon.
+ * State of the "Permissions" card on the TV tab, same as the companion.
  *
- * [lues] vaut `null` tant qu'on n'a rien demandé au téléviseur, et [paquetLu] retient à quel
- * paquet la lecture se rapportait : changer de paquet sans relire ne doit pas laisser croire
- * qu'on connaît l'état du nouveau.
+ * [lues] is `null` until the TV has been queried, and [paquetLu] records which package it describes, so
+ * switching packages without re-reading does not pretend to know the new one's state.
  *
- * Les deux champs partent vides, sans raccourcis, comme sur le compagnon : un exemple en filigrane dit
- * ce qu'on attend (demande du 2026-09-14).
+ * Both fields start empty with a placeholder example; no shortcut chips.
  */
 data class EtatPermissions(
     val paquet: String = "",
@@ -20,10 +18,10 @@ data class EtatPermissions(
     val paquetLu: String = "",
     val modeAppOp: String = "",
 ) {
-    /** L'app-op qui double la permission choisie, s'il y en a un. */
+    /** App-op paired with the chosen permission, if any. */
     val appOp: String get() = APP_OPS_ASSOCIES[permission].orEmpty()
 
-    /** Vrai quand [lues] décrit bien le paquet actuellement saisi. */
+    /** True when [lues] describes the package currently entered. */
     val aJour: Boolean get() = lues != null && paquetLu == paquet
 
     val accordee: Boolean get() = aJour && lues?.estAccordee(permission) == true
@@ -35,24 +33,23 @@ data class EtatPermissions(
     val saisieComplete: Boolean get() = paquet.isNotBlank() && permission.isNotBlank()
 }
 
-/** Les callbacks de la carte, groupés. */
 data class ActionsPermissions(
     val onPaquet: (String) -> Unit,
     val onPermission: (String) -> Unit,
     val onLire: () -> Unit,
     val onAccorder: () -> Unit,
     val onRetirer: () -> Unit,
-    /** Une application choisie dans la liste du téléviseur. */
+    /** An app picked from the TV's app list. */
     val onChoisirPaquet: (String) -> Unit,
-    /** La liste n'est pas encore lue : celle de l'onglet Applications sert ici. */
+    /** Loads that list, shared with the Applications tab, when it has not been read yet. */
     val onChargerApplications: () -> Unit,
 )
 
 /**
- * Les permissions qu'Android double d'un app-op, et l'op correspondant.
+ * Permissions that Android also gates behind an app-op, mapped to that op.
  *
- * Accorder `PACKAGE_USAGE_STATS` sans poser `GET_USAGE_STATS` donne un `pm grant` réussi et une
- * application qui ne voit toujours rien : les deux verrous doivent tomber ensemble.
+ * Granting `PACKAGE_USAGE_STATS` without allowing `GET_USAGE_STATS` gives a successful `pm grant` and an
+ * app that still sees nothing: both must be set together.
  */
 val APP_OPS_ASSOCIES = mapOf(
     "android.permission.PACKAGE_USAGE_STATS" to "GET_USAGE_STATS",

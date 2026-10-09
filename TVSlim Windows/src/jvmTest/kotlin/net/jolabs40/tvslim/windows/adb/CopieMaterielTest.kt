@@ -28,21 +28,20 @@ import java.security.MessageDigest
 import kotlin.random.Random
 
 /**
- * Copier vers le PC et effacer, sur un vrai téléviseur, par le client ADB de l'application et le noyau partagé.
- * Ne tourne que sur demande, parce qu'il **écrit et efface** — dans un dossier `tvslim-copie-…` de
- * Téléchargements et dans `/data/local/tmp`, rien d'autre :
+ * Copy to PC and delete on a real TV, through the app's ADB client and the shared core. Opt-in because it writes
+ * and deletes, only in a `tvslim-copie-...` folder under Download and in `/data/local/tmp`:
  *
  *     ./gradlew jvmTest --tests "*CopieMaterielTest*" '-Pmateriel=192.168.2.135' -Pdepot=1 --rerun
  *
- * Le garde-fou des stockages entiers n'est éprouvé qu'en lecture, ou avec `echo` à la place de `rm` : un défaut
- * effacerait le stockage du téléviseur.
+ * The whole-storage guard is only exercised read-only, or with `echo` in place of `rm`: a bug would wipe the TV's
+ * storage.
  */
 class CopieMaterielTest {
 
     private val hote: String? = System.getProperty("tvslim.materiel")
 
     @Test
-    fun `copier vers le PC, arreter, effacer, et le garde-fou tient`() = runBlocking<Unit> {
+    fun `copy to PC, stop, delete, and the guard holds`() = runBlocking<Unit> {
         assumeTrue(
             "-Pmateriel=<adresse> -Pdepot=1 pour écrire et effacer sur un vrai téléviseur",
             hote != null && System.getProperty("tvslim.depot") != null,
@@ -64,13 +63,13 @@ class CopieMaterielTest {
         val pc = File(local, "pc").apply { mkdirs() }
 
         try {
-            // Le terrain se prépare par le dépôt, éprouvé le 2026-10-03.
+            // Seeded through the upload path, tested on its own.
             val depot = navigateur.examiner(lotDepuis(listOf(source)), telechargements) as ExamenDepot.Pret
             assertTrue(navigateur.deposer(depot.plan).complet)
             val planEnorme = navigateur.examiner(lotDepuis(listOf(enorme)), essai) as ExamenDepot.Pret
             assertTrue(navigateur.deposer(planEnorme.plan).complet)
 
-            // 1. Le dossier entier, sous-dossier et dossier vide compris, sous des noms que Windows accepte.
+            // 1. The whole folder, including a subfolder and an empty folder, under names Windows accepts.
             val dossier = entree(navigateur, telechargements, nom)
             val plan = pret(navigateur.preparerRapatriement(telechargements, dossier, CibleDisque(pc), nom))
             println("Plan : ${plan.fichiers.size} fichiers, ${plan.taille} octets, dossiers ${plan.dossiers}")
@@ -91,8 +90,8 @@ class CopieMaterielTest {
             assertEquals("La date du téléviseur, à la seconde", dateTv / 1000, File(arrive, "a.txt").lastModified() / 1000)
             assertTrue("Aucun fichier provisoire", arrive.walk().none { it.name.endsWith(CibleDisque.SUFFIXE_PROVISOIRE) })
 
-            // 1 bis. Des noms qu'Android admet et que Windows refuse. Le stockage partagé les refuse lui aussi
-            // (« Operation not permitted » pour un `:`) : ils ne naissent qu'ailleurs, ici dans /data/local/tmp.
+            // 1b. Names Android allows and Windows rejects. Shared storage rejects them too ("Operation not
+            // permitted" for a `:`), so they are created in /data/local/tmp.
             val noms = "$temporaire-noms"
             val creation = client.executer(
                 "mkdir ${citer(noms)} && printf apostrophe > ${citer("$noms/l'été 12:30.txt")} && printf nul > ${citer("$noms/NUL.txt")}",
@@ -104,7 +103,7 @@ class CopieMaterielTest {
             assertEquals("apostrophe", File(pc, "noms/l'été 12_30.txt").readText())
             assertEquals("nul", File(pc, "noms/_NUL.txt").readText())
 
-            // 2. Arrêter au milieu d'un gros fichier : rien n'arrive, l'ancien reste, la session sert encore.
+            // 2. Stop halfway through a large file: nothing lands, the previous copy stays, the session still works.
             val grosDistant = entree(navigateur, essai, "enorme.bin")
             val planGros = pret(navigateur.preparerRapatriement(essai, grosDistant, CibleDisque(arrive), "enorme.bin"))
             var annule = false
@@ -116,7 +115,7 @@ class CopieMaterielTest {
             assertEquals(EtatConnexion.CONNECTE, client.connexion.value.etat)
             assertEquals("encore", client.executer("echo encore").sortie)
 
-            // 3. Un fichier disparu : le refus du téléviseur, tel quel, et la session reste.
+            // 3. A missing file: the TV's error comes back as is, and the session survives.
             val fantome = EntreeDistante("fantome.bin", NatureEntree.FICHIER, 1, 0L)
             val absent = navigateur.rapatrier(pret(navigateur.preparerRapatriement(essai, fantome, CibleDisque(pc), "f.bin")))
             println("Fichier absent : ${absent.echecs}")
@@ -124,7 +123,7 @@ class CopieMaterielTest {
             assertFalse(absent.interrompu)
             assertFalse(File(pc, "f.bin").exists())
 
-            // 4. Le garde-fou : jamais un stockage entier, sous aucun de ses noms.
+            // 4. The guard: never a whole storage, under any of its names.
             for ((parent, racine) in listOf(
                 "/storage" to "emulated",
                 "/storage/emulated" to "0",
@@ -137,18 +136,18 @@ class CopieMaterielTest {
                 val examen = navigateur.preparerSuppression(parent, EntreeDistante(racine, NatureEntree.DOSSIER, 0, 0L))
                 assertEquals("$parent/$racine", ExamenSuppression.Protege, examen)
             }
-            // La commande d'effacement monte la même garde : éprouvée avec echo à la place de rm.
+            // The delete command carries the same guard, exercised with echo in place of rm.
             val essaiGarde = InventaireDossier.commandeSuppression("/storage/emulated/0", NatureSuppression.DOSSIER)
                 .replace("; rm -rf ", "; echo PASSE ")
             val garde = client.executer(essaiGarde)
             assertEquals("Garde : $garde", 5, garde.code)
             assertFalse(garde.sortie.contains("PASSE"))
-            // Et un dossier ordinaire passe, avec ce qu'il contient.
+            // An ordinary folder passes, with its contents.
             val ordinaire = navigateur.preparerSuppression(telechargements, dossier) as ExamenSuppression.Pret
             println("Suppression du dossier d'essai : ${ordinaire.plan}")
             assertEquals(PlanSuppression(essai, NatureSuppression.DOSSIER, 3, 2, ordinaire.plan.taille), ordinaire.plan)
 
-            // 5. Un fichier s'efface ; un lien s'efface sans ce vers quoi il mène.
+            // 5. A file is deleted; a symlink is deleted without its target.
             val fichier = navigateur.preparerSuppression(essai, entree(navigateur, essai, "a.txt")) as ExamenSuppression.Pret
             assertEquals(IssueSuppression.SUPPRIME, navigateur.supprimer(fichier.plan).issue)
             assertTrue((navigateur.lister(essai) as LectureDossier.Lue).entrees.none { it.nom == "a.txt" })
@@ -164,11 +163,11 @@ class CopieMaterielTest {
             val reste = client.executer("[ ! -L ${citer(lien)} ] && [ -f ${citer("$cible/x")} ] && echo intact")
             assertEquals("Le lien est parti, sa cible et son contenu sont là", "intact", reste.sortie)
 
-            // 6. Le dossier d'essai lui-même, par le chemin de l'application.
+            // 6. The test folder itself, through the app's code path.
             assertEquals(IssueSuppression.SUPPRIME, navigateur.supprimer(ordinaire.plan).issue)
             assertTrue(navigateur.lister(essai) is LectureDossier.Introuvable)
 
-            // 7. Ce que le shell ne peut pas effacer : le refus du téléviseur, tel quel. /proc ne s'efface jamais.
+            // 7. What the shell cannot delete: the TV's error as is. /proc can never be deleted.
             val refus = navigateur.supprimer(PlanSuppression("/proc/version", NatureSuppression.FICHIER))
             println("Effacer /proc/version : $refus")
             assertEquals(IssueSuppression.ECHEC, refus.issue)

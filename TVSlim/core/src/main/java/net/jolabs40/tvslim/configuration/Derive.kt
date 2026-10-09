@@ -8,22 +8,17 @@ import net.jolabs40.tvslim.journal.dernierAccueil
 import net.jolabs40.tvslim.journal.paquetsDesactives
 
 /**
- * La dérive : ce que TV Slim a coupé sur ce téléviseur et qui s'est rallumé sans lui — une mise à jour
- * système, le plus souvent, qui réactive des paquets et rend la main à l'accueil d'usine.
+ * Drift: what TV Slim disabled on this TV that came back without it, usually after a system update
+ * re-enabled packages and restored the stock home screen.
  *
- * L'état voulu se lit dans le **journal** : les paquets qu'il laisse désactivés, et le dernier écran
- * d'accueil qu'il a posé. Comparé au téléviseur tel qu'il vient d'être lu, il donne un
- * [PlanReinjection] ordinaire — même confirmation, même [Reinjecteur], mêmes garde-fous qu'une
- * sauvegarde qu'on réinjecte.
+ * The desired state comes from the journal (packages it leaves disabled, last home screen set).
+ * Compared with the TV as just read, it yields an ordinary [PlanReinjection], confirmed and applied
+ * like a backup. A package re-enabled by hand from the TV settings is listed too; the user can decline.
  *
- * Ce n'est qu'une proposition : un paquet rallumé à la main, depuis les réglages du téléviseur, y
- * figure aussi, et la personne le laisse alors de côté en refusant.
+ * Only a fallback to the stock home screen counts as home drift: another launcher picked since then
+ * is a deliberate choice and must not be offered again on every connection.
  *
- * ⚠️ **Seul le retour à l'accueil d'usine compte comme une dérive de l'accueil.** Un autre launcher
- * choisi depuis — installé puis désigné à la télécommande — est un choix, pas un accident : le
- * reproposer à chaque connexion serait du harcèlement.
- *
- * @return null quand le téléviseur est tel que TV Slim l'a laissé.
+ * @return null when the TV is as TV Slim left it.
  */
 fun Catalogue.planDeDerive(
     journal: List<ActionJournal>,
@@ -40,14 +35,13 @@ fun Catalogue.planDeDerive(
     )
     val plan = voulu.planifier(this, etats, infos)
     val accueil = plan.accueil?.takeIf { it.possible && infos.accueilRetombe() }
-    // Les paquets absents ou inconnus n'ont pas « dérivé » : le plan d'une sauvegarde les montre, pas celui-ci.
+    // Missing or unknown packages have not drifted; a backup plan lists them, this one does not.
     return plan.copy(accueil = accueil, ignores = emptyList()).takeUnless { it.rienAFaire }
 }
 
 /**
- * L'accueil en place est-il retombé sur celui d'usine — ou sur le sélecteur d'Android, que montre un
- * téléviseur où deux accueils se disputent la place ? Un accueil vide est une lecture ratée, pas une
- * dérive.
+ * True if the home screen fell back to the stock one, or to Android's chooser (shown when two home
+ * screens compete). A blank value is a failed read, not drift.
  */
 private fun InfosAppareil.accueilRetombe(): Boolean =
     accueilActuel == "android" || accueilsUsine.any { it.paquet == accueilActuel }

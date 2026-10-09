@@ -52,7 +52,7 @@ import net.jolabs40.tvslim.windows.ui.theme.CouleursRisque
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
-/** Une carte titrée : la brique de presque tous les écrans, comme sur le téléphone. */
+/** Titled card used by most screens, as on the phone. */
 @Composable
 fun CarteSection(
     titre: String,
@@ -76,7 +76,6 @@ fun CarteSection(
     }
 }
 
-/** Un libellé à gauche, sa valeur à droite. */
 @Composable
 fun LigneValeur(libelle: String, valeur: String) {
     Row(
@@ -102,7 +101,6 @@ fun TexteSecondaire(texte: String, modifier: Modifier = Modifier, petit: Boolean
     )
 }
 
-/** Une barre proportionnelle : plus parlante qu'un nombre isolé. */
 @Composable
 fun Jauge(valeur: Long, total: Long, modifier: Modifier = Modifier) {
     val fraction = if (total > 0) (valeur.toFloat() / total).coerceIn(0f, 1f) else 0f
@@ -121,7 +119,7 @@ fun Jauge(valeur: Long, total: Long, modifier: Modifier = Modifier) {
     }
 }
 
-/** Ce qu'affiche un onglet qui n'a rien à montrer sans téléviseur. */
+/** Placeholder for tabs that have nothing to show without a TV. */
 @Composable
 fun EcranVide(texte: String) {
     Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -144,10 +142,7 @@ fun EcranVide(texte: String) {
     }
 }
 
-/**
- * Deux colonnes qui défilent chacune de leur côté — un bureau a la largeur que le téléphone n'a
- * pas. Une fenêtre étroite les empile, dans l'ordre du téléphone.
- */
+/** Two independently scrolling columns to use the desktop's width; a narrow window stacks them in phone order. */
 @Composable
 fun DeuxColonnes(
     gauche: @Composable ColumnScope.() -> Unit,
@@ -209,7 +204,7 @@ fun libelleRisque(risque: Risque): String = stringResource(
     },
 )
 
-/** Rédige un [MessageUi] dans la langue de la personne, pour l'afficher hors de la bannière. */
+/** Resolves a [MessageUi] for display outside the snackbar. */
 @Composable
 fun texteDe(message: MessageUi): String {
     val texte by produceState(initialValue = "", message) { value = message.rediger() }

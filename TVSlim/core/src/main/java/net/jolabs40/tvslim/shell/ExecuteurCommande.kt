@@ -1,6 +1,6 @@
 package net.jolabs40.tvslim.shell
 
-/** Résultat brut d'une commande exécutée sur le téléviseur. */
+/** Raw result of a command run on the TV. */
 data class ResultatShell(
     val code: Int,
     val sortie: String,
@@ -13,13 +13,12 @@ data class ResultatShell(
 }
 
 /**
- * Canal d'exécution privilégiée vers un téléviseur.
+ * Privileged execution channel to a TV.
  *
- * Le moteur de débloat ne connaît que cette interface : il ignore si les commandes passent par
- * un service local (Shizuku) ou par une connexion ADB depuis un téléphone. Changer de canal ne
- * touche donc ni au catalogue, ni aux garde-fous, ni au journal.
+ * The debloat engine only depends on this interface, so the transport (a local Shizuku service or an ADB
+ * connection from a phone) can change without touching the catalogue, the safeguards or the journal.
  */
 interface ExecuteurCommande {
-    /** Exécute une commande shell et renvoie son code de sortie avec sa sortie fusionnée. */
+    /** Runs a shell command and returns its exit code with stdout and stderr merged. */
     suspend fun executer(commande: String): ResultatShell
 }

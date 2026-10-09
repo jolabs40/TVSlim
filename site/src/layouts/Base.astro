@@ -12,12 +12,12 @@ import { ui, url, SITE, BRAND, OG_IMAGE, REPO, ORG_ID, STARTLIGHT, type Lang } f
 
 interface Props {
   lang: Lang;
-  /** Chemin de la page sans préfixe de langue : canonique, hreflang et bascule. */
+  /** Page path without the language prefix, for canonical, hreflang and the language switch. */
   page: string;
   title?: string;
   description?: string;
   current?: 'home' | 'download' | 'guide' | 'packages' | 'privacy';
-  /** Données structurées propres à la page ; l'éditeur et le site s'y ajoutent toujours. */
+  /** Page-specific structured data; the publisher and website nodes are always added. */
   schema?: object[];
   noindex?: boolean;
 }

@@ -3,21 +3,15 @@ package net.jolabs40.tvslim.remote.ui
 import android.net.Uri
 import net.jolabs40.tvslim.remote.adb.PORT_ADB_PAR_DEFAUT
 
-/** Adresse d'un téléviseur, telle qu'un code scanné ou une saisie la porte. */
 data class AdresseTv(val hote: String, val port: Int)
 
 const val SCHEMA_APPAIRAGE = "tvslim://"
 
 /**
- * Lit ce que le code affiché par le téléviseur contient. Trois formes acceptées : l'URI
- * `tvslim://connect?host=…&port=…` que produit l'application du téléviseur, une adresse
- * `hôte:port`, ou une adresse seule.
+ * Parses the pairing code shown by the TV app: `tvslim://connect?host=...&port=...`, `host:port`, or a bare host.
  *
- * Ce contenu vient d'une **image**, et un autocollant collé n'importe où se scanne aussi bien
- * que l'écran d'un téléviseur : il est traité comme une entrée extérieure. L'adresse doit donc
- * être une IPv4 du réseau local — voir [estSurLeReseauLocal] — et le port un port réel.
- *
- * Renvoie `null` quand rien d'exploitable n'en sort — à l'appelant de le dire.
+ * The content comes from an image, and any sticker scans as well as a TV screen, so it is untrusted input:
+ * the host must be a local IPv4 address ([estSurLeReseauLocal]) and the port valid. Returns null otherwise.
  */
 fun lireCodeAppairage(valeur: String): AdresseTv? {
     val brut = valeur.trim()
@@ -39,16 +33,12 @@ fun lireCodeAppairage(valeur: String): AdresseTv? {
 }
 
 /**
- * Le téléviseur est sur le réseau local, par construction : `InfosReseau` ne met dans le QR
- * qu'une IPv4 lue sur l'interface active, jamais un nom d'hôte.
+ * Accepts only private, link-local or loopback IPv4 addresses. The TV app's QR code always holds an IPv4 read
+ * from the active interface, never a host name.
  *
- * Sans ce filtre, un code fabriqué — `tvslim://connect?host=exemple.invalide` — ferait partir
- * un handshake ADB, et la clé publique du compagnon avec, vers un hôte que personne n'a choisi ;
- * sa réponse serait ensuite découpée et interprétée par le lecteur d'état. La clé privée ne sort
- * pas, mais le compagnon parlerait tout de même à un inconnu.
- *
- * La saisie manuelle n'y passe pas : y taper une adresse est un acte délibéré, pas le contenu
- * d'une image trouvée sous l'objectif.
+ * Without this filter, a forged code (`tvslim://connect?host=example.invalid`) would send an ADB handshake,
+ * with the app's public key, to an arbitrary host whose answers the state reader would then parse.
+ * Manual entry skips this check: typing an address is deliberate.
  */
 internal fun estSurLeReseauLocal(hote: String): Boolean {
     val octets = IPV4.matchEntire(hote)?.groupValues?.drop(1)?.map { it.toInt() } ?: return false
@@ -57,21 +47,18 @@ internal fun estSurLeReseauLocal(hote: String): Boolean {
         octets[0] == 10 -> true                        // 10.0.0.0/8
         octets[0] == 172 && octets[1] in 16..31 -> true // 172.16.0.0/12
         octets[0] == 192 && octets[1] == 168 -> true    // 192.168.0.0/16
-        octets[0] == 169 && octets[1] == 254 -> true    // 169.254.0.0/16, lien-local
-        octets[0] == 127 -> true                        // boucle locale, pour un émulateur
+        octets[0] == 169 && octets[1] == 254 -> true    // 169.254.0.0/16, link-local
+        octets[0] == 127 -> true                        // loopback, for an emulator
         else -> false
     }
 }
 
 /**
- * Un nom de fichier tiré d'une adresse, et rien d'autre.
+ * Turns a host into a safe file name: anything but letters and digits becomes `_`.
  *
- * Remplacer les seuls points laissait passer `/` et `\` : un hôte `a/b` écrivait dans
- * `journaux/a/b.json`, le sous-dossier étant créé au passage par `mkdirs()`. L'adresse venant
- * d'un code scanné, c'était l'extérieur qui choisissait où l'application écrit.
- *
- * Une adresse IPv4 donne exactement ce que donnait l'ancienne règle — `192.168.2.135` devient
- * `192_168_2_135` — donc les journaux et les mesures déjà enregistrés restent retrouvés.
+ * The host may come from a scanned code, so `/` and `\` must not create subfolders (`a/b` would write to
+ * `journaux/a/b.json`). `192.168.2.135` must stay `192_168_2_135`: existing logs and measurements are stored
+ * under that name.
  */
 fun cleDeFichier(hote: String): String =
     hote.map { if (it.isLetterOrDigit()) it else '_' }.joinToString("")

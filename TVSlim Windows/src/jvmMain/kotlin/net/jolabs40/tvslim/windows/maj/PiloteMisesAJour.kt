@@ -34,10 +34,10 @@ data class EtatMiseAJour(
     val verificationAuto: Boolean = true,
     val mode: ModeDistribution = ModeDistribution.DEVELOPPEMENT,
     val versionActuelle: String = "",
-    /** « Plus tard » : la bannière se tait pour cette session. */
+    /** "Later" hides the banner for this session. */
     val banniereEcartee: Boolean = false,
 ) {
-    /** La mise à jour dont on parle, quelle que soit l'étape où l'on en est. */
+    /** The update in progress, whatever the phase. */
     val miseAJour: MiseAJourDisponible?
         get() = when (val p = phase) {
             is PhaseMiseAJour.Disponible -> p.maj
@@ -50,11 +50,11 @@ data class EtatMiseAJour(
 }
 
 /**
- * Tient l'application à jour, sans rien imposer.
+ * Update checks and installs.
  *
- * Au démarrage, une question à GitHub — refusable dans « À propos ». Rien ne se télécharge sans
- * qu'on clique sur « Installer », et rien ne s'installe sans signature valide. La version portable
- * et celle lancée depuis les sources ne s'installent pas elles-mêmes : elles ouvrent la page.
+ * Checks GitHub at startup (can be turned off in About). Nothing is downloaded until the user clicks Install,
+ * and nothing is installed without a valid signature. Portable and development builds open the release page
+ * instead of installing.
  */
 class PiloteMisesAJour(
     private val preferences: PreferencesWindows,
@@ -84,10 +84,7 @@ class PiloteMisesAJour(
         }
     }
 
-    /**
-     * [discret] : la vérification du démarrage ne dit rien quand tout va bien, ni quand GitHub ne
-     * répond pas — hors ligne, on ne va pas accueillir la personne par une erreur.
-     */
+    /** [discret]: the startup check stays silent when up to date or when GitHub is unreachable. */
     fun verifier(discret: Boolean = false) {
         if (travail?.isActive == true) return
         travail = viewModelScope.launch {
@@ -120,7 +117,7 @@ class PiloteMisesAJour(
         }
     }
 
-    /** Installe la version trouvée — ou, hors installation MSI, ouvre sa page de téléchargement. */
+    /** Installs the update, or opens its download page when not running from the MSI install. */
     fun installer() {
         val maj = _etat.value.miseAJour ?: return
         val executable = distribution.executable
@@ -139,7 +136,7 @@ class PiloteMisesAJour(
                 )
                 _etat.update { it.copy(phase = PhaseMiseAJour.Installation(maj)) }
                 installateur.installerPuisRelancer(msi, executable)
-                // Le temps de lire « TV Slim va redémarrer » ; le relais attend notre fermeture.
+                // Leaves time to read the restart message; the relay waits for us to exit.
                 delay(DELAI_AVANT_FERMETURE_MS)
                 quitter()
             } catch (annulation: CancellationException) {

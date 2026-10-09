@@ -47,9 +47,8 @@ import net.jolabs40.tvslim.windows.ressources.permissions_declared_title
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Le choix d'une application du téléviseur, pour la carte des permissions : le nom d'abord, le paquet
- * ensuite, avec l'icône. La liste est celle de l'onglet Applications — le menu et ce que la personne a
- * installé —, lue au premier besoin et gardée en cache. Un autre paquet se tape toujours à la main.
+ * App picker for the permissions card: name first, then package, with icon. Uses the Applications tab's list
+ * (launcher and user-installed apps), read on first use and cached. Any other package can still be typed.
  */
 @Composable
 fun ChoixApplicationDialogue(
@@ -137,9 +136,8 @@ fun ChoixApplicationDialogue(
 }
 
 /**
- * Les permissions que l'application lue demande dans son manifeste : celles qui restent à accorder
- * d'abord, les autres sur demande. Un appui remplit le champ Permission. Ce n'est pas une liste de
- * raccourcis toute faite : c'est ce que cette application-là déclare.
+ * Permissions the app requests in its manifest: those still to grant first, the others on demand. A click
+ * fills the Permission field. Not a canned shortcut list: only what this app declares.
  */
 @Composable
 fun PermissionsDeclarees(lues: PermissionsPaquet, onChoisir: (String) -> Unit) {

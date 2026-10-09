@@ -7,13 +7,12 @@ import net.jolabs40.tvslim.moteur.MoteurDebloat
 import net.jolabs40.tvslim.moteur.ResultatAction
 
 /**
- * Réinjecte une configuration dans le seul ordre sûr, et toujours par le moteur : ses garde-fous
- * valent ici comme partout, et chaque action entre au journal avec la commande qui l'annule.
+ * Reapplies a configuration in the only safe order, always through the engine, so its safeguards
+ * apply and every action is journaled with its undo command.
  *
- *  1. réactiver d'abord — rien n'est retiré avant que ce qui doit revenir soit revenu ;
- *  2. désactiver ensuite : liste noire, launcher tiers exigé, `setupwraith` avant `launcherx` ;
- *  3. l'écran d'accueil en dernier — `set-home-activity` n'a aucun effet tant que l'accueil d'usine
- *     est actif.
+ *  1. Re-enable first: nothing is removed before what must come back is back.
+ *  2. Then disable: blocklist, third-party launcher required, `setupwraith` before `launcherx`.
+ *  3. Home screen last: `set-home-activity` has no effect while the stock home screen is enabled.
  */
 class Reinjecteur(private val moteur: MoteurDebloat) {
 
@@ -46,7 +45,7 @@ class Reinjecteur(private val moteur: MoteurDebloat) {
         }
 
         plan.accueil?.takeIf { it.possible }?.let { accueil ->
-            // Sans composant connu pour l'accueil en place, l'annulation désignera le même : inoffensive.
+            // If the current home component is unknown, undo sets the same one again, which is harmless.
             resultats += moteur.definirAccueil(
                 composant = accueil.composant,
                 ancienAccueil = infos.composantAccueil.ifBlank { accueil.composant },

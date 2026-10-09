@@ -50,15 +50,14 @@ import net.jolabs40.tvslim.remote.ui.EtatCommande
 import net.jolabs40.tvslim.shell.Interruption
 
 /**
- * Une commande du shell du téléviseur, tapée à la main : pour ce que les autres cartes ne font pas.
+ * A shell command typed by hand, for whatever the other cards do not cover.
  *
- * Elle échappe aux garde-fous, et la carte le dit avant tout. Le clavier ne corrige rien — une commande
- * n'est pas une phrase —, l'historique est au bout du champ, et la sortie reste affichée, sélectionnable,
- * jusqu'à la suivante.
+ * It bypasses every safeguard, and the card says so first. No autocorrect or capitalization; the output stays
+ * selectable until the next command.
  */
 @Composable
 fun CarteCommande(etat: EtatCommande, actions: ActionsCommande) {
-    // La seule porte hors garde-fous : bordée de rouge, pour qu'elle ne se confonde pas avec ses voisines.
+    // Red border: the only way around the safeguards must not look like the other cards.
     Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -120,7 +119,6 @@ fun CarteCommande(etat: EtatCommande, actions: ActionsCommande) {
     }
 }
 
-/** Les commandes déjà envoyées, à reprendre d'un toucher plutôt qu'à retaper. */
 @Composable
 private fun Historique(historique: List<String>, onChoisir: (String) -> Unit) {
     var ouvert by remember { mutableStateOf(false) }
@@ -149,7 +147,7 @@ private fun Historique(historique: List<String>, onChoisir: (String) -> Unit) {
     }
 }
 
-/** La commande, comment elle s'est terminée, et ce qu'elle a écrit — même coupée. */
+/** The command, how it ended, and its output (partial if it was cut off). */
 @Composable
 private fun Sortie(echange: EchangeCommande) {
     val (statut, couleur) = when {

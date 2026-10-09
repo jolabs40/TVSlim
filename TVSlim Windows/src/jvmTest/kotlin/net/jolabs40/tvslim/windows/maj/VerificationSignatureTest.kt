@@ -14,10 +14,9 @@ import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
 /**
- * L'installateur ne s'exécute que signé par la clé de TV Slim. On signe ici avec l'outil réellement
- * utilisé à la publication (`outils/SignerMiseAJour.java`), pas avec une copie de sa logique : le
- * jour où l'un des deux change de message, ce test échoue avant qu'une mise à jour soit refusée
- * chez tout le monde.
+ * The installer only runs when signed with TV Slim's key. Signs with the actual release tool
+ * (`outils/SignerMiseAJour.java`), not a copy of its logic: if either side changes the signed message, this
+ * test fails before every install starts refusing updates.
  */
 class VerificationSignatureTest {
 
@@ -43,7 +42,7 @@ class VerificationSignatureTest {
         return File(fichier.path + ".sig").readText()
     }
 
-    /** L'outil de vérification de la publication, lancé tel quel : son code de sortie. */
+    /** Runs the release verification tool as is and returns its exit code. */
     private fun verifierAvecOutil(fichier: File, version: String, clePublique: String): Int {
         val proprietes = File(dossier.newFolder(), "gradle.properties").apply {
             writeText("# clé de test\nclePubliqueMisesAJour=$clePublique\n")
@@ -58,7 +57,7 @@ class VerificationSignatureTest {
     }
 
     @Test
-    fun `l'outil de verification de la publication s'accorde avec l'application`() {
+    fun `the release verification tool agrees with the app`() {
         val msi = installateur()
         val signature = signerAvecOutil(msi, "1.2.3")
         val autreCle = Base64.getEncoder()
@@ -74,25 +73,25 @@ class VerificationSignatureTest {
     }
 
     @Test
-    fun `la cle publique embarquee dans l'application est une cle Ed25519 lisible`() {
+    fun `the public key embedded in the app is a readable Ed25519 key`() {
         val cle = InfosApp.CLE_PUBLIQUE_MISES_A_JOUR
         assertTrue("aucune clé publique : toutes les mises à jour seraient refusées", cle.isNotBlank())
 
         val lue = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(Base64.getDecoder().decode(cle)))
 
-        // Une clé publique Ed25519 en X.509 : douze octets d'en-tête, trente-deux de clé.
+        // X.509-encoded Ed25519 public key: 12-byte header plus 32-byte key.
         assertEquals(44, lue.encoded.size)
     }
 
     @Test
-    fun `une signature produite par l'outil de publication est acceptee`() {
+    fun `a signature from the release tool is accepted`() {
         val msi = installateur()
 
         assertTrue(VerificationSignature.verifier(msi, "1.2.3", signerAvecOutil(msi, "1.2.3"), publique))
     }
 
     @Test
-    fun `un installateur modifie apres signature est refuse`() {
+    fun `an installer modified after signing is rejected`() {
         val msi = installateur()
         val signature = signerAvecOutil(msi, "1.2.3")
 
@@ -102,7 +101,7 @@ class VerificationSignatureTest {
     }
 
     @Test
-    fun `une signature authentique ne vaut pas pour une autre version`() {
+    fun `a genuine signature does not hold for another version`() {
         val msi = installateur()
         val signature = signerAvecOutil(msi, "1.2.3")
 
@@ -110,7 +109,7 @@ class VerificationSignatureTest {
     }
 
     @Test
-    fun `une autre cle, une signature illisible ou l'absence de cle sont refusees`() {
+    fun `another key, an unreadable signature or a missing key is rejected`() {
         val msi = installateur()
         val signature = signerAvecOutil(msi, "1.2.3")
         val autreCle = Base64.getEncoder()

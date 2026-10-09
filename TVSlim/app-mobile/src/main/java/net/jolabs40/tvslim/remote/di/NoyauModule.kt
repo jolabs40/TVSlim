@@ -10,7 +10,7 @@ import net.jolabs40.tvslim.catalog.CatalogueRepository
 import net.jolabs40.tvslim.remote.adb.DepotCles
 import javax.inject.Singleton
 
-/** Le noyau partagé n'utilise pas Hilt : le compagnon fournit ses objets lui-même. */
+/** The shared core does not use Hilt, so the app provides its objects here. */
 @Module
 @InstallIn(SingletonComponent::class)
 object NoyauModule {

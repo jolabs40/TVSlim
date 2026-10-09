@@ -42,14 +42,13 @@ import java.util.Locale
 import javax.swing.SwingUtilities
 
 /**
- * La fenêtre, rendue hors écran avec les données d'un **vrai** téléviseur : connexion ADB réelle,
- * photographie, mémoire, découverte sur le réseau. Ne tourne que sur demande :
+ * Renders the window off screen with data from a real TV: real ADB connection, snapshot, memory, network
+ * discovery. Opt-in:
  *
  *     ./gradlew jvmTest --tests "*CapturesMaterielTest*" -Pmateriel=192.168.2.135 --rerun
  *
- * La clé ADB est celle de l'application (`%APPDATA%\TVSlim\cles`) : l'autorisation acceptée sur le
- * téléviseur pendant ce test vaut ensuite pour l'application. Journal, mesures et préférences, eux,
- * vivent dans un dossier temporaire. Aucune commande d'écriture n'est envoyée au téléviseur.
+ * Uses the app's ADB key (`%APPDATA%\TVSlim\cles`), so an authorization accepted on the TV during the test also
+ * holds for the app. Journal, measurements and preferences live in a temporary folder. No write command is sent.
  */
 class CapturesMaterielTest {
 
@@ -62,10 +61,9 @@ class CapturesMaterielTest {
     }
 
     /**
-     * Exécute [bloc] sur le fil d'AWT, celui de `Dispatchers.Main`. Le registre ci-dessus n'a aucun
-     * verrou : la composition l'alimentait depuis le fil du test pendant que `collectAsStateWithLifecycle`
-     * y touchait depuis AWT, et un `ArrayIndexOutOfBoundsException` finissait par tomber. Un seul fil,
-     * plus de course.
+     * Runs [bloc] on the AWT thread (`Dispatchers.Main`). The registry above has no lock: composition fed it from
+     * the test thread while `collectAsStateWithLifecycle` touched it from AWT, which eventually threw an
+     * `ArrayIndexOutOfBoundsException`.
      */
     private fun <T> surFilAwt(bloc: () -> T): T {
         var resultat: Result<T>? = null
@@ -74,7 +72,7 @@ class CapturesMaterielTest {
     }
 
     @Test
-    fun `les quatre onglets avec un vrai televiseur`() {
+    fun `the four tabs with a real TV`() {
         assumeTrue("-Pmateriel=<adresse> pour capturer sur un vrai téléviseur", hote != null)
         val adresse = hote!!
         sortie.mkdirs()
@@ -107,8 +105,8 @@ class CapturesMaterielTest {
         )
 
         fun capturer(nom: String, onglet: Onglet, sombre: Boolean = false, attenteMs: Long = 1_500, prete: () -> Boolean = { true }) {
-            // Création, rendus et fermeture sur le fil d'AWT ; les attentes, elles, restent sur celui du
-            // test, pour laisser AWT dérouler les coroutines du pilote pendant ce temps.
+            // Create, render and close on the AWT thread; waits stay on the test thread so AWT can run the
+            // controller's coroutines meanwhile.
             val scene = surFilAwt {
                 ImageComposeScene(width = 1280, height = 860, density = Density(1f)) {
                     CompositionLocalProvider(LocalLifecycleOwner provides proprietaire) {
@@ -159,13 +157,13 @@ class CapturesMaterielTest {
             return condition()
         }
 
-        // 1. Avant connexion : la recherche sur le réseau, le temps d'un tour de balayage.
+        // 1. Before connecting: network discovery, for one full scan round.
         capturer("01-recherche", Onglet.TELEVISEUR, attenteMs = 15_000) {
             pilote.etat.value.decouverte.premierTourTermine
         }
 
-        // 2. Connexion. La première fois, le téléviseur demande l'autorisation : on la laisse
-        //    accepter à la télécommande, en retentant tant que le délai n'est pas écoulé.
+        // 2. Connect. The first time, the TV asks for authorization, to be accepted with the remote;
+        //    keeps retrying until the timeout.
         pilote.majHote(adresse)
         pilote.majPort("5555")
         val connecte = attendre(240_000) {
@@ -186,8 +184,8 @@ class CapturesMaterielTest {
         capturer("03-paquets", Onglet.PAQUETS)
         capturer("04-paquets-sombre", Onglet.PAQUETS, sombre = true)
 
-        // La mémoire : l'onglet lance lui-même la lecture à sa première ouverture. On relève ce
-        // qui se passe, pour distinguer une lecture lente, ratée, ou jamais lancée.
+        // Memory: the tab starts reading on first open. Record what happens, to tell a slow read from a
+        // failed or never-started one.
         val releves = mutableListOf<String>()
         val debut = System.currentTimeMillis()
         var chargementVu = false
@@ -208,7 +206,7 @@ class CapturesMaterielTest {
         }
         capturer("06-journal", Onglet.JOURNAL)
 
-        // L'onglet Fichiers : le stockage interne, lu comme à la première visite, et les volumes branchés.
+        // Files tab: internal storage, read as on a first visit, and the mounted volumes.
         pilote.fichiers.explorateur.demarrer()
         capturer("09-fichiers", Onglet.FICHIERS, attenteMs = 20_000) {
             pilote.fichiers.explorateur.etat.value.lecture is LectureDossier.Lue
@@ -217,15 +215,15 @@ class CapturesMaterielTest {
             "entrees=${pilote.fichiers.explorateur.etat.value.entrees.size}, " +
             "raccourcis=${pilote.fichiers.explorateur.etat.value.raccourcis.map { it.chemin }}"
 
-        // L'onglet Applications : l'aide copiée dans /data/local/tmp, lancée, effacée ; noms et icônes lus — le cache de
-        // l'essai est neuf, tout se lit : une demi-minute sur un téléphone.
+        // Applications tab: the helper is copied to /data/local/tmp, run, then deleted; names and icons are read.
+        // The test's cache is empty, so everything is read (about 30 s on a phone).
         pilote.applications.charger()
         capturer("10-applications", Onglet.APPLICATIONS, attenteMs = 120_000) { pilote.applications.etat.value.lue }
         releves += "applications: ${pilote.applications.etat.value.applications.size}, " +
             "avec icone=${pilote.applications.etat.value.applications.count { it.lue }}"
 
-        // La sauvegarde, relue contre le téléviseur qu'elle décrit, ne doit rien demander à
-        // réinjecter. Tout se calcule en mémoire : aucune commande ne part vers le téléviseur.
+        // A saved configuration, read back against the TV it describes, must have nothing to reapply.
+        // Computed in memory; no command is sent to the TV.
         val lu = pilote.etat.value
         val etatsLus = lu.lignes.associate { it.entree.paquet to it.etat }
         val sauvegarde = lu.catalogue.configurationDe(lu.infos, etatsLus)
@@ -237,7 +235,7 @@ class CapturesMaterielTest {
         assertTrue("Une configuration relue doit correspondre au téléviseur : $plan", plan != null && plan.rienAFaire)
         assertTrue("L'accueil en place ne doit pas être à rétablir : ${plan?.accueil}", plan?.accueil == null)
 
-        // Le stockage, lu comme l'onglet le ferait.
+        // Storage, read the way the tab does.
         pilote.rafraichirStockage()
         val stockageLu = attendre(40_000) { pilote.etat.value.lectureStockageTentee }
         val stockage = pilote.etat.value.stockage
@@ -245,8 +243,8 @@ class CapturesMaterielTest {
             "applications=${stockage.applications.size}"
         assertTrue("Le stockage du téléviseur doit se lire", stockage.renseignee)
 
-        // L'inventaire des inconnus, relu et écrit comme par le bouton d'export, à côté des captures. Aucune
-        // fenêtre n'est ouverte à ce moment : le message de fin reste là pour dire comment ça s'est passé.
+        // Unknown-package inventory, read and written as the export button does, next to the screenshots. No
+        // window is open at this point, so the completion message stays and reports the outcome.
         val inventaire = File(sortie, "inconnus.md").apply { delete() }
         pilote.configuration.exporterInconnus(inventaire)
         val fins = setOf(Res.string.msg_unknown_exported, Res.string.msg_unknown_export_failed)
@@ -263,7 +261,7 @@ class CapturesMaterielTest {
         )
         assertTrue("Le catalogue connaît des paquets de la TCL : ${rapport.take(800)}", rapport.contains("## Déjà au catalogue ("))
 
-        // La section des inconnus, amenée en tête de liste par le nom de la première famille.
+        // Brings the unknown-packages section to the top by searching for the first family name.
         lu.inconnus.firstOrNull()?.let { premier ->
             pilote.majRecherche(premier.famille)
             capturer("08-paquets-inconnus", Onglet.PAQUETS)

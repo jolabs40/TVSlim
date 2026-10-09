@@ -12,16 +12,15 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 
 /**
- * La clé ADB vaut un accès shell à chaque téléviseur autorisé : elle ne doit jamais rester en clair
- * sur le disque, et elle doit se relire à l'identique — sans quoi chaque téléviseur redemanderait
- * l'autorisation à la télécommande.
+ * The ADB key is shell access to every authorized TV: it must never sit in plaintext on disk, and it must read
+ * back unchanged, or every TV asks for authorization again.
  */
 class DepotClesTest {
 
     @get:Rule
     val dossier = TemporaryFolder()
 
-    /** Réversible et visible : on vérifie que le dépôt passe bien par la protection. */
+    /** Reversible and recognizable, to prove the store goes through the protection. */
     private object ProtectionInversee : ProtectionDonnees {
         override fun proteger(donnees: ByteArray) = donnees.reversedArray() + MARQUE
         override fun lever(protegees: ByteArray): ByteArray {
@@ -32,12 +31,12 @@ class DepotClesTest {
         private val MARQUE = "#protege".toByteArray()
     }
 
-    /** Le contenu des deux fichiers de la paire : s'il ne bouge pas, la clé a été relue, pas refaite. */
+    /** Both key files' bytes: if unchanged, the key was read back, not regenerated. */
     private fun empreinte(cles: File) =
         File(cles, "adbkey.pub").readBytes() + File(cles, "adbkey.dpapi").readBytes()
 
     @Test
-    fun `la paire creee se relit a l'identique depuis un autre depot`() {
+    fun `a created pair reads back identically from another store`() {
         val cles = dossier.newFolder("cles")
         assertNotNull(DepotCles(cles, ProtectionInversee).paire())
         val avant = empreinte(cles)
@@ -49,7 +48,7 @@ class DepotClesTest {
     }
 
     @Test
-    fun `aucune cle en clair ne reste sur le disque`() {
+    fun `no plaintext key is left on disk`() {
         val cles = dossier.newFolder("cles")
         DepotCles(cles, ProtectionInversee).paire()
 
@@ -58,12 +57,12 @@ class DepotClesTest {
 
         val prive = File(cles, "adbkey.dpapi").readBytes()
         assertFalse(String(prive, Charsets.ISO_8859_1).contains("PRIVATE KEY"))
-        // Le fichier ne se déchiffre qu'en passant par la protection.
+        // The file only decrypts through the protection.
         assertNotNull(clePriveeDepuisDer(ProtectionInversee.lever(prive)))
     }
 
     @Test
-    fun `une cle illisible est mise de cote, pas effacee`() {
+    fun `an unreadable key is set aside, not deleted`() {
         val cles = dossier.newFolder("cles")
         DepotCles(cles, ProtectionInversee).paire()
         File(cles, "adbkey.dpapi").writeText("abîmé")
@@ -76,7 +75,7 @@ class DepotClesTest {
     }
 
     @Test
-    fun `DPAPI chiffre et dechiffre sous ce compte`() {
+    fun `DPAPI encrypts and decrypts under this account`() {
         assumeTrue(System.getProperty("os.name").startsWith("Windows"))
         val secret = "une clé qui ne doit pas se lire".toByteArray()
 
@@ -87,7 +86,7 @@ class DepotClesTest {
     }
 
     @Test
-    fun `la paire reelle se range et se relit avec DPAPI`() {
+    fun `the real pair is stored and read back with DPAPI`() {
         assumeTrue(System.getProperty("os.name").startsWith("Windows"))
         val cles = dossier.newFolder("cles")
         assertNotNull(DepotCles(cles).paire())

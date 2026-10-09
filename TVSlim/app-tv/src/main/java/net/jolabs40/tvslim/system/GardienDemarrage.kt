@@ -13,18 +13,16 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Ce que fait le gardien à chaque allumage du téléviseur — une seule fois par allumage, quelle que soit la
- * porte par laquelle il arrive : le signal de démarrage ([DemarrageReceiver]) là où le fabricant le
- * laisse passer ; sinon [PassageActivity], qu'ouvre StartLight à l'allumage.
+ * Boot guard work, run once per boot whichever path triggers it: the boot broadcast ([DemarrageReceiver])
+ * where the manufacturer lets it through, otherwise [PassageActivity], which StartLight opens at power-on.
  *
- * ⚠️ **Sur une TCL, seule la seconde passe** (2026-10-06) : son gestionnaire de démarrage (`TclAppBoot`)
- * refuse aux applications tierces le signal de démarrage, les services et même la liaison d'un écouteur
- * de notifications, et remet à zéro à chaque allumage toute autorisation `AUTO_START` posée par ADB,
- * par paquet comme par uid. L'ouverture d'une activité, elle, n'est pas filtrée.
+ * On TCL only the second path works. Its boot manager (`TclAppBoot`) denies third-party apps the boot
+ * broadcast, services and even notification listener binding, and resets any `AUTO_START` grant made over
+ * ADB (per package or per uid) on every boot. Starting an activity is not filtered.
  *
- * D'abord constater ([GardienDerive], la photo de l'allumage), ensuite réappliquer les réglages que le
- * téléviseur remet à leur valeur d'usine — `low_power_standby_enabled` au premier chef, qui le rend
- * injoignable en veille. La photo ne dépend pas de `WRITE_SECURE_SETTINGS` ; la réapplication, si.
+ * First takes the boot snapshot ([GardienDerive]), then reapplies settings the TV resets to factory values,
+ * notably `low_power_standby_enabled`, which makes it unreachable in standby. Only the reapply step needs
+ * `WRITE_SECURE_SETTINGS`.
  */
 @Singleton
 class GardienDemarrage @Inject constructor(
@@ -35,15 +33,15 @@ class GardienDemarrage @Inject constructor(
     private val derive: GardienDerive,
 ) {
 
-    /** Pour une porte qui se referme aussitôt (une activité) : le travail continue sans elle. */
+    /** For a caller that finishes right away (an activity): the work outlives it. */
     fun lancer(porte: String) {
         portee.launch { auDemarrage(porte) }
     }
 
     suspend fun auDemarrage(porte: String) {
         if (!preferences.gardienActifMaintenant()) return
-        // Le compteur d'allumages d'Android distingue cet allumage du précédent : une porte peut s'ouvrir
-        // deux fois — le signal de démarrage et StartLight, ou StartLight relancé —, le travail se fait une fois.
+        // Android's boot count tells boots apart. Two triggers may fire for one boot (broadcast and
+        // StartLight, or StartLight relaunched); the work runs once.
         val allumage = Settings.Global.getInt(contexte.contentResolver, Settings.Global.BOOT_COUNT, -1)
         if (allumage >= 0 && !preferences.prendreAllumage(allumage)) {
             Log.i(TAG, "Allumage $allumage déjà traité ($porte)")

@@ -20,16 +20,13 @@ import javax.inject.Singleton
 
 private val Context.magasin: DataStore<Preferences> by preferencesDataStore(name = "tvslim")
 
-/** Préférences de l'application. Rien de sensible n'y est stocké. */
+/** App preferences. Nothing sensitive is stored here. */
 @Singleton
 class PreferencesRepository @Inject constructor(
     @ApplicationContext private val contexte: Context,
 ) {
 
-    /**
-     * Gardien de démarrage : réapplique au boot les réglages que le téléviseur remet à leur
-     * valeur d'usine à chaque redémarrage (`low_power_standby_enabled` au premier chef).
-     */
+    /** Boot guard switch: reapplies settings the TV resets on every reboot (`low_power_standby_enabled`). */
     val gardienActif: Flow<Boolean> = contexte.magasin.data.map { it[CLE_GARDIEN] ?: false }
 
     suspend fun gardienActifMaintenant(): Boolean = gardienActif.first()
@@ -38,7 +35,7 @@ class PreferencesRepository @Inject constructor(
         contexte.magasin.edit { it[CLE_GARDIEN] = actif }
     }
 
-    /** La photo du dernier allumage — cf. [PhotoDemarrage]. Null avant le premier. */
+    /** Snapshot of the last boot ([PhotoDemarrage]), null before the first one. */
     suspend fun photo(): PhotoDemarrage? = contexte.magasin.data.first().let { donnees ->
         val empreinte = donnees[CLE_EMPREINTE] ?: return@let null
         PhotoDemarrage(
@@ -57,8 +54,8 @@ class PreferencesRepository @Inject constructor(
     }
 
     /**
-     * Réserve l'allumage [numero] (`Settings.Global.BOOT_COUNT`) : vrai pour le premier qui le demande,
-     * faux ensuite — le gardien ne travaille qu'une fois par allumage, quelle que soit la porte.
+     * Claims boot [numero] (`Settings.Global.BOOT_COUNT`). Returns true for the first caller only, so the
+     * guard runs once per boot whichever path triggers it.
      */
     suspend fun prendreAllumage(numero: Int): Boolean {
         var libre = false
@@ -69,7 +66,7 @@ class PreferencesRepository @Inject constructor(
         return libre
     }
 
-    /** Ce que la dernière mise à jour système a défait, tant que rien ne l'a repris. */
+    /** What the last system update undid, until it is fixed. */
     val derive: Flow<DeriveDemarrage?> = contexte.magasin.data.map { donnees ->
         DeriveDemarrage(
             rallumes = donnees[CLE_RALLUMES].orEmpty().sorted(),

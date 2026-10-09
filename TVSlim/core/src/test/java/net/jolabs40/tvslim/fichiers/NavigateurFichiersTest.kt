@@ -15,13 +15,10 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
 
-/** Parcourir et déposer : ce qui part vers le téléviseur, dans quel ordre, et ce qui l'arrête. */
+/** Browsing and uploading to the TV: what is sent, in which order, and what stops it. */
 class NavigateurFichiersTest {
 
-    /**
-     * Un téléviseur bouchon. Il connaît le contenu de quelques dossiers, retient les commandes et les envois,
-     * et refuse ce qu'on lui dit de refuser.
-     */
+    /** Fake TV: knows a few folders, records commands and uploads, and refuses the given paths. */
     private class Televiseur(
         private val dossiers: Map<String, String> = mapOf("/sdcard/Movies" to ""),
         private val refuses: Set<String> = emptySet(),
@@ -76,7 +73,7 @@ class NavigateurFichiersTest {
     private fun plan(lot: LotLocal, destination: String = "/sdcard/Movies") = PlanDepot(destination, lot, emptyList())
 
     @Test
-    fun `un dossier envoye cree ses dossiers, vides compris, avant ses fichiers`() = runTest {
+    fun `an uploaded folder creates its folders, empty ones included, before its files`() = runTest {
         val tv = Televiseur()
         val lot = LotLocal(
             fichiers = listOf(Fichier("Vacances/2024/plage.jpg"), Fichier("Vacances/notes.txt")),
@@ -98,7 +95,7 @@ class NavigateurFichiersTest {
     }
 
     @Test
-    fun `un fichier refuse n'arrete pas les suivants`() = runTest {
+    fun `a refused file does not stop the next ones`() = runTest {
         val tv = Televiseur(refuses = setOf("/sdcard/Movies/b.mkv"))
         val lot = LotLocal(listOf(Fichier("a.mkv"), Fichier("b.mkv"), Illisible("c.mkv"), Fichier("d.mkv")))
 
@@ -114,12 +111,12 @@ class NavigateurFichiersTest {
             resultat.echecs,
         )
         assertFalse(resultat.complet)
-        // Rien à créer : aucune commande ne part, seulement les fichiers.
+        // No folder to create, so no command is sent, only the files.
         assertTrue(tv.commandes.isEmpty())
     }
 
     @Test
-    fun `une connexion perdue arrete tout`() = runTest {
+    fun `a lost connection stops everything`() = runTest {
         val tv = Televiseur(coupeA = "/sdcard/Movies/b.mkv")
         val lot = LotLocal(listOf(Fichier("a.mkv"), Fichier("b.mkv"), Fichier("c.mkv")))
 
@@ -131,7 +128,7 @@ class NavigateurFichiersTest {
     }
 
     @Test
-    fun `annuler arrete l'envoi en cours et les suivants`() = runTest {
+    fun `cancelling stops the current upload and the next ones`() = runTest {
         val tv = Televiseur()
         var annule = false
         tv.surEnvoi = { chemin -> if (chemin.endsWith("b.mkv")) annule = true }
@@ -146,7 +143,7 @@ class NavigateurFichiersTest {
     }
 
     @Test
-    fun `des dossiers impossibles a creer arretent l'envoi avant le premier fichier`() = runTest {
+    fun `folders that cannot be created stop the upload before the first file`() = runTest {
         val tv = Televiseur(reponseMkdir = ResultatShell(1, "mkdir: '/x/a': Permission denied"))
         val lot = LotLocal(listOf(Fichier("a/b.txt")))
 
@@ -157,7 +154,7 @@ class NavigateurFichiersTest {
     }
 
     @Test
-    fun `l'avancee suit les octets sur l'ensemble du lot`() = runTest {
+    fun `progress tracks bytes across the whole batch`() = runTest {
         val tv = Televiseur()
         val lot = LotLocal(listOf(Fichier("a", "1234"), Fichier("b", "123456")))
         val avancees = mutableListOf<AvanceeDepot>()
@@ -176,7 +173,7 @@ class NavigateurFichiersTest {
     }
 
     @Test
-    fun `l'examen dit ce qui existe deja, et refuse un fichier a la place d'un dossier`() = runTest {
+    fun `the check lists what already exists and refuses a file in place of a folder`() = runTest {
         val existant = "E|45f8|4096|1|Vacances\nE|81b0|5|1|film.mkv"
         val tv = Televiseur(dossiers = mapOf("/sdcard/Movies" to existant))
         val navigateur = NavigateurFichiers(tv, tv)
@@ -193,7 +190,7 @@ class NavigateurFichiersTest {
     }
 
     @Test
-    fun `l'examen refuse un lot vide, un nom casse et un dossier illisible, sans rien envoyer`() = runTest {
+    fun `the check refuses an empty batch, a broken name and an unreadable folder without sending anything`() = runTest {
         val tv = Televiseur()
         val navigateur = NavigateurFichiers(tv, tv)
 
@@ -210,7 +207,7 @@ class NavigateurFichiersTest {
     }
 
     @Test
-    fun `un dossier se cree une fois, et un nom pris est signale`() = runTest {
+    fun `a folder is created once, and a taken name is reported`() = runTest {
         val tv = object : ExecuteurCommande, EnvoyeurFichiers {
             val commandes = mutableListOf<String>()
             override suspend fun executer(commande: String): ResultatShell {
@@ -233,7 +230,7 @@ class NavigateurFichiersTest {
     }
 
     @Test
-    fun `l'explorateur lit en arrivant, et depose dans le dossier ou l'on est`() = runTest {
+    fun `the explorer reads on start and uploads into the current folder`() = runTest {
         val tv = Televiseur(dossiers = mapOf("/sdcard" to "E|45f8|4096|1|Movies", "/sdcard/Movies" to ""))
         val signaux = mutableListOf<SignalFichiers>()
         val explorateur = ExplorateurFichiers(NavigateurFichiers(tv, tv), this, signaux::add)
@@ -257,7 +254,7 @@ class NavigateurFichiersTest {
     }
 
     @Test
-    fun `oublier le televiseur ecarte ce qui revient d'avant`() = runTest {
+    fun `forgetting the tv discards results from before`() = runTest {
         val tv = Televiseur(dossiers = mapOf("/sdcard" to "E|45f8|4096|1|Movies"))
         val explorateur = ExplorateurFichiers(NavigateurFichiers(tv, tv), this) {}
 

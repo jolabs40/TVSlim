@@ -12,7 +12,7 @@ import net.jolabs40.tvslim.fichiers.LotLocal
 import java.io.IOException
 import java.io.InputStream
 
-/** Un document du sélecteur d'Android, lu par son fournisseur au moment de l'envoi : rien n'est copié avant. */
+/** A document from the Android picker, read from its provider at upload time; nothing is copied beforehand. */
 private class FichierDocument(
     private val resolveur: ContentResolver,
     private val uri: Uri,
@@ -24,8 +24,8 @@ private class FichierDocument(
 }
 
 /**
- * Des documents choisis un à un. Deux d'entre eux peuvent porter le même nom, venus de dossiers différents :
- * le second prend « (2) », sans quoi il remplacerait le premier sur le téléviseur.
+ * Builds a batch from individually picked documents. Two documents from different folders may share a name;
+ * the second gets " (2)" so it does not overwrite the first on the TV.
  */
 fun lotDeDocuments(contexte: Context, documents: List<Uri>): LotLocal {
     val resolveur = contexte.contentResolver
@@ -34,7 +34,7 @@ fun lotDeDocuments(contexte: Context, documents: List<Uri>): LotLocal {
         var nom = "document"
         var taille = 0L
         var date = 0L
-        // Toutes les colonnes : un fournisseur qui ignore la date de modification refuserait qu'on la demande.
+        // All columns: a provider without a last-modified column would reject an explicit projection.
         resolveur.query(uri, null, null, null, null)?.use { curseur ->
             if (curseur.moveToFirst()) {
                 curseur.texte(OpenableColumns.DISPLAY_NAME)?.let { nom = it }
@@ -47,10 +47,7 @@ fun lotDeDocuments(contexte: Context, documents: List<Uri>): LotLocal {
     return LotLocal(fichiers)
 }
 
-/**
- * Un dossier choisi dans le sélecteur, parcouru par le fournisseur de documents — les fichiers avec leur chemin
- * relatif, chaque dossier traversé, vides compris.
- */
+/** Walks a picked folder tree: files with their relative paths, plus every folder, empty ones included. */
 fun lotDeDossier(contexte: Context, arbre: Uri): LotLocal {
     val resolveur = contexte.contentResolver
     val racine = DocumentsContract.getTreeDocumentId(arbre)
@@ -61,14 +58,14 @@ fun lotDeDossier(contexte: Context, arbre: Uri): LotLocal {
     return LotLocal(fichiers, dossiers)
 }
 
-/** Le nom d'un document tel que le montre son fournisseur : « plage.jpg ». */
+/** Returns a document's display name as given by its provider. */
 fun nomDuDocument(contexte: Context, document: Uri): String =
     contexte.contentResolver.query(document, null, null, null, null)
         ?.use { curseur -> if (curseur.moveToFirst()) curseur.texte(OpenableColumns.DISPLAY_NAME) else null }
         ?: document.lastPathSegment?.substringAfterLast('/')?.ifBlank { null }
         ?: "document"
 
-/** Le nom d'un dossier choisi dans le sélecteur ; à défaut, la fin de son identifiant. */
+/** Returns a picked folder's display name, or the end of its document ID. */
 fun nomDuDossier(contexte: Context, arbre: Uri): String {
     val racine = DocumentsContract.getTreeDocumentId(arbre)
     return contexte.contentResolver
@@ -115,7 +112,7 @@ private fun parcourir(
                 }
             }
         }
-    // Le curseur refermé d'abord : un arbre profond en garderait sinon un ouvert par niveau.
+    // Recurse after closing the cursor, so a deep tree does not keep one cursor open per level.
     sousDossiers.sortedBy { it.second.lowercase() }.forEach { (id, sousChemin) ->
         parcourir(resolveur, arbre, id, sousChemin, fichiers, dossiers, profondeur + 1)
     }
@@ -138,5 +135,5 @@ private fun Cursor.texte(colonne: String): String? =
 private fun Cursor.nombre(colonne: String): Long =
     getColumnIndex(colonne).takeIf { it >= 0 && !isNull(it) }?.let(::getLong) ?: 0L
 
-/** Une garde, au cas où un fournisseur exposerait un arbre qui se reboucle. */
+/** Guards against a provider exposing a cyclic tree. */
 private const val PROFONDEUR_MAX = 64

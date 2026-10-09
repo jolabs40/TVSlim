@@ -6,18 +6,18 @@ import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 
 /**
- * Ce que réinjecter une configuration changerait sur ce téléviseur — calculé avant d'y toucher, pour
- * être montré et confirmé. Seuls les écarts y figurent : un paquet déjà dans l'état voulu ne coûte rien.
+ * What reapplying a configuration would change on this TV, computed before touching it so it can be
+ * shown and confirmed. Only differences are listed.
  */
 data class PlanReinjection(
     val configuration: ConfigurationTv,
-    /** Actifs dans la sauvegarde, désactivés ici. */
+    /** Enabled in the backup, disabled here. */
     val aReactiver: List<EntreePaquet>,
-    /** Désactivés dans la sauvegarde, actifs ici. */
+    /** Disabled in the backup, enabled here. */
     val aDesactiver: List<EntreePaquet>,
-    /** Paquets de la sauvegarde absents de ce téléviseur, ou que le catalogue ne connaît plus. */
+    /** Backup packages missing from this TV, or no longer in the catalogue. */
     val ignores: List<String>,
-    /** L'écran d'accueil de la sauvegarde, quand il diffère de celui en place. */
+    /** Home screen from the backup, when it differs from the current one. */
     val accueil: ChangementAccueil?,
 ) {
     val nombreActions: Int
@@ -26,7 +26,7 @@ data class PlanReinjection(
     val rienAFaire: Boolean get() = nombreActions == 0
 }
 
-/** L'écran d'accueil à rétablir. [composant] reste vide quand ce launcher manque sur ce téléviseur. */
+/** Home screen to restore. [composant] is blank when that launcher is missing on this TV. */
 data class ChangementAccueil(
     val paquet: String,
     val nom: String,
@@ -35,7 +35,7 @@ data class ChangementAccueil(
     val possible: Boolean get() = composant.isNotBlank()
 }
 
-/** Compare la sauvegarde au téléviseur tel qu'il vient d'être lu, sans rien exécuter. */
+/** Compares the backup with the TV as just read, without running anything. */
 fun ConfigurationTv.planifier(
     catalogue: Catalogue,
     etats: Map<String, EtatPaquet>,
@@ -48,8 +48,8 @@ fun ConfigurationTv.planifier(
         configuration = this,
         aReactiver = actifs.distinct().mapNotNull { entrees[it] }
             .filter { etat(it.paquet) == EtatPaquet.DESACTIVE },
-        // La liste noire ne se rejoue jamais, même écrite dans un fichier : le moteur la refuserait,
-        // autant ne pas la promettre dans l'aperçu.
+        // Blocklisted packages are never replayed, even from a file: the engine would refuse them, so the
+        // preview does not list them.
         aDesactiver = desactives.distinct().mapNotNull { entrees[it] }
             .filter { etat(it.paquet) == EtatPaquet.ACTIF && !catalogue.estProtege(it.paquet) },
         ignores = (actifs + desactives).distinct()
@@ -62,13 +62,13 @@ private fun ConfigurationTv.changementAccueil(catalogue: Catalogue, infos: Infos
     val voulu = accueil ?: return null
     if (catalogue.memeLauncher(voulu.paquet, infos.accueilActuel)) return null
 
-    // Où le trouver ici : parmi les launchers installés, et les accueils d'usine désactivés compris —
-    // ceux-là sont réactivés avant d'être désignés.
+    // Candidates: installed launchers and stock home screens, disabled ones included (those are
+    // re-enabled before being set).
     val candidats = infos.launchersTiers.map { it.paquet to it.composant } +
         infos.accueilsUsine.map { it.paquet to it.composant }
 
-    // Le même paquet d'abord, sinon une autre version du même launcher : la sauvegarde d'un téléviseur
-    // de développement désigne la version .debug.
+    // Same package first, otherwise another variant of the same launcher: a backup from a development TV
+    // names the .debug build.
     val trouve = candidats.firstOrNull { it.first == voulu.paquet }
         ?: candidats.firstOrNull { catalogue.memeLauncher(voulu.paquet, it.first) }
 
@@ -79,7 +79,7 @@ private fun ConfigurationTv.changementAccueil(catalogue: Catalogue, infos: Infos
     )
 }
 
-/** Deux paquets du même launcher : identiques, ou versions connues d'une même application. */
+/** True if both packages belong to the same launcher: identical, or known variants of one app. */
 private fun Catalogue.memeLauncher(a: String, b: String): Boolean =
     a == b ||
         launchers.any { it.correspond(a) && it.correspond(b) } ||

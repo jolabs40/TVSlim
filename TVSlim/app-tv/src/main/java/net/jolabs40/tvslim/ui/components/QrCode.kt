@@ -21,11 +21,10 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 
 /**
- * QR code encodé sur l'appareil — aucun appel réseau, aucun service tiers.
+ * QR code encoded on the device, with no network call or third-party service.
  *
- * Sur un téléviseur, c'est la seule façon commode de faire passer une adresse : la plupart des
- * Android TV n'ont pas de navigateur, et saisir une URL à la télécommande est pénible.
- * Le code est rendu sur fond blanc : les scanners lisent mal un QR inversé.
+ * The practical way to hand over an address from a TV: most Android TVs have no browser, and typing a URL
+ * with a remote is painful. Drawn on white because scanners read inverted QR codes poorly.
  */
 @Composable
 fun QrCode(
@@ -43,7 +42,7 @@ fun QrCode(
             .padding(8.dp)
             .size(taille),
         contentScale = ContentScale.Fit,
-        // Sans quoi l'interpolation floute les modules et casse la lecture.
+        // Otherwise interpolation blurs the modules and breaks scanning.
         filterQuality = FilterQuality.None,
     )
 }

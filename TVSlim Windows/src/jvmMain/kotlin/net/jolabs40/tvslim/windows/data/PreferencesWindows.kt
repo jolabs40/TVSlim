@@ -18,22 +18,20 @@ import java.nio.file.StandardCopyOption
 data class DonneesPreferences(
     val dernierHote: String = "",
     val dernierPort: Int = PORT_ADB_PAR_DEFAUT,
-    /** Nom de chaque appareil par adresse, appris à la première connexion. */
+    /** Device name per address, learned on first connection. */
     val nomsConnus: Map<String, String> = emptyMap(),
-    /** On peut refuser que l'application interroge GitHub au démarrage. */
+    /** Whether to query GitHub for updates at startup. */
     val verifierMisesAJour: Boolean = true,
-    /** « J'ai déjà fait un don » : le bandeau de soutien ne revient plus. */
+    /** "I already donated": the support banner no longer shows. */
     val donDeclare: Boolean = false,
-    /** Quand le bandeau de soutien s'est montré pour la dernière fois ; 0 tant qu'il ne l'a pas fait. */
+    /** Last time the support banner was shown; 0 if never. */
     val derniereInvitationSoutien: Long = 0L,
 )
 
 /**
- * Préférences de l'application, dans un petit fichier JSON lisible.
+ * App preferences in a small readable JSON file (the companion uses DataStore).
  *
- * Même rôle que le DataStore du compagnon : retenir le dernier téléviseur joint et le nom de
- * chaque appareil, pour ne rien ressaisir. Chaque écriture passe par un fichier provisoire renommé
- * d'un coup : une coupure au mauvais moment laisse l'ancien fichier intact, jamais un demi-JSON.
+ * Writes go to a temporary file then an atomic rename, so a crash leaves the old file intact, never half a JSON.
  */
 class PreferencesWindows(private val fichier: File) : MagasinSoutien {
 
@@ -52,10 +50,7 @@ class PreferencesWindows(private val fichier: File) : MagasinSoutien {
     suspend fun retenir(hote: String, port: Int) =
         modifier { it.copy(dernierHote = hote, dernierPort = port) }
 
-    /**
-     * Retient comment s'appelle l'appareil à cette adresse. Le service ADB ne publie qu'un numéro
-     * de série ; une fois connecté, on connaît son modèle, autant s'en servir les fois suivantes.
-     */
+    /** Remembers the device name for this address, since the ADB mDNS service only advertises a serial number. */
     suspend fun retenirNom(hote: String, nom: String) {
         if (hote.isBlank() || nom.isBlank()) return
         modifier { it.copy(nomsConnus = it.nomsConnus + (hote to nom)) }
@@ -74,7 +69,7 @@ class PreferencesWindows(private val fichier: File) : MagasinSoutien {
         withContext(Dispatchers.IO) {
             verrou.withLock {
                 val nouvelles = transformation(charger())
-                // Retenues pour la session même si le disque refuse : on ne perd que la suivante.
+                // Kept in memory even if the write fails; only the next session loses them.
                 cache = nouvelles
                 ecrire(nouvelles)
             }

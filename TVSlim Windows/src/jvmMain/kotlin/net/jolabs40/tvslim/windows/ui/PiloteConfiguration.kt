@@ -61,13 +61,11 @@ import net.jolabs40.tvslim.windows.ressources.msg_unknown_reading
 import java.io.File
 
 /**
- * La configuration du téléviseur : son écran d'accueil — la fiche du launcher recommandé, le guet de
- * son installation — et la sauvegarde qu'on réinjecte plus tard, launcher et paquets ensemble. S'y ajoutent
- * l'inventaire de ce que le catalogue ignore, relevé et exporté à la demande, l'installation d'un APK
- * qu'on a sous la main, et la commande ADB libre.
+ * TV configuration: home screen (recommended launcher, install watch), saved configurations to reapply later
+ * (launcher and packages), the unknown packages report, APK install and the free ADB command.
  *
- * Tirée du pilote principal comme les permissions : elle n'en partage que l'état et le moteur, et la
- * réinjection passe par les mêmes garde-fous qu'une application en lot.
+ * Split from the main controller like permissions: it shares only state and engine, and reapplying goes
+ * through the same safeguards as a batch disable.
  */
 class PiloteConfiguration(
     private val lecteur: LecteurDistant,
@@ -80,30 +78,30 @@ class PiloteConfiguration(
     private val afficher: (MessageUi) -> Unit,
     private val rafraichir: () -> Unit,
     private val terminer: (List<ResultatAction>) -> Unit,
-    /** Une réinjection ou une installation a abouti : le bandeau de soutien peut se montrer. */
+    /** A reapply or install succeeded: the support banner may show. */
     private val remercier: () -> Unit,
 ) {
 
-    /** Guette l'arrivée d'un launcher que l'on vient d'envoyer installer. */
+    /** Watches for a launcher whose install was just started. */
     private var guet: Job? = null
 
-    /** Appelé à la déconnexion : le guet et le bilan d'installation ne valent que pour le téléviseur quitté. */
+    /** Called on disconnect: the install watch and result only applied to the previous TV. */
     fun oublier() {
         guet?.cancel()
         guet = null
         majInstallation { EtatInstallation() }
-        // Les commandes déjà tapées restent à portée de ↑ ; la sortie, elle, était celle du téléviseur quitté.
+        // Typed commands stay within reach of Up; the output belonged to the previous TV.
         majCommande { EtatCommande(saisie = it.saisie, historique = it.historique) }
     }
 
-    // --- Écran d'accueil ------------------------------------------------------------------
+    // --- Home screen ----------------------------------------------------------------------
 
     /**
-     * Ouvre la fiche d'un launcher dans la boutique du téléviseur. L'installation se valide à la
-     * télécommande, et vient de la boutique : c'est le chemin recommandé, là où un APK existe aussi.
+     * Opens a launcher's page in the TV's store. The user confirms the install with the remote; the store is
+     * the recommended path even where an APK exists.
      */
     fun installerLauncher(paquet: String) {
-        // Hors téléviseur, la carte n'offre rien : rien n'est fait non plus si on y arrive autrement.
+        // The card offers nothing on non-TV devices; do nothing either if called some other way.
         if (!etat().infos.typeAppareil.pourLeCatalogue) return
         val moteurActif = moteur() ?: return afficher(texte(Res.string.msg_connect_first))
         portee.launch {
@@ -118,12 +116,12 @@ class PiloteConfiguration(
     }
 
     /**
-     * Fait d'un launcher installé l'écran d'accueil du téléviseur. Consigné au journal, donc annulable
-     * depuis l'onglet Journal ; puis relu, parce qu'Android répond `Success` sans rien changer tant qu'un
-     * accueil d'usine prioritaire est encore actif — Google TV sur la TCL.
+     * Makes an installed launcher the TV's home screen. Logged, so it can be undone from the Log tab. Re-read
+     * afterwards: Android answers `Success` without changing anything while a higher-priority factory home is
+     * still enabled (Google TV on the TCL).
      */
     fun definirAccueil(composant: String) {
-        // Hors téléviseur, la carte n'offre rien : rien n'est fait non plus si on y arrive autrement.
+        // The card offers nothing on non-TV devices; do nothing either if called some other way.
         if (!etat().infos.typeAppareil.pourLeCatalogue) return
         val moteurActif = moteur() ?: return afficher(texte(Res.string.msg_connect_first))
         val infos = etat().infos
@@ -148,8 +146,8 @@ class PiloteConfiguration(
     }
 
     /**
-     * Guette l'arrivée du launcher plutôt que d'exiger un « Actualiser » : la personne est devant
-     * son téléviseur, pas devant l'écran. Une question courte toutes les cinq secondes, trois minutes.
+     * Polls for the launcher instead of requiring a Refresh, since the user is at the TV, not the PC. One short
+     * query every five seconds, for three minutes.
      */
     private fun guetterInstallation(paquet: String) {
         guet?.cancel()
@@ -168,12 +166,12 @@ class PiloteConfiguration(
         }
     }
 
-    // --- Sauvegarde et réinjection --------------------------------------------------------
+    // --- Save and reapply -----------------------------------------------------------------
 
-    /** Nom proposé par la fenêtre d'enregistrement : l'appareil et le jour. */
+    /** Name suggested by the save dialog: device and date. */
     fun nomFichier(): String = FichierConfiguration.nomPropose(etat().infos)
 
-    /** Écrit la configuration du téléviseur tel qu'il a été lu en dernier. */
+    /** Writes the TV configuration as last read. */
     fun sauvegarder(cible: File) {
         val courant = etat()
         if (!courant.connecte || courant.lignes.isEmpty()) return afficher(texte(Res.string.msg_connect_first))
@@ -186,8 +184,8 @@ class PiloteConfiguration(
     }
 
     /**
-     * Relit une sauvegarde et la compare au téléviseur. Rien ne part : ce qui changerait est soumis à
-     * confirmation, et un téléviseur déjà conforme le dit sans ouvrir de fenêtre.
+     * Reads a saved configuration and compares it with the TV. Nothing is sent: changes go to confirmation, and
+     * a TV that already matches is reported without a dialog.
      */
     fun charger(source: File) {
         if (!etat().connecte || moteur() == null) return afficher(texte(Res.string.msg_connect_first))
@@ -215,15 +213,15 @@ class PiloteConfiguration(
     }
 
     /**
-     * Propose de remettre ce qui a dérivé. La suite est celle d'une réinjection : même confirmation, même
-     * [Reinjecteur], mêmes garde-fous — seule l'origine du plan change.
+     * Offers to restore what drifted. Same confirmation, [Reinjecteur] and safeguards as a reapply; only the
+     * plan's source differs.
      */
     fun proposerDerive() {
         val plan = etat().derive ?: return
         majEtat { it.copy(confirmation = Confirmation.Reinjection(plan, derive = true)) }
     }
 
-    /** Réinjecte après confirmation, avec la progression et le bilan d'une application en lot. */
+    /** Reapplies after confirmation, with the progress and summary of a batch. */
     fun reinjecter(plan: PlanReinjection) {
         val courant = etat()
         val moteurActif = moteur() ?: return afficher(texte(Res.string.msg_connect_first))
@@ -241,19 +239,17 @@ class PiloteConfiguration(
         }
     }
 
-    // --- Inventaire des inconnus ----------------------------------------------------------
+    // --- Unknown packages report ----------------------------------------------------------
 
-    /** Nom proposé pour l'inventaire : l'appareil et le jour. */
+    /** Suggested report name: device and date. */
     fun nomExportInconnus(): String = RapportInconnus.nomPropose(etat().infos)
 
     /**
-     * Écrit l'inventaire des paquets que le catalogue ignore, avec ce qu'ADB dit de chacun : emplacement,
-     * droits, déclarations sensibles, icône, mémoire vive et stockage ; puis le firmware de l'appareil et les
-     * entrées du catalogue qu'il porte déjà. Tout est relu au moment de l'export, par quatre lectures ; rien
-     * n'est écrit sur le téléviseur.
+     * Writes a report of packages missing from the catalogue, with what ADB says about each (location, flags,
+     * sensitive declarations, icon, RAM and storage), then the firmware and the catalogue entries the device
+     * has. Everything is re-read at export time in four reads; nothing is written to the TV.
      *
-     * Avec [puisOuvrir], le formulaire du catalogue s'ouvre ensuite dans le navigateur : la personne y joint
-     * le fichier et l'envoie elle-même.
+     * With [puisOuvrir], the catalogue form then opens in the browser for the user to attach the file and send it.
      */
     fun exporterInconnus(cible: File, puisOuvrir: ((String) -> Unit)? = null) {
         if (!etat().connecte) return afficher(texte(Res.string.msg_connect_first))
@@ -288,11 +284,11 @@ class PiloteConfiguration(
         }
     }
 
-    // --- Installation d'un APK ------------------------------------------------------------
+    // --- APK install ----------------------------------------------------------------------
 
     /**
-     * Examine un APK choisi ou glissé dans la fenêtre : ce qu'il est, et ce que le téléviseur en porte
-     * déjà. Rien ne part avant la confirmation, qui montre le paquet, sa version et ce qu'elle remplace.
+     * Examines an APK picked or dropped on the window, and what the TV already has. Nothing is sent before
+     * confirmation, which shows the package, its version and what it replaces.
      */
     fun choisirApk(fichier: File) {
         val installationActive = installation() ?: return afficher(texte(Res.string.msg_connect_first))
@@ -308,7 +304,7 @@ class PiloteConfiguration(
         }
     }
 
-    /** Envoie puis installe, après confirmation : la barre suit l'envoi, puis l'installation par Android. */
+    /** Uploads then installs after confirmation; progress follows the upload, then Android's install. */
     fun installerApk(apk: ApkChoisi) {
         val installationActive = installation() ?: return afficher(texte(Res.string.msg_connect_first))
         portee.launch {
@@ -325,7 +321,7 @@ class PiloteConfiguration(
                 },
             )
             if (InvitationSoutien.merite(resultat)) remercier()
-            // Les compteurs de paquets ont bougé, et l'application installée est peut-être un launcher.
+            // Package counts changed, and the new app may be a launcher.
             rafraichir()
         }
     }
@@ -341,16 +337,16 @@ class PiloteConfiguration(
     private fun majInstallation(transformation: (EtatInstallation) -> EtatInstallation) =
         majEtat { it.copy(installation = transformation(it.installation)) }
 
-    // --- Commande ADB libre ---------------------------------------------------------------
+    // --- Free ADB command -----------------------------------------------------------------
 
     fun saisirCommande(valeur: String) = majCommande { it.copy(saisie = valeur, rappel = -1) }
 
-    /** ↑ et ↓ dans le champ, comme dans un terminal. */
+    /** Up and Down in the field, as in a terminal. */
     fun rappelerCommande(plusAncienne: Boolean) = majCommande { it.avecRappel(plusAncienne) }
 
     /**
-     * Envoie la commande saisie, une fois, et garde sa sortie à l'écran. Ni confirmation ni garde-fou : la
-     * carte dit ce qu'il en est, et le journal consigne chaque envoi.
+     * Sends the typed command once and keeps its output on screen. No confirmation or safeguard: the card
+     * warns about it, and every send is logged.
      */
     fun envoyerCommande() {
         val courant = etat()
@@ -371,7 +367,7 @@ class PiloteConfiguration(
                 majCommande { it.copy(enCours = true) }
                 val echange = console.envoyer(saisie.commande)
                 majCommande { it.avecEnvoi(saisie.commande).copy(enCours = false, derniere = echange) }
-                // Elle a pu changer ce que montrent les autres onglets : paquets, accueil, compteurs.
+                // It may have changed what other tabs show: packages, home screen, counters.
                 rafraichir()
             }
         }

@@ -18,20 +18,17 @@ import java.io.File
 import java.io.IOException
 
 /**
- * L'application TV installée depuis GitHub : rien ne part vers le téléviseur qui ne soit signé de notre
- * clé, puis l'ordre — installer, accorder, lancer, allumer le gardien.
+ * Installing the TV app from GitHub. Nothing reaches the TV unless it is signed with our key, then the order is
+ * install, grant, launch, start the boot guard.
  */
 class ApplicationTvTest {
 
     private val fixtures = File("src/test/fixtures/apk")
 
-    /**
-     * Un téléviseur bouchon, à l'état : l'application y arrive quand on l'installe, et les permissions
-     * accordées par `pm grant` se relisent ensuite dans `dumpsys`.
-     */
+    /** Stateful fake TV: installing adds the app, and permissions granted by `pm grant` show up in `dumpsys`. */
     private class Televiseur(
         var installee: Boolean = false,
-        /** Déjà ouverte une fois : Android ne la tient plus pour « arrêtée », et une mise à jour n'y change rien. */
+        /** Opened once already: Android no longer treats it as stopped, and an update does not change that. */
         var lancee: Boolean = false,
         private val sdk: Int = 34,
         private val reponseGardien: String = "Broadcasting: Intent { … }\nBroadcast completed: result=1",
@@ -82,7 +79,7 @@ class ApplicationTvTest {
         }
     }
 
-    /** GitHub bouchon : une publication, et l'APK de test qu'on lui demande de servir. */
+    /** Fake GitHub: one release, serving the given test APK. */
     private inner class Github(
         private val apk: String = "tv-cle-a.apk",
         private val panne: Boolean = false,
@@ -116,7 +113,7 @@ class ApplicationTvTest {
     )
 
     @Test
-    fun `installee, autorisee, lancee, gardien allume - dans cet ordre`() = runTest {
+    fun `installs, grants, launches and starts the guard, in that order`() = runTest {
         val tv = Televiseur()
         val etapes = mutableListOf<EtapeTv>()
 
@@ -137,7 +134,7 @@ class ApplicationTvTest {
     }
 
     @Test
-    fun `un APK signe d'une autre cle ne part jamais vers le televiseur`() = runTest {
+    fun `an APK signed with another key is never sent to the TV`() = runTest {
         val tv = Televiseur()
 
         val resultat = application(tv, Github(apk = "tv-cle-b.apk")).installer()
@@ -150,7 +147,7 @@ class ApplicationTvTest {
     }
 
     @Test
-    fun `un APK non signe est refuse de meme`() = runTest {
+    fun `an unsigned APK is rejected the same way`() = runTest {
         val tv = Televiseur()
         val resultat = application(tv, Github(apk = "tv-non-signe.apk")).installer()
         assertEquals(MotifTv.CERTIFICAT, (resultat as ResultatTv.Echoue).motif)
@@ -158,7 +155,7 @@ class ApplicationTvTest {
     }
 
     @Test
-    fun `sans GitHub, rien ne se fait et le motif le dit`() = runTest {
+    fun `without GitHub, nothing happens and the reason says so`() = runTest {
         val tv = Televiseur()
         val github = Github(panne = true)
         val resultat = application(tv, github).installer()
@@ -168,21 +165,21 @@ class ApplicationTvTest {
     }
 
     @Test
-    fun `une application TV qui ne connait pas la commande ne confirme pas son gardien`() = runTest {
+    fun `a TV app that does not know the command does not confirm its guard`() = runTest {
         val tv = Televiseur(reponseGardien = "Broadcast completed: result=0")
         val resultat = application(tv).installer()
         assertEquals(ResultatTv.Reussi("1.1.0", autorisee = true, gardien = false), resultat)
     }
 
     @Test
-    fun `avant Android 13, pas de permission de notification a accorder`() = runTest {
+    fun `before Android 13, no notification permission is granted`() = runTest {
         val tv = Televiseur(sdk = 30)
         application(tv).installer()
         assertTrue(tv.commandes.none { it.endsWith(ApplicationTv.POST_NOTIFICATIONS) })
     }
 
     @Test
-    fun `la situation dit ce que porte le televiseur, comparee a ce que propose GitHub`() = runTest {
+    fun `the status compares what the TV has with what GitHub offers`() = runTest {
         val disponible = application(Televiseur()).derniere()
         assertEquals("1.1.0", disponible?.version)
         assertEquals(null, application(Televiseur(), Github(panne = true)).derniere())
@@ -198,7 +195,7 @@ class ApplicationTvTest {
     }
 
     @Test
-    fun `autoriser une application deja installee ne retelecharge rien`() = runTest {
+    fun `granting an app already installed downloads nothing`() = runTest {
         val tv = Televiseur(installee = true)
         val github = Github()
 
@@ -211,7 +208,7 @@ class ApplicationTvTest {
     }
 
     @Test
-    fun `une mise a jour n'ouvre pas l'application deja lancee - le televiseur garde son programme`() = runTest {
+    fun `an update does not open an app already launched, so the TV keeps its program`() = runTest {
         val tv = Televiseur(installee = true, lancee = true)
 
         val resultat = application(tv).installer()
@@ -223,15 +220,15 @@ class ApplicationTvTest {
     }
 
     @Test
-    fun `autoriser une application deja lancee ne l'ouvre pas non plus`() = runTest {
+    fun `granting an app already launched does not open it either`() = runTest {
         val tv = Televiseur(installee = true, lancee = true)
         application(tv).autoriser("1.0.0")
         assertTrue(tv.commandes.none { it.startsWith("am start") })
     }
 
     @Test
-    fun `seul le profil principal dit si l'application est arretee`() {
-        // Relevé sur la TCL le 2026-10-06 : le second profil, jamais ouvert, la dit arrêtée.
+    fun `only the main profile decides whether the app is stopped`() {
+        // Captured on the TCL: the second profile, never opened, reports the app as stopped.
         val tcl = """
             |    User 0: ceDataInode=1332869 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false
             |    User 10: ceDataInode=0 installed=true hidden=false suspended=false distractionFlags=0 stopped=true notLaunched=true enabled=0 instant=false virtual=false

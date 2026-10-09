@@ -1,4 +1,4 @@
-# Modèles sérialisés du catalogue et du journal (module :core).
+# Serialized catalogue and journal models (:core module).
 -keepclassmembers class net.jolabs40.tvslim.catalog.** {
     *** Companion;
 }

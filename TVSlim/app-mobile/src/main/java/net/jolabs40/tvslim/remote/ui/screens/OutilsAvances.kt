@@ -28,12 +28,9 @@ import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.remote.R
 
 /**
- * Les outils rares de l'onglet Téléviseur — permissions privilégiées, installation d'un APK, commande ADB,
- * relance de Shizuku —, repliés sous un seul titre. Quatre cartes identiques en bas de l'écran pesaient autant
- * que l'essentiel, sans rapport avec le débloat (remarque de l'utilisateur, 2026-10-05).
+ * Folds the TV tab's rarely used tools (privileged permissions, APK install, ADB command, Shizuku) under one header.
  *
- * Repliés par défaut ; une opération en cours ([occupe]) les tient dépliés, pour ne jamais cacher une
- * avancée ni un résultat qui arrive.
+ * Collapsed by default, but kept open while an operation runs ([occupe]) so progress or a result is never hidden.
  */
 @Composable
 fun OutilsAvances(occupe: Boolean, contenu: @Composable ColumnScope.() -> Unit) {

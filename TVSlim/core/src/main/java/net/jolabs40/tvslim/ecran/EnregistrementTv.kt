@@ -6,23 +6,23 @@ import net.jolabs40.tvslim.shell.RecepteurFichiers
 import net.jolabs40.tvslim.shell.ResultatShell
 import java.io.OutputStream
 
-/** Pourquoi un enregistrement n'a pas démarré, ou n'a rien rendu — chaque application le dit dans sa langue. */
+/** Why a recording did not start or produced nothing; each app localizes the message. */
 enum class CauseEnregistrement {
-    /** Aucune session, ou la connexion a lâché. */
+    /** No session, or the connection dropped. */
     CONNEXION,
 
-    /** Le téléviseur n'a pas `screenrecord`. */
+    /** The TV has no `screenrecord`. */
     INDISPONIBLE,
 
-    /** `screenrecord` s'est arrêté aussitôt lancé : encodeur refusé, écran protégé… */
+    /** `screenrecord` exited right after starting (encoder refused, protected screen...). */
     ECHEC,
 
-    /** Arrêté, mais sans fichier — ou un fichier vide. */
+    /** Stopped, but no file or an empty one. */
     VIDE,
 }
 
 sealed interface Demarrage {
-    /** [limiteS] : la durée maximale imposée par un Android d'avant la 14 ; `null` quand il n'y en a pas. */
+    /** [limiteS]: maximum duration enforced before Android 14, or `null` when there is none. */
     data class Lance(val limiteS: Int?) : Demarrage
 
     data class Refuse(val cause: CauseEnregistrement, val detail: String) : Demarrage
@@ -35,15 +35,15 @@ sealed interface Arret {
 }
 
 /**
- * La vidéo de l'écran, enregistrée **sur le téléviseur** par son propre `screenrecord`, puis copiée.
+ * Records the screen on the TV itself with its own `screenrecord`, then copies the video.
  *
- * Choisi plutôt que scrcpy (décision de l'utilisateur, 2026-10-04) : ni logiciel tiers, ni seconde autorisation
- * ADB, rien qui transite pendant l'enregistrement. Le prix : **pas de son** — `screenrecord` n'en capture
- * jamais —, une copie à attendre à la fin, et trois minutes au plus avant Android 14.
+ * Chosen over scrcpy: no third-party software, no second ADB authorization, nothing crosses the network while
+ * recording. The cost: no audio (`screenrecord` never captures it), a copy to wait for at the end, and a
+ * 3-minute limit before Android 14.
  *
- * L'enregistreur est lancé **détaché** (`setsid`) : il survit à la commande qui l'a lancé, et même à une
- * session ADB perdue en route. Il s'arrête sur `SIGINT`, qui lui fait écrire l'index du MP4 — un `SIGKILL`
- * laisserait un fichier illisible.
+ * The recorder runs detached (`setsid`), so it outlives the command that started it and even a lost ADB
+ * session. It is stopped with `SIGINT`, which makes it write the MP4 index; `SIGKILL` would leave an
+ * unreadable file.
  */
 class EnregistrementTv(
     private val executeur: ExecuteurCommande,
@@ -56,15 +56,15 @@ class EnregistrementTv(
         if (!aide.sortie.contains("screenrecord", ignoreCase = true) || aide.sortie.contains("not found")) {
             return Demarrage.Refuse(CauseEnregistrement.INDISPONIBLE, aide.sortie.trim())
         }
-        // « Set to 0 to remove the time limit » : Android 14 et plus. Avant, 180 s au plus.
+        // "Set to 0 to remove the time limit" appears from Android 14; before that, 180 s at most.
         val limiteS = if (aide.sortie.contains("Set to 0")) null else LIMITE_ANCIENNE_S
 
-        // Un enregistrement laissé par une session précédente — TV Slim fermé de force — est arrêté et effacé.
+        // Stops and deletes a recording left by a previous session (TV Slim force-closed).
         val nettoyage = executeur.executer("$ARRETER_PRECEDENT; rm -f $VIDEO $PID $JOURNAL")
         if (nettoyage.code < 0) return Demarrage.Refuse(CauseEnregistrement.CONNEXION, nettoyage.sortie)
 
-        // Ne lance rien si l'enregistreur tourne déjà : une commande rejouée après une rupture n'en démarre pas un
-        // second sur le même fichier.
+        // No-op if the recorder is already running, so a command replayed after a disconnect does not start a
+        // second one on the same file.
         val lancement = executeur.executer(
             "p=\$(cat $PID 2>/dev/null); if [ -n \"\$p\" ] && kill -0 \"\$p\" 2>/dev/null; then echo deja; else " +
                 "setsid sh -c 'echo \$\$ > $PID; exec screenrecord --time-limit ${limiteS ?: 0} --bit-rate $DEBIT $VIDEO' " +
@@ -72,7 +72,7 @@ class EnregistrementTv(
         )
         if (lancement.code < 0) return Demarrage.Refuse(CauseEnregistrement.CONNEXION, lancement.sortie)
 
-        // Un encodeur qui refuse la définition, ou un écran protégé, l'arrête dans la seconde.
+        // An encoder that rejects the resolution, or a protected screen, stops it within a second.
         delay(ATTENTE_DEMARRAGE_MS)
         return when (vivant()) {
             true -> Demarrage.Lance(limiteS)
@@ -81,7 +81,7 @@ class EnregistrementTv(
         }
     }
 
-    /** L'enregistreur tourne-t-il encore ? `null` quand le téléviseur ne répond pas. */
+    /** Whether the recorder is still running; `null` when the TV does not answer. */
     suspend fun vivant(): Boolean? {
         val reponse = executeur.executer("p=\$(cat $PID 2>/dev/null); [ -n \"\$p\" ] && kill -0 \"\$p\" 2>/dev/null")
         return when {
@@ -91,8 +91,8 @@ class EnregistrementTv(
     }
 
     /**
-     * Arrête l'enregistreur par `SIGINT`, attend qu'il ait fini d'écrire, et rend la taille de la vidéo. Déjà
-     * arrêté — limite atteinte —, il ne reste qu'à lire la taille.
+     * Stops the recorder with `SIGINT`, waits for it to finish writing, and returns the video size. If it
+     * already stopped (time limit reached), only the size is read.
      */
     suspend fun arreter(): Arret {
         val reponse = executeur.executer(
@@ -105,7 +105,7 @@ class EnregistrementTv(
         return if (taille > 0) Arret.Termine(taille) else Arret.Refuse(CauseEnregistrement.VIDE, journal())
     }
 
-    /** Copie la vidéo du téléviseur dans [destination], que referme l'appelant. */
+    /** Copies the video from the TV into [destination]; the caller closes it. */
     suspend fun rapatrier(
         destination: OutputStream,
         taille: Long,
@@ -113,19 +113,19 @@ class EnregistrementTv(
         surRecu: (Long) -> Unit = {},
     ): ResultatShell = recepteur.recevoir(VIDEO, destination, taille, annule, surRecu)
 
-    /** Efface la vidéo et ses fichiers de suivi du téléviseur, une fois la copie arrivée. */
+    /** Deletes the video and its tracking files from the TV once the copy is done. */
     suspend fun nettoyer(): ResultatShell = executeur.executer("rm -f $VIDEO $PID $JOURNAL")
 
     private suspend fun journal(): String =
         executeur.executer("cat $JOURNAL 2>/dev/null").sortie.trim().lines().takeLast(3).joinToString(" ")
 
     companion object {
-        /** Dans le dossier du shell d'ADB : invisible des applications du téléviseur, et jamais scanné. */
+        /** In the ADB shell's folder: invisible to TV apps and never media-scanned. */
         const val VIDEO = "/data/local/tmp/tvslim-enregistrement.mp4"
         const val PID = "/data/local/tmp/tvslim-enregistrement.pid"
         const val JOURNAL = "/data/local/tmp/tvslim-enregistrement.log"
 
-        /** 8 Mbit/s, le débit de scrcpy : 60 Mo par minute au plus, bien moins sur un écran calme. */
+        /** 8 Mbit/s, same as scrcpy: at most 60 MB per minute, much less on a static screen. */
         const val DEBIT = "8M"
         const val LIMITE_ANCIENNE_S = 180
         const val ATTENTE_DEMARRAGE_MS = 1_000L

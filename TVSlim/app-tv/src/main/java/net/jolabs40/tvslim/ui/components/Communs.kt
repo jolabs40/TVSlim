@@ -31,7 +31,7 @@ import androidx.tv.material3.Text
 import net.jolabs40.tvslim.catalog.Risque
 import net.jolabs40.tvslim.ui.theme.CouleursRisque
 
-/** Titre d'écran, avec sa ligne d'explication. */
+/** Screen title with an optional explanation line. */
 @Composable
 fun EnTete(titre: String, modifier: Modifier = Modifier, sousTitre: String? = null) {
     Column(modifier = modifier.padding(bottom = 16.dp)) {
@@ -50,7 +50,7 @@ fun EnTete(titre: String, modifier: Modifier = Modifier, sousTitre: String? = nu
     }
 }
 
-/** Bloc d'information : un simple fond, jamais une cible du D-pad. */
+/** Information block: a plain background, never a D-pad target. */
 @Composable
 fun Bloc(
     modifier: Modifier = Modifier,
@@ -65,7 +65,7 @@ fun Bloc(
     )
 }
 
-/** Ligne « libellé : valeur » d'un bloc de mesures. */
+/** Label and value row of a measurement block. */
 @Composable
 fun LigneMesure(libelle: String, valeur: String) {
     Row(
@@ -83,7 +83,7 @@ fun LigneMesure(libelle: String, valeur: String) {
     }
 }
 
-/** Pastille colorée résumant le risque d'une désactivation. */
+/** Colored dot showing the risk of disabling a package. */
 @Composable
 fun PastilleRisque(risque: Risque, modifier: Modifier = Modifier) {
     val couleur = when (risque) {
@@ -96,11 +96,10 @@ fun PastilleRisque(risque: Risque, modifier: Modifier = Modifier) {
 }
 
 /**
- * Élément de liste focusable : toute la ligne est la cible du D-pad.
+ * Focusable list row; the whole row is the D-pad target.
  *
- * Le grossissement par défaut de Compose for TV (1,1×) fait sauter les lignes voisines à chaque
- * déplacement, ce qui est fatigant sur une longue liste. Il est ramené à un frémissement : le
- * fond clair de la ligne focalisée suffit largement à la désigner.
+ * Compose for TV's default 1.1x focus scale makes neighbouring rows jump on every move, which is tiring
+ * on a long list. Scale is cut to 1.01x; the focused row's light background is enough to mark it.
  */
 @Composable
 fun LigneFocusable(
@@ -119,12 +118,7 @@ fun LigneFocusable(
     }
 }
 
-/**
- * Repère de position dans une longue liste : « 12 sur 56 ».
- *
- * Un téléviseur n'a pas de curseur à traîner ; sans ce repère, on ignore où l'on est et combien
- * il reste.
- */
+/** Position counter for long lists ("12 / 56"). With a remote there is no other cue for position. */
 @Composable
 fun CompteurListe(
     etat: LazyListState,
@@ -133,11 +127,9 @@ fun CompteurListe(
     indexCourant: Int? = null,
 ) {
     if (total <= 0) return
-    // L'élément focalisé prime sur le premier élément visible : c'est lui qu'on regarde.
-    //
-    // Isolé dans un état dérivé : `firstVisibleItemIndex` bouge à chaque image du défilement,
-    // le nombre affiché seulement quand on change de ligne. Sans cela, le compteur se
-    // recompose soixante fois par seconde pour écrire le même chiffre.
+    // The focused item wins over the first visible one. derivedStateOf because `firstVisibleItemIndex`
+    // changes on every scroll frame while the shown number only changes per row; without it the counter
+    // recomposes 60 times a second.
     val courant by remember(etat, total, indexCourant) {
         derivedStateOf {
             val position = indexCourant?.takeIf { it >= 0 } ?: etat.firstVisibleItemIndex
@@ -152,14 +144,11 @@ fun CompteurListe(
     )
 }
 
-/**
- * Barre de défilement décorative, calée sur l'état de la liste. Elle n'est pas manipulable —
- * à la télécommande, elle sert uniquement à situer d'un coup d'œil.
- */
+/** Decorative scrollbar following the list state. Not interactive: with a remote it only shows position. */
 @Composable
 fun BarreDefilement(etat: LazyListState, modifier: Modifier = Modifier) {
-    // `layoutInfo` est réécrit à chaque image du défilement ; ces trois nombres, non. Les
-    // isoler évite de redessiner la barre pour une position identique.
+    // `layoutInfo` changes on every scroll frame, these three numbers do not. Deriving them avoids
+    // redrawing the bar for an unchanged position.
     val assiette by remember(etat) {
         derivedStateOf {
             val info = etat.layoutInfo
@@ -186,7 +175,7 @@ fun BarreDefilement(etat: LazyListState, modifier: Modifier = Modifier) {
                 .offset(y = (maxHeight - hauteurCurseur) * avancement.coerceIn(0f, 1f))
                 .height(hauteurCurseur)
                 .fillMaxWidth()
-                // Un repère, pas un élément d'interface : il ne doit pas attirer l'œil.
+                // Kept faint: a position cue, not a control.
                 .background(
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                     RoundedCornerShape(2.dp),
@@ -195,7 +184,7 @@ fun BarreDefilement(etat: LazyListState, modifier: Modifier = Modifier) {
     }
 }
 
-/** Bandeau de retour, affiché après chaque action. */
+/** Feedback banner shown after each action. */
 @Composable
 fun Bandeau(message: String, onFermer: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
@@ -221,9 +210,9 @@ fun Bandeau(message: String, onFermer: () -> Unit, modifier: Modifier = Modifier
     }
 }
 
-/** Ce que la barre a besoin de savoir de la liste, et rien de plus. */
+/** The list metrics the scrollbar needs. */
 private data class Assiette(val total: Int, val visibles: Int, val premier: Int)
 
-/** En dessous, le curseur deviendrait un trait invisible sur une liste très longue. */
+/** Minimum thumb size, so it stays visible on very long lists. */
 private const val FRACTION_MIN = 0.08f
 

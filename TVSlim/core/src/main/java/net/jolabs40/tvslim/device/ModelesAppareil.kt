@@ -1,15 +1,11 @@
 package net.jolabs40.tvslim.device
 
-/** État d'un paquet du catalogue sur un téléviseur donné. */
 enum class EtatPaquet { ABSENT, ACTIF, DESACTIVE }
 
-/** Photographie d'un téléviseur, affichée avant et après une intervention. */
+/** Snapshot of a TV, shown before and after a change. */
 data class InfosAppareil(
     val marque: String = "",
-    /**
-     * La marque vendue (`ro.product.brand`), quand elle diffère du fabricant : un même assembleur
-     * fabrique pour plusieurs enseignes.
-     */
+    /** Brand sold (`ro.product.brand`) when it differs from the manufacturer, who may build for several brands. */
     val marqueCommerciale: String = "",
     val modele: String = "",
     val versionAndroid: String = "",
@@ -19,33 +15,27 @@ data class InfosAppareil(
     val paquetsInstalles: Int = 0,
     val paquetsDesactives: Int = 0,
     val accueilActuel: String = "",
-    /** Le composant entier de l'accueil en place (« paquet/.Activité ») : ce qu'on saurait rétablir. */
+    /** Full component of the current home (`package/.Activity`), which is what could be restored. */
     val composantAccueil: String = "",
     val launchersTiers: List<LauncherInstalle> = emptyList(),
-    /**
-     * Les écrans d'accueil livrés avec l'appareil — Google TV, l'accueil Android TV, celui du
-     * constructeur —, **désactivés compris** : c'est justement une fois coupés qu'il faut les retrouver.
-     */
+    /** Home screens shipped with the device (Google TV, Android TV home, the maker's), disabled ones included. */
     val accueilsUsine: List<AccueilUsine> = emptyList(),
-    /** `ro.build.characteristics` : « tv » sur la TCL, « nosdcard » sur un Pixel, « tablet » sur une tablette. */
+    /** `ro.build.characteristics`: `tv` on the TCL, `nosdcard` on a Pixel, `tablet` on a tablet. */
     val caracteristiques: String = "",
     /**
-     * Les fonctions déclarées qui disent le genre d'appareil — [FONCTIONS_LUES] —, sans le préfixe `feature:`.
-     * `null` tant qu'elles n'ont pas été lues ; vide, l'appareil n'en déclare aucune — pas même d'écran tactile.
+     * Declared features that tell the device kind ([FONCTIONS_LUES]), without the `feature:` prefix. `null`
+     * until read; empty means the device declares none of them, not even a touchscreen.
      */
     val fonctions: Set<String>? = null,
 ) {
-    /** Le fabricant reconnu, marque vendue d'abord : voir [Fabricant]. */
+    /** Recognized manufacturer, brand sold first; see [Fabricant]. */
     val fabricant: Fabricant? get() = Fabricant.identifier(marqueCommerciale, marque)
 
     /**
-     * Ce que l'appareil **déclare** l'emporte sur sa marque : Google fait des box (Chromecast) et des téléphones
-     * (Pixel), et un Pixel passait pour une box. Est un téléviseur ce qui porte `leanback` — Google l'exige de tout
-     * Android TV —, `type.television`, la fonction Fire TV, la caractéristique « tv », ou n'a pas d'écran tactile ;
-     * la marque départage alors téléviseur et box. Le reste est un téléphone, ou une tablette si l'appareil le dit.
-     *
-     * Rien de lu — l'appareil n'a pas encore répondu —, la marque décide seule, et un inconnu est présumé
-     * téléviseur : c'est le cas courant.
+     * Declared features win over the brand, since Google makes both boxes (Chromecast) and phones (Pixel).
+     * A TV has `leanback` (required on Android TV), `type.television`, the Fire TV feature, the `tv`
+     * characteristic, or no touchscreen; the brand then picks TV or box. Anything else is a phone, or a
+     * tablet if declared. Before the device has answered, the brand decides alone and unknown means TV.
      */
     val typeAppareil: TypeAppareil
         get() {
@@ -64,9 +54,8 @@ data class InfosAppareil(
         }
 
     /**
-     * Le nom à montrer et à retenir : la marque vendue plutôt que le sous-traitant (« TPV »), puis le modèle
-     * — sans la marque quand le modèle la porte déjà : la Philips relevée le 2026-10-04 déclare « Philips
-     * Google TV TA1 », qui s'affichait « Philips Philips Google TV TA1 ».
+     * Name to show and store: the brand sold rather than the contractor (`TPV`), then the model, without
+     * the brand when the model already starts with it (a Philips reports "Philips Google TV TA1").
      */
     val nomAffiche: String
         get() {
@@ -75,7 +64,7 @@ data class InfosAppareil(
             return if (sansDoublon) modele.trim() else "$nomMarque $modele".trim()
         }
 
-    /** Le même nom, prêt à entrer dans un nom de fichier : « Philips-55PUS8807-12 ». */
+    /** The same name, safe for a file name: `Philips-55PUS8807-12`. */
     val nomPourFichier: String
         get() = nomAffiche
             .map { if (it.isLetterOrDigit()) it else '-' }
@@ -92,12 +81,12 @@ data class InfosAppareil(
         const val FONCTION_FIRE_TV = "amazon.hardware.fire_tv"
         const val FONCTION_TACTILE = "android.hardware.touchscreen"
 
-        /** Ce que la photographie demande à `pm list features` : le reste ne dit rien du genre d'appareil. */
+        /** Features the snapshot asks `pm list features` for; the others say nothing about the device kind. */
         val FONCTIONS_LUES = listOf(FONCTION_LEANBACK, FONCTION_TELEVISION, FONCTION_FIRE_TV, FONCTION_TACTILE)
     }
 }
 
-/** Un processus vivant et ce qu'il occupe réellement en mémoire (PSS). */
+/** A live process and the memory it actually uses (PSS). */
 data class ProcessusMemoire(
     val nom: String,
     val pid: Int,
@@ -105,19 +94,18 @@ data class ProcessusMemoire(
 ) {
     val megaoctets: Long get() = kilooctets / 1024
 
-    /** Le paquet derrière le processus : « com.android.vending:background » en cache un. */
+    /** Package behind the process: `com.android.vending:background` belongs to `com.android.vending`. */
     val paquet: String get() = nom.substringBefore(':')
 
     /**
-     * Un processus du système ne porte pas de nom de paquet : `surfaceflinger`, `system`,
-     * `vendor.nvidia…`. On ne propose pas de les arrêter — au mieux ils redémarrent aussitôt,
-     * au pire l'appareil bronche.
+     * System processes have no package name (`surfaceflinger`, `system`, `vendor.nvidia...`). They are
+     * never offered for stopping: at best they restart at once, at worst the device misbehaves.
      */
     val estUneApplication: Boolean
         get() = paquet.count { it == '.' } >= 2 && !paquet.startsWith("vendor.")
 }
 
-/** Répartition de la mémoire, telle que la voit `dumpsys meminfo`. */
+/** Memory breakdown as reported by `dumpsys meminfo`. */
 data class RepartitionMemoire(
     val totalKo: Long = 0,
     val libreKo: Long = 0,
@@ -128,7 +116,7 @@ data class RepartitionMemoire(
 ) {
     val renseignee: Boolean get() = totalKo > 0
 
-    /** Ce qu'occupe chaque paquet, ses processus réunis : « com.android.vending » et « …:background ». */
+    /** Memory per package, its processes combined (`com.android.vending` and `...:background`). */
     val kilooctetsParPaquet: Map<String, Long>
         get() = processus.groupBy { it.paquet }.mapValues { (_, siens) -> siens.sumOf { it.kilooctets } }
 }
@@ -139,7 +127,7 @@ data class LauncherInstalle(
     val composant: String,
 )
 
-/** Un écran d'accueil d'usine, et s'il est encore actif. [composant] reste vide quand Android l'a tu. */
+/** A factory home screen and whether it is still enabled. [composant] is empty when Android did not report it. */
 data class AccueilUsine(
     val paquet: String,
     val composant: String,
@@ -147,10 +135,8 @@ data class AccueilUsine(
 )
 
 /**
- * Ce qu'une application déclare vouloir, et ce qu'elle a réellement obtenu.
- *
- * Une permission absente de [demandees] ne s'accorde pas : le manifeste fait foi, et `pm grant`
- * la refuserait de toute façon — mais par une exception Java, là où une phrase est plus utile.
+ * Permissions an app requests and those it was granted. A permission missing from [demandees] cannot be
+ * granted; `pm grant` would refuse it too, but with a Java exception instead of a readable message.
  */
 data class PermissionsPaquet(
     val paquetTrouve: Boolean = false,

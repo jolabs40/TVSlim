@@ -8,11 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /*
- * Le vert menthe et le bleu de TV Slim, étendus à toute la palette — les mêmes que sous Windows.
- *
- * Plus de Material You (2026-10-05, demande de l'utilisateur) : les couleurs tirées du fond d'écran
- * donnaient sur le Pixel un lavande générique, sans rapport avec la marque, et l'application ressemblait à
- * n'importe quelle autre. Tous les rôles sont posés : laissés par défaut, ils tireraient vers le mauve.
+ * TV Slim's mint green and blue extended to the full palette, same as on Windows. No Material You dynamic
+ * color: wallpaper colors turned the app a generic lavender. Every role is set, since defaults lean purple.
  */
 
 private val schemaClair = lightColorScheme(
@@ -71,7 +68,7 @@ private val schemaSombre = darkColorScheme(
     surfaceContainerHighest = Color(0xFF313539),
 )
 
-/** Couleurs des pastilles de risque, hors palette Material pour rester lisibles d'un coup d'œil. */
+/** Risk badge colors, outside the Material palette so they read at a glance. */
 object CouleursRisque {
     val aucun = Color(0xFF2E9E6B)
     val faible = Color(0xFF9AA83A)

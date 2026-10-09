@@ -9,11 +9,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Tout ce que le compagnon a besoin de savoir pour joindre ce téléviseur : son adresse sur le
- * réseau local, et l'état des trois réglages qui conditionnent la connexion.
- *
- * Ces trois-là sont affichés un par un plutôt qu'en bloc : quand la connexion est impossible,
- * il faut savoir lequel manque.
+ * What the companion needs to reach this TV: its LAN address and the three settings the connection
+ * depends on. The settings are shown one by one so that a failed connection tells which one is missing.
  */
 data class PointDeContact(
     val adresse: String = "",
@@ -23,11 +20,11 @@ data class PointDeContact(
 ) {
     val debogageReseau: Boolean get() = port > 0
 
-    /** Vrai quand une connexion est possible ici et maintenant. */
+    /** True when a connection is possible right now. */
     val joignable: Boolean
         get() = adresse.isNotBlank() && debogageReseau && debogageActive
 
-    /** Contenu du QR code, lu par le compagnon. */
+    /** QR code payload, scanned by the companion. */
     fun uri(): String = "tvslim://connect?host=$adresse&port=$port"
 }
 
@@ -43,7 +40,7 @@ class InfosReseau @Inject constructor(
         debogageActive = reglageActif(Settings.Global.ADB_ENABLED),
     )
 
-    /** Première adresse IPv4 non locale de l'interface active — celle que verra le téléphone. */
+    /** First non-loopback, non-link-local IPv4 address of the active network, as the phone sees it. */
     private fun adresseLocale(): String? = runCatching {
         val gestionnaire = contexte.getSystemService(ConnectivityManager::class.java)
         val reseau = gestionnaire?.activeNetwork ?: return@runCatching null
@@ -55,8 +52,8 @@ class InfosReseau @Inject constructor(
     }.getOrNull()
 
     /**
-     * Port d'écoute d'ADB sur TCP. Vide tant que le débogage réseau n'a pas été activé : c'est
-     * `service.adb.tcp.port`, que `getprop` expose à toute application.
+     * ADB's TCP port from `service.adb.tcp.port`, which `getprop` exposes to any app. Empty until
+     * network debugging is enabled.
      */
     private fun portAdb(): Int? = runCatching {
         val processus = ProcessBuilder("getprop", PROPRIETE_PORT)

@@ -133,7 +133,7 @@ const t = fr
 </Base>
 
 <script>
-  // Filtre sans recharger : par texte (nom ou paquet) et par marque. Sans script, tout reste affiché.
+  // Client-side filter by text (name or package) and brand. Without JavaScript everything stays visible.
   const champ = document.getElementById('filtre') as HTMLInputElement | null;
   const puces = [...document.querySelectorAll<HTMLButtonElement>('.chips button')];
   const vide = document.getElementById('vide');

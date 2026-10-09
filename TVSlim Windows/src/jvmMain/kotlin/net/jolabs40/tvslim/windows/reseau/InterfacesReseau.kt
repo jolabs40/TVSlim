@@ -3,7 +3,6 @@ package net.jolabs40.tvslim.windows.reseau
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
-/** Une carte réseau de l'ordinateur, réduite à ce qui sert à chercher un téléviseur. */
 data class InterfaceLocale(
     val nom: String,
     val adresse: Inet4Address,
@@ -13,9 +12,8 @@ data class InterfaceLocale(
 object InterfacesReseau {
 
     /**
-     * Les cartes par lesquelles un téléviseur peut se trouver : actives, en IPv4 privée, et ni
-     * virtuelles ni tunnels. Un PC de développeur porte volontiers une demi-douzaine d'adaptateurs
-     * Hyper-V, WSL ou VPN — les écouter tous multiplierait les annonces sans rien trouver de plus.
+     * Lists interfaces a TV may be reached through: up, private IPv4, not virtual or tunnel. A developer PC often
+     * has half a dozen Hyper-V, WSL or VPN adapters; listening on all of them multiplies traffic for nothing.
      */
     fun actives(): List<InterfaceLocale> = runCatching {
         NetworkInterface.networkInterfaces().toList()
@@ -37,7 +35,7 @@ object InterfacesReseau {
             }
     }.getOrDefault(emptyList())
 
-    /** Adaptateurs de machines virtuelles, de VPN et de tunnels : un téléviseur n'y est jamais. */
+    /** Virtual machine, VPN and tunnel adapters, where a TV never is. */
     fun estVirtuelle(nom: String): Boolean = MOTS_VIRTUELS.any { nom.contains(it, ignoreCase = true) }
 
     private val MOTS_VIRTUELS = listOf(

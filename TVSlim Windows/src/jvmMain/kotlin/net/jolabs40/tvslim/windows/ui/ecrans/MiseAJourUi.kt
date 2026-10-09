@@ -84,8 +84,8 @@ private val PhaseMiseAJour.occupee: Boolean
         this is PhaseMiseAJour.Verification || this is PhaseMiseAJour.Installation
 
 /**
- * Le bandeau qui annonce une nouvelle version, en haut de la fenêtre. Il ne télécharge rien de
- * lui-même : il propose, suit l'installation une fois demandée, et se tait sur « Plus tard ».
+ * New version banner at the top of the window. It downloads nothing on its own: it offers, tracks the install
+ * once requested, and goes quiet after "Later".
  */
 @Composable
 fun BanniereMiseAJour(
@@ -174,10 +174,7 @@ fun BanniereMiseAJour(
     }
 }
 
-/**
- * Version, licence, site, contact, code source, page de soutien, dossier des données — et le réglage des mises à
- * jour.
- */
+/** About dialog: version, license, links, data folder, and the update setting. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AProposDialogue(

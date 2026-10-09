@@ -68,7 +68,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import java.util.Locale
 
-/** Ce qui va partir, et où : rien ne part sans cette confirmation, un dépôt glissé par mégarde compris. */
+/** What will be uploaded and where. Nothing is sent without this confirmation, accidental drops included. */
 @Composable
 fun ConfirmationDepot(plan: PlanDepot, onConfirmer: () -> Unit, onAnnuler: () -> Unit) {
     val racines = plan.lot.racines.entries.sortedWith(
@@ -135,8 +135,8 @@ fun ConfirmationDepot(plan: PlanDepot, onConfirmer: () -> Unit, onAnnuler: () ->
 }
 
 /**
- * La copie d'un dossier vers le PC : d'où, vers où, combien. Un dossier de films pèse vite des dizaines de
- * gigaoctets ; celle d'un fichier n'a pas besoin de ceci, « Enregistrer sous » en a tenu lieu.
+ * Confirms copying a folder to the PC: from where, to where, how much, since a movie folder easily weighs
+ * tens of gigabytes. A single file needs no such step; the save dialog already served.
  */
 @Composable
 fun ConfirmationRapatriement(plan: PlanRapatriement, onConfirmer: () -> Unit, onAnnuler: () -> Unit) {
@@ -173,8 +173,8 @@ fun ConfirmationRapatriement(plan: PlanRapatriement, onConfirmer: () -> Unit, on
 }
 
 /**
- * Ce qu'une suppression emporte, dit avant qu'elle parte : pour un dossier, tout ce qu'il contient. Le téléviseur
- * n'a pas de corbeille, et la confirmation le rappelle — sauf pour un lien, qui n'emporte que lui-même.
+ * States what a delete removes (for a folder, everything in it). The TV has no recycle bin and the dialog
+ * says so, except for a link, which only removes itself.
  */
 @Composable
 fun ConfirmationSuppression(plan: PlanSuppression, onConfirmer: () -> Unit, onAnnuler: () -> Unit) {
@@ -224,7 +224,7 @@ fun ConfirmationSuppression(plan: PlanSuppression, onConfirmer: () -> Unit, onAn
     )
 }
 
-/** Un champ, une action : nommer un dossier, ou taper le chemin où aller. Entrée vaut un clic sur l'action. */
+/** One field, one action: name a folder or type a path to go to. Enter acts as a click on the action. */
 @Composable
 fun DialogueSaisie(
     titre: String,
@@ -272,7 +272,7 @@ fun DialogueSaisie(
     LaunchedEffect(Unit) { focus.requestFocus() }
 }
 
-/** Une taille de fichier à la façon de la langue : « 48,3 Mo », « 912 ko », « 17 o ». */
+/** Localized file size: "48.3 MB", "912 kB", "17 B". */
 @Composable
 fun tailleLisible(octets: Long): String = when {
     octets < KILO -> stringResource(Res.string.file_size_bytes, octets.toInt())
@@ -283,7 +283,7 @@ fun tailleLisible(octets: Long): String = when {
 
 private fun decimale(octets: Long, unite: Long): String = String.format(Locale.getDefault(), "%.1f", octets.toDouble() / unite)
 
-/** Les tailles en unités décimales, comme Windows ne le fait pas mais comme le fait Android : 1 ko = 1 000 o. */
+/** Decimal units (1 kB = 1,000 B), as Android uses and Windows does not. */
 private const val KILO = 1_000L
 
 private const val RACINES_MAX = 8

@@ -1,4 +1,4 @@
-// L'icône d'un raccourci sur l'écran d'accueil d'un téléphone : carrée, le système en arrondit les coins.
+// Home screen shortcut icon on phones: square, the OS rounds the corners.
 import type { APIRoute } from 'astro';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

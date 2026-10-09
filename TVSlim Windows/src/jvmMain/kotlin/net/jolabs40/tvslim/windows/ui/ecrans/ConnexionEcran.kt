@@ -76,12 +76,10 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * L'onglet Téléviseur : trouver l'appareil et s'y connecter, puis — une fois joint — son état, son
- * écran d'accueil, les permissions privilégiées et l'installation d'un APK. Le contenu du compagnon, en
- * deux colonnes.
+ * TV tab: find the device and connect, then its status, home screen, privileged permissions and APK install.
+ * The companion's content, in two columns.
  *
- * Pas de scanner de code ici : rien n'oblige à installer l'application sur le téléviseur. La
- * recherche sur le réseau et la saisie de l'adresse suffisent.
+ * No QR scanner: nothing requires the app on the TV, so discovery and typing the address are enough.
  */
 @Composable
 fun ConnexionEcran(
@@ -109,18 +107,16 @@ fun ConnexionEcran(
     if (etat.connecte) {
         DeuxColonnes(
             gauche = {
-                // Le téléphone met l'action en tête pour éviter de défiler. Sur un bureau, tout
-                // tient à l'écran : l'appareil joint d'abord, son écran d'accueil ensuite. Le titre
-                // « Se connecter » n'a plus lieu d'être, la barre du haut dit à qui l'on parle.
-                // La dérive passe devant tout : le téléviseur a défait seul ce qu'on avait réglé.
+                // Unlike the phone, which puts the action first to avoid scrolling, everything fits here:
+                // device first, then its home screen. Drift comes before anything else.
                 etat.derive?.let { plan -> CarteDerive(plan = plan, onReprendre = onReprendreDerive) }
-                // Face à un téléviseur ou une box seulement : sur un téléphone joint pour essai, elle n'a rien à faire.
+                // TV or box only; pointless on a phone connected for testing.
                 val televiseur = etat.infos.typeAppareil == TypeAppareil.TELEVISEUR || etat.infos.typeAppareil == TypeAppareil.BOX
                 CarteAppareil(
                     etat = etat,
                     onDeconnecter = onDeconnecter,
                     onRedemarrer = onRedemarrer,
-                    // Actualiser relit aussi l'application TV : elle a pu changer sur le téléviseur.
+                    // Refresh also re-reads the TV app, which may have changed on the TV.
                     onActualiser = { onActualiser(); if (televiseur) actionsApplicationTv.onLire() },
                 )
                 if (televiseur) {
@@ -142,8 +138,8 @@ fun ConnexionEcran(
         return
     }
 
-    // La recherche ne tourne que pendant qu'on regarde cet écran, fenêtre visible : réduite dans la
-    // barre des tâches, elle s'arrête, et reprend au retour.
+    // Discovery only runs while this screen is visible: it stops when the window is minimized and
+    // resumes when it is restored.
     LifecycleStartEffect(Unit) {
         onChercher()
         onStopOrDispose { onArreterRecherche() }
@@ -152,7 +148,7 @@ fun ConnexionEcran(
     DeuxColonnes(
         gauche = {
             EnTete()
-            // Le téléviseur redémarre sur demande : on dit qu'on guette son retour, sans rien demander.
+            // Requested reboot: say we are waiting for the TV to come back.
             if (etat.redemarrage) {
                 CarteSection(titre = stringResource(Res.string.device_reboot)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -211,7 +207,7 @@ private fun CarteDecouverte(etat: EtatApp, onConnecterA: (AppareilDecouvert) -> 
                 appareils.forEach { appareil ->
                     BoutonAppareil(
                         appareil = appareil,
-                        // La marque d'un appareil déjà joint : le nom qu'on en a retenu commence par elle.
+                        // Brand of a device seen before: its remembered name starts with it.
                         fabricant = etat.nomsConnus[appareil.hote]?.let { Fabricant.depuisNom(it) },
                         actif = !enCours,
                         onClick = { onConnecterA(appareil) },
@@ -237,7 +233,7 @@ private fun BoutonAppareil(appareil: AppareilDecouvert, fabricant: Fabricant?, a
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            // Sans nom connu, l'adresse suffit : l'écrire deux fois n'apprend rien.
+            // Without a known name the address alone is shown, not twice.
             val adresse = "${appareil.hote}:${appareil.port}"
             Text(
                 text = if (appareil.nomConvivial != null) appareil.libelle else adresse,
@@ -299,7 +295,7 @@ private fun CarteSaisie(
     }
 }
 
-/** Pourquoi la connexion a échoué, en clair, puis le message technique pour qui le veut. */
+/** Why the connection failed in plain words, then the technical message. */
 @Composable
 private fun EtatErreur(connexion: ConnexionUi) {
     if (connexion.etat != EtatConnexion.ERREUR) return
@@ -334,7 +330,7 @@ private fun CarteAide() {
     }
 }
 
-/** Entrée dans un champ vaut un clic sur « Se connecter ». */
+/** Enter in a field acts as a click on "Connect". */
 private fun Modifier.surEntree(action: () -> Unit): Modifier = onPreviewKeyEvent { evenement ->
     val entree = evenement.key == Key.Enter || evenement.key == Key.NumPadEnter
     if (entree && evenement.type == KeyEventType.KeyDown) {

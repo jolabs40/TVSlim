@@ -37,25 +37,23 @@ import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.EtatRemote
 
 /**
- * Écran d'accueil du téléviseur.
+ * The TV's home screen card.
  *
- * Sans launcher tiers, le moteur refuse — à raison — de désactiver l'accueil d'usine. La carte montre
- * donc ce qui est installé, reconnu à son logo — le launcher recommandé en tête, marqué en vert —, et
- * chaque launcher qui n'est pas en place se choisit d'un bouton. Elle ne propose qu'un remplaçant :
- * celui du catalogue, tant qu'aucune de ses versions n'est là, avec le lien de son site. L'application
- * n'installe rien elle-même : tant qu'il n'est pas sur le Play Store, le bouton le dit ; ensuite, il
- * ouvrira sa fiche dans la boutique **du téléviseur**, et l'installation se validera à la télécommande.
+ * The engine will not disable the factory home screen without a third-party launcher, so the card lists the
+ * installed launchers, recommended first, each selectable. It suggests only the catalogue's launcher, while no variant
+ * of it is installed. The phone installs nothing: the button opens the listing in the TV's own store, where the
+ * install is confirmed with the remote.
  */
 @Composable
 fun CarteAccueil(etat: EtatRemote, onInstaller: (String) -> Unit, onDefinirAccueil: (String) -> Unit) {
     val catalogue = etat.catalogue
     val infos = etat.infos
     val usines = infos.accueilsUsine
-    // Un accueil d'usine ne se montre qu'à sa place, pas une seconde fois parmi les launchers tiers.
+    // Factory home screens have their own rows, so they are not repeated among third-party launchers.
     val installes = catalogue.recommandesDAbord(
         infos.launchersTiers.filterNot { launcher -> usines.any { it.paquet == launcher.paquet } },
     ) { it.paquet }
-    // Rien à choisir pendant un chargement ou une passe de paquets : l'accueil lu pourrait être périmé.
+    // Locked while loading or applying packages: the current home screen may be stale.
     val libre = !etat.chargement && etat.progression == null
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -69,9 +67,8 @@ fun CarteAccueil(etat: EtatRemote, onInstaller: (String) -> Unit, onDefinirAccue
                 fontWeight = FontWeight.SemiBold,
             )
             AccueilActuel(catalogue = catalogue, infos = infos)
-            // Un téléphone, une tablette : seul l'accueil en place se montre. Rien n'y est à recommander — Startlight est
-            // un launcher de téléviseur —, et ce que la lecture des composants désactivés y prend pour des accueils d'usine
-            // (restauration, Play Services, gestion du téléphone) n'en sont pas : « Utiliser » en ferait l'écran d'accueil.
+            // Phones and tablets show only the current home screen. Startlight is a TV launcher, and the disabled HOME
+            // activities found there (restore, Play Services, device management) are not real home screens.
             if (!infos.typeAppareil.pourLeCatalogue) return@Column
 
             if (infos.launchersTiers.isEmpty()) {
@@ -101,9 +98,8 @@ fun CarteAccueil(etat: EtatRemote, onInstaller: (String) -> Unit, onDefinirAccue
                         libre = libre,
                     )
                 }
-                // Google TV, l'accueil Android TV, celui du constructeur : listés même désactivés, sans
-                // quoi l'accueil d'origine semblerait avoir disparu du téléviseur. Actif, il se rechoisit ;
-                // désactivé, Android ne le servirait pas.
+                // Listed even when disabled, or the original home screen would seem to be gone. Only an
+                // enabled one is selectable: Android would not serve a disabled one.
                 usines.forEach { usine ->
                     val actuel = usine.paquet == infos.accueilActuel
                     LigneLauncher(
@@ -128,7 +124,6 @@ fun CarteAccueil(etat: EtatRemote, onInstaller: (String) -> Unit, onDefinirAccue
     }
 }
 
-/** L'accueil en place, en grand : c'est lui qu'on voit en allumant le téléviseur. */
 @Composable
 private fun AccueilActuel(catalogue: Catalogue, infos: InfosAppareil) {
     val paquet = infos.accueilActuel
@@ -140,7 +135,6 @@ private fun AccueilActuel(catalogue: Catalogue, infos: InfosAppareil) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Plus grand que ceux de la liste, où il figure aussi.
         LogoLauncher(id = id, taille = 64.dp)
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
@@ -167,10 +161,6 @@ private fun AccueilActuel(catalogue: Catalogue, infos: InfosAppareil) {
     }
 }
 
-/**
- * Un launcher : son logo, son nom, ses étiquettes sous le nom — sur un téléphone, en bout de ligne, elles
- * écraseraient le texte —, et en bout de ligne « Actuel », ou de quoi le choisir.
- */
 @Composable
 private fun LigneLauncher(
     id: String?,
@@ -190,8 +180,6 @@ private fun LigneLauncher(
     ) {
         LogoLauncher(id = id, taille = 40.dp)
         Column(modifier = Modifier.weight(1f)) {
-            // Le nom commercial d'abord quand le catalogue le connaît : « Projectivy Launcher »
-            // parle, « com.spocky.projengmenu » beaucoup moins.
             Text(
                 text = nom ?: paquet,
                 style = MaterialTheme.typography.bodyLarge,
@@ -205,7 +193,7 @@ private fun LigneLauncher(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            // Sous le nom plutôt qu'en bout de ligne : sur un téléphone, deux étiquettes écraseraient le texte.
+            // Under the name: at the end of the row, two badges would squeeze the text on a phone.
             if (recommande || usine || desactive) {
                 Row(
                     modifier = Modifier.padding(top = 4.dp),
@@ -233,7 +221,6 @@ private fun LigneLauncher(
     }
 }
 
-/** Une étiquette arrondie : « Recommandé », « Launcher d'usine », « Désactivé », « Actuel ». */
 @Composable
 private fun Etiquette(texte: String, fond: Color, encre: Color = Color.Unspecified) {
     Surface(color = fond, shape = RoundedCornerShape(50)) {
@@ -246,10 +233,7 @@ private fun Etiquette(texte: String, fond: Color, encre: Color = Color.Unspecifi
     }
 }
 
-/**
- * Le vert de « Recommandé », fond et encre, lisible sur les deux thèmes : les couleurs dynamiques du
- * téléphone n'ont pas de vert, et la recommandation doit se voir quelle que soit la palette.
- */
+/** Fixed green (background, text) for the Recommended badge, readable in both themes whatever the color scheme. */
 @Composable
 private fun couleursRecommande(): Pair<Color, Color> =
     if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) {
@@ -258,7 +242,6 @@ private fun couleursRecommande(): Pair<Color, Color> =
         Color(0xFFCDEFD6) to Color(0xFF0F5223)
     }
 
-/** Le launcher que TV Slim recommande : son logo, ses points forts, et ce qu'on peut en faire. */
 @Composable
 private fun CarteRecommandation(launcher: LauncherRecommande, onInstaller: (String) -> Unit) {
     Surface(
@@ -297,7 +280,7 @@ private fun CarteRecommandation(launcher: LauncherRecommande, onInstaller: (Stri
                     Text(text = point, style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            // Le site d'abord : on peut le découvrir là, bien avant que la boutique le propose.
+            // Website first: the launcher is there long before it reaches the store.
             if (launcher.site.isNotBlank()) {
                 val liens = LocalUriHandler.current
                 Button(onClick = { runCatching { liens.openUri(launcher.site) } }) {
@@ -306,14 +289,12 @@ private fun CarteRecommandation(launcher: LauncherRecommande, onInstaller: (Stri
                     Text(launcher.siteAffiche)
                 }
             }
-            // Pas encore sur le Play Store : aucune fiche à ouvrir, et le bouton le dit.
             if (launcher.disponible) {
                 Button(onClick = { onInstaller(launcher.paquet) }) {
                     Text(stringResource(R.string.home_install))
                 }
             } else {
-                // Grisé mais lisible : les couleurs désactivées par défaut s'effacent presque sur le
-                // fond de la carte.
+                // Not on the Play Store yet. The default disabled colors nearly vanish on the card background.
                 OutlinedButton(
                     onClick = {},
                     enabled = false,

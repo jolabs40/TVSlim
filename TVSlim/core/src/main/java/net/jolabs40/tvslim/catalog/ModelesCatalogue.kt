@@ -3,7 +3,7 @@ package net.jolabs40.tvslim.catalog
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Niveau de risque affiché à côté de chaque paquet. */
+/** Risk level shown next to each package. */
 @Serializable
 enum class Risque {
     @SerialName("aucun")
@@ -29,13 +29,13 @@ data class EntreePaquet(
     val marque: String = "",
     @SerialName("effetDeBord") val effetDeBord: String? = null,
     @SerialName("tailleMo") val tailleMo: Int? = null,
-    /** Ordre d'application dans un lot : les valeurs les plus faibles passent en premier. */
+    /** Order within a batch; lower values run first. */
     val ordre: Int = 100,
-    /** Vrai pour les paquets d'accueil, qui exigent qu'un launcher tiers soit installé. */
+    /** True for home screen packages, which require a third-party launcher to be installed. */
     val requiertLauncherTiers: Boolean = false,
     /**
-     * Faux pour une entrée décrite d'après un inventaire envoyé, sans qu'on ait vu sur un appareil ce que
-     * coûte sa désactivation : montrée et désactivable une à une, jamais cochée par un profil.
+     * False for an entry described from a submitted inventory, never disabled on a real device: it can be
+     * disabled individually but is never checked by a profile.
      */
     val eprouve: Boolean = true,
 )
@@ -72,38 +72,35 @@ data class ReglageSysteme(
 )
 
 /**
- * L'écran d'accueil de remplacement que TV Slim propose. Sans launcher tiers, le garde-fou refuse
- * de désactiver l'accueil d'usine — et il a raison : cette fiche est l'issue qu'on lui donne.
+ * Replacement launcher suggested by TV Slim. Without a third-party launcher the safeguard refuses
+ * to disable the stock home screen; this entry offers the way out.
  */
 @Serializable
 data class LauncherRecommande(
     val paquet: String,
     val nom: String,
     val description: String,
-    /** Identifiant stable, que chaque application associe à son logo. */
+    /** Stable ID that each app maps to its logo. */
     val id: String = "",
-    /** Les autres paquets du même launcher, sa version de développement par exemple. */
+    /** Other packages of the same launcher, such as its debug build. */
     val variantes: List<String> = emptyList(),
     val pointsForts: List<String> = emptyList(),
     /**
-     * Faux tant que le launcher n'est pas sur le Play Store : il n'y a alors aucune fiche à ouvrir
-     * sur le téléviseur, et le bouton le dit plutôt que d'échouer.
+     * False until the launcher is on the Play Store: with no store page to open on the TV, the
+     * button says so instead of failing.
      */
     val disponible: Boolean = true,
-    /** Son site, proposé tant qu'il n'est pas installé : de quoi le découvrir avant même la boutique. */
+    /** Website, offered while the launcher is not installed. */
     val site: String = "",
 ) {
     fun correspond(paquetInstalle: String): Boolean =
         paquetInstalle == paquet || paquetInstalle in variantes
 
-    /** Le site sans son protocole, tel qu'on l'écrit : « startlightlauncher.com ». */
+    /** Website without the scheme, e.g. `startlightlauncher.com`. */
     val siteAffiche: String get() = site.substringAfter("://").trimEnd('/')
 }
 
-/**
- * Un launcher tiers répandu : on sait le nommer et le montrer à son logo quand il est installé.
- * Il n'est jamais proposé, seulement reconnu.
- */
+/** A widespread third-party launcher: named and shown with its logo when installed, never suggested. */
 @Serializable
 data class LauncherConnu(
     val id: String,
@@ -133,33 +130,30 @@ data class Catalogue(
 
     fun nomCategorie(id: String): String = categories.firstOrNull { it.id == id }?.nom ?: id
 
-    /** Ce qu'un profil couvre : ses catégories, et seulement ce qu'on a éprouvé. */
+    /** Entries in the profile's categories, tested ones only. */
     fun entreesDuProfil(profil: Profil): List<EntreePaquet> =
         entrees.filter { it.categorie in profil.categories && it.eprouve }
 
-    /** Le launcher recommandé dont [paquet] est une version, s'il y en a un. */
+    /** The recommended launcher that [paquet] is a variant of, if any. */
     fun launcherRecommande(paquet: String): LauncherRecommande? =
         launchers.firstOrNull { it.correspond(paquet) }
 
-    /** Nom commercial d'un launcher installé, quand on le connaît. */
+    /** Brand name of an installed launcher, when known. */
     fun nomLauncher(paquet: String): String? =
         launcherRecommande(paquet)?.nom ?: launchersConnus.firstOrNull { paquet in it.paquets }?.nom
 
-    /** Identifiant du logo d'un launcher installé, quand on en a un. */
+    /** Logo ID of an installed launcher, when there is one. */
     fun idLauncher(paquet: String): String? =
         launcherRecommande(paquet)?.id?.takeIf { it.isNotBlank() }
             ?: launchersConnus.firstOrNull { paquet in it.paquets }?.id
 
-    /**
-     * Ce qu'il reste à proposer : un launcher recommandé ne l'est plus dès que l'une de ses
-     * versions est installée — la version de développement compte.
-     */
+    /** Recommended launchers still worth suggesting: none of their variants (debug build included) is installed. */
     fun launchersAProposer(installes: Collection<String>): List<LauncherRecommande> =
         launchers.filterNot { recommande -> installes.any(recommande::correspond) }
 
     /**
-     * Les launchers installés, ceux que TV Slim recommande en tête — sa version publiée avant celle de
-     * développement —, les autres ensuite, dans l'ordre où ils sont venus.
+     * Sorts installed launchers with TV Slim's recommendations first (release before debug build), then
+     * the others in their original order.
      */
     fun <T> recommandesDAbord(installes: List<T>, paquet: (T) -> String): List<T> =
         installes.sortedBy { element ->

@@ -16,16 +16,13 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Les garde-fous du moteur, sous test.
- *
- * C'est le code qui peut rendre un téléviseur inutilisable : couper l'écran d'accueil sans
- * remplaçant, désactiver le service dont dépend le démarrage, ou inverser l'ordre qui donne la
- * main à un écran de récupération. Chacune de ces règles a été apprise en intervenant à la main
- * sur une vraie TCL ; elles sont vérifiées ici une par une.
+ * The engine's guardrails. This code can leave a TV unusable: disabling the home screen with no
+ * replacement, disabling a service boot depends on, or disabling in the order that hands control
+ * to a recovery screen. Each rule was learned by hand on a real TCL.
  */
 class MoteurDebloatTest {
 
-    /** Exécuteur bouchon : retient les commandes reçues et renvoie ce qu'on lui dit. */
+    /** Fake executor that records commands and returns canned replies. */
     private class ExecuteurEspion(
         private val reponse: (String) -> ResultatShell = { ResultatShell(0, "new state: disabled-user") },
     ) : ExecuteurCommande {
@@ -61,7 +58,7 @@ class MoteurDebloatTest {
     )
 
     @Test
-    fun `un paquet de la liste noire est refuse et aucune commande ne part`() = runTest {
+    fun `a blacklisted package is refused and no command is sent`() = runTest {
         val espion = ExecuteurEspion()
         val moteur = MoteurDebloat(espion, journal())
 
@@ -78,7 +75,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `l'ecran d'accueil est refuse sans launcher tiers`() = runTest {
+    fun `the home screen is refused without a third-party launcher`() = runTest {
         val espion = ExecuteurEspion()
         val moteur = MoteurDebloat(espion, journal())
 
@@ -95,14 +92,14 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `setupwraith tombe avant launcherx, quel que soit l'ordre de la selection`() = runTest {
+    fun `setupwraith is disabled before launcherx, whatever the selection order`() = runTest {
         val espion = ExecuteurEspion()
         val moteur = MoteurDebloat(espion, journal())
         val launcherx = entree("com.google.android.apps.tv.launcherx", ordre = 2, requiertLauncherTiers = true)
         val setupwraith = entree("com.google.android.tungsten.setupwraith", ordre = 1, requiertLauncherTiers = true)
 
         moteur.desactiver(
-            // Volontairement dans le mauvais ordre : c'est au moteur de le corriger.
+            // Deliberately in the wrong order: the engine must fix it.
             entrees = listOf(launcherx, setupwraith),
             catalogue = catalogue,
             etats = mapOf(
@@ -121,7 +118,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `un paquet absent ou deja desactive ne declenche aucune commande`() = runTest {
+    fun `a missing or already disabled package triggers no command`() = runTest {
         val espion = ExecuteurEspion()
         val moteur = MoteurDebloat(espion, journal())
 
@@ -137,12 +134,12 @@ class MoteurDebloatTest {
 
         assertTrue(espion.commandes.isEmpty())
         assertFalse(resultats.first { it.paquet == "absent.du.televiseur" }.reussi)
-        // Déjà désactivé : c'est un succès, l'état voulu est atteint.
+        // Already disabled counts as success: the target state is reached.
         assertTrue(resultats.first { it.paquet == "deja.coupe" }.reussi)
     }
 
     @Test
-    fun `la desactivation n'utilise jamais uninstall et journalise son annulation`() = runTest {
+    fun `disabling never uses uninstall and logs its undo command`() = runTest {
         val espion = ExecuteurEspion()
         val carnet = journal()
         val moteur = MoteurDebloat(espion, carnet)
@@ -165,8 +162,8 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `une sortie inattendue est un echec, meme avec un code de retour nul`() = runTest {
-        // Le gestionnaire de paquets répond parfois 0 sans rien faire : la sortie fait foi.
+    fun `unexpected output is a failure, even with exit code zero`() = runTest {
+        // The package manager sometimes exits 0 without doing anything; the output is what counts.
         val espion = ExecuteurEspion { ResultatShell(0, "Success") }
         val carnet = journal()
         val moteur = MoteurDebloat(espion, carnet)
@@ -180,12 +177,12 @@ class MoteurDebloatTest {
 
         assertFalse(resultats.single().reussi)
         assertFalse(carnet.actions.value.single().reussi)
-        // Un échec ne doit pas se retrouver dans la liste à restaurer.
+        // A failure must not end up in the restore list.
         assertTrue(carnet.paquetsADesactivationActive().isEmpty())
     }
 
     @Test
-    fun `la reactivation annule la desactivation dans le journal`() = runTest {
+    fun `re-enabling undoes the disable in the log`() = runTest {
         val espion = ExecuteurEspion { commande ->
             if (commande.startsWith("pm enable")) {
                 ResultatShell(0, "new state: enabled")
@@ -214,7 +211,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `un reglage journalise la commande qui remet la valeur precedente`() = runTest {
+    fun `a setting logs the command that restores the previous value`() = runTest {
         val espion = ExecuteurEspion { ResultatShell(0, "") }
         val carnet = journal()
         val moteur = MoteurDebloat(espion, carnet)
@@ -234,13 +231,13 @@ class MoteurDebloatTest {
         )
     }
 
-    // --- Permissions privilégiées -----------------------------------------------------------
+    // --- Privileged permissions -------------------------------------------------------------
     //
-    // C'est le seul endroit du moteur où une commande se construit à partir d'un texte saisi et
-    // non du catalogue : la saisie est donc traitée comme hostile.
+    // The only engine commands built from typed input rather than the catalogue, so the input
+    // is treated as hostile.
 
     @Test
-    fun `une permission absente du manifeste n'est pas accordee`() = runTest {
+    fun `a permission missing from the manifest is not granted`() = runTest {
         val espion = ExecuteurEspion { ResultatShell(0, "") }
         val carnet = journal()
         val moteur = MoteurDebloat(espion, carnet)
@@ -257,7 +254,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `une saisie qui ouvrirait une seconde commande est refusee`() = runTest {
+    fun `input that would start a second command is refused`() = runTest {
         val espion = ExecuteurEspion { ResultatShell(0, "") }
         val moteur = MoteurDebloat(espion, journal())
 
@@ -272,7 +269,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `accorder journalise le revoke qui l'annule`() = runTest {
+    fun `granting logs the revoke that undoes it`() = runTest {
         val espion = ExecuteurEspion { ResultatShell(0, "") }
         val carnet = journal()
         val moteur = MoteurDebloat(espion, carnet)
@@ -302,9 +299,9 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `un pm grant bavard reste un echec malgre un code nul`() = runTest {
-        // `pm grant` se tait quand il réussit. Une exception Java avec un code de retour nul
-        // est exactement le piège déjà rencontré sur `pm disable-user`.
+    fun `a chatty pm grant is still a failure despite exit code zero`() = runTest {
+        // `pm grant` prints nothing on success. A Java exception with exit code 0 is the same
+        // trap as with `pm disable-user`.
         val espion = ExecuteurEspion {
             ResultatShell(0, "java.lang.SecurityException: Permission is not a changeable")
         }
@@ -322,7 +319,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `retirer une permission ne consulte pas le manifeste`() = runTest {
+    fun `revoking a permission does not check the manifest`() = runTest {
         val espion = ExecuteurEspion { ResultatShell(0, "") }
         val carnet = journal()
         val moteur = MoteurDebloat(espion, carnet)
@@ -337,7 +334,7 @@ class MoteurDebloatTest {
         )
     }
     @Test
-    fun `un app-op journalise le retour a son mode precedent`() = runTest {
+    fun `an app-op logs the return to its previous mode`() = runTest {
         val espion = ExecuteurEspion { ResultatShell(0, "") }
         val carnet = journal()
         val moteur = MoteurDebloat(espion, carnet)
@@ -361,7 +358,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `un mode d'app-op inconnu est refuse`() = runTest {
+    fun `an unknown app-op mode is refused`() = runTest {
         val espion = ExecuteurEspion { ResultatShell(0, "") }
         val moteur = MoteurDebloat(espion, journal())
 
@@ -377,8 +374,8 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `un mode precedent inconnu se rend en default`() = runTest {
-        // Lecture impossible au moment de poser l'op : l'annulation doit rester jouable.
+    fun `an unknown previous mode is restored as default`() = runTest {
+        // The previous mode could not be read; the undo command must still be runnable.
         val espion = ExecuteurEspion { ResultatShell(0, "") }
         val carnet = journal()
         val moteur = MoteurDebloat(espion, carnet)
@@ -391,15 +388,13 @@ class MoteurDebloatTest {
         )
     }
 
-    // --- Les trois commandes qui echappaient au filtre ------------------------------------
+    // --- Targets read from device output -------------------------------------------------
     //
-    // Huit appels du moteur validaient deja leur cible ; ces trois-la partaient en
-    // interpolation directe. Leurs valeurs viennent de sorties de `dumpsys` et de
-    // `cmd package`, donc d'une source contrainte par Android — l'asymetrie, elle, ne l'etait
-    // pas, et c'est elle qui se paie a la relecture suivante.
+    // These values come from `dumpsys` and `cmd package` output, which Android constrains,
+    // but they are validated like every other engine target anyway.
 
     @Test
-    fun `un composant d'accueil malforme est refuse et aucune commande ne part`() = runTest {
+    fun `a malformed home component is refused and no command is sent`() = runTest {
         val espion = ExecuteurEspion()
         val moteur = MoteurDebloat(espion, journal())
 
@@ -413,7 +408,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `un ancien accueil malforme est refuse aussi, il sera rejoue depuis le journal`() = runTest {
+    fun `a malformed previous home is refused too, since it is replayed from the log`() = runTest {
         val espion = ExecuteurEspion()
         val carnet = journal()
         val moteur = MoteurDebloat(espion, carnet)
@@ -429,7 +424,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `un composant bien forme passe`() = runTest {
+    fun `a well-formed component goes through`() = runTest {
         val espion = ExecuteurEspion { ResultatShell(0, "") }
         val moteur = MoteurDebloat(espion, journal())
 
@@ -442,11 +437,11 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `forcer l'arret d'un nom de processus douteux est refuse`() = runTest {
+    fun `force-stopping a suspicious process name is refused`() = runTest {
         val espion = ExecuteurEspion()
         val moteur = MoteurDebloat(espion, journal())
 
-        // Ce nom-la sort d'une expression reguliere appliquee a `dumpsys meminfo`.
+        // This name comes from a regex over `dumpsys meminfo` output.
         val resultat = moteur.forcerArret("com.tcl.gallery; reboot")
 
         assertFalse(resultat.reussi)
@@ -454,7 +449,7 @@ class MoteurDebloatTest {
     }
 
     @Test
-    fun `ouvrir une fiche de boutique verifie aussi le nom du paquet`() = runTest {
+    fun `opening a store listing also validates the package name`() = runTest {
         val espion = ExecuteurEspion()
         val moteur = MoteurDebloat(espion, journal())
 

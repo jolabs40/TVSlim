@@ -29,9 +29,8 @@ import net.jolabs40.tvslim.device.Fabricant
 import net.jolabs40.tvslim.remote.R
 
 /**
- * Les logos des launchers, par l'identifiant que leur donne le catalogue partagé — le pendant de
- * ceux de l'application Windows. Noms et paquets vivent dans le catalogue ; les images sont des
- * ressources de chaque application. Un identifiant sans logo retombe sur une icône neutre.
+ * Launcher logos by catalogue id, mirroring the Windows app. Names and packages live in the shared catalogue, images in
+ * each app's resources. An id without a logo falls back to a neutral icon.
  */
 val LOGOS_LAUNCHERS: Map<String, Int> = mapOf(
     "startlight" to R.drawable.launcher_startlight,
@@ -49,8 +48,8 @@ val LOGOS_LAUNCHERS: Map<String, Int> = mapOf(
 )
 
 /**
- * Les logos des fabricants : dix de téléviseurs, cinq de box (Xiaomi est des deux). Thomson, Nokia et
- * Skyworth sont reconnus sans logo, et s'écrivent en toutes lettres sur leur plaque.
+ * Ten TV brands and five box brands (Xiaomi is both). Thomson, Nokia and Skyworth are recognized without a logo and
+ * spelled out on their plate.
  */
 val LOGOS_FABRICANTS: Map<Fabricant, Int> = mapOf(
     Fabricant.TCL to R.drawable.marque_tcl,
@@ -69,7 +68,6 @@ val LOGOS_FABRICANTS: Map<Fabricant, Int> = mapOf(
     Fabricant.FREEBOX to R.drawable.marque_freebox,
 )
 
-/** L'icône d'un launcher, arrondie comme sur le téléviseur. */
 @Composable
 fun LogoLauncher(id: String?, taille: Dp = 40.dp, modifier: Modifier = Modifier) {
     val forme = RoundedCornerShape(taille * 0.22f)
@@ -96,9 +94,8 @@ fun LogoLauncher(id: String?, taille: Dp = 40.dp, modifier: Modifier = Modifier)
 }
 
 /**
- * La marque d'un appareil, sur une plaque claire : les lettrages noirs — Sony, NVIDIA, Amazon —
- * disparaîtraient sur le thème sombre, et la plaque garde la même tenue partout. Une marque reconnue sans logo s'y
- * écrit en toutes lettres.
+ * Brand logo on a white plate, since black lettering (Sony, NVIDIA, Amazon) would vanish in the dark theme. A brand
+ * without a logo is spelled out.
  */
 @Composable
 fun PlaqueMarque(fabricant: Fabricant, hauteur: Dp = 32.dp, modifier: Modifier = Modifier) {

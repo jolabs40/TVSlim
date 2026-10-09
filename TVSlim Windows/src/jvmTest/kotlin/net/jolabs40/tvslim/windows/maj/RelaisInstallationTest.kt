@@ -6,22 +6,22 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Le relais de mise à jour, exécuté pour de vrai : créé par WMI, il attend la fin des processus
- * indiqués, installe un MSI par-dessus la version en place, puis relance l'application. Ne tourne
- * que sur demande, sur un poste où une version antérieure est installée et ouverte :
+ * Runs the update relay for real: spawned by WMI, it waits for the given processes to exit, installs an MSI over
+ * the current version, then relaunches the app. Opt-in, on a machine where an older version is installed and
+ * running:
  *
  *     ./gradlew jvmTest --tests "*RelaisInstallationTest*" --rerun \
  *         -PrelaisMsi=C:\…\TVSlim-Windows-0.9.1.msi \
  *         -PrelaisExe="C:\Users\…\AppData\Local\TV Slim\TV Slim.exe" \
- *         -PrelaisPid=<pid de l'application>,<pid de son lanceur>
+ *         -PrelaisPid=<app pid>,<launcher pid>
  *
- * Le test rend la main dès que WMI a créé le relais : c'est ensuite en fermant l'application qu'on
- * libère l'installation, et on constate le résultat dans `installation.log`.
+ * The test returns as soon as WMI has created the relay. Closing the app then lets the install proceed; the
+ * result is in `installation.log`.
  */
 class RelaisInstallationTest {
 
     @Test
-    fun `WMI cree le relais qui installera la version suivante`() {
+    fun `WMI creates the relay that will install the next version`() {
         val msi = System.getProperty("tvslim.relais.msi")
         assumeTrue("-PrelaisMsi=<installateur> pour éprouver le relais", msi != null)
         val executable = System.getProperty("tvslim.relais.exe")?.let(::File)

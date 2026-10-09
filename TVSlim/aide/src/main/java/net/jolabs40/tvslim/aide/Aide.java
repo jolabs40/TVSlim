@@ -20,26 +20,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Lancée par TV Slim avec les droits du shell d'ADB :
+ * Run by TV Slim with the ADB shell's permissions:
  *
  * <pre>CLASSPATH=/data/local/tmp/tvslim-aide.apk app_process / net.jolabs40.tvslim.aide.Aide liste
- * CLASSPATH=… app_process / net.jolabs40.tvslim.aide.Aide details 96 paquet1 paquet2…</pre>
+ * CLASSPATH=... app_process / net.jolabs40.tvslim.aide.Aide details 96 package1 package2...</pre>
  *
- * La première ligne dit la version du protocole, que TV Slim vérifie ; chaque ligne suivante, une application, ses
- * champs séparés par des tabulations :
+ * The first line gives the protocol version, which TV Slim checks. Each following line is one app, with
+ * tab-separated fields:
  *
  * <ul>
- *   <li>{@code A paquet versionCode systeme active lancement} — les applications du menu, et celles que la personne
- *   a installées ; {@code lancement} est l'activité qui l'ouvre, ou « - » ;</li>
- *   <li>{@code D paquet nom icône} — le nom affiché et l'icône en PNG, en base 64 ;</li>
- *   <li>{@code E paquet motif} — ce paquet-là n'a pas pu être lu.</li>
+ *   <li>{@code A package versionCode system enabled launch}: launcher apps and user-installed apps;
+ *   {@code launch} is the activity that opens the app, or "-";</li>
+ *   <li>{@code D package label icon}: display name and icon as a base64 PNG;</li>
+ *   <li>{@code E package reason}: this package could not be read.</li>
  * </ul>
  *
- * Tout ce qui passe ici est en lecture seule : rien n'est changé sur l'appareil.
+ * Read-only: nothing is changed on the device.
  */
 public final class Aide {
 
-    /** À monter avec tout changement de format : TV Slim refuse une aide d'une autre version. */
+    /** Bump on any format change: TV Slim refuses a helper with a different version. */
     static final int VERSION = 1;
 
     private static final int DRAPEAUX = PackageManager.MATCH_DISABLED_COMPONENTS;
@@ -63,7 +63,7 @@ public final class Aide {
         sortie.flush();
     }
 
-    /** Le contexte du système, comme le fait scrcpy : sans lui, pas de PackageManager hors d'une application. */
+    /** Gets the system context as scrcpy does; outside an app there is no other way to a PackageManager. */
     private static Context contexteSysteme() throws Exception {
         Class<?> activityThread = Class.forName("android.app.ActivityThread");
         Object thread = activityThread.getMethod("systemMain").invoke(null);
@@ -71,7 +71,7 @@ public final class Aide {
     }
 
     private static void liste(PackageManager pm, PrintStream sortie) {
-        // L'activité qui ouvre chaque application du menu — celle du téléviseur d'abord, s'il en est un.
+        // Launch activity of each launcher app, preferring the leanback one on a TV.
         boolean televiseur = pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK);
         String[] categories = televiseur
                 ? new String[]{Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER}
@@ -91,7 +91,7 @@ public final class Aide {
             if (app == null) continue;
             boolean systeme = (app.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0;
             String lancement = lancements.get(info.packageName);
-            // Ce que la personne appelle une application : une icône dans le menu, ou ce qu'elle a installé.
+            // What a user calls an app: a launcher icon, or something they installed.
             if (lancement == null && systeme) continue;
             long version = Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
             sortie.println("A\t" + info.packageName + "\t" + version + "\t" + (systeme ? 1 : 0) + "\t"

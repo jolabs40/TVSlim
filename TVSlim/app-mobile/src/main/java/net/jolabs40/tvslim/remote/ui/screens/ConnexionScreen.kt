@@ -52,7 +52,7 @@ import net.jolabs40.tvslim.remote.ui.ActionsPermissions
 import net.jolabs40.tvslim.remote.ui.ActionsShizuku
 import net.jolabs40.tvslim.remote.ui.EtatRemote
 
-/** Le module d'interface du scanner n'est pas dans l'APK : Play services le télécharge. */
+/** The scanner UI module is not in the APK: Play services downloads it. */
 private enum class EtatModule { INCONNU, TELECHARGEMENT, PRET, INDISPONIBLE }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,9 +88,8 @@ fun ConnexionScreen(
     val scanner = remember { GmsBarcodeScanning.getClient(contexte, options) }
     var etatModule by remember { mutableStateOf(EtatModule.INCONNU) }
 
-    // Le module est réclamé dès l'ouverture de l'écran, pas au premier appui : sans cela, la
-    // première lecture attend derrière un téléchargement, écran figé sur « Waiting for the
-    // Barcode UI module to be downloaded ».
+    // Requested when the screen opens, not on first tap: otherwise the first scan waits for the download, stuck on
+    // "Waiting for the Barcode UI module to be downloaded".
     LaunchedEffect(Unit) {
         val installateur = ModuleInstall.getClient(contexte)
         installateur.areModulesAvailable(scanner)
@@ -126,25 +125,22 @@ fun ConnexionScreen(
         )
 
         if (etat.connecte) {
-            // L'action d'abord, les mesures ensuite : un écran qu'il faut faire défiler pour
-            // trouver le seul bouton utile est un écran raté. La dérive passe devant tout : le
-            // téléviseur a défait seul ce qu'on avait réglé.
+            // Actions before measurements, so the useful button needs no scrolling. Drift comes first of all.
             etat.derive?.let { plan -> CarteDerive(plan = plan, onReprendre = onReprendreDerive) }
             CarteAccueil(etat = etat, onInstaller = onInstallerLauncher, onDefinirAccueil = onDefinirAccueil)
-            // Face à un téléviseur ou une box seulement : sur un téléphone joint pour essai, elle n'a rien à faire.
+            // TV or box only: the TV app has no use on a phone connected for testing.
             val televiseur = etat.infos.typeAppareil == TypeAppareil.TELEVISEUR || etat.infos.typeAppareil == TypeAppareil.BOX
             AppareilConnecte(
                 etat = etat,
                 onDeconnecter = onDeconnecter,
                 onRedemarrer = onRedemarrer,
-                // Actualiser relit aussi l'application TV : elle a pu changer sur le téléviseur.
+                // Also re-reads the TV app, which may have changed on the TV.
                 onActualiser = { onActualiser(); if (televiseur) actionsApplicationTv.onLire() },
             )
             if (televiseur) {
                 CarteApplicationTv(etat = etatApplicationTv, hote = etat.connexion.hote, actions = actionsApplicationTv)
             }
-            // En dernier, repliés : des outils rares, sans rapport avec le débloat, qui n'ont de sens
-            // que téléviseur joint.
+            // Last and collapsed: rarely used tools unrelated to debloating.
             OutilsAvances(
                 occupe = etat.permissions.lecture || etat.installation.occupee ||
                     etat.commande.enCours || etat.shizuku.enCours,
@@ -157,7 +153,6 @@ fun ConnexionScreen(
             return@Column
         }
 
-        // Le téléviseur redémarre sur demande : on dit qu'on guette son retour, sans rien demander.
         if (etat.redemarrage) {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Row(
@@ -171,12 +166,8 @@ fun ConnexionScreen(
             }
         }
 
-        // Le plus court des chemins quand il aboutit : l'appareil s'annonce, on le touche.
-        //
-        // Adossé au cycle de vie, et non à la seule composition : quitter l'application ne
-        // défait pas l'arbre, l'Activity restant vivante. La découverte écoutait alors trois
-        // types de services indéfiniment — de la radio réveillée pour rien pendant qu'on va
-        // allumer le téléviseur. ON_START relance, ON_STOP arrête.
+        // Discovery follows the lifecycle, not composition: leaving the app keeps the Activity and its tree alive, and
+        // discovery would keep listening for three service types, radio awake for nothing. ON_START starts, ON_STOP stops.
         LifecycleStartEffect(Unit) {
             onChercher()
             onStopOrDispose { onArreterRecherche() }
@@ -199,7 +190,7 @@ fun ConnexionScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     etat.detectes.forEach { appareil ->
-                        // La marque d'un appareil déjà joint : le nom qu'on en a retenu commence par elle.
+                        // For a device seen before, its remembered name starts with the brand.
                         val fabricant = etat.nomsConnus[appareil.hote]?.let { Fabricant.depuisNom(it) }
                         OutlinedButton(
                             onClick = { onConnecterA(appareil) },
@@ -226,7 +217,6 @@ fun ConnexionScreen(
             }
         }
 
-        // Chemin principal : scanner le code affiché par le téléviseur.
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -282,8 +272,7 @@ fun ConnexionScreen(
 
         HorizontalDivider()
 
-        // Repli : saisie de l'adresse. Aucun champ ne prend le focus tout seul, le clavier ne
-        // s'ouvre donc pas à l'arrivée sur l'écran.
+        // No field takes focus by itself, so the keyboard stays closed when the screen opens.
         Text(
             text = stringResource(R.string.connection_manual_title),
             style = MaterialTheme.typography.titleMedium,
@@ -364,8 +353,7 @@ private fun AppareilConnecte(
     onRedemarrer: () -> Unit,
     onActualiser: () -> Unit,
 ) {
-    // Trois boutons ne tiennent pas toujours sur une ligne de téléphone : celui qui déborde passe
-    // dessous, entier, plutôt que de voir son texte coupé en deux.
+    // Three buttons do not always fit on a phone: the one that overflows wraps whole instead of splitting its text.
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -396,7 +384,6 @@ private fun AppareilConnecte(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
-            // La marque en tête, reconnue sur ce que l'appareil déclare : voir Fabricant.
             etat.infos.fabricant?.let {
                 PlaqueMarque(fabricant = it, hauteur = 34.dp, modifier = Modifier.padding(vertical = 4.dp))
             }
@@ -444,7 +431,6 @@ private fun Mesure(libelle: String, valeur: String) {
     }
 }
 
-/** Pourquoi la connexion a échoué, en clair, puis le message technique pour qui le veut. */
 @Composable
 private fun EtatErreur(connexion: ConnexionUi) {
     if (connexion.etat != EtatConnexion.ERREUR) return

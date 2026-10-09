@@ -118,7 +118,7 @@ fun AccueilScreen(
             }
         }
 
-        // Une mise à jour système a défait une partie du débloat : c'est la première chose à savoir.
+        // A system update undid part of the debloat: show that first.
         etat.derive?.let { derive ->
             Spacer(Modifier.height(16.dp))
             BlocDerive(derive)
@@ -152,8 +152,8 @@ fun AccueilScreen(
 }
 
 /**
- * Ce que la dernière mise à jour système a défait — cf. `GardienDerive`. Rien à cocher : la réparation se
- * fait depuis le téléphone ou le PC, qui ont le journal et la session ADB.
+ * What the last system update undid (see `GardienDerive`). Nothing to select here: the fix is done from the
+ * phone or PC, which have the log and the ADB session.
  */
 @Composable
 private fun BlocDerive(derive: DeriveAffichee) {

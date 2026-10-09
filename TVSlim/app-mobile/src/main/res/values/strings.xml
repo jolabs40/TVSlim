@@ -238,7 +238,7 @@
     <string name="msg_command_empty">Type a command.</string>
     <string name="msg_command_not_shell">Only shell commands go through here: adb shell …, or the command alone. To install an APK, use the card above.</string>
     <string name="msg_command_too_long">This command is too long.</string>
-    <!-- Onglet Fichiers -->
+    <!-- Files tab -->
     <string name="files_not_connected">Connect to a television to browse its files.</string>
     <string name="shortcut_internal">Internal storage</string>
     <string name="shortcut_downloads">Downloads</string>
@@ -328,7 +328,7 @@
     <string name="capture_failed_unreadable">The television did not return an image: %1$s</string>
     <string name="capture_write_failed">The screenshot could not be saved: %1$s</string>
 
-    <!-- Hors téléviseur -->
+    <!-- Non-TV devices -->
     <string name="device_type_phone">Phone</string>
     <string name="device_type_tablet">Tablet</string>
     <string name="packages_not_tv">This device is not a television: TV Slim\'s catalogue describes televisions, so profiles are off. A package can still be disabled by hand, and re-enabled from the log.</string>
@@ -365,7 +365,7 @@
     <string name="apps_read_helper_refused">The helper that reads names and icons did not answer as expected: %1$s</string>
     <string name="apps_read_connection">The device did not answer: %1$s</string>
 
-    <!-- Connexion et canal ADB -->
+    <!-- Connection and ADB channel -->
     <string name="connection_waiting">Waiting for the television… If it asks to allow debugging from this device, accept with the remote.</string>
     <string name="connection_problem_refused">Connection refused: network debugging does not seem to be enabled on the television.</string>
     <string name="connection_problem_timeout">The television did not answer in time. If it shows an authorisation request, accept it with the remote, then try again.</string>
@@ -376,7 +376,7 @@
     <string name="adb_timeout">The television did not answer in time. Check that it is switched on and try again.</string>
     <string name="adb_send_cancelled">Sending cancelled.</string>
 
-    <!-- Messages du pilote -->
+    <!-- Controller messages -->
     <string name="msg_enter_address">Enter the television\'s address.</string>
     <string name="msg_code_unknown">Code not recognised: %1$s</string>
     <string name="msg_scan_cancelled">Scan cancelled.</string>
@@ -398,7 +398,7 @@
     <string name="msg_undone">Undone.</string>
     <string name="result_summary">Succeeded: %1$d/%2$d.</string>
 
-    <!-- Ce que le moteur dit d'une action (MotifMoteur) -->
+    <!-- Engine outcomes (MotifMoteur) -->
     <string name="engine_absent">Package not on this television.</string>
     <string name="engine_already_disabled">Already disabled.</string>
     <string name="engine_unexplained">Failed, with no answer from the television.</string>
@@ -415,7 +415,7 @@
     <string name="journal_home">Home screen</string>
     <string name="files_refused_silent">refused by the television</string>
 
-    <!-- L'application TV Slim du téléviseur, installée depuis GitHub -->
+    <!-- TV Slim's TV app, installed from GitHub -->
     <string name="tvapp_title">TV Slim on the television</string>
     <string name="tvapp_body">Optional. It shows a code to scan to reconnect this phone, keeps the television reachable during standby, and warns you when a system update undid your changes.</string>
     <string name="tvapp_reading">Reading the television…</string>
@@ -446,7 +446,7 @@
     <string name="tvapp_error_tv">The television no longer answers.</string>
     <string name="tvapp_error_install">The television refused the installation: %1$s</string>
 
-    <!-- Permissions : choisir une application, et ce qu'elle déclare -->
+    <!-- Permissions: app picker and declared permissions -->
     <string name="permissions_choose">Choose an app</string>
     <string name="permissions_choose_title">Apps on the television</string>
     <string name="permissions_choose_hint">Apps in the menu and the ones you installed. Any other package can still be typed.</string>
@@ -461,7 +461,7 @@
     <string name="permissions_declared_show_granted">Also show the %1$d already granted</string>
     <string name="permissions_declared_hide_granted">Hide the granted ones</string>
 
-    <!-- Redémarrer le téléviseur -->
+    <!-- Reboot the TV -->
     <string name="device_reboot">Restart</string>
     <string name="confirm_reboot_title">Restart the television?</string>
     <string name="confirm_reboot_body">The television restarts, in about a minute: what is on screen stops. TV Slim reconnects by itself when it comes back.</string>
@@ -470,7 +470,7 @@
     <string name="msg_reboot_back">The television has restarted, and TV Slim is connected to it again.</string>
     <string name="msg_reboot_not_back">The television has not come back on the network. Turn it on if it is off; if it is on, network debugging may have to be turned on again.</string>
 
-    <!-- À propos -->
+    <!-- About -->
     <string name="about_title">About</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_description">Reversible debloat for Android TV, over ADB from this phone. Nothing is uninstalled or installed on the television unless you ask for it — an APK you send, a command you type. Every change is recorded in the log, with the command that undoes it whenever there is one.</string>

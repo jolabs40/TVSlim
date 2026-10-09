@@ -23,11 +23,11 @@ import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.adb.ClientAdb
 import java.io.File
 
-/** La carte « TV Slim sur le téléviseur ». */
+/** State of the "TV Slim on the TV" card. */
 data class EtatApplicationTvUi(
-    /** Null tant que le téléviseur n'a pas été lu. */
+    /** Null until the TV has been read. */
     val situation: SituationTv? = null,
-    /** Non nulle pendant une installation : ce qu'elle fait. */
+    /** Current install step; null when idle. */
     val etape: EtapeTv? = null,
 ) {
     val occupee: Boolean get() = etape != null
@@ -40,12 +40,9 @@ data class ActionsApplicationTv(
 )
 
 /**
- * L'application TV Slim du téléviseur : ce qu'il en porte, et son installation depuis GitHub — cf.
- * `ApplicationTv` du noyau. Un pilote à part, comme les permissions : rien à voir avec le débloat.
+ * Reads which TV Slim app the TV has and installs it from GitHub (see the core's `ApplicationTv`).
  *
- * GitHub n'est consulté qu'une fois par lancement de l'application, et seulement quand la carte s'affiche,
- * c'est-à-dire face à un téléviseur ou une box : la dernière publication ne change pas d'une connexion à
- * l'autre.
+ * GitHub is queried at most once per app launch, and only when the card is shown (on a TV or a box).
  */
 class PiloteApplicationTv(
     private val contexte: Context,
@@ -100,7 +97,7 @@ class PiloteApplicationTv(
         lancer { application, etape -> application.autoriser(version, etape) }
     }
 
-    /** Le téléviseur change, ou la connexion tombe : rien de ce qu'on en a lu ne vaut plus. */
+    /** Drops what was read, on TV change or disconnection. */
     fun oublier() {
         travail?.cancel()
         _etat.value = EtatApplicationTvUi()
@@ -119,7 +116,7 @@ class PiloteApplicationTv(
             }
             afficher(texte(resultat))
             if (resultat is ResultatTv.Reussi) remercier()
-            // GitHub n'avait pas répondu à la première lecture : l'installation, elle, a pu le joindre.
+            // GitHub may have failed on the first read but answered during the install.
             if (derniere == null) derniere = application.derniere()
             _etat.update { it.copy(situation = application.situation(derniere)) }
         }

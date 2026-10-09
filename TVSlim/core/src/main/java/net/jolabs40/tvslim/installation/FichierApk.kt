@@ -5,20 +5,20 @@ import java.io.File
 import java.io.InputStream
 import java.util.zip.ZipFile
 
-/** Ce qu'est un fichier qu'on propose d'installer. */
+/** What a file offered for installation turned out to be. */
 sealed interface AnalyseApk {
     data class Valide(val manifeste: ManifesteApk) : AnalyseApk
 
-    /** Plusieurs APK dans une archive — `.apks`, `.xapk`, `.apkm` : il faudrait les envoyer ensemble. */
+    /** Several APKs in one archive (`.apks`, `.xapk`, `.apkm`) that would have to be installed together. */
     data object Lot : AnalyseApk
 
-    /** Pas une archive, pas de manifeste, ou un manifeste illisible. */
+    /** Not an archive, no manifest, or an unreadable manifest. */
     data object PasUnApk : AnalyseApk
 }
 
 /**
- * Examine un fichier sur le disque avant qu'il ne parte : un APK est une archive ZIP dont le manifeste
- * compilé nomme l'application. Rien n'est envoyé au téléviseur ici.
+ * Inspects a local file before upload: an APK is a ZIP archive whose compiled manifest names the app.
+ * Nothing is sent to the TV here.
  */
 object FichierApk {
 
@@ -38,7 +38,7 @@ object FichierApk {
         }
     }.getOrDefault(AnalyseApk.PasUnApk)
 
-    /** La taille qu'annonce une archive se fabrique : on cesse de lire au-delà du plafond. */
+    /** The size an archive declares can be forged, so reading stops past the cap. */
     private fun lireAuPlus(flux: InputStream, plafond: Int): ByteArray? {
         val tampon = ByteArrayOutputStream()
         val bloc = ByteArray(8 * 1024)
@@ -52,6 +52,6 @@ object FichierApk {
 
     private const val NOM_MANIFESTE = "AndroidManifest.xml"
 
-    /** Un manifeste pèse quelques dizaines de kilo-octets ; quatre mégaoctets laissent de la marge. */
+    /** A manifest weighs a few tens of KB; 4 MB leaves headroom. */
     private const val TAILLE_MAX_MANIFESTE = 4 * 1024 * 1024
 }

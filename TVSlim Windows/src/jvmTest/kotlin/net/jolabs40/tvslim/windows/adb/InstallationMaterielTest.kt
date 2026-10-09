@@ -15,14 +15,13 @@ import java.io.File
 import java.nio.file.Files
 
 /**
- * Un vrai APK envoyé à un vrai téléviseur, par le client ADB de l'application et le noyau partagé. Ne
- * tourne que sur demande, parce qu'il **installe** :
+ * Sends a real APK to a real TV, through the app's ADB client and the shared core. Opt-in because it installs:
  *
  *     ./gradlew jvmTest --tests "*InstallationMaterielTest*" '-Pmateriel=192.168.2.135' '-Papk=C:/…/app-tv-debug.apk' --rerun
  *
- * Choisir un APK sans conséquence : l'application TV de ce dépôt, déjà en place et signée de la même clé,
- * est réinstallée et garde ses données comme sa permission `WRITE_SECURE_SETTINGS`. Journal temporaire ;
- * la clé ADB est celle de l'application, comme pour `CapturesMaterielTest`.
+ * Pick a harmless APK: this repo's TV app, already installed and signed with the same key, is reinstalled and
+ * keeps its data and its `WRITE_SECURE_SETTINGS` permission. Temporary journal; uses the app's ADB key, like
+ * `CapturesMaterielTest`.
  */
 class InstallationMaterielTest {
 
@@ -30,7 +29,7 @@ class InstallationMaterielTest {
     private val chemin: String? = System.getProperty("tvslim.apk")
 
     @Test
-    fun `un APK part, s'installe et se consigne`() = runBlocking<Unit> {
+    fun `an APK is sent, installed and logged`() = runBlocking<Unit> {
         assumeTrue("-Pmateriel=<adresse> -Papk=<fichier> pour installer sur un vrai téléviseur", hote != null && chemin != null)
         val apk = File(chemin!!)
         val client = ClientAdb(DepotCles(Emplacements.windows().cles))

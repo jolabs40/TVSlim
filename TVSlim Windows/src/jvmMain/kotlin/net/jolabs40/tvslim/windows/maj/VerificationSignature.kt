@@ -9,22 +9,21 @@ import java.util.Base64
 import java.util.HexFormat
 
 /**
- * Vérifie qu'un installateur téléchargé a bien été signé par la clé de TV Slim.
+ * Checks that a downloaded installer was signed with TV Slim's Ed25519 key.
  *
- * HTTPS garantit qu'on parle à GitHub ; la signature garantit que le fichier vient de qui détient
- * la clé privée — et elle seule. Un compte GitHub compromis pourrait publier un installateur, pas
- * le signer. Sans signature valide, rien ne s'exécute.
+ * HTTPS authenticates GitHub; the signature authenticates the holder of the private key. A compromised GitHub
+ * account could publish an installer but not sign it. Nothing runs without a valid signature.
  *
- * Le message signé lie la version à l'empreinte du fichier, pour qu'une signature authentique ne
- * puisse pas être recollée sur un autre installateur, même ancien. Il doit rester identique à
- * celui de `outils/SignerMiseAJour.java`, qui signe au moment de la publication.
+ * The signed message binds the version to the file hash, so a genuine signature cannot be reused on another
+ * installer, even an older one. It must stay identical to the one in `outils/SignerMiseAJour.java`, which signs
+ * at release time.
  */
 object VerificationSignature {
 
     fun message(version: String, empreinte: String): ByteArray =
         "TVSlim-Windows\n$version\n$empreinte".toByteArray(Charsets.UTF_8)
 
-    /** SHA-256 du fichier, en hexadécimal minuscule. */
+    /** SHA-256 of the file, lowercase hex. */
     fun empreinte(fichier: File): String {
         val condensat = MessageDigest.getInstance("SHA-256")
         fichier.inputStream().use { flux ->

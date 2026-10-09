@@ -3,7 +3,7 @@ package net.jolabs40.tvslim.windows.maj
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Une version « majeure.mineure.correctif » : la seule forme qu'accepte un installateur MSI. */
+/** A `major.minor.patch` version, the only form an MSI installer accepts. */
 data class Version(val majeure: Int, val mineure: Int, val correctif: Int) : Comparable<Version> {
 
     override fun compareTo(other: Version): Int =
@@ -21,7 +21,7 @@ data class Version(val majeure: Int, val mineure: Int, val correctif: Int) : Com
     }
 }
 
-/** Une publication telle que la décrit l'API de GitHub — réduite à ce qui sert ici. */
+/** The subset of a GitHub API release that is used here. */
 @Serializable
 data class PublicationGithub(
     @SerialName("tag_name") val tag: String = "",
@@ -49,12 +49,11 @@ data class MiseAJourDisponible(
 )
 
 /**
- * Choisit, parmi les publications du dépôt, celle qui remplacerait la version en cours.
+ * Picks the release that would replace the running version.
  *
- * Le dépôt publie aussi l'application Android : seules comptent les publications dont le tag
- * commence par `windows-v`, ni brouillons ni préversions. Et un fichier ne se télécharge que s'il
- * est attaché à une publication **de ce dépôt** — une description de publication, un lien glissé
- * ailleurs, ne peuvent pas faire télécharger autre chose.
+ * The repository also publishes the Android app, so only `windows-v*` tags count, excluding drafts and
+ * prereleases. Only assets attached to a release of this repository are downloaded; a link in a release
+ * description or elsewhere cannot point the download to another file.
  */
 object ChoixPublication {
 
@@ -87,7 +86,7 @@ object ChoixPublication {
             notes = publication.body.orEmpty().trim(),
             page = publication.page.takeIf { it.startsWith("https://github.com/$depot/releases/", ignoreCase = true) }
                 ?: "https://github.com/$depot/releases",
-            // Sans installateur ou sans signature, la publication est incomplète : on attend.
+            // A release without installer or signature is incomplete; skip it for now.
             installateur = fichier(nomInstallateur(version)) ?: return null,
             signature = fichier(nomSignature(version)) ?: return null,
             portable = fichier(nomPortable(version)),

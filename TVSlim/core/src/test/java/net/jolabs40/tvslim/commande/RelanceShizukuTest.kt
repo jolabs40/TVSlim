@@ -5,21 +5,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * La relance du service Shizuku : ce qui part, et comment on sait que c'est parti.
+ * Restarting the Shizuku service: the command sent, and how a successful start is detected.
  *
- * **Pourquoi ces tests existent.** La commande traverse une socket ADB et un shell distant : si
- * elle est mal formée, elle échoue sur le téléviseur, loin d'ici, avec un message que personne ne
- * lit. Sa forme est donc tenue ici.
+ * The command goes through an ADB socket and a remote shell. A malformed one fails on the TV with a message
+ * nobody reads, so its shape is checked here.
  */
 class RelanceShizukuTest {
 
     /**
-     * ⚠️ **Le chemin se découvre, il ne s'écrit pas.** Le dossier d'installation porte un suffixe
-     * tiré au sort à chaque mise à jour, et l'ABI n'est pas toujours `arm` : une commande à chemin
-     * figé marcherait sur une machine et sur aucune autre.
+     * The install folder gets a random suffix on every update and the ABI is not always `arm`, so the path must
+     * be looked up, never hardcoded.
      */
     @Test
-    fun `la commande decouvre le chemin au lieu de le figer`() {
+    fun `the command looks up the path instead of hardcoding it`() {
         val commande = RelanceShizuku.COMMANDE
 
         assertTrue(commande.contains("pm path ${RelanceShizuku.PAQUET}"))
@@ -29,22 +27,18 @@ class RelanceShizukuTest {
     }
 
     /**
-     * ⚠️ **Ni `start.sh`, ni `app_process`** (§ 5) : le premier n'existe pas tant que l'interface
-     * de Shizuku n'a jamais été ouverte — le cas d'un téléviseur neuf —, le second lève
-     * `ClassNotFoundException` depuis Shizuku 13.
+     * `start.sh` does not exist until the Shizuku UI has been opened once (a fresh TV), and `app_process`
+     * throws `ClassNotFoundException` since Shizuku 13.
      */
     @Test
-    fun `la commande n'emprunte aucune des deux voies qui echouent`() {
+    fun `the command uses neither of the two ways that fail`() {
         assertFalse(RelanceShizuku.COMMANDE.contains("start.sh"))
         assertFalse(RelanceShizuku.COMMANDE.contains("app_process"))
     }
 
-    /**
-     * ⚠️ **Le code de retour ne dit pas que c'est parti.** Le starter rend 0 même quand il
-     * renonce : c'est sa sortie qui annonce le pid.
-     */
+    /** The starter exits with 0 even when it gives up; only its output reports the server pid. */
     @Test
-    fun `le demarrage se lit dans la sortie, pas dans le code`() {
+    fun `startup is read from the output, not the exit code`() {
         assertTrue(RelanceShizuku.demarre("info: shizuku_server pid is 5276"))
         assertTrue(RelanceShizuku.demarre("info: shizuku_starter exit with 0"))
         assertFalse(RelanceShizuku.demarre(""))
@@ -53,12 +47,11 @@ class RelanceShizukuTest {
     }
 
     /**
-     * ⚠️ **Le motif d'état ne doit pas se trouver lui-même.** Un `ps | grep` dont le shell porte
-     * le motif se voit dans sa propre sortie, et `pkill -f` se tue avant d'agir — relevé le
-     * 2026-09-20, l'appel était resté pendu.
+     * The status pattern must not match its own command line: `ps | grep` sees its own shell, and `pkill -f` kills
+     * itself before acting, which left the call hanging.
      */
     @Test
-    fun `l'etat se lit sans pkill`() {
+    fun `the status is read without pkill`() {
         assertFalse(RelanceShizuku.COMMANDE_ETAT.contains("pkill"))
         assertTrue(RelanceShizuku.COMMANDE_ETAT.startsWith("ps "))
     }

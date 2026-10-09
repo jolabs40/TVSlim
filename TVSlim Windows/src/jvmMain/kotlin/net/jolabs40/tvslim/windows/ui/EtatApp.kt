@@ -21,9 +21,8 @@ import net.jolabs40.tvslim.windows.reseau.AppareilDecouvert
 import net.jolabs40.tvslim.windows.reseau.ResultatDecouverte
 
 /**
- * Stable pour Compose, et honnêtement : `EntreePaquet` vient du noyau, qui n'applique pas le
- * compilateur Compose — son inférence de stabilité ne traverse pas la frontière. Sans cette
- * promesse, toutes les lignes de l'écran Paquets se redessinent à chaque avancée de la progression.
+ * `EntreePaquet` comes from the core, which is not built with the Compose compiler, so its stability is not
+ * inferred. Without `@Immutable` every Packages row recomposes on each progress update.
  */
 @Immutable
 data class LignePaquet(
@@ -32,26 +31,23 @@ data class LignePaquet(
     val selectionne: Boolean = false,
 )
 
-/** Filtre d'affichage de la liste. */
 enum class Filtre { TOUS, ACTIFS, DESACTIVES }
 
-/** Ce qu'on s'apprête à faire, soumis à confirmation. */
+/** An action waiting for the user's confirmation. */
 sealed interface Confirmation {
-    /** Désactivation : on montre surtout les effets de bord, connus du catalogue. */
+    /** Disabling packages; the dialog stresses the side effects listed in the catalogue. */
     data class Application(val entrees: List<EntreePaquet>) : Confirmation
 
     data class Restauration(val paquets: List<String>) : Confirmation
 
     /**
-     * Réinjection d'une configuration sauvegardée : on montre ce qu'elle changera, et seulement cela.
-     * Avec [derive], le plan ne vient pas d'un fichier mais du journal — cf. `planDeDerive`.
+     * Reapplying a saved configuration, showing only what it would change. With [derive], the plan comes
+     * from the journal (`planDeDerive`) instead of a file.
      */
     data class Reinjection(val plan: PlanReinjection, val derive: Boolean = false) : Confirmation
 
-    /** Installation d'un APK : l'application qui arrive, sa version, et ce qu'elle remplace. */
     data class Installation(val apk: ApkChoisi) : Confirmation
 
-    /** Redémarrer le téléviseur : ce que ça interrompt, et ce qui peut ne pas revenir. */
     data object Redemarrage : Confirmation
 }
 
@@ -59,25 +55,23 @@ sealed interface Confirmation {
 data class Progression(val fait: Int, val total: Int)
 
 /**
- * Tout ce que la fenêtre affiche. Le pendant exact de `EtatRemote` du compagnon, plus ce que le
- * bureau ajoute : le volet de détail d'un paquet et la recherche sur le réseau.
+ * Window state: the companion's `EtatRemote` plus the package detail pane and network discovery.
  *
- * Tenu pour immuable : tous les champs sont des `val`, et aucune liste n'est mutée en place —
- * chaque changement passe par `copy()`.
+ * Safe to mark immutable: every field is a `val` and lists are only replaced through `copy()`.
  */
 @Immutable
 data class EtatApp(
     val hoteSaisi: String = "",
     val portSaisi: String = PORT_ADB_PAR_DEFAUT.toString(),
     val connexion: ConnexionUi = ConnexionUi(),
-    /** Le téléviseur redémarre : on guette son retour pour s'y reconnecter. */
+    /** The TV is rebooting; we wait for it to come back and reconnect. */
     val redemarrage: Boolean = false,
     val chargement: Boolean = false,
     val progression: Progression? = null,
     val catalogue: Catalogue = Catalogue(),
     val infos: InfosAppareil = InfosAppareil.VIDE,
     val lignes: List<LignePaquet> = emptyList(),
-    /** Les paquets livrés avec le téléviseur que le catalogue ne décrit pas : montrés, jamais proposés. */
+    /** Preinstalled packages missing from the catalogue: shown, never offered for removal. */
     val inconnus: List<PaquetInconnu> = emptyList(),
     val journal: List<ActionJournal> = emptyList(),
     val mesures: HistoriqueMesures = HistoriqueMesures(),
@@ -87,12 +81,12 @@ data class EtatApp(
     val filtre: Filtre = Filtre.TOUS,
     val paquetDetaille: String? = null,
     val memoire: RepartitionMemoire = RepartitionMemoire(),
-    /** Une lecture de la mémoire a abouti ou échoué : « lecture en cours » ne dure pas au-delà. */
+    /** Set once a memory read has succeeded or failed, so the "reading" state cannot last forever. */
     val lectureMemoireTentee: Boolean = false,
-    /** Une lecture de la mémoire est en cours, lancée par l'onglet ou d'avance à la connexion. */
+    /** A memory read is running, started by the tab or prefetched on connection. */
     val memoireEnLecture: Boolean = false,
     val stockage: RepartitionStockage = RepartitionStockage(),
-    /** Comme pour la mémoire : un échec de lecture se dit, au lieu d'un « lecture en cours » sans fin. */
+    /** Same as for memory: a failed read is reported instead of showing "reading" forever. */
     val lectureStockageTentee: Boolean = false,
     val stockageEnLecture: Boolean = false,
     val permissions: EtatPermissions = EtatPermissions(),
@@ -105,13 +99,13 @@ data class EtatApp(
     val travailEnCours: Boolean get() = progression != null
     val selection: List<LignePaquet> by lazy { lignes.filter { it.selectionne } }
 
-    // Calculées une fois par état, et non à chaque lecture : l'écran Paquets en consulte
-    // plusieurs, et chacune reparcourait toutes les entrées du catalogue.
+    // Lazy, computed once per state: the Packages screen reads several of these and each one scans
+    // the whole catalogue.
     private val presentes: List<LignePaquet> by lazy {
         lignes.filter { it.etat != EtatPaquet.ABSENT }
     }
 
-    /** Ce que la liste affiche vraiment, une fois la recherche et le filtre appliqués. */
+    /** Rows left once the search and filter are applied. */
     val affichees: List<LignePaquet> by lazy {
         presentes
             .filter { ligne ->
@@ -128,7 +122,7 @@ data class EtatApp(
             }
     }
 
-    /** Les inconnus que la liste montre, sous le même filtre et la même recherche que le catalogue. */
+    /** Unknown packages under the same filter and search as catalogue rows. */
     val inconnusAffiches: List<PaquetInconnu> by lazy {
         inconnus
             .filter { inconnu ->
@@ -144,20 +138,19 @@ data class EtatApp(
     val nombreActifs: Int by lazy { presentes.count { it.etat == EtatPaquet.ACTIF } }
     val nombreDesactives: Int by lazy { presentes.count { it.etat == EtatPaquet.DESACTIVE } }
 
-    /** Le paquet dont parle le volet de détail, tant qu'il figure encore dans la liste. */
+    /** Package in the detail pane, as long as it is still listed. */
     val ligneDetaillee: LignePaquet? by lazy {
         paquetDetaille?.let { paquet -> affichees.firstOrNull { it.entree.paquet == paquet } }
     }
 
-    /** Les appareils trouvés, nommés : le nom du cast d'abord, celui d'une visite précédente ensuite. */
+    /** Discovered devices, named by their cast name, or else by the name seen on a previous visit. */
     val detectes: List<AppareilDecouvert> by lazy {
         decouverte.appareils.map { it.copy(nomConvivial = it.nomConvivial ?: nomsConnus[it.hote]) }
     }
 
     /**
-     * Ce que TV Slim avait coupé et que le téléviseur a rallumé seul, après une mise à jour système le
-     * plus souvent — cf. `planDeDerive`. Rien pendant une lecture ni pendant un travail : un état à
-     * moitié appliqué passerait pour une dérive.
+     * What TV Slim disabled and the TV re-enabled on its own, usually after a system update (see
+     * `planDeDerive`). Null while loading or applying, since a half-applied state would look like drift.
      */
     val derive: PlanReinjection? by lazy {
         if (!connecte || chargement || travailEnCours || lignes.isEmpty()) return@lazy null
@@ -165,12 +158,11 @@ data class EtatApp(
     }
 }
 
-// --- Transformations de la sélection ------------------------------------------------------
+// --- Selection ------------------------------------------------------------------------------
 //
-// Choisir des paquets ne demande ni téléviseur ni coroutine : ce sont des fonctions de l'état vers
-// l'état, identiques à celles du compagnon, et testées de la même façon.
+// Pure state-to-state functions, identical to the companion's and tested the same way.
 
-/** Coche ou décoche un paquet. Un paquet déjà désactivé ou absent ne se sélectionne pas. */
+/** Toggles a package. Disabled or absent packages cannot be selected. */
 fun EtatApp.avecBascule(paquet: String): EtatApp = copy(
     lignes = lignes.map { ligne ->
         if (ligne.entree.paquet == paquet && ligne.etat == EtatPaquet.ACTIF) {
@@ -182,8 +174,8 @@ fun EtatApp.avecBascule(paquet: String): EtatApp = copy(
 )
 
 /**
- * Coche tout ce qu'un profil couvre, sans jamais décocher ce qui l'était déjà. Une entrée non éprouvée n'est
- * jamais couverte : elle se coche à la main, une à une.
+ * Selects everything a profile covers, never unselecting anything. Untested entries are never covered:
+ * they must be ticked by hand.
  */
 fun EtatApp.avecProfil(profil: Profil): EtatApp = if (!infos.typeAppareil.pourLeCatalogue) this else copy(
     lignes = lignes.map { ligne ->

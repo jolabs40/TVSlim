@@ -49,19 +49,19 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
 
-/** Le téléviseur visé : son adresse pour scrcpy, ses infos pour nommer les fichiers. */
+/** Target TV: address for scrcpy, device info for file names. */
 data class CibleEcran(val hote: String, val port: Int, val infos: InfosAppareil)
 
-/** Une capture enregistrée, montrée en aperçu. */
+/** A saved screenshot, shown in a preview. */
 class CaptureFaite(val fichier: File, val png: ByteArray, val largeur: Int, val hauteur: Int)
 
 sealed interface PhaseScrcpy {
     data object Inactif : PhaseScrcpy
 
-    /** scrcpy n'était pas installé : il arrive de GitHub. */
+    /** scrcpy was missing and is being downloaded from GitHub. */
     data class Telechargement(val progression: Float) : PhaseScrcpy
 
-    /** Lancé : sa fenêtre s'ouvre, ou est ouverte. */
+    /** Launched; its window is opening or open. */
     data object Actif : PhaseScrcpy
 }
 
@@ -70,10 +70,10 @@ sealed interface PhaseEnregistrement {
 
     data object Demarrage : PhaseEnregistrement
 
-    /** [limiteS] : la durée maximale d'un Android d'avant la 14, au-delà de laquelle il s'arrête seul. */
+    /** [limiteS]: time limit before Android 14, after which the recorder stops on its own. */
     data class EnCours(val debut: Long, val limiteS: Int?) : PhaseEnregistrement
 
-    /** L'enregistreur s'arrête et finit d'écrire la vidéo sur le téléviseur. */
+    /** The recorder is stopping and finishing the video file on the TV. */
     data object Arret : PhaseEnregistrement
 
     data class Copie(val progression: Float) : PhaseEnregistrement
@@ -83,33 +83,33 @@ data class EtatEcran(
     val captureEnCours: Boolean = false,
     val capture: CaptureFaite? = null,
     val scrcpy: PhaseScrcpy = PhaseScrcpy.Inactif,
-    /** Le titre du miroir qu'on voulait ouvrir quand il a fallu proposer de télécharger scrcpy. */
+    /** Title of the requested mirror while the scrcpy download is being offered. */
     val telechargementPropose: String? = null,
     val enregistrement: PhaseEnregistrement = PhaseEnregistrement.Inactif,
-    /** La vidéo qu'un enregistrement vient de copier sur le PC. */
+    /** Video just copied to the PC. */
     val video: File? = null,
-    /** TV Slim se ferme dès que la vidéo en cours est arrivée. */
+    /** TV Slim quits as soon as the current video has arrived. */
     val fermeture: Boolean = false,
     val message: MessageUi? = null,
 )
 
 /**
- * L'écran du téléviseur depuis le PC :
+ * The TV screen from the PC:
  *
- * - la **capture**, par la session ADB de TV Slim ;
- * - la **vidéo**, enregistrée sur le téléviseur par son propre `screenrecord`, puis copiée par la même session
- *   (`EnregistrementTv`) — sans son ;
- * - le **miroir**, par scrcpy, qui ouvre sa propre fenêtre et sa propre session, avec sa propre clé : le
- *   téléviseur demande une fois de l'autoriser. TV Slim ne lui prête pas la sienne, qui ne sort jamais déchiffrée.
+ * - screenshot, over TV Slim's ADB session;
+ * - video, recorded on the TV by its own `screenrecord`, then copied over the same session (`EnregistrementTv`),
+ *   without audio;
+ * - mirror, through scrcpy, which opens its own window and session with its own key, so the TV asks once to
+ *   authorize it. TV Slim does not lend its own key, which never leaves the app decrypted.
  *
- * Enregistrer coupe le miroir : l'un ou l'autre, jamais les deux.
+ * Recording closes the mirror: one or the other, never both.
  */
 class PiloteEcran(
     private val lecteur: LecteurBinaire,
     private val enregistrement: EnregistrementTv,
     private val localisation: LocalisationScrcpy,
     private val installation: InstallationScrcpy,
-    /** `null` tant qu'aucun téléviseur n'est joint. */
+    /** `null` while no TV is connected. */
     private val cible: () -> CibleEcran?,
     private val dossierImages: () -> File,
     private val dossierVideos: () -> File,
@@ -120,16 +120,16 @@ class PiloteEcran(
 
     private var session: SessionScrcpy? = null
 
-    /** Guette la fin de l'enregistreur : limite atteinte, ou arrêt imprévu. */
+    /** Watches for the recorder ending: limit reached or unexpected stop. */
     private var veille: Job? = null
     private var fin: Job? = null
 
-    /** Ce qu'on sait du téléviseur au moment d'enregistrer : la vidéo porte son nom et l'heure du début. */
+    /** TV info and start time of the recording, used to name the video. */
     private var enregistre: Pair<InfosAppareil, LocalDateTime>? = null
 
     private var quitter: (() -> Unit)? = null
 
-    // --- Capture ----------------------------------------------------------------------------
+    // --- Screenshot -------------------------------------------------------------------------
 
     fun capturer() {
         val visee = cible() ?: return afficher(texte(Res.string.msg_connect_first))
@@ -145,7 +145,7 @@ class PiloteEcran(
         }
     }
 
-    /** Écrit la capture dans `Images\TV Slim` ; rend un message seulement si l'écriture échoue. */
+    /** Writes the screenshot to `Pictures\TV Slim`; returns a message only if writing fails. */
     private suspend fun enregistrerCapture(resultat: ResultatCapture.Reussie, infos: InfosAppareil): MessageUi? =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -179,14 +179,14 @@ class PiloteEcran(
 
     fun fermerCapture() = _etat.update { it.copy(capture = null) }
 
-    // --- Vidéo, sur le téléviseur -------------------------------------------------------------
+    // --- Video, on the TV ---------------------------------------------------------------------
 
     fun enregistrer() {
         val visee = cible() ?: return afficher(texte(Res.string.msg_connect_first))
         if (_etat.value.enregistrement != PhaseEnregistrement.Inactif) return
         _etat.update { it.copy(enregistrement = PhaseEnregistrement.Demarrage) }
         viewModelScope.launch {
-            // L'un ou l'autre : le miroir se ferme quand l'enregistrement commence.
+            // One or the other: the mirror closes when recording starts.
             session?.let { miroir -> withContext(Dispatchers.IO) { miroir.arreter() } }
             when (val demarrage = enregistrement.demarrer()) {
                 is Demarrage.Lance -> {
@@ -208,7 +208,7 @@ class PiloteEcran(
         }
     }
 
-    /** Toutes les deux secondes : l'enregistreur s'est-il arrêté seul ? Sans réponse, on attend la suivante. */
+    /** Checks every two seconds whether the recorder stopped on its own; no answer means try again next time. */
     private fun guetter() {
         veille?.cancel()
         veille = viewModelScope.launch {
@@ -224,7 +224,7 @@ class PiloteEcran(
 
     fun arreterEnregistrement() = terminer()
 
-    /** Arrête l'enregistreur, copie la vidéo dans `Vidéos\TV Slim`, puis l'efface du téléviseur. */
+    /** Stops the recorder, copies the video to `Videos\TV Slim`, then deletes it from the TV. */
     private fun terminer() {
         if (_etat.value.enregistrement !is PhaseEnregistrement.EnCours || fin?.isActive == true) return
         veille?.cancel()
@@ -250,7 +250,7 @@ class PiloteEcran(
                 var palier = -1
                 val resultat = partiel.outputStream().buffered().use { flux ->
                     enregistrement.rapatrier(flux, taille, surRecu = { recu ->
-                        // Un palier par pour-cent : pas mille recompositions pour une seule copie.
+                        // Update once per percent, not thousands of recompositions per copy.
                         val pourcent = (recu * 100 / taille.coerceAtLeast(1)).toInt()
                         if (pourcent != palier) {
                             palier = pourcent
@@ -271,7 +271,7 @@ class PiloteEcran(
             if (!_etat.value.fermeture) _etat.update { it.copy(video = fichier) }
         }.onFailure { erreur ->
             Traces.avertir(TAG, "Vidéo non copiée", erreur)
-            // La vidéo reste sur le téléviseur : le prochain enregistrement la remplacera.
+            // The video stays on the TV; the next recording replaces it.
             afficher(texte(Res.string.record_copy_failed, MessageUi.Brut(erreur.message.orEmpty()), EnregistrementTv.VIDEO))
         }
     }
@@ -285,9 +285,9 @@ class PiloteEcran(
 
     fun fermerVideo() = _etat.update { it.copy(video = null) }
 
-    // --- Miroir, par scrcpy ---------------------------------------------------------------------
+    // --- Mirror, via scrcpy ---------------------------------------------------------------------
 
-    /** Ouvre le miroir ; s'il manque scrcpy, propose d'abord de le télécharger. */
+    /** Opens the mirror, offering to download scrcpy first if it is missing. */
     fun ouvrirMiroir(titre: String) {
         if (cible() == null) return afficher(texte(Res.string.msg_connect_first))
         if (_etat.value.scrcpy != PhaseScrcpy.Inactif || _etat.value.enregistrement != PhaseEnregistrement.Inactif) return
@@ -352,17 +352,17 @@ class PiloteEcran(
         return texte(Res.string.scrcpy_failed, MessageUi.Brut(motif))
     }
 
-    /** Ferme la fenêtre de scrcpy comme on la fermerait à la souris. */
+    /** Closes the scrcpy window the way a mouse click would. */
     fun arreterMiroir() {
         val active = session ?: return
         viewModelScope.launch(Dispatchers.IO) { active.arreter() }
     }
 
-    // --- Fermeture de TV Slim -------------------------------------------------------------------
+    // --- Closing TV Slim ------------------------------------------------------------------------
 
     /**
-     * Ferme le miroir, puis [quitter] — tout de suite, ou une fois la vidéo en cours arrivée sur le PC : la laisser
-     * sur le téléviseur, enregistreur tournant, ne servirait personne.
+     * Closes the mirror, then calls [quitter], right away or once the current video has reached the PC rather
+     * than leaving it on the TV with the recorder still running.
      */
     fun fermer(quitter: () -> Unit) {
         session?.arreter()

@@ -7,32 +7,31 @@ import org.junit.Test
 import java.io.File
 
 /**
- * L'empreinte du certificat d'un APK, lue dans son bloc de signature. Les APK de test portent le vrai
- * manifeste de l'application TV, signé par deux clés jetables (`apksigner`, 2026-10-06) ; les empreintes
- * attendues sont celles qu'affiche `apksigner verify --print-certs`.
+ * Reads an APK's certificate digest from its signing block. The fixtures carry the real TV app manifest, signed
+ * with two throwaway keys; expected digests are those printed by `apksigner verify --print-certs`.
  */
 class SignatureApkTest {
 
     private val fixtures = File("src/test/fixtures/apk")
 
     @Test
-    fun `le certificat se lit dans le bloc v3`() {
+    fun `the certificate is read from the v3 block`() {
         assertEquals(CLE_A, SignatureApk.empreinteCertificat(File(fixtures, "tv-cle-a.apk")))
         assertEquals(CLE_B, SignatureApk.empreinteCertificat(File(fixtures, "tv-cle-b.apk")))
     }
 
     @Test
-    fun `sans bloc v3, le bloc v2 suffit`() {
+    fun `without a v3 block, the v2 block is enough`() {
         assertEquals(CLE_A, SignatureApk.empreinteCertificat(File(fixtures, "tv-cle-a-v2.apk")))
     }
 
     @Test
-    fun `un APK non signe n'a pas d'empreinte`() {
+    fun `an unsigned APK has no digest`() {
         assertNull(SignatureApk.empreinteCertificat(File(fixtures, "tv-non-signe.apk")))
     }
 
     @Test
-    fun `un fichier tronque ou etranger n'a pas d'empreinte, et ne fait rien tomber`() {
+    fun `a truncated or foreign file has no digest and does not throw`() {
         val complet = File(fixtures, "tv-cle-a.apk").readBytes()
         val tronque = File.createTempFile("tronque", ".apk").apply {
             deleteOnExit()
@@ -48,17 +47,17 @@ class SignatureApkTest {
     }
 
     /**
-     * Sur la vraie release, quand elle a été construite et signée en local : l'empreinte doit être celle
-     * de `empreinteCertificat` — celle que les applications compareront à l'APK téléchargé.
+     * Runs only when a signed release was built locally. Its digest must match `empreinteCertificat`, which the
+     * apps compare against the downloaded APK.
      */
     @Test
-    fun `la release locale de l'application TV porte l'empreinte attendue`() {
+    fun `the local TV app release carries the expected digest`() {
         val release = File("../app-tv/build/outputs/apk/release/app-tv-release.apk")
         assumeTrue("Pas de release signée en local", release.exists())
         val attendue = File("../gradle.properties").readLines()
             .first { it.startsWith("empreinteCertificat=") }.substringAfter('=').trim()
         val lue = SignatureApk.empreinteCertificat(release)
-        // Une release construite sans le coffre n'est pas signée : rien à comparer.
+        // A release built without the signing key is unsigned: nothing to compare.
         assumeTrue("Release non signée", lue != null)
         assertEquals(attendue, lue)
     }

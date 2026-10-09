@@ -1,24 +1,23 @@
 package net.jolabs40.tvslim.device
 
 /**
- * Ce qui identifie un firmware plutôt qu'un appareil : deux téléviseurs du même modèle, vendus dans la
- * même région, portent les mêmes valeurs. Rien de la personne n'y figure — ni la langue qu'elle a
- * choisie, ni un numéro de série.
+ * Identifies a firmware rather than a device: two TVs of the same model sold in the same region report the
+ * same values. Nothing personal (no user language, no serial number).
  */
 data class Firmware(
-    /** `ro.build.fingerprint` : marque, produit, appareil, Android et build — de quoi reconnaître un doublon. */
+    /** `ro.build.fingerprint`: brand, product, device, Android version and build; enough to spot duplicates. */
     val empreinte: String = "",
-    /** `ro.product.name` : le produit, qui porte souvent la région (« G08_4K_GB » sur la TCL). */
+    /** `ro.product.name`: the product, which often includes the region (`G08_4K_GB` on the TCL). */
     val produit: String = "",
-    /** `ro.product.locale` : la langue d'usine, et non celle qu'a choisie la personne. */
+    /** `ro.product.locale`: the factory language, not the one the user picked. */
     val langueUsine: String = "",
 ) {
     val renseigne: Boolean get() = empreinte.isNotEmpty() || produit.isNotEmpty() || langueUsine.isNotEmpty()
 }
 
 /**
- * Relève le [Firmware] en une commande, pour l'inventaire des inconnus : les paquets préinstallés changent
- * d'une région à l'autre, et d'une version du firmware à la suivante.
+ * Reads the [Firmware] in one command, for the unknown-packages inventory: preinstalled packages vary by region
+ * and by firmware version.
  */
 object LectureFirmware {
 
@@ -26,7 +25,7 @@ object LectureFirmware {
     const val MARQUEUR_PRODUIT = "@@TVSLIM_PRODUIT"
     const val MARQUEUR_LANGUE = "@@TVSLIM_LANGUE"
 
-    /** Une section par propriété : une valeur vide n'y laisse qu'une section vide, sans décaler les autres. */
+    /** One section per property, so an empty value leaves an empty section without shifting the others. */
     val COMMANDE: String = listOf(
         "echo $MARQUEUR_EMPREINTE",
         "getprop ro.build.fingerprint",

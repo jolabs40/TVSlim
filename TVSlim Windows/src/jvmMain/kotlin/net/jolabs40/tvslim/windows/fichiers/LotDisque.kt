@@ -6,7 +6,6 @@ import java.io.File
 import java.io.InputStream
 import java.nio.file.Files
 
-/** Un fichier du disque, et son chemin dans le lot. */
 private class FichierDisque(private val fichier: File, override val chemin: String) : FichierLocal {
     override val taille: Long = fichier.length()
     override val date: Long = fichier.lastModified()
@@ -14,13 +13,13 @@ private class FichierDisque(private val fichier: File, override val chemin: Stri
 }
 
 /**
- * Ce qu'on a glissé ou choisi — fichiers et dossiers mêlés — mis à plat : chaque fichier avec son chemin
- * relatif à ce qui a été choisi, chaque dossier traversé, vides compris.
+ * Flattens dropped or picked files and folders: every file with its path relative to the selection, and every
+ * folder traversed, empty ones included.
  *
- * Dans un dossier, on écarte :
- *  - les liens symboliques, qui pourraient mener à un parent et tourner sans fin ;
- *  - ce que Windows cache — `desktop.ini`, `Thumbs.db`, et les jonctions de compatibilité comme
- *    « Application Data », qui pointent sur leur propre dossier. Ce qu'on a choisi soi-même part, caché ou non.
+ * Inside folders, skips:
+ *  - symlinks, which could point to a parent and loop forever;
+ *  - hidden items: `desktop.ini`, `Thumbs.db`, and compatibility junctions like "Application Data" that point
+ *    to their own parent. Items the user picked directly are kept even if hidden.
  */
 fun lotDepuis(elements: List<File>): LotLocal {
     val fichiers = mutableListOf<FichierLocal>()
@@ -43,7 +42,7 @@ private fun parcourir(
 ) {
     dossiers += chemin
     if (profondeur >= PROFONDEUR_MAX) return
-    // Un dossier illisible ne rend rien : il arrive vide, plutôt que de faire échouer tout l'envoi.
+    // An unreadable folder is sent empty rather than failing the whole upload.
     val enfants = dossier.listFiles()?.sortedBy { it.name.lowercase() } ?: return
     enfants
         .filterNot { it.isHidden || Files.isSymbolicLink(it.toPath()) }
@@ -56,5 +55,5 @@ private fun parcourir(
         }
 }
 
-/** Une garde, au cas où un détour du système de fichiers échapperait aux deux filtres. */
+/** Safety net in case a file system loop slips past both filters. */
 private const val PROFONDEUR_MAX = 64

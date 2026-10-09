@@ -19,10 +19,10 @@ import net.jolabs40.tvslim.windows.ui.composants.CarteSection
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Le téléviseur a défait seul une partie de ce que TV Slim avait réglé — cf. `planDeDerive`.
+ * Shown when the TV undid part of what TV Slim set (see `planDeDerive`).
  *
- * Elle ne dit que l'essentiel, et un seul bouton : le détail paquet par paquet, effets de bord compris,
- * vient dans la confirmation, la même que pour une configuration réinjectée.
+ * Only a summary and one button: the per-package detail, side effects included, is in the confirmation
+ * dialog, the same one used to reapply a configuration.
  */
 @Composable
 fun CarteDerive(plan: PlanReinjection, onReprendre: () -> Unit) {
@@ -56,7 +56,7 @@ fun CarteDerive(plan: PlanReinjection, onReprendre: () -> Unit) {
     }
 }
 
-/** Les trois premiers noms, puis « … » : la liste entière est dans la confirmation. */
+/** First three names, then "…"; the full list is in the confirmation. */
 private fun resume(noms: List<String>): String =
     noms.take(NOMS_MONTRES).joinToString(", ") + if (noms.size > NOMS_MONTRES) ", …" else ""
 

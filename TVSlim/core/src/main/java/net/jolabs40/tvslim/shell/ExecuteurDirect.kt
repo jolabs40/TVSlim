@@ -1,25 +1,25 @@
 package net.jolabs40.tvslim.shell
 
-/** Pourquoi une commande envoyée une seule fois n'a pas rendu de code de retour. */
+/** Why a run-once command returned no exit code. */
 enum class Interruption { DELAI, CONNEXION }
 
-/** Ce qu'une commande tapée à la main a rendu — même coupée en route. */
+/** Output of a hand-typed command, even if it was cut off. */
 data class ReponseDirecte(
-    /** `null` quand la commande n'a pas fini : coupée par le délai, ou par la connexion. */
+    /** `null` when the command did not finish (timeout or lost connection). */
     val code: Int?,
     val sortie: String,
     val interruption: Interruption? = null,
-    /** Le motif technique d'une interruption. */
+    /** Technical reason for the interruption. */
     val motif: String = "",
 )
 
 /**
- * Exécution d'une commande que TV Slim n'a pas écrite.
+ * Runs a command that TV Slim did not write.
  *
- * À part d'[ExecuteurCommande], dont les commandes sont rejouées après une rupture parce qu'elles
- * peuvent l'être : rien ne le dit d'une commande tapée à la main.
+ * Separate from [ExecuteurCommande], which replays its commands after a disconnect because they are known
+ * to be safe to repeat. Nothing says that of a hand-typed command.
  */
 interface ExecuteurDirect {
-    /** Exécute [commande] une seule fois, et rend ce qu'elle a écrit avant une éventuelle coupure. */
+    /** Runs [commande] exactly once and returns whatever it printed before any interruption. */
     suspend fun executerUneFois(commande: String): ReponseDirecte
 }

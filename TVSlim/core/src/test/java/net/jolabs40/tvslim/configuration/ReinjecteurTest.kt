@@ -15,13 +15,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/**
- * La réinjection passe par le moteur, dans un ordre qui ne laisse jamais le téléviseur sans accueil :
- * réactiver, désactiver, puis désigner l'écran d'accueil.
- */
+/** Reinjection goes through the engine in an order that never leaves the TV without a home screen. */
 class ReinjecteurTest {
 
-    /** Répond comme le téléviseur, et retient chaque commande reçue. */
+    /** Answers like the TV and records every command. */
     private class ExecuteurEspion : ExecuteurCommande {
         val commandes = mutableListOf<String>()
 
@@ -69,14 +66,14 @@ class ReinjecteurTest {
     private fun plan(accueil: ChangementAccueil?) = PlanReinjection(
         configuration = ConfigurationTv(ConfigurationTv.APPLICATION, ConfigurationTv.FORMAT, sauvegardeLe = 0),
         aReactiver = listOf(demo),
-        // Volontairement à l'envers : l'ordre du catalogue doit l'emporter.
+        // Reversed on purpose: the catalogue order must win.
         aDesactiver = listOf(launcherx, setupwraith),
         ignores = emptyList(),
         accueil = accueil,
     )
 
     @Test
-    fun `on reactive, on desactive dans l'ordre du catalogue, et l'accueil vient en dernier`() = runTest {
+    fun `enables first, disables in catalogue order, and sets the home screen last`() = runTest {
         val espion = ExecuteurEspion()
         val etapes = mutableListOf<Pair<Int, Int>>()
 
@@ -102,7 +99,7 @@ class ReinjecteurTest {
     }
 
     @Test
-    fun `sans launcher tiers, l'accueil d'usine reste en place malgre la sauvegarde`() = runTest {
+    fun `without a third-party launcher, the factory home stays in place despite the backup`() = runTest {
         val espion = ExecuteurEspion()
 
         val resultats = Reinjecteur(MoteurDebloat(espion, journal())).reinjecter(

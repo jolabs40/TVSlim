@@ -32,14 +32,12 @@ import net.jolabs40.tvslim.ui.components.EnTete
 import net.jolabs40.tvslim.ui.components.QrCode
 
 /**
- * Écran d'appairage : le téléviseur montre son adresse sous forme de QR code, le compagnon la
- * lit. Cela évite de chercher l'adresse IP dans les réglages puis de la saisir au doigt.
+ * Pairing screen: the TV shows its address as a QR code for the companion to scan, so nobody has to dig
+ * up the IP address in the settings and type it.
  *
- * Les trois conditions d'une connexion sont affichées séparément, avec leur pastille : quand
- * rien ne marche, il faut voir laquelle manque plutôt qu'un « impossible » global.
- *
- * Le QR n'ouvre aucune porte : il ne contient que l'adresse et le port. C'est le téléviseur qui
- * demandera ensuite d'autoriser le débogage, à la télécommande.
+ * The three connection prerequisites are shown separately so a failure points at the missing one.
+ * The QR code grants nothing: it holds only address and port, and the TV still asks to authorize
+ * debugging on the remote.
  */
 @Composable
 fun ConnexionTvScreen(
@@ -88,7 +86,7 @@ fun ConnexionTvScreen(
                 Text(
                     text = when {
                         contact.adresse.isBlank() -> stringResource(R.string.pairing_no_address)
-                        // Port à 0 : le débogage réseau est éteint, l'afficher n'aiderait pas.
+                        // Port 0 means network debugging is off; showing it would not help.
                         contact.port > 0 -> "${contact.adresse}:${contact.port}"
                         else -> contact.adresse
                     },
@@ -137,7 +135,7 @@ fun ConnexionTvScreen(
     }
 }
 
-/** Une condition de connexion : pastille verte quand elle est remplie, rouge sinon. */
+/** A connection prerequisite: green dot when met, red otherwise. */
 @Composable
 private fun Condition(remplie: Boolean, libelle: String) {
     Row(

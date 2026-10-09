@@ -14,29 +14,25 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Un téléviseur qui s'annonce sur le réseau local comme joignable en ADB. */
+/** A TV announcing itself on the local network as reachable over ADB. */
 data class AppareilDecouvert(
     val nom: String,
     val hote: String,
     val port: Int,
-    /** Le nom que la personne a donné à l'appareil, s'il se laisse trouver. */
+    /** User-given device name, when one can be found. */
     val nomConvivial: String? = null,
 ) {
-    /** Ce qu'on affiche : le nom donné par la personne, sinon l'adresse. */
     val libelle: String get() = nomConvivial ?: hote
 }
 
 /**
- * Découverte des téléviseurs par mDNS.
+ * Finds TVs over mDNS.
  *
- * Un appareil dont le débogage réseau est actif publie un service `_adb._tcp` : c'est ainsi que
- * `adb mdns services` les liste, et il n'y a aucune raison que le compagnon s'en prive. Trouver
- * la machine tout seul évite d'aller allumer le téléviseur pour lire un QR code, ou de retenir
- * une adresse IP qui change au gré du bail DHCP.
+ * A device with network debugging enabled publishes `_adb._tcp`, which is how `adb mdns services` lists them.
+ * This spares the user a QR code on the TV, or an IP address that changes with the DHCP lease.
  *
- * La résolution des services est **sérialisée** : `NsdManager` refuse les demandes concurrentes
- * avec `FAILURE_ALREADY_ACTIVE`, et un réseau domestique en annonce facilement plusieurs d'un
- * coup.
+ * Service resolution is serialized: `NsdManager` rejects concurrent requests with `FAILURE_ALREADY_ACTIVE`,
+ * and a home network often announces several services at once.
  */
 @Singleton
 class DecouverteTv @Inject constructor(
@@ -53,19 +49,14 @@ class DecouverteTv @Inject constructor(
 
         val trouves = ConcurrentHashMap<String, AppareilDecouvert>()
 
-        /**
-         * Le service ADB ne porte qu'un numéro de série. Le Chromecast intégré, lui, publie
-         * `_googlecast._tcp` avec le nom que la personne a donné à l'appareil — « Salon »,
-         * « TV du bas ». On les rapproche par adresse IP.
-         */
+        // The ADB service only carries a serial number. The built-in Chromecast publishes `_googlecast._tcp`
+        // with the user-given name ("Living room"); the two are matched by IP address.
         val nomsParHote = ConcurrentHashMap<String, String>()
 
         val aResoudre = ArrayDeque<NsdServiceInfo>()
 
-        // Un drapeau nu ne suffit pas : il est lu et écrit depuis les fils du binder, et deux
-        // services trouvés en même temps pouvaient tous deux le voir à `false` — c'est
-        // exactement le FAILURE_ALREADY_ACTIVE qu'on cherche à éviter. On réserve la place
-        // avant de piocher, et on la rend si la file était vide.
+        // Atomic: binder threads read and write it, and two services found at once could both see `false`,
+        // causing FAILURE_ALREADY_ACTIVE. Claim the slot before dequeuing, release it if the queue was empty.
         val resolutionEnCours = AtomicBoolean(false)
 
         fun publier() = trySend(
@@ -74,7 +65,7 @@ class DecouverteTv @Inject constructor(
                 .sortedBy { it.libelle },
         )
 
-        // Une résolution à la fois : NsdManager refuse les demandes simultanées.
+        // One resolution at a time: NsdManager rejects concurrent requests.
         fun resoudreSuivant() {
             if (!resolutionEnCours.compareAndSet(false, true)) return
             val service = synchronized(aResoudre) { aResoudre.removeFirstOrNull() }
@@ -94,8 +85,8 @@ class DecouverteTv @Inject constructor(
                     override fun onServiceResolved(info: NsdServiceInfo) {
                         val adresse = info.host?.hostAddress
                         if (adresse != null && adresse.substringBefore('%') in adressesDuTelephone()) {
-                            // Le débogage sans fil du téléphone s'annonce lui aussi : le choisir ne mène à
-                            // aucun téléviseur, et sa connexion chiffrée bloquait le compagnon (2026-10-04).
+                            // The phone's own wireless debugging is announced too. It is not a TV, and its
+                            // encrypted connection used to hang the app.
                             Log.d(TAG, "Le téléphone lui-même, écarté" + detail("$adresse:${info.port}"))
                         } else if (adresse != null) {
                             if (info.serviceType.contains(TYPE_CAST.trim('.'))) {
@@ -116,7 +107,7 @@ class DecouverteTv @Inject constructor(
             )
         }
 
-        // Un écouteur par type : NsdManager en refuse un qui serait déjà enregistré ailleurs.
+        // One listener per type: NsdManager rejects a listener that is already registered.
         fun ecouteur() = object : NsdManager.DiscoveryListener {
             override fun onStartDiscoveryFailed(type: String?, code: Int) {
                 Log.w(TAG, "Découverte impossible ($code)" + detail(type.orEmpty()))
@@ -137,9 +128,8 @@ class DecouverteTv @Inject constructor(
             }
         }
 
-        // Pas `_adb-tls-connect._tcp` : le débogage sans fil d'Android 11+ passe par une connexion chiffrée que
-        // dadb ne sait pas ouvrir. L'appareil était listé sans être joignable, et s'y connecter bloquait le
-        // compagnon — le téléphone lui-même s'annonçait ainsi (retiré à la demande de l'utilisateur, 2026-10-04).
+        // Not `_adb-tls-connect._tcp`: Android 11+ wireless debugging uses an encrypted connection dadb cannot
+        // open. Such devices (the phone itself, typically) were listed but unreachable, and connecting hung the app.
         val ecoutes = listOf(TYPE_ADB, TYPE_CAST).mapNotNull { type ->
             val ecoute = ecouteur()
             runCatching {
@@ -156,15 +146,15 @@ class DecouverteTv @Inject constructor(
     private companion object {
         const val TAG = "TVSlim/Decouverte"
 
-        /** Débogage réseau classique, celui des téléviseurs sur le port 5555 : le seul que dadb sache joindre. */
+        /** Classic network debugging (TVs on port 5555), the only kind dadb can connect to. */
         const val TYPE_ADB = "_adb._tcp"
 
-        /** Chromecast intégré : c'est lui qui porte le nom donné à l'appareil. */
+        /** Built-in Chromecast, which carries the user-given device name. */
         const val TYPE_CAST = "_googlecast._tcp"
 
         /**
-         * Les adresses du téléphone, toutes cartes confondues, relues à chaque résolution : le bail DHCP
-         * peut changer pendant qu'on regarde l'écran. Sans le suffixe de zone des adresses IPv6 (`%wlan0`).
+         * All of the phone's addresses, re-read on each resolution since the DHCP lease may change. IPv6 zone
+         * suffixes (`%wlan0`) are stripped.
          */
         fun adressesDuTelephone(): Set<String> = runCatching {
             NetworkInterface.getNetworkInterfaces().asSequence()
@@ -173,7 +163,7 @@ class DecouverteTv @Inject constructor(
                 .toSet()
         }.getOrDefault(emptySet())
 
-        /** `fn` (friendly name) dans les attributs du service cast, `md` à défaut (modèle). */
+        /** `fn` (friendly name) from the cast service attributes, falling back to `md` (model). */
         fun nomConvivial(info: NsdServiceInfo): String? {
             val attributs = info.attributes ?: return null
             return listOf("fn", "md")

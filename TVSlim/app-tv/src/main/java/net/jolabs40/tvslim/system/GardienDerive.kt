@@ -25,16 +25,14 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * La dérive vue du téléviseur : à chaque allumage, une photo — firmware, paquets du catalogue
- * désactivés, accueil en place — comparée à celle du précédent. Une mise à jour système qui a rallumé
- * des paquets, ou rendu l'accueil à Google TV, laisse un rapport que l'écran d'accueil de l'application
- * montre, et une notification quand Android le permet.
+ * Detects drift on the TV: on every boot, takes a snapshot (firmware, disabled catalogue packages, current
+ * launcher) and compares it with the previous one. A system update that re-enabled packages or restored
+ * the stock launcher leaves a report on the app's home screen, and a notification when allowed.
  *
- * ⚠️ **Il constate, il ne répare pas.** Désactiver un paquet demande une session ADB, que seuls le
- * téléphone et le PC ouvrent ; ce sont eux qui proposent de tout remettre, d'après leur journal
- * (`planDeDerive`). Le gardien dit pourquoi, et quand.
+ * Reports only, never repairs: disabling a package needs an ADB session, which only the phone and PC open.
+ * They offer the fix from their own log (`planDeDerive`).
  *
- * Lecture seule, par `PackageManager` : aucune permission privilégiée n'est nécessaire.
+ * Read-only through `PackageManager`, no privileged permission needed.
  */
 @Singleton
 class GardienDerive @Inject constructor(
@@ -44,7 +42,7 @@ class GardienDerive @Inject constructor(
     private val preferences: PreferencesRepository,
 ) {
 
-    /** Photographie cet allumage, le compare au précédent, et retient ce qui a dérivé. */
+    /** Snapshots this boot, compares it with the previous one and stores any drift. */
     suspend fun verifier(): DeriveDemarrage? = withContext(Dispatchers.IO) {
         val catalogue = catalogueRepo.catalogue()
         val etats = catalogue.entrees.map { it.paquet }.distinct().associateWith(appareil::etat)
@@ -59,7 +57,7 @@ class GardienDerive @Inject constructor(
             accueilsUsine = catalogue.accueilsUsine(),
         )
         preferences.retenirPhoto(photo)
-        // Un rapport ancien reste tant que rien ne l'a repris : un allumage sans mise à jour ne l'efface pas.
+        // An older report stays until it is fixed; a boot without an update does not clear it.
         if (derive != null) {
             preferences.retenirDerive(derive)
             notifier(derive, catalogue)
@@ -87,7 +85,7 @@ class GardienDerive @Inject constructor(
             PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(contexte, CANAL)
-            // Une silhouette : de l'icône de l'application, Android ne garderait qu'un carré blanc.
+            // A silhouette icon: Android would render the app icon as a white square.
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(contexte.getString(R.string.drift_title))
             .setContentText(resume(derive, catalogue))
@@ -98,7 +96,7 @@ class GardienDerive @Inject constructor(
         gestionnaire.notify(ID_NOTIFICATION, notification)
     }
 
-    /** Une phrase par nature de dérive, puis ce qu'il faut faire. */
+    /** One sentence per kind of drift, then what to do about it. */
     private fun resume(derive: DeriveDemarrage, catalogue: Catalogue): String = buildList {
         if (derive.rallumes.isNotEmpty()) {
             add(
@@ -119,8 +117,8 @@ class GardienDerive @Inject constructor(
     }
 }
 
-/** Les accueils d'usine que le catalogue connaît : ceux qu'on ne coupe qu'avec un launcher tiers en place. */
+/** Stock launchers known to the catalogue, which may only be disabled with a third-party launcher installed. */
 fun Catalogue.accueilsUsine(): Set<String> = entrees.filter { it.requiertLauncherTiers }.map { it.paquet }.toSet()
 
-/** Le nom lisible d'un launcher, son paquet à défaut. */
+/** Display name of a launcher, or its package name. */
 fun Catalogue.nomDuLauncher(paquet: String): String = nomLauncher(paquet) ?: paquet

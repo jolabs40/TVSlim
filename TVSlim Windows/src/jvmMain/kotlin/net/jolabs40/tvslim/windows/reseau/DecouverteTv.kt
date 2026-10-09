@@ -19,38 +19,34 @@ import javax.jmdns.ServiceEvent
 import javax.jmdns.ServiceInfo
 import javax.jmdns.ServiceListener
 
-/** Un téléviseur repéré sur le réseau local. */
 data class AppareilDecouvert(
     val nom: String,
     val hote: String,
     val port: Int,
-    /** Le nom que la personne a donné à l'appareil, s'il se laisse trouver. */
+    /** User-given device name, when one can be found. */
     val nomConvivial: String? = null,
     /**
-     * Débogage sans fil d'Android 11+ : la session y est chiffrée en TLS, ce que le client ADB
-     * embarqué ne sait pas faire. On le montre quand même, pour pouvoir dire quoi activer à la place.
+     * Android 11+ wireless debugging, which uses TLS that the embedded ADB client does not support. Still listed
+     * so the UI can say what to enable instead.
      */
     val sansFil: Boolean = false,
 ) {
-    /** Ce qu'on affiche : le nom donné par la personne, sinon l'adresse. */
     val libelle: String get() = nomConvivial ?: hote
 }
 
-/** Ce que la recherche a trouvé jusqu'ici, et si un premier tour complet a eu lieu. */
+/** Devices found so far, and whether a first full scan has completed. */
 data class ResultatDecouverte(
     val appareils: List<AppareilDecouvert> = emptyList(),
     val premierTourTermine: Boolean = false,
 )
 
 /**
- * Trouve les téléviseurs joignables en ADB, sans rien demander à la personne.
+ * Finds TVs reachable over ADB.
  *
- * Deux sources, fusionnées par adresse :
- *  - **mDNS**, comme le téléphone : `_adb._tcp` pour le débogage réseau, `_adb-tls-connect._tcp`
- *    pour le débogage sans fil, et `_googlecast._tcp`, qui porte le nom donné à l'appareil
- *    (« Salon ») — rapproché des deux autres par l'adresse IP ;
- *  - un **balayage** du port 5555 ([BalayageReseau]) : beaucoup de téléviseurs n'annoncent rien,
- *    et c'est justement le cas où un débutant ne saurait pas où lire l'adresse.
+ * Two sources, merged by address:
+ *  - mDNS, as on the phone: `_adb._tcp` (network debugging), `_adb-tls-connect._tcp` (wireless debugging) and
+ *    `_googlecast._tcp`, which carries the user-given name (e.g. "Living room"), matched to the others by IP;
+ *  - a scan of port 5555 ([BalayageReseau]), since many TVs announce nothing.
  */
 class DecouverteTv(
     private val balayage: BalayageReseau = BalayageReseau(),
@@ -122,8 +118,8 @@ class DecouverteTv(
         }
 
         awaitClose {
-            // Fermer JmDNS envoie ses messages d'adieu et prend une à deux secondes : ce bloc
-            // tourne sur Dispatchers.IO (voir flowOn), l'interface n'attend pas.
+            // Closing JmDNS sends goodbye messages and takes 1 to 2 s; this runs on Dispatchers.IO (flowOn), not
+            // on the UI thread.
             instances.forEach { runCatching { it.close() } }
         }
     }.flowOn(Dispatchers.IO)
@@ -131,21 +127,21 @@ class DecouverteTv(
     private companion object {
         const val TAG = "Decouverte"
 
-        /** Débogage réseau classique, celui des téléviseurs sur le port 5555. */
+        /** Classic network debugging, as on TVs listening on port 5555. */
         const val TYPE_ADB = "_adb._tcp.local."
 
-        /** Débogage sans fil d'Android 11+, une fois l'appareil appairé. */
+        /** Android 11+ wireless debugging, once the device is paired. */
         const val TYPE_ADB_TLS = "_adb-tls-connect._tcp.local."
 
-        /** Chromecast intégré : c'est lui qui porte le nom donné à l'appareil. */
+        /** Built-in Chromecast, which carries the user-given device name. */
         const val TYPE_CAST = "_googlecast._tcp.local."
 
         val TYPES = listOf(TYPE_ADB, TYPE_ADB_TLS, TYPE_CAST)
 
-        /** Le tour de balayage suivant : un téléviseur qu'on vient d'allumer finit par apparaître. */
+        /** Rescan period, so a TV switched on later eventually shows up. */
         const val INTERVALLE_BALAYAGE_MS = 20_000L
 
-        /** `fn` (friendly name) dans les attributs du service cast, `md` à défaut (le modèle). */
+        /** `fn` (friendly name) from the cast TXT record, else `md` (model). */
         fun nomConvivial(info: ServiceInfo): String? =
             listOf("fn", "md")
                 .firstNotNullOfOrNull { cle -> info.getPropertyString(cle) }

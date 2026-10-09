@@ -16,9 +16,8 @@ import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * Chaque langue doit porter exactement les mêmes textes, avec les mêmes arguments : un texte absent
- * en français retomberait sur l'anglais au milieu d'un écran, un argument oublié ferait disparaître
- * un nombre ou un nom de paquet.
+ * Every language must have exactly the same strings with the same arguments: a string missing in French falls
+ * back to English mid-screen, and a missing argument drops a number or a package name.
  */
 class RessourcesTest {
 
@@ -38,7 +37,7 @@ class RessourcesTest {
         Regex("""%\d+\$[sd]""").findAll(texte).map { it.value }.sorted().toList()
 
     @Test
-    fun `le francais et l'anglais portent les memes textes`() {
+    fun `French and English have the same strings`() {
         val anglais = textes("values")
         val francais = textes("values-fr")
 
@@ -47,7 +46,7 @@ class RessourcesTest {
     }
 
     @Test
-    fun `chaque traduction garde les arguments de l'original`() {
+    fun `each translation keeps the original's arguments`() {
         val anglais = textes("values")
         val francais = textes("values-fr")
 
@@ -57,7 +56,7 @@ class RessourcesTest {
     }
 
     @Test
-    fun `une apostrophe echappee s'affiche sans sa barre oblique`() = runTest {
+    fun `an escaped apostrophe renders without its backslash`() = runTest {
         val rendu = getString(Res.string.msg_enter_address)
 
         assertFalse(rendu, rendu.contains('\\'))
@@ -65,7 +64,7 @@ class RessourcesTest {
     }
 
     @Test
-    fun `un message compose redige ses morceaux et saute les vides`() = runTest {
+    fun `a composite message renders its parts and skips blank ones`() = runTest {
         val message = MessageUi.Lignes(
             listOf(
                 texte(Res.string.msg_perm_granted, "android.permission.DUMP"),
@@ -81,7 +80,7 @@ class RessourcesTest {
     }
 
     @Test
-    fun `un argument peut etre lui-meme un message`() = runTest {
+    fun `an argument can itself be a message`() = runTest {
         val rendu = texte(Res.string.msg_failure, MessageUi.Brut("Error: unknown package")).rediger()
 
         assertTrue(rendu, rendu.endsWith("Error: unknown package"))

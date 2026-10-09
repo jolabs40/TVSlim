@@ -48,12 +48,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Les actions dont le pilote sait jouer la commande d'annulation, ligne par ligne. */
+/** Action types the controller can undo line by line. */
 private val ANNULABLES = setOf(TypeAction.DESACTIVATION, TypeAction.PERMISSION, TypeAction.APP_OP)
 
 /**
- * Le journal du téléviseur joint : chaque action, avec la commande exacte qui l'annule. C'est lui
- * qui rend l'intervention réversible — tout restaurer, ou une seule ligne.
+ * Journal of the connected TV: each action with the exact command that undoes it. This is what makes the
+ * debloat reversible, all at once or one line at a time.
  */
 @Composable
 fun JournalEcran(
@@ -128,11 +128,10 @@ private fun VueAction(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            // L'accueil se nomme dans la langue de l'écran ; le libellé écrit au journal ne sert qu'à l'export.
+            // Home entries use the UI language; the label stored in the journal is only for export.
             val libelle = if (action.type == TypeAction.ACCUEIL) stringResource(Res.string.journal_home) else action.libelle
             Text(text = "$libelle — ${action.cible}", style = MaterialTheme.typography.bodyMedium)
-            // La commande d'annulation se copie : elle se rejoue aussi bien depuis un terminal. Une
-            // installation n'en a pas.
+            // The undo command is selectable so it can be replayed from a terminal. Installs have none.
             SelectionContainer {
                 TexteSecondaire(
                     listOf(horodatage, action.commandeAnnulation).filter { it.isNotBlank() }.joinToString(" · "),

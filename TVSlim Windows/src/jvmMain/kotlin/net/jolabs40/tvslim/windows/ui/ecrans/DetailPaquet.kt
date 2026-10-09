@@ -57,7 +57,7 @@ import net.jolabs40.tvslim.windows.ui.composants.libelleRisque
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
-/** Tout ce que le catalogue sait d'un paquet, lisible d'un coup d'œil, avec l'action qui s'y rapporte. */
+/** Everything the catalogue knows about a package, with the matching action. */
 @Composable
 fun DetailPaquet(
     ligne: LignePaquet?,
@@ -158,7 +158,7 @@ fun DetailPaquet(
                         tint = MaterialTheme.colorScheme.tertiary,
                     )
                     Text(
-                        // Une application d'un téléphone n'a été décrite par personne : voir avecApplicationsDuMenu.
+                        // Phone apps have no catalogue description: see avecApplicationsDuMenu.
                         text = stringResource(
                             if (entree.categorie == CATEGORIE_APPAREIL) {
                                 Res.string.packages_device_app_detail

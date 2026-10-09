@@ -16,8 +16,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * La dérive : ce que le journal a coupé et que le téléviseur a rallumé. Elle ne doit rien proposer
- * sur un téléviseur conforme, ni prendre un choix de la personne pour un accident.
+ * Drift: what the journal disabled and the TV turned back on. Nothing is offered on a TV that matches, and a
+ * choice the user made since is not taken for drift.
  */
 class DeriveTest {
 
@@ -52,7 +52,7 @@ class DeriveTest {
         reussi = reussi,
     )
 
-    /** Le journal de la TCL : publicité, Google TV et son assistant coupés, Startlight désigné. */
+    /** TCL journal: ads, Google TV and its setup app disabled, Startlight set as home app. */
     private val journal = listOf(
         action(TypeAction.DESACTIVATION, "com.tcl.pub"),
         action(TypeAction.DESACTIVATION, SETUPWRAITH),
@@ -60,7 +60,7 @@ class DeriveTest {
         action(TypeAction.ACCUEIL, "$STARTLIGHT/.HomeActivity"),
     )
 
-    /** Le téléviseur tel que TV Slim l'a laissé. */
+    /** The TV as TV Slim left it. */
     private val conforme = mapOf(
         "com.tcl.pub" to EtatPaquet.DESACTIVE,
         "com.tcl.demo" to EtatPaquet.ACTIF,
@@ -75,7 +75,7 @@ class DeriveTest {
         accueilsUsine = listOf(AccueilUsine(LAUNCHERX, "$LAUNCHERX/.home.HomeActivity", actif = false)),
     )
 
-    /** Après la mise à jour : tout ce qui était coupé revient, et Google TV reprend l'accueil. */
+    /** After a system update: everything disabled is back on, and Google TV is the home app again. */
     private val apresMiseAJour = conforme.mapValues { EtatPaquet.ACTIF }
     private val tclApresMiseAJour = tcl.copy(
         accueilActuel = LAUNCHERX,
@@ -84,17 +84,17 @@ class DeriveTest {
     )
 
     @Test
-    fun `un televiseur tel que TV Slim l'a laisse ne derive pas`() {
+    fun `a TV left as TV Slim set it has no drift`() {
         assertNull(catalogue.planDeDerive(journal, conforme, tcl))
     }
 
     @Test
-    fun `sans journal il n'y a rien a comparer`() {
+    fun `without a journal there is nothing to compare`() {
         assertNull(catalogue.planDeDerive(emptyList(), apresMiseAJour, tclApresMiseAJour))
     }
 
     @Test
-    fun `apres une mise a jour les paquets rallumes et l'accueil sont a reprendre`() {
+    fun `after an update, re-enabled packages and the home app are planned again`() {
         val plan = checkNotNull(catalogue.planDeDerive(journal, apresMiseAJour, tclApresMiseAJour))
 
         assertEquals(listOf("com.tcl.pub", SETUPWRAITH, LAUNCHERX).sorted(), plan.aDesactiver.map { it.paquet }.sorted())
@@ -104,7 +104,7 @@ class DeriveTest {
     }
 
     @Test
-    fun `un paquet restaure depuis TV Slim n'est pas une derive`() {
+    fun `a package restored from TV Slim is not drift`() {
         val restaure = journal + action(TypeAction.REACTIVATION, "com.tcl.pub")
         val etats = conforme + ("com.tcl.pub" to EtatPaquet.ACTIF)
 
@@ -112,21 +112,21 @@ class DeriveTest {
     }
 
     @Test
-    fun `une desactivation ratee n'est pas un etat voulu`() {
+    fun `a failed disable is not a wanted state`() {
         val rate = listOf(action(TypeAction.DESACTIVATION, "com.tcl.demo", reussi = false))
 
         assertNull(catalogue.planDeDerive(rate, conforme, tcl))
     }
 
     @Test
-    fun `un autre launcher choisi depuis est un choix et non une derive`() {
+    fun `another launcher picked since is a choice, not drift`() {
         val projectivy = tcl.copy(accueilActuel = PROJECTIVY, composantAccueil = "$PROJECTIVY/.Main")
 
         assertNull(catalogue.planDeDerive(journal, conforme, projectivy))
     }
 
     @Test
-    fun `le selecteur d'Android compte comme un accueil retombe`() {
+    fun `the Android chooser counts as a lost home app`() {
         val selecteur = tcl.copy(accueilActuel = "android", composantAccueil = "android/.ResolverActivity")
         val plan = checkNotNull(catalogue.planDeDerive(journal, conforme, selecteur))
 
@@ -135,7 +135,7 @@ class DeriveTest {
     }
 
     @Test
-    fun `un launcher desinstalle depuis ne se repropose pas`() {
+    fun `a launcher uninstalled since is not offered again`() {
         val sansStartlight = tclApresMiseAJour.copy(launchersTiers = emptyList())
         val plan = checkNotNull(catalogue.planDeDerive(journal, apresMiseAJour, sansStartlight))
 
@@ -143,7 +143,7 @@ class DeriveTest {
     }
 
     @Test
-    fun `un paquet absent ou protege n'est jamais propose`() {
+    fun `a missing or protected package is never offered`() {
         val avecProtege = journal + action(TypeAction.DESACTIVATION, PROTEGE) +
             action(TypeAction.DESACTIVATION, "com.tcl.retire")
         val etats = conforme + (PROTEGE to EtatPaquet.ACTIF)

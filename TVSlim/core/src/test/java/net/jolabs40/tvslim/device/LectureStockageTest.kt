@@ -5,10 +5,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Le stockage d'un téléviseur, lu dans `dumpsys diskstats` — et dans `df` à défaut. */
+/** TV storage, read from `dumpsys diskstats`, with `df` as a fallback. */
 class LectureStockageTest {
 
-    /** Extrait de la sortie relevée sur la TCL le 2026-09-13, listes raccourcies à trois paquets. */
+    /** Output from the TCL, package lists cut to three entries. */
     private val tcl = """
         Latency: 0ms [512B Data Write]
         Recent Disk Write Speed (kB/s) = 9260
@@ -35,7 +35,7 @@ class LectureStockageTest {
     """.trimIndent()
 
     @Test
-    fun `la sortie de la TCL se lit en entier`() {
+    fun `the TCL output is read in full`() {
         val stockage = LectureStockage.interpreter(tcl)
 
         assertEquals(51_170_024L, stockage.totalKo)
@@ -50,7 +50,7 @@ class LectureStockageTest {
     }
 
     @Test
-    fun `les applications se rangent de la plus lourde a la plus legere`() {
+    fun `apps are sorted from largest to smallest`() {
         val applications = LectureStockage.interpreter(tcl).applications
 
         assertEquals(
@@ -61,7 +61,7 @@ class LectureStockageTest {
     }
 
     @Test
-    fun `sans ligne Data-Free, df donne le total et le libre`() {
+    fun `without a Data-Free line, df gives total and free space`() {
         val sortie = """
             App Size: 1000
             @@TVSLIM_DF
@@ -76,7 +76,7 @@ class LectureStockageTest {
     }
 
     @Test
-    fun `des listes de longueurs differentes ne fabriquent aucune application`() {
+    fun `lists of different lengths produce no apps`() {
         val sortie = """
             Data-Free: 10K / 20K total = 50% free
             Package Names: ["a.b","c.d"]
@@ -87,7 +87,7 @@ class LectureStockageTest {
     }
 
     @Test
-    fun `une sortie vide ne passe pas pour un stockage vide`() {
+    fun `an empty output does not pass for empty storage`() {
         assertFalse(LectureStockage.interpreter("").renseignee)
     }
 }

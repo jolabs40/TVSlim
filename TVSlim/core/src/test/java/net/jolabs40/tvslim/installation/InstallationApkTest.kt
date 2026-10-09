@@ -13,13 +13,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/**
- * L'installation d'un APK : ce qu'on lit du téléviseur avant de confirmer, ce qui n'atteint jamais son
- * shell, et ce que le journal en garde.
- */
+/** APK installation: what is read from the TV before confirming, what never reaches its shell, and what is logged. */
 class InstallationApkTest {
 
-    /** Un téléviseur bouchon : il retient les commandes et les envois, et répond ce qu'on lui dit. */
+    /** Fake TV that records commands and uploads and returns canned replies. */
     private class Televiseur(
         private val lecture: (String) -> ResultatShell = { ResultatShell(1, "34") },
         private val reponseInstallation: ResultatShell = ResultatShell(0, "Success"),
@@ -53,7 +50,7 @@ class InstallationApkTest {
         ApkChoisi(fichier, "HippieTV.apk", fichier.length(), manifeste, installee)
 
     @Test
-    fun `une application absente du televiseur est une nouvelle installation, et rien ne part`() = runTest {
+    fun `an app missing from the tv is a new install, and nothing is uploaded`() = runTest {
         val tv = Televiseur(lecture = { ResultatShell(1, "34\n") })
 
         val examen = InstallationApk(tv, tv, journal()).examiner(fichier, "HippieTV.apk", manifeste)
@@ -67,7 +64,7 @@ class InstallationApkTest {
     }
 
     @Test
-    fun `la version en place se lit avant celle d'usine cachee derriere elle`() = runTest {
+    fun `the installed version is read before the factory version hidden behind it`() = runTest {
         val sortie = listOf(
             "34",
             "    versionCode=251 minSdk=26 targetSdk=35",
@@ -84,13 +81,13 @@ class InstallationApkTest {
     }
 
     @Test
-    fun `mise a jour et reinstallation se distinguent au code de version`() {
+    fun `update and reinstall are told apart by the version code`() {
         assertEquals(NatureInstallation.MISE_A_JOUR, apk(VersionInstallee(239, "2.3.9")).nature)
         assertEquals(NatureInstallation.REINSTALLATION, apk(VersionInstallee(240, "2.4.0")).nature)
     }
 
     @Test
-    fun `un Android trop ancien est refuse avant tout envoi`() = runTest {
+    fun `a too old Android is refused before any upload`() = runTest {
         val tv = Televiseur(lecture = { ResultatShell(1, "25") })
 
         val examen = InstallationApk(tv, tv, journal()).examiner(fichier, "HippieTV.apk", manifeste)
@@ -100,7 +97,7 @@ class InstallationApkTest {
     }
 
     @Test
-    fun `un nom de paquet fabrique n'atteint jamais le shell`() = runTest {
+    fun `a forged package name never reaches the shell`() = runTest {
         val tv = Televiseur()
 
         val examen = InstallationApk(tv, tv, journal())
@@ -111,7 +108,7 @@ class InstallationApkTest {
     }
 
     @Test
-    fun `un televiseur injoignable se dit comme tel`() = runTest {
+    fun `an unreachable tv is reported as such`() = runTest {
         val tv = Televiseur(lecture = { ResultatShell.indisponible("Aucun téléviseur connecté.") })
 
         val examen = InstallationApk(tv, tv, journal()).examiner(fichier, "HippieTV.apk", manifeste)
@@ -120,7 +117,7 @@ class InstallationApkTest {
     }
 
     @Test
-    fun `un fichier qui n'est pas un APK est refuse sans rien demander au televiseur`() = runTest {
+    fun `a file that is not an APK is refused without querying the tv`() = runTest {
         val tv = Televiseur()
 
         val examen = InstallationApk(tv, tv, journal()).examiner(fichier, "HippieTV.apk")
@@ -130,7 +127,7 @@ class InstallationApkTest {
     }
 
     @Test
-    fun `une installation reussie se consigne, sans commande d'annulation ni uninstall`() = runTest {
+    fun `a successful install is logged, with no undo command and no uninstall`() = runTest {
         val tv = Televiseur()
         val carnet = journal()
         val avancement = mutableListOf<Long>()
@@ -149,7 +146,7 @@ class InstallationApkTest {
     }
 
     @Test
-    fun `un refus d'Android se consigne en echec, avec sa cause et sa reponse brute`() = runTest {
+    fun `an Android refusal is logged as a failure, with its cause and raw output`() = runTest {
         val refus = "Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package net.jolabs40.hippietv signatures do not " +
             "match newer version; ignoring!]"
         val tv = Televiseur(reponseInstallation = ResultatShell(1, refus))
@@ -167,7 +164,7 @@ class InstallationApkTest {
     }
 
     @Test
-    fun `les refus courants d'Android sont reconnus`() {
+    fun `common Android refusals are recognized`() {
         mapOf(
             "Failure [INSTALL_FAILED_VERSION_DOWNGRADE]" to CauseEchec.RETROGRADATION,
             "Failure [INSTALL_FAILED_OLDER_SDK: Requires newer sdk version #34 (current version is #30)]" to

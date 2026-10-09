@@ -3,13 +3,11 @@ package net.jolabs40.tvslim.catalog
 import kotlinx.serialization.Serializable
 
 /**
- * Traductions du catalogue.
+ * Catalogue translations.
  *
- * `catalogue.json` porte la structure et les textes anglais — la langue par défaut du projet,
- * comme `values/` pour les ressources. Chaque langue supplémentaire n'apporte qu'un fichier de
- * **surcharge** (`catalogue-fr.json`), indexé par identifiant : ajouter un paquet ne demande
- * donc de toucher qu'au fichier de base, et une traduction manquante retombe sur l'anglais au
- * lieu de laisser un trou.
+ * `catalogue.json` holds the structure and the English text (the default language, like `values/`).
+ * Each other language only adds an override file keyed by ID (`catalogue-fr.json`), so adding a
+ * package only touches the base file and a missing translation falls back to English.
  */
 @Serializable
 data class TexteEntree(
@@ -24,7 +22,7 @@ data class TexteNomme(
     val description: String? = null,
 )
 
-/** Le texte d'un launcher recommandé. Ses points forts ne se remplacent qu'en entier. */
+/** Text of a recommended launcher. Its highlights are only replaced as a whole list. */
 @Serializable
 data class TexteLauncher(
     val nom: String? = null,
@@ -44,7 +42,7 @@ data class Traductions(
     val launchers: Map<String, TexteLauncher> = emptyMap(),
 )
 
-/** Applique une surcharge de langue, champ par champ. Ce qui manque garde sa valeur d'origine. */
+/** Applies a language override field by field; missing fields keep their original value. */
 fun Catalogue.traduit(traductions: Traductions): Catalogue = copy(
     source = traductions.source ?: source,
     categories = categories.map { categorie ->
@@ -75,7 +73,7 @@ fun Catalogue.traduit(traductions: Traductions): Catalogue = copy(
             launcher.copy(
                 nom = texte.nom ?: launcher.nom,
                 description = texte.description ?: launcher.description,
-                // Une liste d'une autre longueur mêlerait deux langues dans la même carte.
+                // A list of a different length would mix two languages on the same card.
                 pointsForts = texte.pointsForts
                     ?.takeIf { it.size == launcher.pointsForts.size }
                     ?: launcher.pointsForts,

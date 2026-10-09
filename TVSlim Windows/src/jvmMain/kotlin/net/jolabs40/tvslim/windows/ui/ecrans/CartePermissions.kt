@@ -45,16 +45,15 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Accorde à une application du téléviseur une permission qu'Android réserve à une session ADB.
+ * Grants a TV app a permission that Android reserves for ADB sessions.
  *
- * L'état lu est affiché avant toute action : savoir qu'une permission est déjà accordée, ou qu'elle
- * n'est même pas demandée au manifeste, évite d'envoyer une commande pour rien.
+ * The current state is shown before any action, so no command is sent for a permission that is already
+ * granted or not even declared in the manifest.
  *
- * Deux champs plutôt qu'une ligne de commande libre, parce que le moteur vérifie chacun — un identifiant, et
- * une permission que l'application déclare — avant que rien ne parte. Le paquet se tape, ou se choisit parmi
- * les applications du téléviseur — nom d'abord, paquet ensuite (2026-10-06) ; une fois lu, ce que
- * l'application déclare s'affiche, et un clic remplit le champ Permission. Pas de raccourcis génériques : les
- * puces retirées le 2026-09-14 ne reviennent pas, seule la liste propre à l'application s'affiche.
+ * Two fields rather than a free command line, because the engine validates each (an identifier, and a
+ * permission the app declares) before anything is sent. The package is typed or picked from the TV's apps
+ * (name first, then package); once read, the app's declared permissions are listed and a click fills the
+ * Permission field. No generic shortcut chips: only the app's own list is shown.
  */
 @Composable
 fun CartePermissions(etat: EtatPermissions, applications: EtatApplications, actions: ActionsPermissions) {
@@ -120,11 +119,11 @@ fun CartePermissions(etat: EtatPermissions, applications: EtatApplications, acti
     }
 }
 
-/** Ce que le téléviseur a répondu sur le couple paquet/permission, en une ligne. */
+/** The TV's answer for the package and permission, in one line. */
 @Composable
 private fun EtatLu(etat: EtatPermissions) {
     if (!etat.aJour) return
-    // Une application choisie dans la liste est lue avant qu'une permission soit saisie : rien à en dire encore.
+    // An app picked from the list is read before any permission is entered: nothing to say yet.
     if (etat.permission.isBlank() && !etat.paquetIntrouvable) return
 
     val (texte, couleur) = when {
@@ -142,8 +141,7 @@ private fun EtatLu(etat: EtatPermissions) {
     }
     Text(text = texte, style = MaterialTheme.typography.bodyMedium, color = couleur)
 
-    // Le second verrou, quand la permission en a un : l'afficher évite de chercher pourquoi un
-    // `pm grant` réussi ne change rien.
+    // Show the app-op too, when there is one: it explains a successful `pm grant` that changes nothing.
     if (etat.appOp.isNotEmpty() && etat.modeAppOp.isNotEmpty()) {
         TexteSecondaire(
             stringResource(Res.string.permissions_state_appop, etat.appOp, etat.modeAppOp),

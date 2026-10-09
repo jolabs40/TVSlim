@@ -18,9 +18,9 @@ import org.junit.Test
 import java.nio.file.Files
 
 /**
- * La mise à jour de l'application TV depuis GitHub, pour de vrai : dernière publication `android-v*`, certificat
- * comparé, installation, autorisation, gardien. Ce qui joue au premier plan doit y rester — une application déjà
- * lancée n'est plus rouverte. Installe sur le téléviseur ; journal temporaire :
+ * Updates the TV app from GitHub on a real TV: latest `android-v*` release, certificate check, install, grant,
+ * watchdog. The foreground app must stay there (an app already running is not relaunched). Installs on the TV,
+ * with a temporary journal:
  *
  *     ./gradlew jvmTest --tests "*ApplicationTvMaterielTest*" '-Pmateriel=192.168.2.135' -PapplicationTv=1 --rerun
  */
@@ -30,7 +30,7 @@ class ApplicationTvMaterielTest {
     private val permis = System.getProperty("tvslim.applicationtv") == "1"
 
     @Test
-    fun `l'application TV se met a jour depuis GitHub sans rien passer au premier plan`() = runBlocking<Unit> {
+    fun `the TV app updates from GitHub without bringing anything to the foreground`() = runBlocking<Unit> {
         assumeTrue("-Pmateriel=<adresse> -PapplicationTv=1 : installe sur un vrai téléviseur", hote != null && permis)
         val client = ClientAdb(DepotCles(Emplacements.windows().cles))
         assertTrue("Connexion à $hote : ${client.connexion.value}", client.connecter(hote!!))

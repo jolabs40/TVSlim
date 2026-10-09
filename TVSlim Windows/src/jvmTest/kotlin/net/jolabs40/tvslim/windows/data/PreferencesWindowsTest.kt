@@ -17,7 +17,7 @@ class PreferencesWindowsTest {
     private fun fichier() = File(dossier.root, "preferences.json")
 
     @Test
-    fun `sans fichier, les valeurs par defaut s'appliquent`() = runTest {
+    fun `without a file, defaults apply`() = runTest {
         val lues = PreferencesWindows(fichier()).lire()
 
         assertEquals("", lues.dernierHote)
@@ -26,7 +26,7 @@ class PreferencesWindowsTest {
     }
 
     @Test
-    fun `le dernier televiseur et son nom survivent a un redemarrage`() = runTest {
+    fun `the last TV and its name survive a restart`() = runTest {
         PreferencesWindows(fichier()).apply {
             retenir("192.168.2.135", 5555)
             retenirNom("192.168.2.135", "TCL Smart TV Pro")
@@ -39,14 +39,14 @@ class PreferencesWindowsTest {
     }
 
     @Test
-    fun `un nom vide n'est pas retenu`() = runTest {
+    fun `a blank name is not saved`() = runTest {
         PreferencesWindows(fichier()).retenirNom("192.168.2.135", "  ")
 
         assertTrue(PreferencesWindows(fichier()).lire().nomsConnus.isEmpty())
     }
 
     @Test
-    fun `un fichier abime rend les valeurs par defaut au lieu d'empecher le demarrage`() = runTest {
+    fun `a corrupt file yields defaults instead of blocking startup`() = runTest {
         fichier().writeText("{ pas du json")
 
         val lues = PreferencesWindows(fichier()).lire()
@@ -55,7 +55,7 @@ class PreferencesWindowsTest {
     }
 
     @Test
-    fun `refuser la verification des mises a jour est retenu`() = runTest {
+    fun `turning off update checks is saved`() = runTest {
         PreferencesWindows(fichier()).majVerificationMisesAJour(false)
 
         assertFalse(PreferencesWindows(fichier()).lire().verifierMisesAJour)

@@ -30,7 +30,7 @@ import net.jolabs40.tvslim.remote.BuildConfig
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.soutien.InvitationSoutien
 
-/** La barre du haut : ouvre « À propos », depuis chaque onglet. */
+/** Top bar button, shown on every tab. */
 @Composable
 fun BoutonAPropos(onOuvrir: () -> Unit) {
     IconButton(onClick = onOuvrir) {
@@ -38,10 +38,7 @@ fun BoutonAPropos(onOuvrir: () -> Unit) {
     }
 }
 
-/**
- * Version, licence, site, contact, code source et soutien — la fenêtre « À propos » de Windows, sans ce qui n'y
- * concerne que l'ordinateur (dossier des données, mises à jour). Le site s'ouvre dans la langue de l'application.
- */
+/** The Windows About window minus its PC-only parts (data folder, updates). The site URL is localized. */
 @Composable
 fun AProposDialogue(onFermer: () -> Unit) {
     val liens = LocalUriHandler.current
@@ -70,14 +67,14 @@ fun AProposDialogue(onFermer: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
-                // Les uns sous les autres : un téléphone n'a pas la largeur d'en aligner trois.
+                // Stacked: a phone is too narrow to fit them in a row.
                 Column {
                     TextButton(onClick = { runCatching { liens.openUri(site) } }) {
                         Icon(Icons.Filled.Language, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.about_website))
                     }
-                    // Sans messagerie sur le téléphone, rien ne s'ouvre : l'adresse reste lisible sur le bouton.
+                    // Nothing opens without a mail app, so the address is printed on the button.
                     TextButton(onClick = { runCatching { liens.openUri("mailto:$contact") } }) {
                         Icon(Icons.Filled.Mail, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -102,7 +99,7 @@ fun AProposDialogue(onFermer: () -> Unit) {
     )
 }
 
-/** Comme `licenceApp` de la version Windows. */
+/** Keep in sync with `licenceApp` in the Windows build. */
 private const val LICENCE = "Apache-2.0"
 
 private const val CODE_SOURCE = "https://github.com/${ChoixPublicationTv.DEPOT}"

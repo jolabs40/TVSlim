@@ -10,14 +10,14 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.IOException
 
-/** Le disque qui reçoit les copies : des noms que Windows accepte, et rien d'inachevé à leur place. */
+/** Local copy target: names Windows accepts, and never a partial file in place of the real one. */
 class CibleDisqueTest {
 
     @get:Rule
     val dossier = TemporaryFolder()
 
     @Test
-    fun `un nom d'Android devient un nom de Windows`() {
+    fun `an Android name becomes a Windows name`() {
         assertEquals("Capture 12_30_05.png", nomWindows("Capture 12:30:05.png"))
         assertEquals("a_b_c_d_e_f_g_h", nomWindows("a<b>c\"d\\e|f?g*h"))
         assertEquals("fin", nomWindows("fin. ."))
@@ -31,7 +31,7 @@ class CibleDisqueTest {
     }
 
     @Test
-    fun `un fichier n'arrive qu'entier, et date du televiseur`() {
+    fun `a file lands only when complete, with the TV's timestamp`() {
         val racine = dossier.newFolder("copies")
         val cible = CibleDisque(racine)
         cible.creerDossier("Films/Saison 1")
@@ -51,7 +51,7 @@ class CibleDisqueTest {
     }
 
     @Test
-    fun `une copie arretee ne laisse rien, et n'ecrase pas le fichier precedent`() {
+    fun `a stopped copy leaves nothing and does not overwrite the previous file`() {
         val racine = dossier.newFolder("copies")
         File(racine, "film.mkv").writeText("ancien")
         val cible = CibleDisque(racine)
@@ -69,14 +69,14 @@ class CibleDisqueTest {
     }
 
     @Test(expected = IOException::class)
-    fun `un fichier ne remplace pas un dossier`() {
+    fun `a file does not replace a folder`() {
         val racine = dossier.newFolder("copies")
         File(racine, "Films").mkdirs()
         CibleDisque(racine).ecrire("Films")
     }
 
     @Test(expected = IOException::class)
-    fun `un dossier ne se cree pas a la place d'un fichier`() {
+    fun `a folder is not created in place of a file`() {
         val racine = dossier.newFolder("copies")
         File(racine, "Films").writeText("x")
         CibleDisque(racine).creerDossier("Films/Saison 1")

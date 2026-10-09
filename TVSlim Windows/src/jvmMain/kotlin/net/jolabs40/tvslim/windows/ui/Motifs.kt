@@ -18,13 +18,10 @@ import net.jolabs40.tvslim.windows.ressources.engine_protected
 import net.jolabs40.tvslim.windows.ressources.engine_unexplained
 import net.jolabs40.tvslim.windows.ressources.engine_unknown_appop_mode
 
-/**
- * Ce qu'une action a donné, à rédiger à l'affichage : le motif du moteur s'il en a un, sinon ce que le
- * téléviseur a répondu, tel quel.
- */
+/** The engine's reason if there is one, otherwise the TV's raw reply. */
 fun ResultatAction.texte(): MessageUi = motif?.message() ?: MessageUi.Brut(message)
 
-/** Un [MotifMoteur] en phrase des ressources : le noyau, partagé avec Android, n'écrit aucune phrase. */
+/** Maps a [MotifMoteur] to a string resource. The core is shared with Android and holds no UI text. */
 fun MotifMoteur.message(): MessageUi = when (this) {
     MotifMoteur.PaquetAbsent -> texte(Res.string.engine_absent)
     MotifMoteur.DejaDesactive -> texte(Res.string.engine_already_disabled)

@@ -9,12 +9,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Lecture d'état à distance.
+ * Remote state reading.
  *
- * Le premier test est né d'un vrai échec sur la TCL : les marqueurs commençaient par `#`, que
- * le shell traite comme un début de commentaire. La commande composite entière était avalée,
- * `pm` n'était jamais appelé, et le compagnon affichait un téléviseur vide sans la moindre
- * erreur — le pire des cas, un échec silencieux.
+ * The first test comes from a real failure on the TCL: markers started with `#`, which the shell reads as
+ * a comment. The rest of the compound command was swallowed, `pm` never ran, and the companion showed an
+ * empty TV with no error.
  */
 class LecteurDistantTest {
 
@@ -28,7 +27,7 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `la commande ne contient aucun mot ouvrant un commentaire shell`() {
+    fun `the command contains no word that starts a shell comment`() {
         val motsCommentaire = LecteurDistant.COMMANDE
             .split(' ', ';')
             .map { it.trim() }
@@ -41,7 +40,7 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `chaque section est annoncee par son marqueur`() {
+    fun `each section is announced by its marker`() {
         val marqueurs = listOf("_D", "_E", "_P", "_B", "_M", "_H", "_L", "_U", "_T")
             .map { LecteurDistant.PREFIXE_MARQUEUR + it.removePrefix("_") }
         marqueurs.forEach { marqueur ->
@@ -53,7 +52,7 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `une sortie realiste est decoupee correctement`() = runTest {
+    fun `a realistic output is split correctly`() = runTest {
         val sortie = """
             @@TVSLIM_D
             package:com.tcl.gallery
@@ -101,12 +100,12 @@ class LecteurDistantTest {
         assertEquals(2454, photo.infos.memoireTotaleMo)
         assertEquals("com.spocky.projengmenu", photo.infos.accueilActuel)
 
-        // L'accueil d'usine ne compte pas comme un launcher de remplacement.
+        // The factory home does not count as a replacement launcher.
         assertEquals(listOf("com.spocky.projengmenu"), photo.infos.launchersTiers.map { it.paquet })
     }
 
     @Test
-    fun `une marque commerciale vide ne decale aucune propriete`() = runTest {
+    fun `an empty retail brand does not shift any property`() = runTest {
         val sortie = """
             @@TVSLIM_P
             NVIDIA
@@ -126,10 +125,9 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `un ecran de secours n'est jamais pris pour un launcher de remplacement`() = runTest {
-        // Cas réel, relevé sur une Shield : FallbackHome répond à category.HOME avec une
-        // priorité négative. Le compter comme un remplaçant laisserait le moteur désactiver
-        // l'accueil d'usine, et l'appareil démarrerait sur un écran vide.
+    fun `a fallback screen is never taken for a replacement launcher`() = runTest {
+        // Seen on a Shield: FallbackHome answers category.HOME with a negative priority. Counting it as a
+        // replacement would let the engine disable the factory home, and the device would boot to a blank screen.
         val sortie = """
             @@TVSLIM_L
             2 activities found:
@@ -153,9 +151,9 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `l'accueil d'usine coupe se retrouve, sans assistants ni ecrans de repli`() = runTest {
-        // Relevé sur la TCL le 2026-09-13 : Google TV désactivé n'apparaît qu'avec --query-flags 512,
-        // entouré d'un provisionnement, d'un assistant de configuration et de deux écrans de repli.
+    fun `a disabled factory home is found, without setup wizards or fallback screens`() = runTest {
+        // From the TCL: disabled Google TV only shows up with --query-flags 512, next to provisioning,
+        // a setup wizard and two fallback screens.
         val sortie = """
             @@TVSLIM_D
             package:com.google.android.apps.tv.launcherx
@@ -222,7 +220,7 @@ class LecteurDistantTest {
             infos.accueilsUsine,
         )
         assertEquals("net.jolabs40.startlight.debug/net.jolabs40.startlight.HomeActivity", infos.composantAccueil)
-        // Le garde-fou n'a pas bougé : les launchers tiers sont ceux d'avant.
+        // The safeguard is unchanged: third-party launchers still come from the unflagged query.
         assertEquals(
             listOf("com.spocky.projengmenu", "net.jolabs40.startlight.debug"),
             infos.launchersTiers.map { it.paquet },
@@ -230,7 +228,7 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `les paquets systeme sont tout ce que la personne n'a pas installe`() = runTest {
+    fun `system packages are everything the user did not install`() = runTest {
         val sortie = """
             @@TVSLIM_D
             package:com.google.android.apps.tv.launcherx
@@ -253,14 +251,14 @@ class LecteurDistantTest {
             photo.paquetsSysteme,
         )
 
-        // Sans la liste des applications tierces, rien : Projectivy passerait pour un paquet système.
+        // Without the third-party list, nothing: Projectivy would pass for a system package.
         val sansTiers = LecteurDistant(ExecuteurFixe(sortie.substringBefore("@@TVSLIM_T")))
             .photographie(emptyList(), emptySet())
         assertTrue(sansTiers.paquetsSysteme.isEmpty())
     }
 
     @Test
-    fun `sans la liste des applications tierces, seuls les accueils du catalogue passent pour d'usine`() = runTest {
+    fun `without the third-party app list, only catalogue homes count as factory homes`() = runTest {
         val sortie = """
             @@TVSLIM_D
             package:com.google.android.tvlauncher
@@ -280,7 +278,7 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `un Android qui ignore le drapeau ne fabrique aucun accueil avec son message d'aide`() = runTest {
+    fun `an Android that ignores the flag yields no home from its help message`() = runTest {
         val sortie = """
             @@TVSLIM_E
             package:com.google.android.tvlauncher
@@ -299,9 +297,9 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `l'aiguilleur HOME de Philips n'est pas un ecran d'accueil`() = runTest {
-        // Relevé sur une Philips Google TV TA1 (Android 14) le 2026-10-04 : org.droidtv.homeintentresolver
-        // reçoit HOME en priorité 100, au-dessus de Google TV, et choisit où envoyer la touche.
+    fun `the Philips HOME dispatcher is not a home screen`() = runTest {
+        // From a Philips Google TV TA1 (Android 14): org.droidtv.homeintentresolver receives HOME at priority 100,
+        // above Google TV, and decides where the key goes.
         val sortie = """
             @@TVSLIM_D
             @@TVSLIM_E
@@ -343,7 +341,7 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `l'accueil en place se relit seul, et une lecture en echec ne dit rien`() = runTest {
+    fun `the current home can be read alone, and a failed read returns nothing`() = runTest {
         val sortie = "priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false\n" +
             "com.spocky.projengmenu/.ui.home.HomeActivity"
         assertEquals("com.spocky.projengmenu", LecteurDistant(ExecuteurFixe(sortie)).accueilActuel())
@@ -351,7 +349,7 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `une commande en echec ne fabrique pas de fausses donnees`() = runTest {
+    fun `a failed command does not produce fake data`() = runTest {
         val photo = LecteurDistant(ExecuteurFixe("", code = 1)).photographie(
             paquetsSurveilles = listOf("com.tcl.gallery"),
             paquetsDAccueil = emptySet(),
@@ -362,24 +360,22 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `une sortie vide ne passe pas pour un televiseur sans paquets`() = runTest {
-        // Exactement ce que renvoyait la commande avalée par le commentaire : un succès vide.
+    fun `an empty output does not pass for a TV with no packages`() = runTest {
+        // What the command swallowed by the comment returned: an empty success.
         val photo = LecteurDistant(ExecuteurFixe("")).photographie(
             paquetsSurveilles = listOf("com.tcl.gallery"),
             paquetsDAccueil = emptySet(),
         )
 
-        // Le paquet est déclaré absent, faute de mieux — mais rien ne doit laisser croire
-        // qu'on a lu un téléviseur en bonne santé.
+        // The package is reported absent for lack of anything better, but nothing may suggest a healthy TV.
         assertEquals(EtatPaquet.ABSENT, photo.etats["com.tcl.gallery"])
         assertEquals(0, photo.infos.paquetsInstalles)
         assertFalse("Aucune propriété ne doit être inventée", photo.infos.modele.isNotBlank())
     }
     @Test
-    fun `les permissions demandees se distinguent de celles reellement accordees`() = runTest {
-        // Extrait fidèle de `dumpsys package` : les sections ne sont séparées que par leur
-        // indentation, et « declared permissions » liste ce que l'application définit pour les
-        // autres — surtout pas ce qu'elle demande.
+    fun `requested permissions are told apart from those actually granted`() = runTest {
+        // Real `dumpsys package` excerpt: sections are separated only by indentation, and "declared permissions"
+        // lists what the app defines for others, not what it requests.
         val executeur = ExecuteurFixe(
             """
             Permissions:
@@ -427,7 +423,7 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `un nom de paquet douteux n'atteint jamais le shell`() = runTest {
+    fun `a suspicious package name never reaches the shell`() = runTest {
         val executeur = ExecuteurFixe("")
 
         val lues = LecteurDistant(executeur).permissions("com.tcl.gallery; reboot")
@@ -436,8 +432,8 @@ class LecteurDistantTest {
         assertEquals(null, executeur.recue)
     }
     @Test
-    fun `le mode d'un app-op se lit dans ses trois formes`() = runTest {
-        // Les trois sorties relevées sur un appareil réel.
+    fun `an app-op mode is read in all three output forms`() = runTest {
+        // The three outputs seen on a real device.
         val pose = LecteurDistant(ExecuteurFixe("GET_USAGE_STATS: allow; time=+13m59s344ms ago"))
         assertEquals("allow", pose.modeAppOp("com.exemple", "GET_USAGE_STATS"))
 
@@ -449,7 +445,7 @@ class LecteurDistantTest {
     }
 
     @Test
-    fun `un app-op au nom douteux n'atteint jamais le shell`() = runTest {
+    fun `an app-op with a suspicious name never reaches the shell`() = runTest {
         val executeur = ExecuteurFixe("GET_USAGE_STATS: allow")
 
         val mode = LecteurDistant(executeur).modeAppOp("com.exemple", "GET_USAGE_STATS; reboot")

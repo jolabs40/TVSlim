@@ -1,9 +1,9 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
-// Site statique servi par l'Hébergement Web Infomaniak (Apache), comme startlightlauncher.com.
-// format 'directory' : /fr/packages/ -> fr/packages/index.html, servi sans réécriture.
-// Le catalogue, le logo et les captures se lisent dans le dépôt, un cran au-dessus : fs.allow.
+// Static site served by Infomaniak web hosting (Apache).
+// format 'directory': /fr/packages/ -> fr/packages/index.html, served without rewrites.
+// The catalogue, logo and screenshots are read from the parent repository folder, hence fs.allow.
 export default defineConfig({
   site: 'https://tvslim.app',
   output: 'static',

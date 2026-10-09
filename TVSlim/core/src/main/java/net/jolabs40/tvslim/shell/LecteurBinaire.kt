@@ -1,23 +1,20 @@
 package net.jolabs40.tvslim.shell
 
-/**
- * Ce qu'une commande à sortie binaire a rendu : sa sortie standard octet pour octet, à part de ce qu'elle a
- * écrit sur sa sortie d'erreur.
- */
+/** Output of a binary command: stdout byte for byte, stderr kept apart. */
 class SortieBinaire(
-    /** `null` quand la commande n'a pas fini : coupée par le délai, ou par la connexion. */
+    /** `null` when the command did not finish (timeout or lost connection). */
     val code: Int?,
     val octets: ByteArray,
     val erreurs: String = "",
-    /** Le motif technique d'une interruption. */
+    /** Technical reason for the interruption. */
     val motif: String = "",
 )
 
 /**
- * Lecture d'une commande dont la sortie n'est pas du texte — `screencap -p`, un PNG.
+ * Runs a command whose output is not text, such as `screencap -p` (a PNG).
  *
- * À part d'[ExecuteurCommande], qui rend une chaîne : un PNG lu comme du texte UTF-8 n'en est plus un.
- * Rien n'est rejoué après une rupture : une capture manquée se redemande d'un clic.
+ * Separate from [ExecuteurCommande], which returns a string: a PNG decoded as UTF-8 is corrupted.
+ * Nothing is replayed after a disconnect; a missed capture is one click away.
  */
 interface LecteurBinaire {
     suspend fun lireBinaire(commande: String): SortieBinaire

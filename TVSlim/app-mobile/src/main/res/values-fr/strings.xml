@@ -237,7 +237,7 @@
     <string name="msg_command_empty">Tapez une commande.</string>
     <string name="msg_command_not_shell">Seules les commandes du shell passent d\'ici : adb shell …, ou la commande seule. Pour installer un APK, passez par la carte au-dessus.</string>
     <string name="msg_command_too_long">Cette commande est trop longue.</string>
-    <!-- Onglet Fichiers -->
+    <!-- Files tab -->
     <string name="files_not_connected">Connectez-vous à un téléviseur pour parcourir ses fichiers.</string>
     <string name="shortcut_internal">Stockage interne</string>
     <string name="shortcut_downloads">Téléchargements</string>
@@ -307,7 +307,7 @@
     <string name="files_delete_protected">%1$s est un stockage entier, ou en contient un : TV Slim ne l\'efface pas d\'un bloc.</string>
     <string name="files_delete_failed">%1$s n\'a pas pu être entièrement supprimé : %2$s</string>
 
-    <!-- Soutien -->
+    <!-- Support -->
     <string name="support_title">TV Slim vous a rendu service ?</string>
     <string name="support_text">Il est gratuit, sans publicité ni pistage, et le restera. Un café aide à le faire vivre.</string>
     <string name="support_donate">Offrir un café</string>
@@ -315,7 +315,7 @@
     <string name="support_later">Plus tard</string>
     <string name="support_link">Soutenir TV Slim</string>
 
-    <!-- Capture d'écran -->
+    <!-- Screenshot -->
     <string name="screen_capture">Capture d\'écran</string>
     <string name="capture_title">Capture d\'écran</string>
     <string name="capture_saved">Enregistrée dans %1$s</string>
@@ -328,12 +328,12 @@
     <string name="capture_failed_unreadable">Le téléviseur n\'a pas rendu d\'image : %1$s</string>
     <string name="capture_write_failed">La capture n\'a pas pu être enregistrée : %1$s</string>
 
-    <!-- Hors téléviseur -->
+    <!-- Non-TV devices -->
     <string name="device_type_phone">Téléphone</string>
     <string name="device_type_tablet">Tablette</string>
     <string name="packages_not_tv">Cet appareil n\'est pas un téléviseur : le catalogue de TV Slim décrit des téléviseurs, les profils sont donc désactivés. Un paquet se désactive encore à la main, et se réactive depuis le journal.</string>
 
-    <!-- Onglet Applications -->
+    <!-- Apps tab -->
     <string name="tab_apps">Applis</string>
     <string name="apps_not_connected">Connectez-vous à un téléviseur pour voir ses applications.</string>
     <string name="apps_search">Rechercher une application</string>
@@ -365,7 +365,7 @@
     <string name="apps_read_helper_refused">L\'aide qui lit noms et icônes n\'a pas répondu comme prévu : %1$s</string>
     <string name="apps_read_connection">L\'appareil n\'a pas répondu : %1$s</string>
 
-    <!-- Connexion et canal ADB -->
+    <!-- Connection and ADB channel -->
     <string name="connection_waiting">En attente du téléviseur… S\'il demande d\'autoriser le débogage depuis cet appareil, acceptez à la télécommande.</string>
     <string name="connection_problem_refused">Connexion refusée : le débogage réseau ne semble pas activé sur le téléviseur.</string>
     <string name="connection_problem_timeout">Le téléviseur n\'a pas répondu à temps. S\'il affiche une demande d\'autorisation, acceptez-la à la télécommande, puis réessayez.</string>
@@ -376,7 +376,7 @@
     <string name="adb_timeout">Le téléviseur n\'a pas répondu à temps. Vérifiez qu\'il est allumé et réessayez.</string>
     <string name="adb_send_cancelled">Envoi annulé.</string>
 
-    <!-- Messages du pilote -->
+    <!-- Controller messages -->
     <string name="msg_enter_address">Renseignez l\'adresse du téléviseur.</string>
     <string name="msg_code_unknown">Code non reconnu : %1$s</string>
     <string name="msg_scan_cancelled">Lecture annulée.</string>
@@ -398,7 +398,7 @@
     <string name="msg_undone">Annulé.</string>
     <string name="result_summary">Réussis : %1$d/%2$d.</string>
 
-    <!-- Ce que le moteur dit d'une action (MotifMoteur) -->
+    <!-- Engine outcomes (MotifMoteur) -->
     <string name="engine_absent">Paquet absent de ce téléviseur.</string>
     <string name="engine_already_disabled">Déjà désactivé.</string>
     <string name="engine_unexplained">Échec, sans réponse du téléviseur.</string>
@@ -415,7 +415,7 @@
     <string name="journal_home">Écran d\'accueil</string>
     <string name="files_refused_silent">refusé par le téléviseur</string>
 
-    <!-- L'application TV Slim du téléviseur, installée depuis GitHub -->
+    <!-- TV Slim's TV app, installed from GitHub -->
     <string name="tvapp_title">TV Slim sur le téléviseur</string>
     <string name="tvapp_body">Facultative. Elle affiche un code à scanner pour reconnecter ce téléphone, garde le téléviseur joignable pendant la veille, et vous prévient quand une mise à jour système a défait vos réglages.</string>
     <string name="tvapp_reading">Lecture du téléviseur…</string>
@@ -446,7 +446,7 @@
     <string name="tvapp_error_tv">Le téléviseur ne répond plus.</string>
     <string name="tvapp_error_install">Le téléviseur a refusé l\'installation : %1$s</string>
 
-    <!-- Permissions : choisir une application, et ce qu'elle déclare -->
+    <!-- Permissions: app picker and declared permissions -->
     <string name="permissions_choose">Choisir une application</string>
     <string name="permissions_choose_title">Applications du téléviseur</string>
     <string name="permissions_choose_hint">Les applications du menu et celles que vous avez installées. Tout autre paquet peut toujours se taper.</string>
@@ -461,7 +461,7 @@
     <string name="permissions_declared_show_granted">Afficher aussi les %1$d déjà accordées</string>
     <string name="permissions_declared_hide_granted">Masquer les accordées</string>
 
-    <!-- Redémarrer le téléviseur -->
+    <!-- Reboot the TV -->
     <string name="device_reboot">Redémarrer</string>
     <string name="confirm_reboot_title">Redémarrer le téléviseur ?</string>
     <string name="confirm_reboot_body">Le téléviseur redémarre, en une minute environ : ce qui passe à l\'écran s\'interrompt. TV Slim se reconnecte tout seul à son retour.</string>
@@ -470,7 +470,7 @@
     <string name="msg_reboot_back">Le téléviseur a redémarré, et TV Slim s\'y est reconnecté.</string>
     <string name="msg_reboot_not_back">Le téléviseur n\'est pas revenu sur le réseau. Rallumez-le s\'il est éteint ; s\'il est allumé, le débogage réseau doit peut-être être réactivé.</string>
 
-    <!-- À propos -->
+    <!-- About -->
     <string name="about_title">À propos</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_description">Débloat réversible des téléviseurs Android, en ADB depuis ce téléphone. Rien n\'est désinstallé ni installé sur le téléviseur sans que vous le demandiez — un APK envoyé, une commande tapée. Chaque changement est consigné au journal, avec la commande qui l\'annule quand il y en a une.</string>

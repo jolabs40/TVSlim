@@ -1,6 +1,6 @@
-// Le catalogue des applications, lu dans le dépôt à la construction : l'encyclopédie des paquets ne
-// dit rien que TV Slim ne dise lui-même. La surcharge française s'applique comme `Catalogue.traduit()` :
-// une traduction absente retombe sur l'anglais.
+// The app catalogue, read from the repository at build time, so the package pages say nothing TV Slim
+// does not say itself. The French overlay applies like `Catalogue.traduit()`: a missing translation falls
+// back to English.
 
 import base from '../../../TVSlim/core/src/main/assets/catalogue.json';
 import fr from '../../../TVSlim/core/src/main/assets/catalogue-fr.json';
@@ -52,7 +52,7 @@ const surcharge = fr as unknown as {
   proteges: Record<string, string>;
 };
 
-/** Les paquets protégés n'ont pas de marque au catalogue : on la tire de leur nom. */
+/** Protected packages have no brand in the catalogue, so it is derived from the package name. */
 const PREFIXES: [RegExp, string][] = [
   [/^com\.tcl\.|^com\.tvos\.|^com\.tpa\./, 'TCL'],
   [/^org\.droidtv\.|^com\.tpv\./, 'Philips'],
@@ -66,7 +66,7 @@ const PREFIXES: [RegExp, string][] = [
 
 export const marqueDe = (paquet: string) => PREFIXES.find(([re]) => re.test(paquet))?.[1] ?? 'Third party';
 
-/** L'ordre des marques à l'écran : les fabricants d'abord, Android et les tiers à la fin. */
+/** Display order: device makers first, Android and third parties last. */
 export const ORDRE_MARQUES = ['TCL', 'Philips', 'Sony', 'NVIDIA', 'Xiaomi', 'MediaTek', 'Google', 'AOSP', 'Third party'];
 
 export const nomMarque = (marque: string, lang: Lang) =>
@@ -102,10 +102,10 @@ export function catalogue(lang: Lang) {
     description: (fr ? surcharge.profils[p.id]?.description : undefined) ?? p.description,
     categories: p.categories,
   }));
-  /** Le profil qui coche ce paquet — aucun pour une entrée non éprouvée. */
+  /** The profile that selects this package; none for an untested entry. */
   const profilDe = (e: Paquet) => (e.eprouve ? profils.find((p) => p.categories.includes(e.categorie)) : undefined);
   return { entrees, proteges, categories, profils, profilDe };
 }
 
-/** Tous les identifiants qui ont une page : entrées et paquets protégés. */
+/** Every package id that gets a page: entries and protected packages. */
 export const tousLesPaquets = () => [...base.entrees.map((e) => e.paquet), ...base.proteges.map((p) => p.paquet)];

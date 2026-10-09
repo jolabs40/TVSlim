@@ -32,15 +32,11 @@ import net.jolabs40.tvslim.remote.ui.EtatApplications
 import net.jolabs40.tvslim.remote.ui.EtatPermissions
 
 /**
- * Accorde à une application du téléviseur une permission qu'Android réserve à une session ADB.
+ * Grants a TV app a permission that Android reserves for an ADB session.
  *
- * L'état lu est affiché avant toute action : savoir qu'une permission est déjà accordée, ou
- * qu'elle n'est même pas demandée au manifeste, évite d'envoyer une commande pour rien.
- *
- * Deux champs, comme sous Windows. Le paquet se tape, ou se choisit parmi les applications du
- * téléviseur — nom d'abord, paquet ensuite (2026-10-06) ; une fois lu, ce que l'application déclare
- * s'affiche, et un appui remplit le champ Permission. Pas de raccourcis génériques : les puces retirées
- * le 2026-09-14 ne reviennent pas, seule la liste propre à l'application s'affiche.
+ * The current state is shown before any action, so a permission already granted, or not even declared in the
+ * manifest, is not sent for nothing. The package is typed or picked from the TV's apps; once read, its declared
+ * permissions are listed and a tap fills the Permission field. No generic shortcut chips, only the app's own list.
  */
 @Composable
 fun CartePermissions(etat: EtatPermissions, applications: EtatApplications, actions: ActionsPermissions) {
@@ -123,11 +119,10 @@ fun CartePermissions(etat: EtatPermissions, applications: EtatApplications, acti
     }
 }
 
-/** Ce que le téléviseur a répondu sur le couple paquet/permission, en une ligne. */
 @Composable
 private fun EtatLu(etat: EtatPermissions) {
     if (!etat.aJour) return
-    // Une application choisie dans la liste est lue avant qu'une permission soit saisie : rien à en dire encore.
+    // An app picked from the list is read before any permission is typed: nothing to report yet.
     if (etat.permission.isBlank() && !etat.paquetIntrouvable) return
 
     val (texte, couleur) = when {
@@ -149,8 +144,7 @@ private fun EtatLu(etat: EtatPermissions) {
 
     Text(text = texte, style = MaterialTheme.typography.bodyMedium, color = couleur)
 
-    // Le second verrou, quand la permission en a un : l'afficher évite de chercher pourquoi un
-    // `pm grant` réussi ne change rien.
+    // The app-op is a second lock: it explains why a successful `pm grant` may change nothing.
     if (etat.appOp.isNotEmpty() && etat.modeAppOp.isNotEmpty()) {
         Text(
             text = stringResource(R.string.permissions_state_appop, etat.appOp, etat.modeAppOp),

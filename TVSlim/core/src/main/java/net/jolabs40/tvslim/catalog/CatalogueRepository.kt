@@ -9,16 +9,13 @@ import kotlinx.serialization.json.Json
 import java.util.Locale
 
 /**
- * Charge le catalogue embarqué : la description de chaque paquet, la liste noire et les réglages
- * système. Son contenu est la retranscription du journal d'intervention mené sur un TCL 65C89K
- * sous Android 14.
+ * Loads the bundled catalogue: package descriptions, blocklist and system settings, transcribed from
+ * the debloat log of a TCL 65C89K on Android 14.
  *
- * `catalogue.json` est en anglais ; la langue du téléviseur est appliquée par-dessus depuis
- * `catalogue-<langue>.json` s'il existe. Une langue sans fichier, ou une entrée absente de la
- * traduction, retombe simplement sur l'anglais.
+ * `catalogue.json` is in English; `catalogue-<lang>.json` is applied on top when it exists. A
+ * missing language file or a missing entry falls back to English.
  *
- * Il vit dans le module partagé : le compagnon mobile et l'application du téléviseur lisent
- * exactement le même catalogue.
+ * Lives in the shared module so the phone companion and the TV app read the same catalogue.
  */
 class CatalogueRepository(
     private val contexte: Context,
@@ -46,7 +43,7 @@ class CatalogueRepository(
     private fun lire(nom: String): String =
         contexte.assets.open(nom).bufferedReader().use { it.readText() }
 
-    /** Une langue sans fichier de traduction n'est pas une erreur : l'anglais fait office. */
+    /** A language without a translation file is not an error: English is used. */
     private fun lireOuNull(nom: String): String? = runCatching { lire(nom) }.getOrNull()
 
     private fun fichierDeLangue(code: String): String = "catalogue-$code.json"

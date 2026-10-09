@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
-/** L'état d'un téléviseur à un instant donné, réduit à ce qui se compare d'une fois sur l'autre. */
+/** Snapshot of a TV at a given time, reduced to what can be compared between snapshots. */
 @Serializable
 data class Mesure(
     val horodatage: Long,
@@ -24,17 +24,15 @@ data class Mesure(
 }
 
 /**
- * Ce qu'on garde d'un téléviseur : son état au tout premier contact, et le plus récent.
- *
- * Deux mesures suffisent à répondre à la seule question qui intéresse — « qu'est-ce que ça a
- * changé ? ». Garder tout l'historique donnerait une courbe joliment bruitée, pas une réponse.
+ * What is kept for a TV: its state at first contact, and the latest one. Two snapshots are enough
+ * to tell what the debloat changed; a full history would only add noise.
  */
 @Serializable
 data class HistoriqueMesures(
     val reference: Mesure? = null,
     val derniere: Mesure? = null,
 ) {
-    /** Le gain n'a de sens qu'entre deux mesures distinctes. */
+    /** The gain only makes sense between two distinct snapshots. */
     val comparable: Boolean
         get() = reference != null && derniere != null &&
             reference.horodatage != derniere.horodatage
@@ -47,13 +45,12 @@ data class HistoriqueMesures(
 }
 
 /**
- * Mesures avant / après d'un téléviseur, conservées d'une session à l'autre.
+ * Before/after snapshots of a TV, persisted across sessions.
  *
- * Le journal dit ce qui a été fait ; ceci dit ce que ça a donné. La première mesure enregistrée
- * fait office de référence : c'est l'état du téléviseur avant qu'on y touche, et il ne sert à
- * rien de le remesurer une fois le débloat commencé.
+ * The journal says what was done; this says what it achieved. The first recorded snapshot is the
+ * baseline (the TV before anything was touched) and is not re-measured once debloating started.
  *
- * Un fichier par téléviseur, comme le journal.
+ * One file per TV, like the journal.
  */
 class MesuresRepository(private val fichier: File) {
 
@@ -76,8 +73,8 @@ class MesuresRepository(private val fichier: File) {
     }
 
     /**
-     * Consigne l'état courant. La toute première devient la référence : sur un téléviseur déjà
-     * dégraissé la veille, on ne veut pas que le « avant » se remette à jour et efface le gain.
+     * Records the current state. The very first snapshot becomes the baseline, so on a TV debloated
+     * the day before, the "before" is not refreshed and the gain is not erased.
      */
     suspend fun enregistrer(mesure: Mesure) = withContext(Dispatchers.IO) {
         if (!mesure.renseignee) return@withContext
@@ -92,7 +89,7 @@ class MesuresRepository(private val fichier: File) {
         }
     }
 
-    /** Reprend la mesure courante comme nouvelle référence, pour repartir d'une page blanche. */
+    /** Makes the latest snapshot the new baseline, to start over. */
     suspend fun redefinirReference() = withContext(Dispatchers.IO) {
         verrou.withLock {
             val fusion = HistoriqueMesures(

@@ -14,13 +14,13 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * Ce que TV Slim demande à scrcpy pour le miroir, où il le cherche, et comment il installe celui qu'il télécharge. Lancer scrcpy
- * pour de vrai demande un téléviseur : ce test s'en tient à ce qui se vérifie sans lui.
+ * scrcpy mirror arguments, lookup, and installation of the downloaded copy. Running scrcpy needs a TV, so this only
+ * covers what can be checked without one.
  */
 class ScrcpyTest {
 
     @Test
-    fun `le miroir laisse le son au televiseur`() {
+    fun `the mirror leaves audio on the TV`() {
         assertEquals(
             listOf("--tcpip=192.168.2.135:5555", "--window-title=TV Slim - Miroir - TCL", "--no-audio"),
             ArgumentsScrcpy.miroir("192.168.2.135", 5555, "TV Slim - Miroir - TCL"),
@@ -28,7 +28,7 @@ class ScrcpyTest {
     }
 
     @Test
-    fun `une version trop ancienne de scrcpy est ignoree`() {
+    fun `an outdated scrcpy version is ignored`() {
         assertEquals(4 to 1, LocalisationScrcpy.lireLigneVersion("scrcpy 4.1 <https://github.com/Genymobile/scrcpy>\n"))
         assertNull(LocalisationScrcpy.lireLigneVersion("'scrcpy' n'est pas reconnu"))
         assertTrue(LocalisationScrcpy.suffisante(4 to 1))
@@ -37,7 +37,7 @@ class ScrcpyTest {
     }
 
     @Test
-    fun `la copie telechargee passe avant le PATH, puis winget`() {
+    fun `the downloaded copy comes before PATH, then winget`() {
         val racine = Files.createTempDirectory("tvslim-scrcpy").toFile()
         try {
             val telecharge = File(racine, "local/scrcpy").apply { mkdirs() }
@@ -49,10 +49,10 @@ class ScrcpyTest {
             val versions = mapOf("ancien" to (1 to 24), "winget" to (3 to 3), "epingle" to (4 to 1))
             val localisation = LocalisationScrcpy(telecharge, environnement::get) { versions[it.readText()] }
 
-            // L'exécutable du PATH est trop ancien : celui de winget est retenu.
+            // The PATH executable is too old, so winget's is picked.
             assertEquals(File(winget, "scrcpy.exe"), localisation.trouver())
 
-            // Une fois la version épinglée téléchargée, c'est elle.
+            // Once the pinned version is downloaded, it wins.
             File(telecharge, "${ScrcpyEpingle.DOSSIER}/scrcpy.exe").apply { parentFile.mkdirs() }.writeText("epingle")
             assertEquals(File(telecharge, "${ScrcpyEpingle.DOSSIER}/scrcpy.exe"), localisation.trouver())
         } finally {
@@ -61,7 +61,7 @@ class ScrcpyTest {
     }
 
     @Test
-    fun `l'archive se decompresse sous son nom final, et une entree hors du dossier est refusee`() {
+    fun `the archive extracts under its final name, and an entry outside the folder is rejected`() {
         val racine = Files.createTempDirectory("tvslim-scrcpy").toFile()
         try {
             val installation = InstallationScrcpy(ClientGithub("Genymobile/scrcpy", "test"), racine)
@@ -86,7 +86,7 @@ class ScrcpyTest {
     }
 
     @Test
-    fun `l'empreinte est celle de sha256sum`() {
+    fun `the checksum matches sha256sum`() {
         val fichier = Files.createTempFile("tvslim", ".txt").toFile()
         try {
             fichier.writeText("abc")

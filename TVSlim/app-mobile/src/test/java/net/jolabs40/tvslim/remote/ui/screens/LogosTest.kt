@@ -8,9 +8,8 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Chaque launcher que le catalogue sait nommer, et chaque fabricant annoncé avec un logo, doit avoir
- * son image : sans elle, la carte retomberait sur l'icône neutre ou sur le nom écrit. Le catalogue lu
- * est celui que l'application embarque.
+ * Every launcher the catalogue names, and every manufacturer flagged with a logo, needs an image, or the
+ * card falls back to the generic icon or the plain name. Reads the catalogue the app ships.
  */
 class LogosTest {
 
@@ -18,7 +17,7 @@ class LogosTest {
         .decodeFromString(Catalogue.serializer(), File("../core/src/main/assets/catalogue.json").readText())
 
     @Test
-    fun `chaque launcher du catalogue a son logo`() {
+    fun `every catalog launcher has a logo`() {
         val ids = catalogue.launchers.map { it.id } + catalogue.launchersConnus.map { it.id }
 
         val sansLogo = ids.filterNot { it in LOGOS_LAUNCHERS }
@@ -28,7 +27,7 @@ class LogosTest {
     }
 
     @Test
-    fun `chaque fabricant annonce avec un logo en a un, et eux seuls`() {
+    fun `every manufacturer flagged with a logo has one, and only those`() {
         val sansLogo = Fabricant.entries.filter { it.aUnLogo && it !in LOGOS_FABRICANTS }
 
         assertTrue("Fabricants sans logo : $sansLogo", sansLogo.isEmpty())

@@ -9,13 +9,11 @@ import java.io.FileNotFoundException
 import java.util.Locale
 
 /**
- * Pendant Windows du `CatalogueRepository` du noyau : même catalogue, même anglais par défaut,
- * même surcharge de langue. Seule la lecture change — Android ouvre ses assets par un `Context`,
- * ici le build range ces mêmes fichiers dans le classpath (voir `build.gradle.kts`).
+ * Windows replacement for the core `CatalogueRepository`: same catalogue, English default and language overlay,
+ * read from the classpath instead of Android assets (see `build.gradle.kts`).
  *
- * Le fichier Android est exclu de la compilation Windows et celui-ci le remplace sous le même
- * nom de classe : le reste du noyau, compilé depuis les sources d'Android, n'y voit aucune
- * différence.
+ * The Android file is excluded from the Windows build and this class takes its name, so the rest of the core
+ * compiles unchanged.
  */
 class CatalogueRepository(
     private val langue: () -> String = { Locale.getDefault().language },
@@ -45,7 +43,7 @@ class CatalogueRepository(
         return flux.bufferedReader(Charsets.UTF_8).use { it.readText() }
     }
 
-    /** Une langue sans fichier de traduction n'est pas une erreur : l'anglais fait office. */
+    /** A language without a translation file falls back to English. */
     private fun lireOuNull(nom: String): String? = runCatching { lire(nom) }.getOrNull()
 
     private fun fichierDeLangue(code: String): String = "catalogue-$code.json"

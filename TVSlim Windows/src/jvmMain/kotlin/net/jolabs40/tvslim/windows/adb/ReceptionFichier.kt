@@ -6,16 +6,15 @@ import okio.Sink
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicLong
 
-/** Levée par le puits quand la personne arrête la copie : dadb l'interrompt, et ferme son flux. */
+/** Thrown by the sink when the user cancels; dadb aborts the transfer and closes its stream. */
 internal class ReceptionAnnulee : IOException("copie annulée")
 
-/** Le disque a refusé d'écrire — plein, retiré, protégé : ce n'est pas la connexion qui a lâché. */
+/** The local disk refused the write (full, removed, read-only); the connection itself is fine. */
 internal class EcritureLocaleEchouee(cause: IOException) : IOException(cause.message ?: cause.javaClass.simpleName, cause)
 
 /**
- * Le puits d'un fichier qui arrive du téléviseur, pendant de [SourceEnvoi] : il compte les octets — dadb ne dit
- * rien pendant une copie —, note que la liaison vit, s'arrête net quand [annule] devient vrai, et distingue une
- * erreur du disque d'une rupture de la connexion.
+ * Download sink, counterpart of [SourceEnvoi]: counts bytes, records activity, stops when [annule] returns true,
+ * and tells disk errors apart from connection errors.
  */
 internal class PuitsReception(
     puits: Sink,
@@ -28,7 +27,7 @@ internal class PuitsReception(
     private var recu = 0L
     private var signale = 0L
 
-    /** Un signe par centième, et pas moins de 64 Ko : l'écran n'a que faire de dix mille mises à jour. */
+    /** Progress step: 1% of the size, at least 64 KiB. */
     private val pas = maxOf(taille / 100, 64L * 1024)
 
     override fun write(source: Buffer, byteCount: Long) {

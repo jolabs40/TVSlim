@@ -12,10 +12,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** La commande libre : ce qui part de la saisie, une seule fois, et ce que le journal en garde. */
+/** Free-form ADB command: what is sent from the input, sent only once, and what the journal keeps. */
 class ConsoleAdbTest {
 
-    /** Un téléviseur bouchon : il retient les commandes et répond ce qu'on lui dit. */
+    /** Fake TV that records commands and returns the given response. */
     private class Televiseur(
         private val reponse: (String) -> ReponseDirecte = { ReponseDirecte(0, "ok") },
     ) : ExecuteurDirect {
@@ -34,13 +34,13 @@ class ConsoleAdbTest {
     private fun refusee(refus: RefusCommande) = SaisieCommande.Refusee(refus)
 
     @Test
-    fun `une commande seule part telle quelle`() {
+    fun `a bare command is sent as is`() {
         assertEquals(prete("pm list packages -d"), ConsoleAdb.lire("  pm list packages -d "))
         assertEquals(prete("adbd --version"), ConsoleAdb.lire("adbd --version"))
     }
 
     @Test
-    fun `l'enveloppe d'adb shell est retiree, appareil et guillemets compris`() {
+    fun `the adb shell wrapper is stripped, device and quotes included`() {
         assertEquals(prete("pm list packages -d"), ConsoleAdb.lire("adb shell pm list packages -d"))
         assertEquals(
             prete("getprop ro.product.model"),
@@ -50,7 +50,7 @@ class ConsoleAdbTest {
             prete("dumpsys package net.jolabs40.tvslim | grep version"),
             ConsoleAdb.lire("adb -d shell \"dumpsys package net.jolabs40.tvslim | grep version\""),
         )
-        // Des guillemets qui n'entourent qu'une partie restent : le shell du téléviseur les lira.
+        // Quotes around only part of the command stay, for the TV shell to handle.
         assertEquals(
             prete("settings put global nom 'a b'"),
             ConsoleAdb.lire("adb shell settings put global nom 'a b'"),
@@ -58,7 +58,7 @@ class ConsoleAdbTest {
     }
 
     @Test
-    fun `les autres commandes d'adb et une saisie vide ne partent pas`() {
+    fun `other adb commands and empty input are not sent`() {
         assertEquals(refusee(RefusCommande.PAS_SHELL), ConsoleAdb.lire("adb install HippieTV.apk"))
         assertEquals(refusee(RefusCommande.PAS_SHELL), ConsoleAdb.lire("adb reboot"))
         assertEquals(refusee(RefusCommande.VIDE), ConsoleAdb.lire("adb shell"))
@@ -70,7 +70,7 @@ class ConsoleAdbTest {
     }
 
     @Test
-    fun `une commande part une seule fois et se consigne sans annulation`() = runTest {
+    fun `a command is sent once and journaled with no undo`() = runTest {
         val tv = Televiseur { ReponseDirecte(0, "package:com.tcl.gallery") }
         val carnet = journal()
 
@@ -88,7 +88,7 @@ class ConsoleAdbTest {
     }
 
     @Test
-    fun `une commande coupee garde ce qu'elle a ecrit, et n'est pas rejouee`() = runTest {
+    fun `a command cut off keeps the output written so far and is not replayed`() = runTest {
         val tv = Televiseur { ReponseDirecte(null, "début\n", Interruption.DELAI, "délai dépassé") }
         val carnet = journal()
 
@@ -104,7 +104,7 @@ class ConsoleAdbTest {
     }
 
     @Test
-    fun `un code non nul est un echec, et sa sortie en dit le motif`() = runTest {
+    fun `a nonzero exit code is a failure, and the output gives the reason`() = runTest {
         val tv = Televiseur { ReponseDirecte(255, "Error: unknown command 'lister'") }
         val carnet = journal()
 
@@ -115,7 +115,7 @@ class ConsoleAdbTest {
     }
 
     @Test
-    fun `une sortie demesuree est tronquee pour l'affichage`() = runTest {
+    fun `oversized output is truncated for display`() = runTest {
         val tv = Televiseur { ReponseDirecte(0, "x".repeat(ConsoleAdb.SORTIE_MAX + 10)) }
 
         val echange = ConsoleAdb(tv) { null }.envoyer("dumpsys")

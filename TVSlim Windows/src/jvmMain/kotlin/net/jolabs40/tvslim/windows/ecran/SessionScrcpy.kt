@@ -12,14 +12,12 @@ import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 /**
- * Un miroir scrcpy lancé par TV Slim : sa fenêtre, ce qu'il écrit, et la façon de l'arrêter.
+ * A scrcpy mirror process started by TV Slim: its output and how to stop it.
  *
- * Arrêter, c'est **fermer sa fenêtre** comme on le ferait à la souris (`WM_CLOSE`) : scrcpy termine alors
- * proprement, et rend la main à son `adb`. Tuer le processus n'est que le dernier recours, quand la fenêtre ne
- * s'est jamais ouverte.
+ * Stopping sends `WM_CLOSE` to its window so scrcpy exits cleanly and releases its `adb`. Killing the process is
+ * the last resort, for when the window never opened.
  *
- * Lancé comme enfant de TV Slim, il vit dans le même *job* que lui (voir `CLAUDE.md`, mises à jour) : fermer
- * TV Slim le ferme aussi.
+ * As a child process it lives in the jpackage launcher's job object, so it dies when TV Slim exits.
  */
 class SessionScrcpy private constructor(private val processus: Process) {
 
@@ -38,14 +36,14 @@ class SessionScrcpy private constructor(private val processus: Process) {
         }
     }
 
-    /** Les dernières lignes écrites par scrcpy : de quoi dire pourquoi il s'est arrêté. */
+    /** Last lines printed by scrcpy, to explain why it stopped. */
     val sortie: List<String> get() = synchronized(lignes) { lignes.toList() }
 
     val vivante: Boolean get() = processus.isAlive
 
     suspend fun attendre(): Int = withContext(Dispatchers.IO) { processus.waitFor() }
 
-    /** Ferme la fenêtre, attend que scrcpy ait fini d'écrire, et ne tue le processus qu'en dernier recours. */
+    /** Closes the window, waits for scrcpy to exit, and kills it only after [attenteMs]. */
     fun arreter(attenteMs: Long = ATTENTE_ARRET_MS) {
         if (!processus.isAlive) return
         fermerFenetres(processus.pid())
@@ -69,7 +67,7 @@ class SessionScrcpy private constructor(private val processus: Process) {
             return SessionScrcpy(processus)
         }
 
-        /** `WM_CLOSE` à chaque fenêtre de premier niveau du processus : celle de scrcpy, titrée par TV Slim. */
+        /** Posts `WM_CLOSE` to every top-level window of the process. */
         private fun fermerFenetres(pid: Long) {
             runCatching {
                 User32.INSTANCE.EnumWindows(

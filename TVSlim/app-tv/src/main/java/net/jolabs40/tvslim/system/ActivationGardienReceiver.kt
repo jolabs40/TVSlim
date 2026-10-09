@@ -12,14 +12,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Allume le gardien de démarrage à distance : c'est ce que fait le téléphone ou le PC juste après avoir
- * installé cette application (`ApplicationTv` du noyau), pour qu'elle ne dorme pas jusqu'à ce que
- * quelqu'un pense à l'ouvrir.
+ * Turns on the boot guard remotely. The phone or PC sends this right after installing the app (core's
+ * `ApplicationTv`), so the guard runs without anyone opening the app.
  *
- * Seul un expéditeur qui détient `WRITE_SECURE_SETTINGS` peut l'appeler (`android:permission` du
- * manifeste) : le shell d'ADB, pas une application du téléviseur. Il fait ce que fait l'interrupteur des
- * Réglages — le gardien, puis la première photo —, et répond [GARDIEN_ACTIVE] pour que l'appelant le
- * sache.
+ * Only a sender holding `WRITE_SECURE_SETTINGS` may call it (`android:permission` in the manifest), i.e. the
+ * ADB shell, not an app on the TV. Does what the settings switch does (guard, then first snapshot) and
+ * replies [GARDIEN_ACTIVE].
  */
 @AndroidEntryPoint
 class ActivationGardienReceiver : BroadcastReceiver() {
@@ -34,7 +32,7 @@ class ActivationGardienReceiver : BroadcastReceiver() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 preferences.definirGardien(true)
-                // La première photo, tout de suite : sans elle, la première mise à jour passerait inaperçue.
+                // First snapshot right away, or the first system update would go unnoticed.
                 runCatching { derive.verifier() }.onFailure { Log.w(TAG, "Première photo manquée", it) }
                 relais.resultCode = GARDIEN_ACTIVE
                 Log.i(TAG, "Gardien activé à distance")
@@ -45,7 +43,7 @@ class ActivationGardienReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        /** Mêmes valeurs que `ApplicationTv.ACTION_GARDIEN` et `GARDIEN_ACTIVE`, dans le noyau. */
+        /** Must match `ApplicationTv.ACTION_GARDIEN` and `GARDIEN_ACTIVE` in the core. */
         const val ACTION = "net.jolabs40.tvslim.action.ACTIVER_GARDIEN"
         const val GARDIEN_ACTIVE = 1
         private const val TAG = "TVSlim/Gardien"

@@ -55,10 +55,7 @@ import kotlin.concurrent.thread
 
 private const val TAG = "App"
 
-/**
- * Point d'entrée. Les objets s'assemblent ici, à la main : le noyau partagé n'utilise pas Hilt,
- * et une fenêtre unique n'a pas besoin d'un conteneur d'injection pour une dizaine d'objets.
- */
+/** Entry point. Objects are wired by hand: the shared core does not use Hilt and there are only a dozen of them. */
 fun main() {
     val emplacements = Emplacements.windows()
     Traces.ecrireDans(emplacements.traces)
@@ -75,7 +72,7 @@ fun main() {
         val pilote = remember {
             PiloteApp(client, CatalogueRepository(), preferences, DecouverteTv(), emplacements)
         }
-        // Capture et vidéo par la session de TV Slim — la vidéo s'enregistre sur le téléviseur —, miroir par scrcpy.
+        // Screenshots and video go through TV Slim's ADB session (video is recorded on the TV); mirroring uses scrcpy.
         val ecran = remember {
             PiloteEcran(
                 lecteur = client,
@@ -119,7 +116,7 @@ fun main() {
 
         Window(
             onCloseRequest = {
-                // Une vidéo en cours est d'abord copiée : elle ne resterait pas sur le téléviseur, enregistreur tournant.
+                // Stop and copy a running recording first, so the recorder is not left running on the TV.
                 ecran.fermer {
                     client.deconnecter()
                     exitApplication()
@@ -129,7 +126,7 @@ fun main() {
             title = stringResource(Res.string.app_name),
             icon = painterResource(Res.drawable.ic_tvslim),
             onKeyEvent = { evenement ->
-                // F5 relit le téléviseur, comme on rafraîchit une page.
+                // F5 reloads the current tab from the TV.
                 if (evenement.type == KeyEventType.KeyDown && evenement.key == Key.F5) {
                     when (onglet) {
                         Onglet.MEMOIRE -> {
@@ -178,12 +175,12 @@ fun main() {
     }
 }
 
-/** N'ouvre que des liens HTTPS, dans le navigateur de la personne, et une adresse `mailto:`, dans sa messagerie. */
+/** Opens only `https://` links (browser) and `mailto:` addresses (mail client). */
 private fun ouvrirLien(lien: String) {
     val courriel = lien.startsWith("mailto:")
     if (!lien.startsWith("https://") && !courriel) return
     thread(isDaemon = true, name = "ouverture-lien") {
-        // Sans messagerie installée, rien ne s'ouvre : l'adresse reste lisible sur le bouton.
+        // Without a mail client nothing opens; the address is still shown on the button.
         runCatching { if (courriel) Desktop.getDesktop().mail(URI(lien)) else Desktop.getDesktop().browse(URI(lien)) }
             .onFailure { Traces.avertir(TAG, "Lien non ouvert", it) }
     }
@@ -198,18 +195,15 @@ private fun ouvrirDossier(dossier: File) {
     }
 }
 
-/**
- * La fenêtre « Enregistrer sous » de Windows, ouverte sur Documents — sur Téléchargements pour un fichier copié du
- * téléviseur. Elle demande d'elle-même s'il faut remplacer un fichier existant.
- */
+/** Native Save As dialog, in Documents by default. It asks before overwriting on its own. */
 private fun choisirFichier(parent: Frame, titre: String, nomPropose: String, dossier: File = dossierDocuments()): File? {
     val dialogue = FileDialog(parent, titre, FileDialog.SAVE).apply {
         directory = dossier.path
         file = nomPropose
-        isVisible = true // bloquant jusqu'au choix
+        isVisible = true // blocks until the user picks
     }
     val nom = dialogue.file ?: return null
-    // L'extension du nom proposé — .md pour le journal, .json pour une configuration — si on l'a ôtée.
+    // Restore the suggested extension (.md, .json) if the user removed it.
     val extension = nomPropose.substringAfterLast('.', "").let { if (it.isBlank()) "" else ".$it" }
     return File(
         dialogue.directory,
@@ -217,10 +211,7 @@ private fun choisirFichier(parent: Frame, titre: String, nomPropose: String, dos
     )
 }
 
-/**
- * La fenêtre « Ouvrir » de Windows, limitée à un type de fichier : les configurations JSON, depuis
- * Documents ; les APK, depuis Téléchargements, où arrive ce qu'on vient de récupérer.
- */
+/** Native Open dialog limited to one file type. */
 private fun choisirFichierAOuvrir(
     parent: Frame,
     titre: String,
@@ -229,28 +220,27 @@ private fun choisirFichierAOuvrir(
 ): File? {
     val dialogue = FileDialog(parent, titre, FileDialog.LOAD).apply {
         directory = dossier.path
-        // Le filtre que respecte la fenêtre de Windows ; setFilenameFilter y est ignoré.
+        // The Windows dialog honours this pattern; setFilenameFilter is ignored there.
         file = filtre
-        isVisible = true // bloquant jusqu'au choix
+        isVisible = true // blocks until the user picks
     }
     val nom = dialogue.file ?: return null
     return File(dialogue.directory, nom)
 }
 
-/** La fenêtre « Ouvrir » de Windows, plusieurs fichiers à la fois, depuis Téléchargements. */
+/** Native Open dialog with multiple selection, in Downloads. */
 private fun choisirPlusieurs(parent: Frame, titre: String): List<File> {
     val dialogue = FileDialog(parent, titre, FileDialog.LOAD).apply {
         directory = dossierTelechargements().path
         isMultipleMode = true
-        isVisible = true // bloquant jusqu'au choix
+        isVisible = true // blocks until the user picks
     }
     return dialogue.files.toList()
 }
 
 /**
- * Le choix d'un dossier. Celle d'AWT ne sait pas en désigner un sous Windows : c'est donc la fenêtre de Swing,
- * à l'allure de Windows. Changer l'apparence de Swing ne touche à rien d'autre : la fenêtre de l'application
- * est dessinée par Compose, et n'a aucun composant Swing.
+ * Folder picker. AWT's `FileDialog` cannot pick a folder on Windows, so this uses Swing with the system look and
+ * feel. Setting the look and feel affects nothing else: the app window is Compose, with no Swing component.
  */
 private fun choisirDossier(parent: Frame, titre: String, dossier: File = dossierDocuments()): File? {
     runCatching { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) }
@@ -263,28 +253,28 @@ private fun choisirDossier(parent: Frame, titre: String, dossier: File = dossier
     return if (choix.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) choix.selectedFile else null
 }
 
-/** Le vrai dossier Documents — souvent redirigé vers OneDrive — et non `~/Documents` supposé. */
+/** The real Documents folder (often redirected to OneDrive), not an assumed `~/Documents`. */
 private fun dossierDocuments(): File =
     runCatching { File(Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Documents)) }
         .getOrNull()
         ?.takeIf { it.isDirectory }
         ?: File(System.getProperty("user.home"))
 
-/** Le vrai dossier Images, où vont les captures ; Documents à défaut. */
+/** Pictures folder for screenshots, Documents as fallback. */
 private fun dossierImages(): File =
     runCatching { File(Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Pictures)) }
         .getOrNull()
         ?.takeIf { it.isDirectory }
         ?: dossierDocuments()
 
-/** Le vrai dossier Vidéos, où vont les enregistrements ; Documents à défaut. */
+/** Videos folder for recordings, Documents as fallback. */
 private fun dossierVideos(): File =
     runCatching { File(Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Videos)) }
         .getOrNull()
         ?.takeIf { it.isDirectory }
         ?: dossierDocuments()
 
-/** Le vrai dossier Téléchargements, qui se déplace aussi ; Documents à défaut. */
+/** Downloads folder (it can be relocated too), Documents as fallback. */
 private fun dossierTelechargements(): File =
     runCatching { File(Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Downloads)) }
         .getOrNull()

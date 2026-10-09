@@ -1,9 +1,8 @@
-// Le petit programme que TV Slim lance sur l'appareil par `app_process`, comme scrcpy son serveur : il lit le nom et
-// l'icône des applications par le PackageManager, ce qu'aucune commande d'ADB ne sait faire. Java pur, sans Kotlin
-// ni dépendance : quelques kilo-octets.
+// Helper that TV Slim runs on the device through `app_process`, the way scrcpy runs its server. It reads app names
+// and icons from the PackageManager, which no ADB command can do. Plain Java, no Kotlin or dependencies: a few KB.
 //
-// Il n'est pas installé : copié dans /data/local/tmp le temps d'une lecture, puis effacé. Sa signature ne compte pas
-// — app_process ne la vérifie pas —, d'où l'APK de release non signé.
+// It is never installed: copied to /data/local/tmp for one read, then deleted. app_process does not check
+// signatures, hence the unsigned release APK.
 plugins {
     id("com.android.application")
 }
@@ -32,8 +31,8 @@ android {
     }
 }
 
-// Les deux applications lisent l'aide dans les ressources du noyau — la version Windows sans SDK Android. Après
-// toute modification de l'aide :  ./gradlew :aide:copierDansLeNoyau
+// Both apps read the helper from the core module's assets, so the Windows build needs no Android SDK. After any
+// change to the helper:  ./gradlew :aide:copierDansLeNoyau
 tasks.register<Copy>("copierDansLeNoyau") {
     dependsOn("assembleRelease")
     from(layout.buildDirectory.file("outputs/apk/release/aide-release-unsigned.apk"))

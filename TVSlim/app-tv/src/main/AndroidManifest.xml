@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Application destinée aux téléviseurs : pilotage exclusif à la télécommande. -->
+    <!-- TV app, driven by the remote only. -->
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />
@@ -11,38 +11,33 @@
         android:required="true" />
 
     <!--
-        Lecture de l'état des paquets du système, y compris désactivés. Lecture seule.
+        Read-only state of system packages, disabled ones included.
 
-        Lint la refuse, et il a raison dans le cas général. Ici elle n'alimente qu'un seul
-        appel — `getInstalledApplications()` dans AppareilRepository — donc les deux compteurs
-        de l'écran d'accueil. Tout le reste (état des 96 entrées du catalogue, accueil courant,
-        launchers tiers) passe par le <queries> déclaré plus bas.
+        Lint flags it, rightly in general. Here it only feeds `getInstalledApplications()` in
+        AppareilRepository, i.e. the two counters on the home screen; the 96 catalogue entries, the
+        current home and third-party launchers go through the <queries> below. Replacing it with 96
+        <package> entries would cap those counters at what the catalogue already knows, and hide that
+        a TV carries three times as many packages.
 
-        La remplacer par 96 <package> ferait tomber ces compteurs à 96 : ils ne diraient plus
-        que ce que le catalogue connaît déjà, et la seule vue d'ensemble serait perdue — le
-        fait qu'un téléviseur en porte trois fois plus.
-
-        L'application ne va pas sur le Play Store (distribution en sideload, tranché le
-        2026-09-11) : la restriction de Google ne s'y applique pas. Ne pas « corriger ».
+        The app is sideloaded, not on the Play Store, so Google's restriction does not apply.
     -->
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
-    <!-- Gardien de démarrage : réapplique les réglages que le téléviseur remet à zéro au boot. -->
+    <!-- Boot guardian: reapplies the settings the TV resets at boot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- Gardien de démarrage : prévenir qu'une mise à jour système a défait le débloat. Demandée en
-         activant le gardien ; refusée, le rapport reste sur l'écran d'accueil de l'application. -->
+    <!-- Boot guardian: notifies when a system update undid the debloat. Requested when the guardian
+         is enabled; if denied, the report stays on the app's home screen. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Lecture de l'adresse IP locale, pour l'afficher en QR code à destination du compagnon. -->
+    <!-- Reads the local IP address to show it as a QR code for the companion. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!--
-        Écriture des réglages système. Non accordable depuis l'interface : elle doit l'être une
-        fois par ADB, ce qui lui permet ensuite de survivre aux redémarrages — condition sine
-        qua non du gardien de démarrage.
+        Cannot be granted from the UI, only once over ADB; it then survives reboots, which the boot
+        guardian depends on.
         adb shell pm grant net.jolabs40.tvslim android.permission.WRITE_SECURE_SETTINGS
     -->
     <uses-permission
@@ -87,8 +82,8 @@
             </intent-filter>
         </receiver>
         <!--
-            Le service de démarrage que lance StartLight à l'allumage : une activité invisible, la seule
-            porte que le gestionnaire de démarrage de TCL laisse ouverte à une application tierce.
+            Startup service StartLight launches at power-on: an invisible activity, the only entry point
+            TCL's startup manager leaves open to a third-party app.
         -->
         <activity
             android:name=".system.PassageActivity"
@@ -102,8 +97,8 @@
             </intent-filter>
         </activity>
         <!--
-            Le téléphone ou le PC allume le gardien juste après avoir installé l'application. Réservé à
-            qui détient WRITE_SECURE_SETTINGS : le shell d'ADB, aucune application du téléviseur.
+            The phone or PC enables the guardian right after installing the app. Restricted to holders
+            of WRITE_SECURE_SETTINGS: the ADB shell, and no app on the TV.
         -->
         <receiver
             android:name=".system.ActivationGardienReceiver"

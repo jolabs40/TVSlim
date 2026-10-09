@@ -28,8 +28,8 @@ import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.soutien.InvitationSoutien
 
 /**
- * Le bandeau de soutien, en tête de chaque onglet : il se montre après un service rendu, et seulement quand
- * `PiloteSoutien` le décide. Il ne bloque rien, et chacun de ses trois boutons le referme.
+ * Support banner at the top of every tab, shown after a successful operation when `PiloteSoutien` decides.
+ * It blocks nothing, and each of its three buttons closes it.
  */
 @Composable
 fun BanniereSoutien(
@@ -61,7 +61,7 @@ fun BanniereSoutien(
             }
             Button(
                 onClick = {
-                    // Sans navigateur, rien ne casse : le bandeau s'efface comme pour « Plus tard ».
+                    // Without a browser nothing breaks, and the banner closes as with Later.
                     runCatching { liens.openUri(InvitationSoutien.LIEN) }
                     onSoutenir()
                 },
@@ -80,9 +80,8 @@ fun BanniereSoutien(
 }
 
 /**
- * Le symbole de Ko-fi — la tasse au cœur —, tel que Ko-fi le publie dans ses ressources de marque, sans teinte : il
- * se reconnaît à ses couleurs, et son intérieur blanc le garde lisible sur le thème sombre. Plus large que haut, il
- * tient dans la boîte de 24 dp d'une icône. Fichiers ramenés à 24 dp de large dans chaque `drawable-*dpi`.
+ * Ko-fi's cup symbol from its brand assets, untinted: its colors identify it, and its white inside keeps it readable
+ * on the dark theme. Wider than tall, it fits a 24 dp icon box; each `drawable-*dpi` file is 24 dp wide.
  */
 @Composable
 internal fun SymboleKofi(contentDescription: String?, modifier: Modifier = Modifier, taille: Dp = 24.dp) {
@@ -94,8 +93,8 @@ internal fun SymboleKofi(contentDescription: String?, modifier: Modifier = Modif
 }
 
 /**
- * Le symbole de Ko-fi dans la barre du haut, visible depuis chaque onglet, téléviseur joint ou non — « À propos » le
- * propose aussi. Discret par principe : c'est le bandeau qui remercie après un service rendu.
+ * Top bar Ko-fi button, on every tab whether or not a TV is connected. Deliberately low-key: the banner is what
+ * appears after a successful operation.
  */
 @Composable
 fun BoutonSoutien() {

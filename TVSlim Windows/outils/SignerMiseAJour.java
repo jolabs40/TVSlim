@@ -10,21 +10,21 @@ import java.util.Base64;
 import java.util.HexFormat;
 
 /**
- * Signe un installateur de TV Slim pour la mise à jour automatique.
+ * Signs a TV Slim installer for auto-update.
  *
  * <pre>
  *   java outils/SignerMiseAJour.java TVSlim-Windows-1.2.3.msi 1.2.3
  * </pre>
  *
- * La clé privée (PKCS#8, base64) vient de la variable d'environnement TVSLIM_CLE_SIGNATURE — jamais
- * d'un fichier ni d'un argument, qui finiraient dans un historique. Écrit
- * TVSlim-Windows-1.2.3.msi.sig à côté de l'installateur.
+ * The private key (PKCS#8, base64) comes from the TVSLIM_CLE_SIGNATURE environment variable, never from a
+ * file or an argument, which could end up in a shell history. Writes TVSlim-Windows-1.2.3.msi.sig next to
+ * the installer.
  *
- * Le message signé lie la version à l'empreinte du fichier : « TVSlim-Windows\n&lt;version&gt;\n&lt;sha256&gt; ».
- * L'application vérifie exactement le même (src/jvmMain/.../maj/VerificationSignature.kt), et un
- * test s'assure que les deux s'accordent.
+ * The signed message binds the version to the file hash: "TVSlim-Windows\n&lt;version&gt;\n&lt;sha256&gt;".
+ * The app verifies exactly the same message (src/jvmMain/.../maj/VerificationSignature.kt), and a test
+ * checks that both agree.
  *
- * Aucune dépendance : ce fichier se lance tel quel avec un JDK 17 ou plus récent.
+ * No dependencies: runs as is with JDK 17 or later.
  */
 public class SignerMiseAJour {
 

@@ -34,11 +34,11 @@ import net.jolabs40.tvslim.windows.ressources.tvapp_error_too_big
 import net.jolabs40.tvslim.windows.ressources.tvapp_error_tv
 import java.io.File
 
-/** La carte « TV Slim sur le téléviseur ». */
+/** State of the "TV Slim on the TV" card. */
 data class EtatApplicationTvUi(
-    /** Null tant que le téléviseur n'a pas été lu. */
+    /** Null until the TV has been read. */
     val situation: SituationTv? = null,
-    /** Non nulle pendant une installation : ce qu'elle fait. */
+    /** Current install step; null when idle. */
     val etape: EtapeTv? = null,
 ) {
     val occupee: Boolean get() = etape != null
@@ -51,9 +51,8 @@ data class ActionsApplicationTv(
 )
 
 /**
- * L'application TV Slim du téléviseur : ce qu'il en porte, et son installation depuis GitHub — cf.
- * `ApplicationTv` du noyau. Le même pilote que sur le téléphone ; GitHub n'est consulté que quand la
- * carte s'affiche, face à un téléviseur ou une box, et une fois par lancement.
+ * The TV Slim app on the TV: installed version, and installing it from GitHub (see the core's `ApplicationTv`).
+ * Same controller as on the phone. GitHub is queried only when the card is shown for a TV or box, once per run.
  */
 class PiloteApplicationTv(
     private val client: ClientAdb,
@@ -108,7 +107,7 @@ class PiloteApplicationTv(
         lancer { application, etape -> application.autoriser(version, etape) }
     }
 
-    /** Le téléviseur change, ou la connexion tombe : rien de ce qu'on en a lu ne vaut plus. */
+    /** Forgets what was read, when the TV changes or the connection drops. */
     fun oublier() {
         travail?.cancel()
         _etat.value = EtatApplicationTvUi()
@@ -127,7 +126,7 @@ class PiloteApplicationTv(
             }
             afficher(message(resultat))
             if (resultat is ResultatTv.Reussi) remercier()
-            // GitHub n'avait pas répondu à la première lecture : l'installation, elle, a pu le joindre.
+            // GitHub may have failed on the first read while the install reached it.
             if (derniere == null) derniere = application.derniere()
             _etat.update { it.copy(situation = application.situation(derniere)) }
         }

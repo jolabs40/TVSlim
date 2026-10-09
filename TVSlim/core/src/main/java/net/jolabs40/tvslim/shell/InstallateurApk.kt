@@ -3,19 +3,18 @@ package net.jolabs40.tvslim.shell
 import java.io.File
 
 /**
- * Envoi d'un APK vers un téléviseur, et son installation.
+ * Pushes an APK to a TV and installs it.
  *
- * À part d'[ExecuteurCommande] : une commande shell tient en une ligne et se rejoue sans risque, un
- * envoi de plusieurs dizaines de mégaoctets non. Le canal qui sait faire les deux — la connexion ADB
- * de chaque application — implémente les deux interfaces.
+ * Separate from [ExecuteurCommande]: a shell command is one line and safe to replay, a transfer of tens
+ * of megabytes is not. Each app's ADB connection implements both interfaces.
  */
 interface InstallateurApk {
     /**
-     * Envoie [apk] et l'installe, comme `adb install -r -t` : une application déjà présente est mise à
-     * jour et garde ses données. [surEnvoi] suit les octets partis.
+     * Pushes and installs [apk] like `adb install -r -t`: an installed app is updated and keeps its data.
+     * [surEnvoi] reports the bytes sent.
      *
-     * Renvoie `Success` en cas de réussite, sinon la réponse d'Android — `Failure [INSTALL_…]` — ou
-     * [ResultatShell.indisponible] si la connexion a lâché.
+     * Returns `Success`, otherwise Android's answer (`Failure [INSTALL_...]`), or
+     * [ResultatShell.indisponible] if the connection dropped.
      */
     suspend fun installer(apk: File, surEnvoi: (envoye: Long, total: Long) -> Unit): ResultatShell
 }

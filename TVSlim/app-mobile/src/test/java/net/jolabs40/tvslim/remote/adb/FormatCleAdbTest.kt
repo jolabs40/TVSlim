@@ -9,12 +9,11 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 /**
- * Le dépôt de clés reconstruit la paire ADB en mémoire, à partir d'octets gardés chiffrés, sans
- * jamais réécrire de fichier en clair. Cela suppose de savoir relire ce que dadb écrit — du PEM
- * aujourd'hui, rien ne le garantit d'une version à l'autre.
+ * The key store rebuilds the ADB pair in memory from bytes kept encrypted, never writing a plaintext
+ * file again. That requires parsing what dadb writes: PEM today, with no guarantee across versions.
  *
- * Ce test le vérifie sur la bibliothèque réellement embarquée : le jour où le format change, il
- * échoue ici plutôt que sur un téléviseur qui refuse la connexion.
+ * Runs against the library actually shipped, so a format change fails here rather than on a TV that
+ * refuses the connection.
  */
 class FormatCleAdbTest {
 
@@ -22,7 +21,7 @@ class FormatCleAdbTest {
     val dossier = TemporaryFolder()
 
     @Test
-    fun `la cle privee ecrite par dadb se relit en PKCS8`() {
+    fun `the private key written by dadb reads back as PKCS8`() {
         val privee = dossier.newFile("adbkey")
         val publique = dossier.newFile("adbkey.pub")
         AdbKeyPair.generate(privee, publique)
@@ -37,12 +36,12 @@ class FormatCleAdbTest {
     }
 
     @Test
-    fun `la paire se reconstruit en memoire sans repasser par le disque`() {
+    fun `the pair is rebuilt in memory without going back to disk`() {
         val privee = dossier.newFile("adbkey")
         val publique = dossier.newFile("adbkey.pub")
         AdbKeyPair.generate(privee, publique)
 
-        // C'est exactement ce que fait DepotCles une fois les octets déchiffrés.
+        // Exactly what DepotCles does once the bytes are decrypted.
         val cle = clePriveeDepuisDer(derDepuisPem(privee.readText()))
         val enMemoire = AdbKeyPair(cle, publique.readBytes())
 
@@ -51,19 +50,19 @@ class FormatCleAdbTest {
     }
 
     @Test
-    fun `le DER reconstruit est identique a celui encode dans le PEM`() {
+    fun `the rebuilt DER matches the one encoded in the PEM`() {
         val privee = dossier.newFile("adbkey")
         val publique = dossier.newFile("adbkey.pub")
         AdbKeyPair.generate(privee, publique)
 
         val der = derDepuisPem(privee.readText())
 
-        // La clé rangée au coffre doit pouvoir refaire le tour complet sans se dégrader.
+        // The stored key must survive a full round trip unchanged.
         assertTrue(der.contentEquals(clePriveeDepuisDer(der).encoded))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun `un PEM vide est refuse plutot que de produire une cle muette`() {
+    fun `an empty PEM is rejected instead of producing a blank key`() {
         derDepuisPem("-----BEGIN PRIVATE KEY-----\n-----END PRIVATE KEY-----\n")
     }
 }

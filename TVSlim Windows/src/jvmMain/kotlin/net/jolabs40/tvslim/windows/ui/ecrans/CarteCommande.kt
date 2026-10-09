@@ -51,10 +51,10 @@ import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Une commande du shell du téléviseur, tapée à la main : pour ce que les autres cartes ne font pas.
+ * A shell command typed by hand, for what the other cards do not cover.
  *
- * Elle échappe aux garde-fous, et la carte le dit avant tout. Entrée envoie, ↑ et ↓ rappellent les
- * commandes précédentes ; la sortie reste affichée, sélectionnable, jusqu'à la suivante.
+ * It bypasses the safeguards, and the card says so first. Enter sends, Up and Down recall earlier commands;
+ * the output stays on screen, selectable, until the next one.
  */
 @Composable
 fun CarteCommande(etat: EtatCommande, actions: ActionsCommande) {
@@ -113,7 +113,7 @@ fun CarteCommande(etat: EtatCommande, actions: ActionsCommande) {
     }
 }
 
-/** La commande, comment elle s'est terminée, et ce qu'elle a écrit — même coupée. */
+/** The command, how it ended, and its output, even when cut off. */
 @Composable
 private fun Sortie(echange: EchangeCommande) {
     val (statut, couleur) = when {

@@ -9,7 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import net.jolabs40.tvslim.catalog.CatalogueRepository
 import javax.inject.Singleton
 
-/** Le noyau partagé n'utilise pas Hilt : chaque application fournit ses objets elle-même. */
+/** The shared core does not use Hilt, so each app provides its objects. */
 @Module
 @InstallIn(SingletonComponent::class)
 object NoyauModule {

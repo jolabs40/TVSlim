@@ -1,49 +1,48 @@
 package net.jolabs40.tvslim.moteur
 
 /**
- * Ce que le moteur dit d'une action — un refus, ou un échec dont le téléviseur n'a rien dit — sous forme de
- * motif typé, que chaque application rédige dans la langue de la personne depuis ses ressources.
+ * What the engine says about an action (a refusal, or a failure the TV gave no reason for), as a typed
+ * reason that each app words in the user's language from its own resources.
  *
- * Le noyau n'écrit plus de phrase (constat H7 de l'audit) : il est compilé par le compagnon Android et par la
- * version Windows, dont les interfaces sont en anglais par défaut. Ce que le téléviseur répond reste, lui, dans
- * [ResultatAction.message], tel quel : on ne traduit pas ce qu'on n'a pas écrit.
+ * The core writes no sentences: it is compiled into the Android companion and the Windows app, whose UIs
+ * default to English. The TV's own answer stays untranslated in [ResultatAction.message].
  */
 sealed interface MotifMoteur {
 
-    /** Le paquet n'est pas sur cet appareil. */
+    /** The package is not on this device. */
     data object PaquetAbsent : MotifMoteur
 
-    /** Rien à faire, il l'était déjà : accompagne un succès. */
+    /** Nothing to do, already disabled; comes with a success. */
     data object DejaDesactive : MotifMoteur
 
-    /** Le téléviseur a refusé sans rien répondre. */
+    /** The TV refused without any message. */
     data object EchecInexplique : MotifMoteur
 
-    /** Un nom qui partirait dans le shell n'en est pas un : refusé avant tout envoi. */
+    /** A name bound for the shell is not a valid identifier; rejected before sending. */
     data class NomInvalide(val nature: NatureNom, val valeur: String) : MotifMoteur
 
-    /** Un mode d'app-op qu'`appops` n'accepte pas. */
+    /** An app-op mode that `appops` does not accept. */
     data class ModeAppOpInconnu(val mode: String) : MotifMoteur
 
-    /** Liste noire du catalogue. [raison] vient du catalogue, déjà dans la langue de l'appareil. */
+    /** On the catalogue blocklist. [raison] comes from the catalogue, already in the device language. */
     data class Protege(val raison: String) : MotifMoteur
 
-    /** L'accueil d'usine ne se coupe pas sans launcher tiers : le téléviseur démarrerait sur un écran vide. */
+    /** The stock home screen cannot be disabled without a third-party launcher: the TV would boot to nothing. */
     data object SansLauncherTiers : MotifMoteur
 
-    /** L'application ne demande pas cette permission dans son manifeste : rien à accorder. */
+    /** The app does not request this permission in its manifest, so there is nothing to grant. */
     data class PermissionNonDemandee(val paquet: String, val permission: String) : MotifMoteur
 
-    /** L'application n'a aucune activité à ouvrir depuis un menu. */
+    /** The app has no launcher activity to open. */
     data object AucuneActivite : MotifMoteur
 
-    /** Ce n'est pas une application installée par la personne : elle ne se désinstalle pas. */
+    /** Not an app installed by the user, so it cannot be uninstalled here. */
     data object PasInstalleeParLaPersonne : MotifMoteur
 }
 
-/** Ce qu'un [MotifMoteur.NomInvalide] devait nommer. */
+/** What a [MotifMoteur.NomInvalide] was supposed to name. */
 enum class NatureNom { PAQUET, PERMISSION, APP_OP, COMPOSANT }
 
-/** Le motif d'un échec dont le téléviseur n'a rien dit ; aucun quand il a répondu quelque chose. */
+/** Reason for a failure the TV said nothing about; null when it did answer something. */
 internal fun motifSiMuet(reussi: Boolean, sortie: String): MotifMoteur? =
     if (!reussi && sortie.isBlank()) MotifMoteur.EchecInexplique else null

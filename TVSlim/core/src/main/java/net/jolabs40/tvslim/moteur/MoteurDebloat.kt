@@ -12,24 +12,24 @@ data class ResultatAction(
     val paquet: String,
     val nom: String,
     val reussi: Boolean,
-    /** Ce que le téléviseur a répondu, tel quel. */
+    /** The TV's raw answer. */
     val message: String = "",
-    /** Ce que le moteur en dit, à rédiger par l'application ; quand il est là, il passe avant [message]. */
+    /** The engine's reason, worded by each app; takes precedence over [message] when set. */
     val motif: MotifMoteur? = null,
 )
 
 /**
- * Applique et annule les désactivations, avec les garde-fous appris lors de l'intervention
- * manuelle sur la TCL :
+ * Applies and undoes package disabling, with the safeguards learned from the manual debloat of the
+ * TCL:
  *
- *  - jamais de `pm uninstall` : uniquement `pm disable-user --user 0`, annulé par `pm enable` ;
- *  - refus catégorique des paquets de la liste noire du catalogue ;
- *  - refus de toucher à l'écran d'accueil d'usine tant qu'aucun launcher tiers n'est installé ;
- *  - respect de l'ordre déclaré, pour que `setupwraith` tombe avant `launcherx` — sans quoi
- *    la RecoveryActivity de priorité 1 prendrait la main à la place du launcher choisi.
+ *  - never `pm uninstall`: only `pm disable-user --user 0`, undone by `pm enable`;
+ *  - blocklisted catalogue packages are always refused;
+ *  - the stock home screen is not touched until a third-party launcher is installed;
+ *  - the declared order is kept so `setupwraith` goes before `launcherx`; otherwise its
+ *    priority-1 RecoveryActivity would take over instead of the chosen launcher.
  *
- * Le moteur ignore par quel canal les commandes partent : service local ou connexion ADB. Il ne
- * rédige rien non plus : ses refus sont des [MotifMoteur], que chaque application met en mots.
+ * The engine does not know which channel the commands go through (local service or ADB). It writes
+ * no text either: its refusals are [MotifMoteur] values that each app words.
  */
 class MoteurDebloat(
     private val executeur: ExecuteurCommande,
@@ -120,15 +120,15 @@ class MoteurDebloat(
     }
 
     /**
-     * Désigne un écran d'accueil. À n'appeler qu'une fois l'accueil d'usine désactivé : tant
-     * qu'il est actif, la commande répond `Success` sans le moindre effet.
+     * Sets the home activity. Call only once the stock home screen is disabled: while it is enabled,
+     * the command answers `Success` with no effect.
      *
-     * Le résultat porte le composant pour nom : c'est ce qu'un bilan d'échecs peut citer sans traduction.
+     * The result is named after the component, which a failure summary can quote untranslated.
      */
     suspend fun definirAccueil(composant: String, ancienAccueil: String): ResultatAction {
-        // Les deux partent dans une commande : celui d'annulation aussi, et il sera rejoué tel
-        // quel depuis le journal, longtemps après. Ils viennent d'une sortie de `cmd package`,
-        // donc d'une source contrainte — mais c'est l'asymétrie qui se paie à la relecture.
+        // Both go into commands, and the undo one is replayed as is from the journal long after.
+        // They come from `cmd package` output, a constrained source, but checking only one of them
+        // would leave the replay unchecked.
         val refus = motifDeRefusComposant(composant) ?: motifDeRefusComposant(ancienAccueil)
         if (refus != null) return ResultatAction(composant, composant, false, motif = refus)
 
@@ -138,7 +138,7 @@ class MoteurDebloat(
                 horodatage = System.currentTimeMillis(),
                 type = TypeAction.ACCUEIL,
                 cible = composant,
-                // Les écrans du journal nomment ce type eux-mêmes ; ce libellé ne sert qu'à l'export.
+                // Journal screens name this type themselves; this label is only used by the export.
                 libelle = LIBELLE_ACCUEIL,
                 commandeAnnulation = "cmd package set-home-activity $ancienAccueil",
                 reussi = sortie.reussi,
@@ -149,12 +149,11 @@ class MoteurDebloat(
     }
 
     /**
-     * Ouvre la fiche d'une application dans la boutique **du téléviseur**, à charge pour la
-     * personne devant l'écran de valider l'installation à la télécommande.
+     * Opens an app's page in the TV's own store; the person at the TV confirms the install with
+     * the remote.
      *
-     * Pour un launcher recommandé, c'est le chemin retenu : rien n'est téléchargé, l'installation
-     * vient de la boutique officielle. Un APK que la personne a sous la main passe, lui, par
-     * `InstallationApk`, et seulement à sa demande.
+     * This is the path for a recommended launcher: nothing is downloaded, the install comes from
+     * the official store. An APK the user already has goes through `InstallationApk`, on request.
      */
     suspend fun ouvrirFicheBoutique(paquet: String): ResultatAction {
         if (!IDENTIFIANT.matches(paquet)) {
@@ -167,13 +166,12 @@ class MoteurDebloat(
     }
 
     /**
-     * Arrête les processus d'une application. Rien à journaliser : ce n'est pas un changement
-     * d'état mais une remise à zéro — l'application repart dès qu'on l'ouvre, ou dès qu'un
-     * service la rappelle.
+     * Force-stops an app's processes. Nothing is journaled: it is a reset, not a state change, and
+     * the app restarts as soon as it is opened or a service calls it.
      */
     suspend fun forcerArret(paquet: String): ResultatAction {
-        // Ce nom-ci sort d'une expression régulière appliquée à `dumpsys meminfo` : le seul du
-        // moteur qui ne vienne ni du catalogue ni d'une liste de paquets.
+        // This name is parsed from `dumpsys meminfo` output, the only one in the engine not taken
+        // from the catalogue or a package list.
         if (!IDENTIFIANT.matches(paquet)) {
             return ResultatAction(paquet, paquet, false, motif = MotifMoteur.NomInvalide(NatureNom.PAQUET, paquet))
         }
@@ -181,7 +179,7 @@ class MoteurDebloat(
         return ResultatAction(paquet, paquet, sortie.reussi, sortie.sortie, motifSiMuet(sortie.reussi, sortie.sortie))
     }
 
-    /** Applique une valeur de réglage système et journalise son annulation. */
+    /** Writes a system setting value and journals its undo command. */
     suspend fun ecrireReglage(
         cle: String,
         portee: String,
@@ -205,17 +203,13 @@ class MoteurDebloat(
     }
 
     /**
-     * Accorde à une application du téléviseur une permission qu'aucune application ne peut
-     * s'attribuer seule — `DUMP`, `WRITE_SECURE_SETTINGS`, `READ_LOGS`. Elle ne s'obtient que
-     * d'une session ADB, et l'octroi survit aux redémarrages.
+     * Grants a TV app a permission no app can grant itself (`DUMP`, `WRITE_SECURE_SETTINGS`,
+     * `READ_LOGS`). Only ADB can grant it, and the grant survives reboots.
      *
-     * Deux garde-fous, parce que c'est le seul endroit où une commande se construit à partir
-     * d'un texte saisi plutôt que du catalogue :
-     *
-     *  - le paquet et la permission doivent être des identifiants. Sans cela, une saisie
-     *    contenant `;` ouvrirait une seconde commande sur le téléviseur ;
-     *  - la permission doit figurer parmi celles que l'application déclare. `pm grant` la
-     *    refuserait de toute façon, mais par une exception Java là où une phrase est plus utile.
+     * This is the only command built from typed text rather than the catalogue, hence two checks:
+     * package and permission must be identifiers (a `;` would start a second command on the TV),
+     * and the app must declare the permission (`pm grant` would otherwise fail with a Java exception
+     * instead of a readable reason).
      */
     suspend fun accorderPermission(
         paquet: String,
@@ -227,7 +221,7 @@ class MoteurDebloat(
         return changerPermission(paquet, permission, accorder = true)
     }
 
-    /** Retire une permission accordée. Rendre est toujours licite : rien à vérifier au manifeste. */
+    /** Revokes a granted permission. Revoking is always allowed, so the manifest is not checked. */
     suspend fun retirerPermission(paquet: String, permission: String): ResultatAction {
         val refus = motifDeRefusPermission(paquet, permission, permissionsDeclarees = null)
         if (refus != null) return ResultatAction(paquet, permission, false, motif = refus)
@@ -243,7 +237,7 @@ class MoteurDebloat(
         val inverse = if (accorder) "revoke" else "grant"
         val sortie = executeur.executer("pm $verbe $paquet $permission")
 
-        // `pm grant` se tait quand il réussit : toute sortie est une exception du téléviseur.
+        // `pm grant` prints nothing on success; any output is an exception from the TV.
         val reussi = sortie.reussi && sortie.sortie.isBlank()
         val message = if (reussi) "" else sortie.sortie
 
@@ -262,11 +256,11 @@ class MoteurDebloat(
     }
 
     /**
-     * Pose le mode d'un app-op — le second verrou d'Android, à côté des permissions.
+     * Sets an app-op mode, Android's second lock next to permissions.
      *
-     * `PACKAGE_USAGE_STATS` en est l'exemple : le `pm grant` réussit, et l'application ne voit
-     * pourtant rien tant que `GET_USAGE_STATS` reste refusé. L'inverse est vrai aussi, d'où
-     * [modePrecedent] : l'annulation remet le mode trouvé avant, pas un « default » supposé.
+     * Example: `pm grant ... PACKAGE_USAGE_STATS` succeeds, yet the app sees nothing while
+     * `GET_USAGE_STATS` stays denied. The reverse holds too, hence [modePrecedent]: undo restores
+     * the mode found before, not an assumed `default`.
      */
     suspend fun reglerAppOp(
         paquet: String,
@@ -284,7 +278,7 @@ class MoteurDebloat(
 
         val sortie = executeur.executer("cmd appops set $paquet $appOp $mode")
 
-        // Comme `pm grant`, `cmd appops set` se tait quand il réussit.
+        // Like `pm grant`, `cmd appops set` prints nothing on success.
         val reussi = sortie.reussi && sortie.sortie.isBlank()
         val message = if (reussi) "" else sortie.sortie
         val retour = modePrecedent.ifBlank { MODE_APP_OP_DEFAUT }
@@ -324,8 +318,8 @@ class MoteurDebloat(
         catalogue: Catalogue,
         launchersDisponibles: Boolean,
     ): MotifMoteur? = when {
-        // Le paquet part dans le shell : un nom, et rien d'autre. Ceux du catalogue le sont ; ceux qu'un téléphone
-        // annonce (Catalogue.avecApplicationsDuMenu) viennent de l'appareil.
+        // The package goes into the shell, so it must be a plain identifier. Catalogue names are; those a phone
+        // reports (Catalogue.avecApplicationsDuMenu) come from the device.
         !IDENTIFIANT.matches(entree.paquet) -> MotifMoteur.NomInvalide(NatureNom.PAQUET, entree.paquet)
 
         catalogue.estProtege(entree.paquet) -> MotifMoteur.Protege(catalogue.motifProtection(entree.paquet).orEmpty())
@@ -336,18 +330,18 @@ class MoteurDebloat(
     }
 
     private companion object {
-        /** Le shell du téléviseur prend la ligne telle quelle : un nom, et rien d'autre. */
+        /** The TV shell takes the line as is, so only a plain identifier is allowed. */
         val IDENTIFIANT = Regex("""[A-Za-z0-9_.]+""")
 
-        /** « com.spocky.projengmenu/.MainActivity » : deux identifiants, une barre, rien de plus. */
+        /** E.g. `com.spocky.projengmenu/.MainActivity`: two identifiers and a slash, nothing more. */
         val COMPOSANT = Regex("""[A-Za-z0-9_.]+/[A-Za-z0-9_.]+""")
 
         const val MODE_APP_OP_DEFAUT = "default"
 
-        /** Les quatre modes qu'`appops` accepte. Tout le reste est une faute de frappe. */
+        /** The four modes `appops` accepts; anything else is a typo. */
         val MODES_APP_OP = setOf("allow", "deny", "ignore", MODE_APP_OP_DEFAUT)
 
-        /** Le libellé d'une ligne d'accueil au journal, tel que l'export Markdown l'écrit. */
+        /** Label of a home screen journal entry, as written by the Markdown export. */
         const val LIBELLE_ACCUEIL = "Écran d'accueil"
     }
 }

@@ -11,22 +11,21 @@ import java.util.HexFormat;
 import java.util.Properties;
 
 /**
- * Vérifie qu'un installateur de TV Slim a bien été signé par la clé du projet : la vérification que
- * fait l'application avant d'installer une mise à jour, que chacun peut refaire à la main.
+ * Checks that a TV Slim installer was signed with the project key. This is the check the app runs before
+ * installing an update, so anyone can repeat it by hand.
  *
  * <pre>
  *   java outils/VerifierMiseAJour.java TVSlim-Windows-1.2.3.msi 1.2.3 [gradle.properties]
  * </pre>
  *
- * La signature est lue à côté de l'installateur (….msi.sig) ; la clé publique dans
- * gradle.properties (clePubliqueMisesAJour), celle-là même que l'application embarque. Code de
- * sortie 0 si la signature est valide, 1 sinon.
+ * Reads the signature next to the installer (.msi.sig) and the public key from gradle.properties
+ * (clePubliqueMisesAJour), the same key the app embeds. Exits 0 if the signature is valid, 1 otherwise.
  *
- * La publication s'en sert juste après avoir signé : une clé privée qui ne correspondrait pas à la
- * clé embarquée produirait une version que toutes les installations refuseraient.
+ * The release workflow runs it right after signing: a private key that does not match the embedded key
+ * would produce a release that every install refuses.
  *
- * Le message vérifié est celui de SignerMiseAJour.java et de VerificationSignature.kt ; un test
- * s'assure que les trois s'accordent. Aucune dépendance : un JDK 17 ou plus récent suffit.
+ * The message format is the one in SignerMiseAJour.java and VerificationSignature.kt; a test checks that
+ * all three agree. No dependencies: JDK 17 or later.
  */
 public class VerifierMiseAJour {
 

@@ -39,13 +39,12 @@ import java.io.File
 import java.io.FileNotFoundException
 
 /**
- * La configuration du téléviseur : son écran d'accueil — la fiche du launcher recommandé, le guet de
- * son installation — et la sauvegarde qu'on réinjecte plus tard, launcher et paquets ensemble. S'y ajoutent
- * l'inventaire de ce que le catalogue ignore, relevé et exporté à la demande, l'installation d'un APK
- * qu'on a sur le téléphone, et la commande ADB libre.
+ * TV configuration: home screen (recommended launcher's store page, watching for its install), saving and
+ * re-applying a configuration, exporting packages missing from the catalogue, installing an APK from the phone,
+ * and the free-form ADB command.
  *
- * Tirée du pilote principal comme les permissions : elle n'en partage que l'état et le moteur. Les
- * fichiers passent par le sélecteur d'Android : rien n'est écrit ni lu sans qu'on l'ait désigné.
+ * Shares only state and engine with the main view model. Files go through the Android picker, so nothing is
+ * read or written unless the user picked it.
  */
 class PiloteConfiguration(
     private val contexte: Context,
@@ -59,31 +58,30 @@ class PiloteConfiguration(
     private val afficher: (String) -> Unit,
     private val rafraichir: () -> Unit,
     private val terminer: (List<ResultatAction>) -> Unit,
-    /** Une réinjection ou une installation a abouti : le bandeau de soutien peut se montrer. */
+    /** Called after a successful re-apply or install; may show the support banner. */
     private val remercier: () -> Unit,
 ) {
 
-    /** Guette l'arrivée d'un launcher que l'on vient d'envoyer installer. */
+    /** Watches for a launcher whose store page was just opened. */
     private var guet: Job? = null
 
-    /** Appelé à la déconnexion : le guet et le bilan d'installation ne valent que pour le téléviseur quitté. */
+    /** Called on disconnect: the watch and the install outcome belong to the previous TV. */
     fun oublier() {
         guet?.cancel()
         guet = null
         majInstallation { EtatInstallation() }
-        // Les commandes déjà tapées restent dans le menu ; la sortie, elle, était celle du téléviseur quitté.
+        // Keep the command history; the last output came from the previous TV.
         majCommande { EtatCommande(saisie = it.saisie, historique = it.historique) }
     }
 
-    // --- Écran d'accueil ------------------------------------------------------------------
+    // --- Home screen ----------------------------------------------------------------------
 
     /**
-     * Ouvre la fiche d'un launcher dans la boutique du téléviseur. L'installation elle-même se
-     * valide à la télécommande, et vient de la boutique : c'est le chemin recommandé, là où un APK
-     * existe aussi.
+     * Opens a launcher's page in the TV's store. The user confirms the install with the remote; the store is
+     * the recommended path even when an APK exists.
      */
     fun installerLauncher(paquet: String) {
-        // Hors téléviseur, la carte n'offre rien : rien n'est fait non plus si on y arrive autrement.
+        // The card offers nothing on non-TV devices; do nothing if reached another way.
         if (!etat().infos.typeAppareil.pourLeCatalogue) return
         val moteurActif = moteur()
         if (moteurActif == null) {
@@ -102,12 +100,12 @@ class PiloteConfiguration(
     }
 
     /**
-     * Fait d'un launcher installé l'écran d'accueil du téléviseur. Consigné au journal, donc annulable
-     * depuis l'onglet Journal ; puis relu, parce qu'Android répond `Success` sans rien changer tant qu'un
-     * accueil d'usine prioritaire est encore actif — Google TV sur la TCL.
+     * Makes an installed launcher the TV's home screen. Logged, so it can be undone from the Log tab. The home
+     * is read back afterwards because Android answers `Success` without changing anything while a higher-priority
+     * factory home is still enabled (Google TV on the TCL).
      */
     fun definirAccueil(composant: String) {
-        // Hors téléviseur, la carte n'offre rien : rien n'est fait non plus si on y arrive autrement.
+        // The card offers nothing on non-TV devices; do nothing if reached another way.
         if (!etat().infos.typeAppareil.pourLeCatalogue) return
         val moteurActif = moteur()
         if (moteurActif == null) {
@@ -136,9 +134,8 @@ class PiloteConfiguration(
     }
 
     /**
-     * Guette l'arrivée du launcher après avoir ouvert sa fiche, plutôt que d'exiger un
-     * « Actualiser » manuel : la personne est devant son téléviseur, pas devant le téléphone.
-     * Une question courte toutes les cinq secondes, abandonnée au bout de trois minutes.
+     * Polls for the launcher after opening its store page, since the user is at the TV rather than the phone.
+     * Every five seconds, for at most three minutes.
      */
     private fun guetterInstallation(paquet: String) {
         guet?.cancel()
@@ -157,12 +154,12 @@ class PiloteConfiguration(
         }
     }
 
-    // --- Sauvegarde et réinjection --------------------------------------------------------
+    // --- Save and re-apply ----------------------------------------------------------------
 
-    /** Nom proposé par le sélecteur d'Android : l'appareil et le jour. */
+    /** Suggested file name: device and date. */
     fun nomFichier(): String = FichierConfiguration.nomPropose(etat().infos)
 
-    /** Écrit la configuration du téléviseur tel qu'il a été lu en dernier, là où on l'a choisi. */
+    /** Writes the TV's configuration, as last read, to the picked file. */
     fun sauvegarder(cible: Uri) {
         val courant = etat()
         if (!courant.connecte || courant.lignes.isEmpty()) {
@@ -178,8 +175,8 @@ class PiloteConfiguration(
     }
 
     /**
-     * Relit une sauvegarde et la compare au téléviseur. Rien ne part : ce qui changerait est soumis à
-     * confirmation, et un téléviseur déjà conforme le dit sans ouvrir de fenêtre.
+     * Reads a saved configuration and compares it with the TV. Nothing is sent: changes go to confirmation, and
+     * a TV that already matches just shows a message.
      */
     fun charger(source: Uri) {
         if (!etat().connecte || moteur() == null) {
@@ -219,15 +216,15 @@ class PiloteConfiguration(
     }
 
     /**
-     * Propose de remettre ce qui a dérivé. La suite est celle d'une réinjection : même confirmation, même
-     * [Reinjecteur], mêmes garde-fous — seule l'origine du plan change.
+     * Offers to undo drift. Same confirmation, [Reinjecteur] and safeguards as a re-apply; only the plan's
+     * origin differs.
      */
     fun proposerDerive() {
         val plan = etat().derive ?: return
         majEtat { it.copy(confirmation = Confirmation.Reinjection(plan, derive = true)) }
     }
 
-    /** Réinjecte après confirmation, avec la progression et le bilan d'une application en lot. */
+    /** Re-applies after confirmation, with progress and a summary like a batch apply. */
     fun reinjecter(plan: PlanReinjection) {
         val courant = etat()
         val moteurActif = moteur()
@@ -249,19 +246,17 @@ class PiloteConfiguration(
         }
     }
 
-    // --- Inventaire des inconnus ----------------------------------------------------------
+    // --- Unknown packages report ---------------------------------------------------------
 
-    /** Nom proposé pour l'inventaire : l'appareil et le jour. */
+    /** Suggested file name: device and date. */
     fun nomExportInconnus(): String = RapportInconnus.nomPropose(etat().infos)
 
     /**
-     * Écrit l'inventaire des paquets que le catalogue ignore, avec ce qu'ADB dit de chacun : emplacement,
-     * droits, déclarations sensibles, icône, mémoire vive et stockage ; puis le firmware de l'appareil et les
-     * entrées du catalogue qu'il porte déjà. Tout est relu au moment de l'export, par quatre lectures ; rien
-     * n'est écrit sur le téléviseur.
+     * Writes a report of packages missing from the catalogue with what ADB says about each (location, privileges,
+     * sensitive declarations, icon, RAM and storage), then the firmware and the catalogue entries the device has.
+     * Everything is re-read at export time in four reads; nothing is written to the TV.
      *
-     * Avec [proposer], le formulaire du catalogue s'ouvre ensuite dans le navigateur du téléphone : la
-     * personne y joint le fichier et l'envoie elle-même.
+     * With [proposer], the catalogue submission form then opens in the phone's browser; the user attaches the file.
      */
     fun exporterInconnus(cible: Uri, proposer: Boolean = false) {
         if (!etat().connecte) {
@@ -294,7 +289,7 @@ class PiloteConfiguration(
         }
     }
 
-    /** Ouvre le formulaire du catalogue, titre et appareil remplis, et dit quoi faire du fichier. */
+    /** Opens the prefilled catalogue form and returns the message telling what to do with the file. */
     private fun ouvrirProposition(): String {
         val lien = PropositionCatalogue.lien(etat().infos)
         val vue = Intent(Intent.ACTION_VIEW, Uri.parse(lien)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -305,12 +300,11 @@ class PiloteConfiguration(
         }
     }
 
-    // --- Installation d'un APK ------------------------------------------------------------
+    // --- APK install ---------------------------------------------------------------------
 
     /**
-     * Examine un APK désigné dans le sélecteur d'Android. Il est d'abord copié dans le cache : dadb envoie
-     * un fichier, et la lecture du manifeste en demande un aussi. Rien ne part vers le téléviseur avant la
-     * confirmation, qui montre le paquet, sa version et ce qu'elle remplace.
+     * Examines an APK picked in the Android picker. It is first copied to the cache, since both dadb and the
+     * manifest reader need a file. Nothing reaches the TV before confirmation.
      */
     fun choisirApk(source: Uri) {
         val installationActive = installation() ?: return afficher(contexte.getString(R.string.msg_connect_first))
@@ -335,7 +329,7 @@ class PiloteConfiguration(
         }
     }
 
-    /** Envoie puis installe, après confirmation : la barre suit l'envoi, puis l'installation par Android. */
+    /** Uploads and installs after confirmation; progress follows the upload, then Android's install. */
     fun installerApk(apk: ApkChoisi) {
         val installationActive = installation() ?: return afficher(contexte.getString(R.string.msg_connect_first))
         portee.launch {
@@ -356,12 +350,12 @@ class PiloteConfiguration(
                 },
             )
             if (InvitationSoutien.merite(resultat)) remercier()
-            // Les compteurs de paquets ont bougé, et l'application installée est peut-être un launcher.
+            // Package counts changed, and the new app may be a launcher.
             rafraichir()
         }
     }
 
-    /** La confirmation refusée : la copie du cache n'a plus de raison d'être. */
+    /** Confirmation declined: deletes the cached copy. */
     fun abandonnerApk(apk: ApkChoisi) {
         portee.launch(Dispatchers.IO) { apk.fichier.delete() }
     }
@@ -376,7 +370,7 @@ class PiloteConfiguration(
         RefusApk.TELEVISEUR_INJOIGNABLE -> contexte.getString(R.string.msg_apk_unreachable)
     }
 
-    /** Le nom sous lequel le fichier se présente — pour l'affichage seulement, jamais pour un chemin. */
+    /** Display name of the picked file; for display only, never used in a path. */
     private suspend fun nomAffiche(source: Uri): String = withContext(Dispatchers.IO) {
         runCatching {
             contexte.contentResolver.query(source, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
@@ -385,8 +379,8 @@ class PiloteConfiguration(
     }
 
     /**
-     * Copie l'APK dans le cache, sous un nom fixe : le nom affiché vient d'une autre application et ne
-     * compose aucun chemin. Une copie précédente, abandonnée en route, part avec le dossier.
+     * Copies the APK to the cache under a fixed name, since the display name comes from another app. Clearing
+     * the folder also removes any copy left by an abandoned attempt.
      */
     private suspend fun copier(source: Uri): File = withContext(Dispatchers.IO) {
         val dossier = File(contexte.cacheDir, DOSSIER_APK).apply {
@@ -402,13 +396,13 @@ class PiloteConfiguration(
     private fun majInstallation(transformation: (EtatInstallation) -> EtatInstallation) =
         majEtat { it.copy(installation = transformation(it.installation)) }
 
-    // --- Commande ADB libre ---------------------------------------------------------------
+    // --- Free-form ADB command ------------------------------------------------------------
 
     fun saisirCommande(valeur: String) = majCommande { it.copy(saisie = valeur) }
 
     /**
-     * Envoie la commande saisie, une fois, et garde sa sortie à l'écran. Ni confirmation ni garde-fou : la
-     * carte dit ce qu'il en est, et le journal consigne chaque envoi.
+     * Sends the typed command once and keeps its output on screen. No confirmation and no safeguard (the card
+     * says so); every command is logged.
      */
     fun envoyerCommande() {
         val courant = etat()
@@ -429,7 +423,7 @@ class PiloteConfiguration(
                 majCommande { it.copy(enCours = true) }
                 val echange = console.envoyer(saisie.commande)
                 majCommande { it.avecEnvoi(saisie.commande).copy(enCours = false, derniere = echange) }
-                // Elle a pu changer ce que montrent les autres onglets : paquets, accueil, compteurs.
+                // The command may have changed what other tabs show.
                 rafraichir()
             }
         }
@@ -438,18 +432,14 @@ class PiloteConfiguration(
     private fun majCommande(transformation: (EtatCommande) -> EtatCommande) =
         majEtat { it.copy(commande = transformation(it.commande)) }
 
-    // --- Relance de Shizuku ----------------------------------------------------------------
+    // --- Shizuku restart -------------------------------------------------------------------
 
     /**
-     * Relance le service Shizuku du téléviseur — cf. [RelanceShizuku].
+     * Restarts the TV's Shizuku service (see [RelanceShizuku]).
      *
-     * ⚠️ **Rien n'est saisi ici, et c'est la différence avec la commande libre.** La chaîne est
-     * une constante du noyau, jamais un texte de l'utilisateur : la carte ne peut envoyer que
-     * celle-là. Elle passe malgré tout par la même console, donc par le même journal et le même
-     * envoi unique — une relance ne se rejoue pas après une rupture.
-     *
-     * Pas de rafraîchissement des autres onglets : démarrer un service ne change ni les paquets,
-     * ni l'accueil, ni la mémoire mesurée.
+     * Unlike the free-form command, the command is a core constant, never user input. It still goes through the
+     * console, so it is logged and sent once, never replayed after a broken session. Other tabs are not
+     * refreshed: starting a service changes neither packages, home nor memory.
      */
     fun relancerShizuku() {
         val courant = etat()
@@ -465,7 +455,7 @@ class PiloteConfiguration(
     private fun majShizuku(transformation: (EtatShizuku) -> EtatShizuku) =
         majEtat { it.copy(shizuku = transformation(it.shizuku)) }
 
-    /** « wt » : un fichier réécrit se tronque, sans quoi un contenu plus court laisserait une queue. */
+    /** Mode "wt" truncates, so shorter content does not leave the old file's tail behind. */
     private suspend fun ecrire(cible: Uri, texte: String) = withContext(Dispatchers.IO) {
         val flux = contexte.contentResolver.openOutputStream(cible, "wt")
             ?: throw FileNotFoundException(cible.toString())

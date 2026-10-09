@@ -37,13 +37,11 @@ import net.jolabs40.tvslim.ui.components.LigneFocusable
 import net.jolabs40.tvslim.ui.components.PastilleRisque
 
 /**
- * Ce que le catalogue connaît, et l'état de chaque entrée sur ce téléviseur — **en lecture
- * seule**. Activer ou désactiver se fait depuis le compagnon : cocher cinquante-six entrées à
- * la télécommande est précisément ce qu'on cherchait à éviter.
+ * Catalogue entries and their state on this TV, read-only. Enabling and disabling is done from the
+ * companion, since ticking dozens of entries with a remote is what the app avoids.
  *
- * Disposition en deux volets, comme le veut la télévision : une liste compacte à gauche, et le
- * détail de l'élément focalisé à droite. Rien à faire défiler dans un texte, tout est lisible
- * de loin.
+ * Two-pane TV layout: compact list on the left, details of the focused entry on the right, with no
+ * scrolling text.
  */
 @Composable
 fun PaquetsScreen(etat: EtatUi) {
@@ -109,7 +107,7 @@ fun PaquetsScreen(etat: EtatUi) {
     }
 }
 
-/** Une ligne de liste : juste de quoi reconnaître l'entrée et son état. */
+/** List row: just enough to recognize the entry and its state. */
 @Composable
 private fun LigneCompacte(ligne: LignePaquetTv) {
     Row(
@@ -141,7 +139,7 @@ private fun LigneCompacte(ligne: LignePaquetTv) {
     }
 }
 
-/** Volet de droite : tout ce que le catalogue sait de l'entrée survolée. */
+/** Right pane: everything the catalogue knows about the focused entry. */
 @Composable
 private fun Apercu(ligne: LignePaquetTv?) {
     if (ligne == null) {

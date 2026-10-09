@@ -10,10 +10,8 @@ import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 /**
- * La commande libre sur un vrai téléviseur : une commande qui réussit, une qui échoue, une qui ne finit
- * pas et que le délai coupe en gardant ce qu'elle a écrit, puis la session qui se rouvre d'elle-même.
- * Rien n'est écrit sur le téléviseur. Ne tourne que sur demande — la commande coupée prend trente
- * secondes :
+ * Free-form command on a real TV: one succeeds, one fails, one never ends and is cut by the timeout with its
+ * output kept, then the session reopens by itself. Read-only. Opt-in, since the cut command takes 30 s:
  *
  *     ./gradlew jvmTest --tests "*CommandeMaterielTest*" '-Pmateriel=192.168.2.135' --rerun
  */
@@ -22,7 +20,7 @@ class CommandeMaterielTest {
     private val hote: String? = System.getProperty("tvslim.materiel")
 
     @Test
-    fun `une commande reussit, une echoue, une est coupee, et la suivante repart`() = runBlocking<Unit> {
+    fun `one command succeeds, one fails, one is cut off, and the next one still runs`() = runBlocking<Unit> {
         assumeTrue("-Pmateriel=<adresse> pour essayer sur un vrai téléviseur", hote != null)
         val client = ClientAdb(DepotCles(Emplacements.windows().cles))
         val connecte = client.connecter(hote!!)

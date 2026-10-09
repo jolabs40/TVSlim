@@ -43,7 +43,7 @@ import javax.inject.Singleton
 
 enum class EtatConnexion { DECONNECTE, CONNEXION, CONNECTE, ERREUR }
 
-/** Pourquoi la connexion n'a pas abouti : l'écran le dit, dans la langue de la personne. */
+/** Why a connection failed; the UI turns it into a localized explanation. */
 enum class ProblemeConnexion { REFUSEE, DELAI, NON_AUTORISEE, INJOIGNABLE, AUTRE }
 
 data class ConnexionUi(
@@ -51,28 +51,24 @@ data class ConnexionUi(
     val hote: String = "",
     val port: Int = PORT_ADB_PAR_DEFAUT,
     val probleme: ProblemeConnexion? = null,
-    /** Le message technique d'origine, affiché en petit sous l'explication. */
+    /** Raw technical message, shown in small print under the explanation. */
     val detail: String = "",
 )
 
 const val PORT_ADB_PAR_DEFAUT = 5555
 
 /**
- * Connexion ADB du téléphone vers un téléviseur, en Kotlin pur (dadb) : ni binaire `adb`, ni
- * serveur ADB, ni ordinateur.
+ * ADB connection from the phone to a TV in pure Kotlin (dadb): no `adb` binary, no ADB server, no computer.
  *
- * La première connexion fait apparaître sur le téléviseur la demande « Autoriser le débogage
- * depuis cet appareil ? ». Une fois acceptée à la télécommande, la clé publique est inscrite
- * dans `/data/misc/adb/adb_keys` du téléviseur : **l'autorisation survit aux redémarrages**.
- * C'est précisément ce qui manque à un service privilégié local, qui meurt à chaque extinction.
+ * The first connection shows the "Allow debugging?" prompt on the TV. Once accepted, the public key is stored
+ * in the TV's `/data/misc/adb/adb_keys`, so the authorization survives reboots (a local privileged service
+ * would die at every shutdown). The private key never leaves the phone and is stored encrypted ([DepotCles]).
  *
- * La clé privée ne quitte jamais l'appareil, et y dort chiffrée (voir [DepotCles]).
- *
- * Deux leçons de dadb, apprises pour la version Windows et reprises ici :
- *  - dadb n'ouvre la connexion qu'à la première commande. On la provoque dès [connecter], pour ne
- *    pas afficher « connecté » avant que le téléviseur ait accepté quoi que ce soit ;
- *  - un `withTimeout` n'interrompt pas une lecture de socket bloquée : les délais maximaux sont
- *    tenus par [sousSurveillance], qui ferme la session depuis une autre coroutine.
+ * Two dadb pitfalls:
+ *  - dadb only opens the socket on the first command. [connecter] forces it, so "connected" is not shown
+ *    before the TV has accepted anything.
+ *  - `withTimeout` does not interrupt a blocked socket read. Timeouts are enforced by [sousSurveillance],
+ *    which closes the session from another coroutine.
  */
 @Singleton
 class ClientAdb @Inject constructor(
@@ -88,20 +84,19 @@ class ClientAdb @Inject constructor(
     @Volatile
     private var session: Dadb? = null
 
-    /** Le dernier téléviseur joint volontairement : c'est vers lui que va toute reprise. */
+    /** Last TV the user connected to; reconnects target it. */
     @Volatile
     private var cible: Pair<String, Int>? = null
 
-    /** Quand la dernière reprise a échoué, pour ne pas la retenter à chaque commande. */
+    /** Time of the last failed reconnect, so it is not retried on every command. */
     private var dernierEchecReprise = 0L
 
-    /** Faux pour une seconde session ([ouvrirSeconde]) : rompue, elle ne se rouvre pas. */
+    /** False for a secondary session ([ouvrirSeconde]): once broken, it is not reopened. */
     private var repriseAutorisee = true
 
     /**
-     * Ouvre la connexion et attend que le téléviseur l'accepte. [discret] sert aux tentatives que
-     * personne n'a demandées — au retour dans l'application, par exemple : un échec y est banal
-     * (téléviseur éteint) et ne mérite pas d'afficher une erreur en travers de l'écran.
+     * Opens the connection and waits for the TV to accept it. [discret] is for attempts the user did not
+     * ask for (returning to the app): failure is common there (TV off) and shows no error.
      */
     suspend fun connecter(
         hote: String,
@@ -141,13 +136,13 @@ class ClientAdb @Inject constructor(
     }
 
     /**
-     * Une seconde session vers le même téléviseur, pour les lectures longues lancées d'avance à la connexion —
-     * applications, `dumpsys meminfo`, stockage : la session principale reste libre pendant ce temps pour ce que
-     * la personne demande. La clé est déjà autorisée, rien ne s'affiche sur le téléviseur.
+     * Opens a second session to the same TV for the long reads prefetched on connect (apps, `dumpsys meminfo`,
+     * storage), leaving the main session free for user actions. The key is already authorized, so the TV shows
+     * no prompt.
      *
-     * Elle ne se rouvre jamais d'elle-même : une lecture d'avance qui échoue se refait à la demande, par la
-     * principale. La fermer ([deconnecter]) revient à qui l'a ouverte — c'est aussi ce qui interrompt une lecture
-     * en cours. Null sans téléviseur joint, ou s'il ne répond pas.
+     * It never reconnects by itself; a failed prefetch is redone on demand through the main session. The caller
+     * closes it ([deconnecter]), which also interrupts a read in progress. Returns null if no TV is connected or
+     * it does not answer.
      */
     suspend fun ouvrirSeconde(): ClientAdb? {
         val (hote, port) = cible ?: return null
@@ -156,38 +151,35 @@ class ClientAdb @Inject constructor(
         try {
             ouverte = seconde.connecter(hote, port, discret = true)
         } finally {
-            // Annulée en route, la connexion a pu aboutir quand même : on ne la laisse pas ouverte.
+            // If cancelled midway, the connection may still have succeeded: do not leave it open.
             if (!ouverte) seconde.deconnecter()
         }
         return seconde.takeIf { ouverte }
     }
 
     fun deconnecter() {
-        // Sans le verrou, exprès : fermer la socket est justement ce qui débloque une commande
-        // en attente, et le verrou est tenu pendant ce temps.
+        // Deliberately outside the lock: closing the socket is what unblocks a pending command,
+        // which holds the lock.
         fermerSession()
-        // Se déconnecter est un choix : rien ne doit rouvrir la session dans le dos.
+        // Disconnecting is explicit: nothing may reopen the session behind the user's back.
         cible = null
         _connexion.value = ConnexionUi()
     }
 
     /**
-     * Un téléviseur qui s'endort ferme sa session sans prévenir, et l'affaire se découvre à la
-     * commande suivante. Plutôt que de renvoyer la personne sur « Se connecter », on rouvre
-     * une fois et on rejoue.
+     * Runs a command, reconnecting once and replaying it if the session dropped (a sleeping TV closes it
+     * silently, which only shows on the next command).
      *
-     * Le rejeu est sans danger parce que **toutes** les commandes envoyées d'ici sont
-     * idempotentes : lectures, `pm disable-user`, `pm enable`, `am force-stop`, `settings put`,
-     * ouverture d'une fiche de boutique. Rien qui compte, ajoute ou supprime. Une commande qui
-     * ne le serait pas ne devrait pas passer par ce chemin.
+     * Replay is safe because every command sent here is idempotent: reads, `pm disable-user`, `pm enable`,
+     * `am force-stop`, `settings put`, opening a store page. Non-idempotent commands must not use this path.
      */
     override suspend fun executer(commande: String): ResultatShell = withContext(Dispatchers.IO) {
         val demande = System.currentTimeMillis()
         verrou.withLock {
             val obtenu = System.currentTimeMillis()
             val resultat = executerSousVerrou(commande)
-            // Une lecture de dossier de plus de dix secondes, vue le 2026-10-04, n'a pas pu être reproduite :
-            // la prochaine dira si elle attendait le verrou, la réponse, ou une reprise.
+            // A folder read once took over ten seconds and could not be reproduced. Log slow commands to tell
+            // whether they wait on the lock, the TV or a reconnect.
             val fin = System.currentTimeMillis()
             if (fin - demande > SEUIL_LENTEUR_MS) {
                 Log.w(
@@ -200,7 +192,7 @@ class ClientAdb @Inject constructor(
         }
     }
 
-    /** Une tentative ; si la session était tombée, une seule reprise et un rejeu. */
+    /** One attempt; if the session dropped, one reconnect and one replay. */
     private suspend fun executerSousVerrou(commande: String): ResultatShell =
         when (val premiere = tenter(commande)) {
             is Issue.Repondu -> premiere.resultat
@@ -220,13 +212,11 @@ class ClientAdb @Inject constructor(
         }
 
     /**
-     * Envoie un APK et l'installe, en flux vers `cmd package install` : rien n'est d'abord copié sur le
-     * téléviseur.
+     * Streams an APK to `cmd package install` without copying it to the TV first.
      *
-     * Hors du chemin d'[executer], exprès : un envoi de plusieurs dizaines de mégaoctets ne se rejoue pas
-     * dans le dos de la personne. Une session tombée avant l'envoi est rouverte ; une rupture pendant
-     * l'envoi est rapportée. Le délai maximal suit la taille du fichier, et laisse à Android le temps de
-     * vérifier l'application.
+     * Not routed through [executer]: a large upload is never replayed silently. A session that dropped before
+     * the upload is reopened; a break during it is reported. The timeout grows with the file size and leaves
+     * Android time to verify the package.
      */
     override suspend fun installer(apk: File, surEnvoi: (envoye: Long, total: Long) -> Unit): ResultatShell =
         withContext(Dispatchers.IO) {
@@ -259,11 +249,10 @@ class ClientAdb @Inject constructor(
         }
 
     /**
-     * Écrit un fichier sur le téléviseur, comme `adb push`. Hors du chemin d'[executer], comme l'installation :
-     * un envoi ne se rejoue pas. Le délai ne porte pas sur la durée — un film prend son temps — mais sur le
-     * silence : rien de parti pendant [DELAI_SILENCE_MS], et la session est fermée.
+     * Writes a file to the TV, like `adb push`. Not replayed, like [installer]. The timeout applies to
+     * inactivity rather than total duration: nothing sent for [DELAI_SILENCE_MS] closes the session.
      *
-     * Annuler n'interrompt que ce fichier : dadb ferme son flux, la session reste ouverte pour la suite.
+     * Cancelling stops only this file: dadb closes its stream and the session stays open.
      */
     override suspend fun envoyer(
         source: InputStream,
@@ -307,13 +296,11 @@ class ClientAdb @Inject constructor(
     }
 
     /**
-     * Exécute une commande tapée à la main, **une seule fois** : contrairement à [executer], rien ne la
-     * rejoue après une rupture, puisque rien ne dit qu'elle le supporte. La sortie est lue au fil de l'eau,
-     * pour rendre ce qui est déjà sorti quand le délai coupe une commande qui ne finit pas seule —
-     * `logcat` sans `-d`, `top`.
+     * Runs a user-typed command exactly once: unlike [executer], it is never replayed since it may not be
+     * idempotent. Output is streamed so that commands that never end (`logcat` without `-d`, `top`) still
+     * return what they printed when the timeout cuts them.
      *
-     * Le délai ferme la session, seul moyen d'interrompre la lecture ; la suivante se rouvre d'elle-même,
-     * sans rien signaler, puisque le téléviseur n'y est pour rien.
+     * The timeout closes the session (the only way to stop the read); the next command reopens it silently.
      */
     override suspend fun executerUneFois(commande: String): ReponseDirecte = withContext(Dispatchers.IO) {
         verrou.withLock {
@@ -350,9 +337,8 @@ class ClientAdb @Inject constructor(
     }
 
     /**
-     * Lit une commande à sortie binaire — `screencap -p` —, sortie standard et sortie d'erreur à part : le
-     * protocole shell v2 de dadb les sépare, sans terminal pour traduire les fins de ligne. Rien n'est rejoué :
-     * une capture manquée se redemande d'un appui.
+     * Runs a command with binary output (`screencap -p`). dadb's shell v2 protocol keeps stdout and stderr apart
+     * and uses no terminal, so line endings are not translated. Not replayed.
      */
     override suspend fun lireBinaire(commande: String): SortieBinaire = withContext(Dispatchers.IO) {
         verrou.withLock {
@@ -396,7 +382,7 @@ class ClientAdb @Inject constructor(
         data class Echouee(val erreur: Throwable, val probleme: ProblemeConnexion) : Ouverture
     }
 
-    /** Ce qu'une commande a donné : une réponse, ou une session à rouvrir. */
+    /** A command's outcome: an answer, or a session to reopen. */
     private sealed interface Issue {
         data class Repondu(val resultat: ResultatShell) : Issue
         data class Rompue(val motif: String, val probleme: ProblemeConnexion) : Issue
@@ -404,13 +390,13 @@ class ClientAdb @Inject constructor(
 
     private suspend fun ouvrir(hote: String, port: Int, delaiMs: Long): Ouverture {
         val ouverte = try {
-            // La socket attend jusqu'à DELAI_CONNEXION_MS : le temps qu'on accepte la demande sur
-            // le téléviseur. Le délai plus court d'une reprise est tenu par la surveillance.
+            // The socket read timeout is DELAI_CONNEXION_MS, time for the user to accept the prompt on the TV.
+            // The shorter reconnect timeout is enforced by the watchdog.
             Dadb.create(hote, port, depotCles.paire(), DELAI_TCP_MS, DELAI_CONNEXION_MS.toInt())
         } catch (erreur: Exception) {
             return Ouverture.Echouee(erreur, diagnostic(erreur))
         }
-        // Un aller-retour anodin force la poignée de main — et donc l'autorisation — maintenant.
+        // A harmless round trip forces the handshake, and thus the authorization prompt, now.
         return sousSurveillance(ouverte, delaiMs) { ouverte.shell("echo tvslim") }.fold(
             onSuccess = { Ouverture.Reussie(ouverte) },
             onFailure = { erreur ->
@@ -423,8 +409,7 @@ class ClientAdb @Inject constructor(
     private suspend fun tenter(commande: String): Issue {
         val active = session ?: return Issue.Rompue(motifAucuneSession(), ProblemeConnexion.AUTRE)
 
-        // Sans délai maximal réel, un téléviseur qui se fige ou s'endort en pleine commande
-        // bloquerait l'application pour toujours — et le verrou avec elle.
+        // Without a real timeout, a TV that freezes or sleeps mid-command would hold the lock forever.
         return sousSurveillance(active, DELAI_COMMANDE_MS) { active.shell(commande) }.fold(
             onSuccess = { sortie ->
                 Issue.Repondu(
@@ -447,11 +432,10 @@ class ClientAdb @Inject constructor(
     }
 
     /**
-     * Rouvre la session sur le même téléviseur, sans rien demander à personne : la clé est déjà
-     * autorisée, il n'y a pas de dialogue à valider à la télécommande.
+     * Reopens the session to the same TV; the key is already authorized, so no prompt appears.
      *
-     * Un échec met la reprise au repos un moment. Sans cela, une désactivation de quatre-vingts
-     * paquets sur un téléviseur qu'on vient d'éteindre tenterait quatre-vingts reconnexions.
+     * After a failure, reconnects pause for [REPOS_APRES_ECHEC_MS]. Otherwise disabling eighty packages on a TV
+     * that was just turned off would attempt eighty reconnects.
      */
     private suspend fun reprendre(): Boolean {
         if (!repriseAutorisee) return false
@@ -478,11 +462,10 @@ class ClientAdb @Inject constructor(
     }
 
     /**
-     * Exécute un appel bloquant de dadb avec un **vrai** délai maximal.
+     * Runs a blocking dadb call with a real timeout.
      *
-     * `withTimeout` n'y suffit pas : il annule la coroutine, pas la lecture de socket en cours,
-     * qui continuerait d'attendre — verrou tenu, application figée. Fermer la session depuis une
-     * autre coroutine, si : la lecture lève aussitôt une exception, rendue ici en [DelaiDepasse].
+     * `withTimeout` cancels the coroutine but not the blocked socket read, which would keep the lock. Closing
+     * the session from another coroutine makes the read throw at once; that is reported as [DelaiDepasse].
      */
     private suspend fun <T> sousSurveillance(active: Dadb, delaiMs: Long, appel: () -> T): Result<T> = coroutineScope {
         val depasse = AtomicBoolean(false)
@@ -502,7 +485,7 @@ class ClientAdb @Inject constructor(
 
     private class DelaiDepasse(cause: Throwable) : IOException("délai dépassé", cause)
 
-    /** Une session perdue : le motif, dans la langue de la personne, et sa cause pour l'écran de connexion. */
+    /** A lost session: a localized reason, plus its cause for the connection screen. */
     private fun rupture(erreur: Throwable, delaiDepasse: Boolean): Issue.Rompue =
         if (delaiDepasse) {
             Issue.Rompue(motifDelai(), ProblemeConnexion.DELAI)
@@ -529,7 +512,7 @@ class ClientAdb @Inject constructor(
     private fun diagnostic(erreur: Throwable): ProblemeConnexion =
         diagnostiquer(erreur, delaiDepasse = erreur is DelaiDepasse)
 
-    // Ces motifs remontent dans les résultats du moteur, à côté des réponses du téléviseur.
+    // These reasons end up in the engine's results, next to the TV's own output.
     private fun motifAucuneSession(): String = contexte.getString(R.string.adb_no_session)
 
     private fun motifDelai(): String = contexte.getString(R.string.adb_timeout)
@@ -537,48 +520,44 @@ class ClientAdb @Inject constructor(
     private companion object {
         const val TAG = "TVSlim/Adb"
 
-        /** Ouverture TCP : un téléviseur allumé sur le réseau local répond en quelques millisecondes. */
+        /** TCP connect: a TV on the local network answers within milliseconds. */
         const val DELAI_TCP_MS = 5_000
 
-        /** Large : la connexion attend que quelqu'un accepte la demande sur le téléviseur. */
+        /** Long: the connection waits for someone to accept the prompt on the TV. */
         const val DELAI_CONNEXION_MS = 45_000L
 
-        /**
-         * Une commande de gestion de paquets répond en quelques dizaines de millisecondes ;
-         * `dumpsys meminfo` peut demander plusieurs secondes sur un petit boîtier. Comme Windows.
-         */
+        /** Package commands take tens of ms; `dumpsys meminfo` can take seconds on a small box. Same as Windows. */
         const val DELAI_COMMANDE_MS = 30_000L
 
-        /** Court : une reprise ne demande aucune validation, elle aboutit ou l'appareil dort. */
+        /** Short: a reconnect needs no prompt, it either succeeds or the device is asleep. */
         const val DELAI_REPRISE_MS = 12_000L
 
-        /** Après un échec de reprise, on laisse le téléviseur tranquille un moment. */
         const val REPOS_APRES_ECHEC_MS = 20_000L
 
-        /** Une lecture répond en quelques centaines de millisecondes ; au-delà de deux secondes, on le note. */
+        /** Reads normally take a few hundred ms; anything slower is logged. */
         const val SEUIL_LENTEUR_MS = 2_000L
 
-        /** La part fixe du délai d'une installation : Android vérifie l'application avant de répondre. */
+        /** Fixed part of the install timeout: Android verifies the package before answering. */
         const val DELAI_INSTALLATION_MS = 120_000L
 
-        /** Plus le temps d'envoi : deux secondes par mégaoctet, un Wi-Fi médiocre compris. */
+        /** Plus upload time: two seconds per megabyte, enough for poor Wi-Fi. */
         const val DELAI_PAR_MO_MS = 2_000L
         const val OCTETS_PAR_MO = 1_000_000L
 
-        /** Une minute sans qu'un octet parte : la liaison ne fait plus rien passer. */
+        /** A minute without a byte sent means the link is dead. */
         const val DELAI_SILENCE_MS = 60_000L
 
-        /** `rw-r--r--` : ce que pose `adb push` ; le stockage partagé n'en tient de toute façon pas compte. */
+        /** `rw-r--r--`, as `adb push` sets; shared storage ignores it anyway. */
         const val MODE_FICHIER = 0b110_100_100
 
-        /** `-r` remplace une version en place en gardant ses données ; `-t` admet une build de test. */
+        /** `-r` replaces an installed version and keeps its data; `-t` allows test builds. */
         val OPTIONS_INSTALLATION = arrayOf("-r", "-t")
     }
 }
 
 /**
- * Compte les octets qui partent : dadb ne dit rien pendant un envoi. Un signe par centième, et non à
- * chaque bloc de huit kilo-octets — l'écran n'a que faire de dix mille mises à jour.
+ * Counts bytes sent, since dadb reports no progress. Reports every 1% (at least 64 KiB) rather than on every
+ * 8 KiB block.
  */
 private class SourceComptee(
     source: Source,

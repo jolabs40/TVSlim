@@ -33,11 +33,10 @@ import net.jolabs40.tvslim.remote.ui.megaoctets
 import net.jolabs40.tvslim.remote.ui.ressource
 
 /**
- * Installe sur le téléviseur une application qu'on a sur le téléphone, en APK — ce que fait
- * `adb install`, sans ordinateur.
+ * Installs an APK from the phone onto the TV, like `adb install` without a computer.
  *
- * Le bilan de la dernière installation reste affiché : la bannière passe, et un refus d'Android mérite
- * d'être relu, sa réponse brute comprise.
+ * The last result stays on the card: the banner goes away, and an Android refusal (raw response included) is worth
+ * rereading.
  */
 @Composable
 fun CarteInstallation(etat: EtatInstallation, onChoisir: () -> Unit) {
@@ -69,7 +68,7 @@ fun CarteInstallation(etat: EtatInstallation, onChoisir: () -> Unit) {
                     texte = stringResource(R.string.install_sending, megaoctets(phase.envoye), megaoctets(phase.total)),
                     fraction = if (phase.total > 0) phase.envoye.toFloat() / phase.total else null,
                 )
-                // Tout est parti : Android vérifie l'application, et le téléviseur peut demander son avis.
+                // Fully sent: Android verifies the app, and the TV may ask for confirmation.
                 PhaseInstallation.Installation ->
                     Avancement(stringResource(R.string.install_installing), fraction = null)
             }
@@ -119,7 +118,7 @@ private fun Bilan(resultat: ResultatInstallation) {
             )
             if (resultat is ResultatInstallation.Echouee) {
                 Text(text = stringResource(resultat.cause.ressource()), style = MaterialTheme.typography.bodyMedium)
-                // Vide quand le téléviseur n'a rien répondu : la cause suffit.
+                // Empty when the TV sent no response.
                 if (resultat.detail.isNotBlank()) {
                     SelectionContainer {
                         Text(
@@ -134,6 +133,6 @@ private fun Bilan(resultat: ResultatInstallation) {
     }
 }
 
-/** « net.jolabs40.hippietv · 2.4.0 » */
+/** `net.jolabs40.hippietv · 2.4.0` */
 private fun identite(apk: ApkChoisi): String =
     listOf(apk.manifeste.paquet, apk.manifeste.versionName).filter { it.isNotBlank() }.joinToString(" · ")

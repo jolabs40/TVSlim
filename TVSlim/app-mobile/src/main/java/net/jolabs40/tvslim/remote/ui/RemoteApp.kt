@@ -78,7 +78,7 @@ private val onglets = listOf(
     Onglet("journal", R.string.tab_log, Icons.Filled.History),
 )
 
-/** Selon le gestionnaire de fichiers, un APK se présente en paquet Android ou en simple binaire. */
+/** Depending on the file manager, an APK is typed as an Android package or as plain binary. */
 private val TYPES_APK = arrayOf("application/vnd.android.package-archive", "application/octet-stream")
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,16 +89,15 @@ fun RemoteApp() {
     val soutienVisible by modele.soutien.visible.collectAsStateWithLifecycle()
     val etatCapture by modele.capture.etat.collectAsStateWithLifecycle()
     val etatApplicationTv by modele.applicationTv.etat.collectAsStateWithLifecycle()
-    // Aussi hors de l'onglet Applications : le choix d'une application, dans les permissions, s'en sert.
+    // Collected outside the Apps tab too: the permissions card uses it to pick an app.
     val etatApplicationsGlobal by modele.applications.etat.collectAsStateWithLifecycle()
     val contexte = LocalContext.current
     val navigation = rememberNavController()
     val pileCourante by navigation.currentBackStackEntryAsState()
     val messages = remember { SnackbarHostState() }
 
-    // Une session ADB ne survit pas à la veille du téléviseur, ni forcément à un long
-    // passage dans une autre application. Au retour à l'écran, on retente le dernier
-    // téléviseur sans rien demander ; l'échec reste silencieux.
+    // An ADB session does not survive TV standby, nor always a long time in another app. On return,
+    // silently retry the last TV; failure shows nothing.
     val proprietaire = LocalLifecycleOwner.current
     DisposableEffect(proprietaire) {
         val observateur = LifecycleEventObserver { _, evenement ->
@@ -108,7 +107,7 @@ fun RemoteApp() {
         onDispose { proprietaire.lifecycle.removeObserver(observateur) }
     }
 
-    // Chaque retour d'action passe par la même bannière, puis est consommé.
+    // Every action result goes through the same snackbar, then is consumed.
     LaunchedEffect(etat.message) {
         etat.message?.let { texte ->
             messages.showSnackbar(texte)
@@ -121,7 +120,7 @@ fun RemoteApp() {
             confirmation = demande,
             onConfirmer = modele::confirmer,
             onAnnuler = {
-                // Une installation refusée laisse une copie de l'APK dans le cache : elle part avec.
+                // A declined install leaves the APK copy in the cache; delete it.
                 (demande as? Confirmation.Installation)?.let { modele.configuration.abandonnerApk(it.apk) }
                 modele.annulerConfirmation()
             },
@@ -144,7 +143,7 @@ fun RemoteApp() {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Décoratif : le nom, juste à côté, dit déjà tout.
+                        // Decorative: the name next to it says it all.
                         Image(
                             painter = painterResource(R.drawable.ic_logo),
                             contentDescription = null,
@@ -155,7 +154,6 @@ fun RemoteApp() {
                     }
                 },
                 actions = {
-                    // Seulement téléviseur joint : sans lui, il n'y a rien à capturer.
                     if (etat.connecte) BoutonCapture(enCours = etatCapture.enCours, onCapturer = modele.capture::capturer)
                     BoutonSoutien()
                     BoutonAPropos(onOuvrir = { aPropos = true })
@@ -185,7 +183,7 @@ fun RemoteApp() {
         },
     ) { marges ->
         Column(modifier = Modifier.padding(marges)) {
-            // En tête de chaque onglet : le service rendu peut l'avoir été depuis n'importe lequel.
+            // Above every tab, since the action that triggered it may come from any of them.
             BanniereSoutien(
                 visible = soutienVisible,
                 onSoutenir = modele.soutien::ecarter,
@@ -198,7 +196,7 @@ fun RemoteApp() {
                 modifier = Modifier.weight(1f),
             ) {
                 composable("connexion") {
-                    // L'APK se désigne dans le sélecteur d'Android : aucune permission de stockage à demander.
+                    // The Android picker needs no storage permission.
                     val apk = rememberLauncherForActivityResult(
                         ActivityResultContracts.OpenDocument(),
                     ) { uri -> uri?.let(modele.configuration::choisirApk) }
@@ -245,7 +243,7 @@ fun RemoteApp() {
                     )
                 }
                 composable("paquets") {
-                    // Le sélecteur d'Android désigne l'emplacement : rien n'est écrit ni lu sans qu'on l'ait choisi.
+                    // Files are only read or written where the user picked them.
                     val sauvegarde = rememberLauncherForActivityResult(
                         ActivityResultContracts.CreateDocument("application/json"),
                     ) { uri -> uri?.let(modele.configuration::sauvegarder) }
@@ -255,7 +253,7 @@ fun RemoteApp() {
                     val inventaire = rememberLauncherForActivityResult(
                         ActivityResultContracts.CreateDocument("text/markdown"),
                     ) { uri -> uri?.let { modele.configuration.exporterInconnus(it) } }
-                    // Le même export, puis le formulaire du catalogue dans le navigateur.
+                    // Same export, then the catalogue form in the browser.
                     val proposition = rememberLauncherForActivityResult(
                         ActivityResultContracts.CreateDocument("text/markdown"),
                     ) { uri -> uri?.let { modele.configuration.exporterInconnus(it, proposer = true) } }
@@ -269,7 +267,7 @@ fun RemoteApp() {
                         onRecherche = modele::majRecherche,
                         onFiltre = modele::majFiltre,
                         onSauvegarder = { sauvegarde.launch(modele.configuration.nomFichier()) },
-                        // Selon le gestionnaire de fichiers, un .json passe pour du texte ou pour du binaire.
+                        // Depending on the file manager, a .json file is typed as text or as binary.
                         onReinjecter = {
                             reinjection.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
                         },
@@ -313,8 +311,8 @@ fun RemoteApp() {
                     val etatFichiers by modele.fichiers.explorateur.etat.collectAsStateWithLifecycle()
                     val enAttente by modele.fichiers.enAttente.collectAsStateWithLifecycle()
                     val explorateur = modele.fichiers.explorateur
-                    // Les documents se désignent dans le sélecteur d'Android : aucune permission de stockage à demander,
-                    // et chacun n'est lu qu'au moment de partir. Ils attendent ensuite qu'on ouvre leur destination.
+                    // The Android picker needs no storage permission, and each document is read only when sent.
+                    // Picked items then wait for the user to open their destination.
                     val documents = rememberLauncherForActivityResult(
                         ActivityResultContracts.OpenMultipleDocuments(),
                     ) { uris -> modele.fichiers.choisirDocuments(uris) }

@@ -18,8 +18,8 @@ import org.junit.Test
 import java.time.LocalDate
 
 /**
- * Sauvegarder puis réinjecter : le fichier doit se relire tel quel, refuser ce qui n'en est pas un,
- * et le plan ne promettre que ce que le téléviseur peut réellement recevoir.
+ * Saving and restoring a configuration. The file reads back unchanged and anything else is rejected; the plan only
+ * promises what the TV can actually apply.
  */
 class ConfigurationTvTest {
 
@@ -55,7 +55,7 @@ class ConfigurationTvTest {
 
     private fun launcher(paquet: String) = LauncherInstalle(paquet, paquet, "$paquet/.Accueil")
 
-    /** La TCL de l'utilisateur : Startlight de développement en accueil, Google TV coupé. */
+    /** The reference TCL: debug Startlight as home app, Google TV disabled. */
     private val tcl = InfosAppareil(
         marque = "TCL",
         modele = "Smart TV Pro",
@@ -79,10 +79,10 @@ class ConfigurationTvTest {
         actifs = actifs,
     )
 
-    // --- Le fichier ----------------------------------------------------------------------------
+    // --- File ----------------------------------------------------------------------------------
 
     @Test
-    fun `la sauvegarde retient l'etat des paquets du catalogue et l'accueil en place`() {
+    fun `saving keeps the state of catalog packages and the current home app`() {
         val configuration = catalogue.configurationDe(
             infos = tcl,
             etats = mapOf(
@@ -103,21 +103,21 @@ class ConfigurationTvTest {
     }
 
     @Test
-    fun `le selecteur d'Android n'est pas un accueil a retenir`() {
+    fun `the Android chooser is not saved as a home app`() {
         val sansChoix = tcl.copy(accueilActuel = "android", composantAccueil = "android/.ResolverActivity")
 
         assertNull(catalogue.configurationDe(sansChoix, emptyMap()).accueil)
     }
 
     @Test
-    fun `une configuration ecrite se relit a l'identique`() {
+    fun `a written configuration reads back unchanged`() {
         val configuration = catalogue.configurationDe(tcl, mapOf("com.tcl.pub" to EtatPaquet.DESACTIVE), 42)
 
         assertEquals(configuration, FichierConfiguration.lire(FichierConfiguration.ecrire(configuration)))
     }
 
     @Test
-    fun `un fichier qui n'est pas une configuration TV Slim est refuse`() {
+    fun `a file that is not a TV Slim configuration is rejected`() {
         listOf(
             "",
             "pas du JSON",
@@ -131,14 +131,14 @@ class ConfigurationTvTest {
     }
 
     @Test
-    fun `un champ ajoute par une version future ne rend pas le fichier illisible`() {
+    fun `a field added by a future version does not make the file unreadable`() {
         val texte = """{"application": "TV Slim", "format": 1, "sauvegardeLe": 0, "reglages": ["x"]}"""
 
         assertNotNull(FichierConfiguration.lire(texte))
     }
 
     @Test
-    fun `le nom propose dit l'appareil et le jour`() {
+    fun `the suggested file name gives the device and the date`() {
         val jour = LocalDate.of(2026, 9, 13)
         val philips = InfosAppareil(marque = "TPV", marqueCommerciale = "Philips", modele = "55PUS8807/12")
 
@@ -146,10 +146,10 @@ class ConfigurationTvTest {
         assertEquals("TVSlim-televiseur-2026-09-13.json", FichierConfiguration.nomPropose(InfosAppareil.VIDE, jour))
     }
 
-    // --- Le plan -------------------------------------------------------------------------------
+    // --- Plan ----------------------------------------------------------------------------------
 
     @Test
-    fun `le plan ne retient que les ecarts, dans les deux sens`() {
+    fun `the plan keeps only the differences, in both directions`() {
         val plan = sauvegarde(
             desactives = listOf("com.tcl.pub", "com.tcl.demo"),
             actifs = listOf("com.tcl.absent", "com.retire.du.catalogue", SETUPWRAITH),
@@ -171,7 +171,7 @@ class ConfigurationTvTest {
     }
 
     @Test
-    fun `un paquet protege n'est jamais promis a la desactivation`() {
+    fun `a protected package is never planned for disabling`() {
         val avecProtege = catalogue.copy(entrees = catalogue.entrees + entree("com.android.location.fused"))
 
         val plan = sauvegarde(desactives = listOf("com.android.location.fused"))
@@ -182,7 +182,7 @@ class ConfigurationTvTest {
     }
 
     @Test
-    fun `un accueil installe se designe par son composant`() {
+    fun `an installed home app is set by its component`() {
         val plan = sauvegarde(accueil = AccueilSauvegarde(PROJECTIVY, nom = "Projectivy Launcher"))
             .planifier(catalogue, emptyMap(), tcl)
 
@@ -191,8 +191,8 @@ class ConfigurationTvTest {
     }
 
     @Test
-    fun `une autre version du meme launcher fait l'affaire`() {
-        // Sauvegardé sur un téléviseur qui avait la version publiée ; celui-ci n'a que celle de développement.
+    fun `another build of the same launcher will do`() {
+        // Saved on a TV with the release build; this one only has the debug build.
         val ailleurs = tcl.copy(accueilActuel = PROJECTIVY, composantAccueil = "$PROJECTIVY/.Accueil")
 
         val plan = sauvegarde(accueil = AccueilSauvegarde(STARTLIGHT, nom = "Startlight Launcher"))
@@ -203,7 +203,7 @@ class ConfigurationTvTest {
     }
 
     @Test
-    fun `l'accueil deja en place, fut-ce une autre version, ne coute rien`() {
+    fun `a home app already set, even as another build, needs no action`() {
         val plan = sauvegarde(accueil = AccueilSauvegarde(STARTLIGHT)).planifier(catalogue, emptyMap(), tcl)
 
         assertNull(plan.accueil)
@@ -211,7 +211,7 @@ class ConfigurationTvTest {
     }
 
     @Test
-    fun `un launcher absent garde son nom mais ne se designe pas`() {
+    fun `a missing launcher keeps its name but cannot be set`() {
         val sansProjectivy = tcl.copy(launchersTiers = listOf(launcher(STARTLIGHT_DEBUG)))
 
         val plan = sauvegarde(accueil = AccueilSauvegarde(PROJECTIVY, nom = "Projectivy Launcher"))
@@ -223,7 +223,7 @@ class ConfigurationTvTest {
     }
 
     @Test
-    fun `un accueil d'usine desactive se retrouve pour etre rendu`() {
+    fun `a disabled factory home app is found and restored`() {
         val plan = sauvegarde(actifs = listOf(LAUNCHERX), accueil = AccueilSauvegarde(LAUNCHERX))
             .planifier(catalogue, mapOf(LAUNCHERX to EtatPaquet.DESACTIVE), tcl)
 

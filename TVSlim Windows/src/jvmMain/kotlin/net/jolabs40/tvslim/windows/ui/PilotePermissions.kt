@@ -26,16 +26,15 @@ import net.jolabs40.tvslim.windows.ressources.msg_perm_revoked
 import net.jolabs40.tvslim.windows.ressources.msg_undone
 
 /**
- * Accorde aux applications du téléviseur les permissions qu'aucune d'elles ne peut s'attribuer
- * seule — `DUMP`, `WRITE_SECURE_SETTINGS`, `READ_LOGS`, `PACKAGE_USAGE_STATS`.
+ * Grants TV apps permissions they cannot obtain on their own (`DUMP`, `WRITE_SECURE_SETTINGS`, `READ_LOGS`,
+ * `PACKAGE_USAGE_STATS`).
  *
- * Le privilège est celui de la session ADB, le même qui sert à `pm disable-user`. Ce qui change est
- * la cible — une application tierce plutôt qu'un paquet du catalogue — d'où le passage obligé par
- * les garde-fous du moteur, qui refusent une saisie douteuse et une permission absente du manifeste.
+ * The privilege is the ADB session's, the same one used for `pm disable-user`. Only the target differs (a
+ * third-party app rather than a catalogue package), hence the engine's safeguards, which reject suspicious
+ * input and permissions missing from the manifest.
  *
- * Certaines permissions ne suffisent pas seules : Android les double d'un **app-op**. Les deux
- * tombent donc ensemble, et se rendent ensemble. Même logique que le compagnon, ligne pour ligne ;
- * seuls les messages passent désormais par les ressources traduites.
+ * Some permissions are not enough alone: Android also gates them behind an app-op, so both are granted and
+ * revoked together. Same logic as the companion, line for line.
  */
 class PilotePermissions(
     private val lecteur: LecteurDistant,
@@ -47,26 +46,26 @@ class PilotePermissions(
     private val _etat = MutableStateFlow(EtatPermissions())
     val etat: StateFlow<EtatPermissions> = _etat.asStateFlow()
 
-    /** Changer de paquet périme la lecture : on ne garde pas l'état d'une autre application. */
+    /** Changing package discards what was read for the previous one. */
     fun majPaquet(valeur: String) = _etat.update {
         it.copy(paquet = valeur.trim(), lues = null, paquetLu = "", modeAppOp = "")
     }
 
-    /** Une application choisie dans la liste : son paquet, puis ce qu'elle déclare, lu aussitôt. */
+    /** An app picked from the list: sets its package and reads what it declares right away. */
     fun choisirPaquet(paquet: String) {
         majPaquet(paquet)
         lire()
     }
 
-    /** Changer de permission périme le mode lu : il ne vaut que pour l'app-op de la précédente. */
+    /** Changing permission discards the app-op mode read for the previous one. */
     fun majPermission(valeur: String) = _etat.update {
         it.copy(permission = valeur.trim(), modeAppOp = "")
     }
 
-    /** Oublie tout : appelé à la déconnexion, l'état lu ne vaut que pour un téléviseur donné. */
+    /** Called on disconnect: read state belongs to one TV. */
     fun oublier() = _etat.update { EtatPermissions() }
 
-    /** Demande au téléviseur ce que l'application déclare et ce qu'elle a déjà obtenu. */
+    /** Asks the TV what the app declares and what it has already been granted. */
     fun lire() {
         val paquet = _etat.value.paquet
         if (paquet.isBlank()) {
@@ -110,16 +109,16 @@ class PilotePermissions(
             afficher(texte(Res.string.msg_failure, resultat.texte()))
             return@agir
         }
-        // On rend l'app-op à « default » plutôt qu'à « ignore » : rien ne dit qu'il était refusé
-        // avant notre passage, et « default » laisse la permission trancher, comme à l'origine.
+        // Reset the app-op to "default" rather than "ignore": it may not have been denied before, and
+        // "default" lets the permission decide, as originally.
         val complement = poserAppOp(paquet, permission, MODE_DEFAUT, moteurActif)
         afficher(MessageUi.Lignes(listOf(texte(Res.string.msg_perm_revoked, permission), complement)))
         relire(paquet)
     }
 
     /**
-     * Annule une ligne du journal. La cible y est écrite « paquet nom » — les garde-fous du moteur
-     * ont déjà écarté tout ce qui contiendrait un espace de plus.
+     * Undoes a journal line. Its target is stored as "package name"; the engine's safeguards already
+     * rejected anything containing another space.
      */
     fun annuler(action: ActionJournal) {
         val moteurActif = moteur()
@@ -134,12 +133,12 @@ class PilotePermissions(
                 action.type == TypeAction.APP_OP -> moteurActif.reglerAppOp(
                     paquet = paquet,
                     appOp = nom,
-                    // Le journal porte la commande complète : son dernier mot est le mode visé.
+                    // The journal stores the full command; its last word is the target mode.
                     mode = action.commandeAnnulation.substringAfterLast(' '),
                     modePrecedent = lecteur.modeAppOp(paquet, nom),
                 )
 
-                // Accorder s'annule en retirant, et l'inverse.
+                // A grant is undone by revoking, and vice versa.
                 action.commandeAnnulation.contains(" revoke ") ->
                     moteurActif.retirerPermission(paquet, nom)
 
@@ -161,8 +160,8 @@ class PilotePermissions(
     }
 
     /**
-     * Pose l'app-op qui double la permission, s'il y en a un, et dit en une phrase ce qu'il en est
-     * advenu. Un op déjà dans le mode voulu ne coûte pas d'aller-retour.
+     * Sets the app-op paired with the permission, if any, and returns a one-line outcome. Skips the
+     * round trip when the op is already in the wanted mode.
      */
     private suspend fun poserAppOp(
         paquet: String,
@@ -194,7 +193,7 @@ class PilotePermissions(
         }
     }
 
-    /** Relit l'état du paquet — permissions et app-op associé — et le publie. */
+    /** Re-reads the package's permissions and paired app-op, and publishes them. */
     private suspend fun relire(paquet: String): PermissionsPaquet {
         val permission = _etat.value.permission
         _etat.update { it.copy(lecture = true) }
@@ -205,7 +204,7 @@ class PilotePermissions(
             .orEmpty()
 
         _etat.update { courant ->
-            // La personne a pu changer de cible pendant l'aller-retour : dans ce cas, on jette.
+            // The user may have changed target during the round trip; if so, drop the result.
             if (courant.paquet != paquet || courant.permission != permission) {
                 courant.copy(lecture = false)
             } else {

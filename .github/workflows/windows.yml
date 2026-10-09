@@ -1,14 +1,12 @@
-# Construit, teste et publie TV Slim pour Windows.
+# Builds, tests and publishes TV Slim for Windows.
 #
-#  - Pull request ou push sur main touchant la version Windows ou le noyau partagé : tests,
-#    installateur et version portable, gardés comme artefact pour qu'on puisse les essayer.
-#  - Tag annoté windows-vX.Y.Z : la même chose, puis signature de l'installateur, vérification de
-#    cette signature contre la clé embarquée dans l'application, et publication — le message du
-#    tag sert de notes de version.
+#  - Pull request or push to main touching the Windows app or the shared core: tests, MSI installer
+#    and portable build, kept as an artifact for trying out.
+#  - Annotated tag windows-vX.Y.Z: the same, then the installer is signed, the signature is checked
+#    against the key embedded in the app, and the release is published with the tag message as notes.
 #
-# La clé privée de signature (secret TVSLIM_CLE_SIGNATURE) n'est lue que par le job de publication,
-# et seulement sur un tag. Les actions sont épinglées par empreinte de commit : une étiquette se
-# déplace, une empreinte non.
+# The private signing key (secret TVSLIM_CLE_SIGNATURE) is only read by the publish job, and only on
+# a tag. Actions are pinned by commit SHA because tags can move.
 
 name: TV Slim Windows
 
@@ -67,7 +65,7 @@ jobs:
             $ligne = Get-Content gradle.properties | Where-Object { $_ -match '^versionApp=' }
             $version = $ligne -replace '^versionApp=', ''
           }
-          # Contrainte de MSI : trois nombres, le premier sous 256.
+          # MSI requires three numbers, the first under 256.
           if ($version -notmatch '^\d{1,3}\.\d{1,3}\.\d{1,5}$') { throw "Version invalide : $version" }
           "valeur=$version" >> $env:GITHUB_OUTPUT
 
@@ -85,7 +83,7 @@ jobs:
           $msi = Get-ChildItem build/compose/binaries/main/msi -Filter *.msi | Select-Object -First 1
           Copy-Item -LiteralPath $msi.FullName (Join-Path $sortie "TVSlim-Windows-$env:VERSION.msi")
 
-          # La version portable porte un marqueur : elle ne tente pas de s'installer elle-même.
+          # Marker file: the portable build never tries to install itself.
           $image = Get-ChildItem build/compose/binaries/main/app -Directory | Select-Object -First 1
           New-Item -ItemType File -Force (Join-Path $image.FullName 'app/portable') | Out-Null
           Compress-Archive -LiteralPath $image.FullName -DestinationPath (Join-Path $sortie "TVSlim-Windows-$env:VERSION-portable.zip")
@@ -128,16 +126,16 @@ jobs:
           VERSION: ${{ needs.construire.outputs.version }}
         run: java "TVSlim Windows/outils/SignerMiseAJour.java" "publication/TVSlim-Windows-$VERSION.msi" "$VERSION"
 
-      # Une clé privée qui ne correspondrait pas à la clé publique embarquée produirait une version
-      # que toutes les installations refuseraient : on vérifie comme elles, avant de publier.
+      # A private key that does not match the embedded public key would produce a release every
+      # install refuses, so verify it the way they do before publishing.
       - name: Vérifier la signature contre la clé embarquée
         env:
           VERSION: ${{ needs.construire.outputs.version }}
         run: java "TVSlim Windows/outils/VerifierMiseAJour.java" "publication/TVSlim-Windows-$VERSION.msi" "$VERSION" "TVSlim Windows/gradle.properties"
 
-      # actions/checkout rapatrie un tag par l'empreinte de son commit : il arrive « léger », sans son
-      # message — et `gh release create --notes-from-tag` ne lit rien quand --repo est donné. Les
-      # notes se lisent donc par l'API, sur l'objet tag lui-même.
+      # actions/checkout fetches the tag by its commit SHA, so it arrives lightweight, without its
+      # message, and `gh release create --notes-from-tag` reads nothing when --repo is given. Read the
+      # notes from the tag object through the API instead.
       - name: Notes de version, depuis le message du tag
         env:
           GH_TOKEN: ${{ github.token }}

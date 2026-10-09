@@ -3,22 +3,21 @@ package net.jolabs40.tvslim.catalog
 import net.jolabs40.tvslim.device.EtatPaquet
 import net.jolabs40.tvslim.device.InfosAppareil
 
-/** La catégorie des applications d'un téléphone ou d'une tablette que le catalogue ne décrit pas. */
+/** Category for phone or tablet apps that the catalogue does not describe. */
 const val CATEGORIE_APPAREIL = "appareil"
 
 private val IDENTIFIANT = Regex("""[A-Za-z0-9_.]+""")
 
 /**
- * Sur un téléphone ou une tablette, les applications **préinstallées** qui ont une icône dans le menu, et que le
- * catalogue ne décrit pas, deviennent des entrées — YouTube, YouTube Music sur un Pixel. Décision de l'utilisateur
- * (2026-10-04) : les paquets inconnus restent en lecture seule, sauf celles-là, hors téléviseur.
+ * On a phone or tablet, turns preinstalled apps that have a launcher icon and are unknown to the catalogue into
+ * entries (YouTube, YouTube Music on a Pixel). Other unknown packages stay read-only.
  *
- * Une application visible est une application, pas un service sans visage : la limite écarte ce qui porte le
- * réseau ou l'interface. Chacune est **non éprouvée** — elle se coche à la main, jamais par un profil, et le dit —,
- * reste soumise à la liste noire, et se réactive depuis le journal comme le reste.
+ * Requiring a launcher icon keeps out headless services, which may carry networking or the system UI. Each added
+ * entry is untested: checked by hand only, never by a profile, still subject to the blocklist, and re-enabled from
+ * the journal like any other.
  *
- * Sur un téléviseur, rien ne change : un paquet système inconnu peut y porter le tuner ou la télécommande, et
- * couper le réseau rendrait ADB injoignable.
+ * Nothing is added on a TV: an unknown system package may run the tuner or the remote, and cutting the network
+ * would make ADB unreachable.
  */
 fun Catalogue.avecApplicationsDuMenu(
     infos: InfosAppareil,
@@ -33,7 +32,7 @@ fun Catalogue.avecApplicationsDuMenu(
         .map { paquet ->
             EntreePaquet(
                 paquet = paquet,
-                // Le nom affiché d'une application ne se lit pas par ADB : le paquet en tient lieu.
+                // ADB cannot read an app's display name; the package name stands in.
                 nom = paquet,
                 description = "",
                 categorie = CATEGORIE_APPAREIL,

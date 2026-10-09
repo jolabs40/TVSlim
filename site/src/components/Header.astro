@@ -5,7 +5,7 @@ import { path, ui, REPO, KOFI, type Lang } from '../site';
 
 interface Props {
   lang: Lang;
-  /** Chemin de la page sans préfixe de langue, pour la bascule. */
+  /** Page path without the language prefix, for the language switch. */
   page: string;
   current?: 'home' | 'download' | 'guide' | 'packages' | 'privacy';
 }
@@ -30,7 +30,7 @@ const liens = [
       ))}
       <a href={REPO} rel="noopener">{t.nav.github}</a>
       <a class="lang" href={path(autre, page)} hreflang={autre} lang={autre}>{t.switchTo}</a>
-      <!-- La tasse seule, comme dans la barre du haut des applications : le libellé est pour les lecteurs d'écran et la bulle. -->
+      <!-- Cup only, as in the apps' top bar; the label is for screen readers and the tooltip. -->
       <a class="kofi" href={KOFI} rel="noopener" aria-label={t.nav.kofi} title={t.nav.kofi}><SymboleKofi taille={26} /></a>
     </nav>
   </div>

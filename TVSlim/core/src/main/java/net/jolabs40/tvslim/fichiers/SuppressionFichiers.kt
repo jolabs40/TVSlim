@@ -1,9 +1,9 @@
 package net.jolabs40.tvslim.fichiers
 
-/** Ce qu'efface une suppression : un lien n'emporte que lui-même, jamais ce vers quoi il mène. */
+/** What a delete removes. A link removes only itself, never its target. */
 enum class NatureSuppression { FICHIER, DOSSIER, LIEN }
 
-/** Une suppression soumise à confirmation : pour un dossier, ce qu'il contient, à toute profondeur. */
+/** A delete awaiting confirmation; for a folder, its recursive contents. */
 data class PlanSuppression(
     val chemin: String,
     val nature: NatureSuppression,
@@ -17,7 +17,7 @@ data class PlanSuppression(
 sealed interface ExamenSuppression {
     data class Pret(val plan: PlanSuppression) : ExamenSuppression
 
-    /** Le dossier est un stockage entier, ou en contient un : TV Slim ne l'efface pas. */
+    /** The folder is or contains a whole storage root; TV Slim does not delete it. */
     data object Protege : ExamenSuppression
 
     data class Illisible(val refus: RefusLecture, val motif: String = "") : ExamenSuppression
@@ -25,5 +25,5 @@ sealed interface ExamenSuppression {
 
 enum class IssueSuppression { SUPPRIME, PROTEGE, ECHEC }
 
-/** [detail] : la réponse du téléviseur à un échec — ce qui n'a pas pu être effacé, et pourquoi. */
+/** [detail]: the TV's answer on failure (what could not be deleted, and why). */
 data class SuppressionEntree(val issue: IssueSuppression, val nom: String, val detail: String = "")

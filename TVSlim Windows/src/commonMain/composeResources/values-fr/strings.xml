@@ -14,7 +14,7 @@
     <string name="status_disconnected">Aucun téléviseur connecté</string>
     <string name="status_error">Connexion perdue avec %1$s</string>
 
-    <!-- Onglet Téléviseur -->
+    <!-- Television tab -->
     <string name="connection_title">Se connecter à un téléviseur</string>
     <string name="connection_subtitle">Cet ordinateur parle au téléviseur en ADB, sur votre réseau local. Rien à installer sur le téléviseur.</string>
     <string name="connection_host">Adresse</string>
@@ -63,7 +63,7 @@
     <string name="home_use">Utiliser</string>
     <string name="home_current_badge">Actuel</string>
 
-    <!-- Onglet Paquets -->
+    <!-- Packages tab -->
     <string name="packages_not_connected">Connectez-vous à un téléviseur pour voir ses paquets.</string>
     <string name="packages_apply">Appliquer (%1$d)</string>
     <string name="packages_clear">Tout décocher</string>
@@ -137,7 +137,7 @@
     <string name="confirm_install_downgrade">Une version plus récente, %1$s, est installée : Android refusera très probablement de revenir en arrière.</string>
     <string name="confirm_install_note">L'installation est consignée au journal, mais ne s'annule pas depuis TV Slim, qui ne désinstalle rien.</string>
 
-    <!-- Onglet Mémoire -->
+    <!-- Memory tab -->
     <string name="memory_title">Occupation de la mémoire</string>
     <string name="memory_reading">Lecture en cours…</string>
     <string name="memory_unavailable">Aucune lecture : le téléviseur n’a pas répondu. Essayez Actualiser.</string>
@@ -180,7 +180,7 @@
     <string name="gain_reset">Repartir de l'état actuel</string>
     <string name="gain_memory_caveat">La mémoire libre varie selon ce que fait le téléviseur : à lire comme une tendance, pas comme un verdict.</string>
 
-    <!-- Onglet Journal -->
+    <!-- Log tab -->
     <string name="journal_title">Journal</string>
     <string name="journal_subtitle">Chaque action, avec la commande qui l'annule. Un journal par téléviseur.</string>
     <string name="journal_empty">Rien de consigné pour ce téléviseur.</string>
@@ -292,7 +292,7 @@
     <string name="msg_command_too_long">Cette commande est trop longue.</string>
     <string name="result_summary">%1$d sur %2$d réussis.</string>
 
-    <!-- À propos -->
+    <!-- About -->
     <string name="about_version">Version %1$s</string>
     <string name="about_description">Débloat réversible des téléviseurs Android, en ADB depuis cet ordinateur. Rien n'est désinstallé ni installé sur le téléviseur sans que vous le demandiez — un APK envoyé, une commande tapée. Chaque changement est consigné au journal, avec la commande qui l'annule quand il y en a une.</string>
     <string name="about_open_source">Code ouvert : chacun peut lire le code, recompiler l'application et vérifier ce qu'elle fait.</string>
@@ -306,7 +306,7 @@
     <string name="about_close">Fermer</string>
     <string name="about_support">Soutenir TV Slim</string>
 
-    <!-- Mises à jour -->
+    <!-- Updates -->
     <string name="update_auto_check">Rechercher les mises à jour au démarrage</string>
     <string name="update_check_now">Rechercher maintenant</string>
     <string name="update_checking">Recherche…</string>
@@ -324,7 +324,7 @@
     <string name="update_whats_new">Nouveautés</string>
     <string name="update_portable">Version portable : téléchargez la nouvelle archive et remplacez ce dossier par son contenu.</string>
     <string name="update_dev">Version de développement : les mises à jour automatiques sont désactivées.</string>
-    <!-- Onglet Fichiers -->
+    <!-- Files tab -->
     <string name="files_not_connected">Connectez-vous à un téléviseur pour parcourir ses fichiers.</string>
     <string name="shortcut_internal">Stockage interne</string>
     <string name="shortcut_downloads">Téléchargements</string>
@@ -411,14 +411,14 @@
     <string name="files_delete_protected">%1$s est un stockage entier, ou en contient un : TV Slim ne l'efface pas d'un bloc.</string>
     <string name="files_delete_failed">%1$s n'a pas pu être entièrement supprimé : %2$s</string>
 
-    <!-- Soutien -->
+    <!-- Support -->
     <string name="support_title">TV Slim vous a rendu service ?</string>
     <string name="support_text">Il est gratuit, sans publicité ni pistage, et le restera. Un café aide à le faire vivre.</string>
     <string name="support_donate">Offrir un café</string>
     <string name="support_already">J'ai déjà fait un don</string>
     <string name="support_later">Plus tard</string>
 
-    <!-- Écran : capture, miroir, vidéo -->
+    <!-- Screen: screenshot, mirror, video -->
     <string name="screen_capture">Capture d'écran</string>
     <string name="screen_mirror">Miroir de l'écran</string>
     <string name="screen_mirror_stop">Arrêter le miroir</string>
@@ -458,12 +458,12 @@
     <string name="closing_title">Fin de la vidéo</string>
     <string name="closing_text">TV Slim copie la vidéo depuis le téléviseur, puis se ferme.</string>
 
-    <!-- Hors téléviseur -->
+    <!-- Non-TV devices -->
     <string name="device_type_phone">Téléphone</string>
     <string name="device_type_tablet">Tablette</string>
     <string name="packages_not_tv">Cet appareil n'est pas un téléviseur : le catalogue de TV Slim décrit des téléviseurs, les profils sont donc désactivés. Un paquet se désactive encore à la main, et se réactive depuis le journal.</string>
 
-    <!-- Onglet Applications -->
+    <!-- Apps tab -->
     <string name="tab_apps">Applications</string>
     <string name="apps_not_connected">Connectez-vous à un téléviseur pour voir ses applications.</string>
     <string name="apps_search">Rechercher une application</string>
@@ -495,7 +495,7 @@
     <string name="apps_read_helper_refused">L'aide qui lit noms et icônes n'a pas répondu comme prévu : %1$s</string>
     <string name="apps_read_connection">L'appareil n'a pas répondu : %1$s</string>
 
-    <!-- Ce que le moteur dit d'une action (MotifMoteur) -->
+    <!-- Engine outcomes (MotifMoteur) -->
     <string name="engine_absent">Paquet absent de ce téléviseur.</string>
     <string name="engine_already_disabled">Déjà désactivé.</string>
     <string name="engine_unexplained">Échec, sans réponse du téléviseur.</string>
@@ -513,7 +513,7 @@
     <string name="files_refused_silent">refusé par le téléviseur</string>
     <string name="files_refused_silent_line">%1$s : refusé par le téléviseur</string>
 
-    <!-- L'application TV Slim du téléviseur, installée depuis GitHub -->
+    <!-- TV Slim's TV app, installed from GitHub -->
     <string name="tvapp_title">TV Slim sur le téléviseur</string>
     <string name="tvapp_body">Facultative. Elle garde le téléviseur joignable pendant la veille, vous prévient quand une mise à jour système a défait vos réglages, et affiche un code que TV Slim Remote, sur un téléphone, scanne pour se connecter.</string>
     <string name="tvapp_reading">Lecture du téléviseur…</string>
@@ -544,7 +544,7 @@
     <string name="tvapp_error_tv">Le téléviseur ne répond plus.</string>
     <string name="tvapp_error_install">Le téléviseur a refusé l'installation : %1$s</string>
 
-    <!-- Permissions : choisir une application, et ce qu'elle déclare -->
+    <!-- Permissions: app picker and declared permissions -->
     <string name="permissions_choose">Choisir une application</string>
     <string name="permissions_choose_title">Applications du téléviseur</string>
     <string name="permissions_choose_hint">Les applications du menu et celles que vous avez installées. Tout autre paquet peut toujours se taper.</string>
@@ -559,7 +559,7 @@
     <string name="permissions_declared_show_granted">Afficher aussi les %1$d déjà accordées</string>
     <string name="permissions_declared_hide_granted">Masquer les accordées</string>
 
-    <!-- Redémarrer le téléviseur -->
+    <!-- Reboot the TV -->
     <string name="device_reboot">Redémarrer</string>
     <string name="confirm_reboot_title">Redémarrer le téléviseur ?</string>
     <string name="confirm_reboot_body">Le téléviseur redémarre, en une minute environ : ce qui passe à l'écran s'interrompt. TV Slim se reconnecte tout seul à son retour.</string>

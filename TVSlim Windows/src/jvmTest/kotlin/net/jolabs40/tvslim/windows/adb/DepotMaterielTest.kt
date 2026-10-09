@@ -21,9 +21,8 @@ import java.security.MessageDigest
 import kotlin.random.Random
 
 /**
- * Parcourir et déposer sur un vrai téléviseur, par le client ADB de l'application et le noyau partagé. Ne
- * tourne que sur demande, parce qu'il **écrit** — dans un dossier `tvslim-essai-…` de Téléchargements, effacé
- * à la fin :
+ * Browse and upload on a real TV, through the app's ADB client and the shared core. Opt-in because it writes,
+ * in a `tvslim-essai-...` folder under Download that is deleted at the end:
  *
  *     ./gradlew jvmTest --tests "*DepotMaterielTest*" '-Pmateriel=192.168.2.135' -Pdepot=1 --rerun
  */
@@ -32,7 +31,7 @@ class DepotMaterielTest {
     private val hote: String? = System.getProperty("tvslim.materiel")
 
     @Test
-    fun `un dossier part entier, intact, et le reste se dit`() = runBlocking<Unit> {
+    fun `a folder uploads whole and intact, and the other outcomes are reported`() = runBlocking<Unit> {
         assumeTrue(
             "-Pmateriel=<adresse> -Pdepot=1 pour écrire sur un vrai téléviseur",
             hote != null && System.getProperty("tvslim.depot") != null,
@@ -44,7 +43,7 @@ class DepotMaterielTest {
         val destination = "/sdcard/Download"
         val essai = CheminDistant.joindre(destination, nom)
 
-        // Sur place : un texte, un nom à apostrophe et espaces, 5 Mo aléatoires dans un sous-dossier, un dossier vide.
+        // Locally: a text file, a name with an apostrophe and spaces, 5 MB of random data in a subfolder, an empty folder.
         val local = File(Files.createTempDirectory("tvslim-depot").toFile(), nom).apply { mkdirs() }
         File(local, "a.txt").writeText("bonjour")
         File(local, "l'été 2024.txt").writeText("apostrophe")
@@ -78,10 +77,10 @@ class DepotMaterielTest {
             val md5 = client.executer("md5sum ${citer("$essai/sous/b.bin")}").sortie.substringBefore(' ')
             assertEquals(empreinte(gros), md5)
 
-            // Une seconde fois : le dossier est déjà là, et le dire ne change rien à l'envoi.
+            // A second time: the folder already exists, which is reported without changing the upload.
             assertEquals(listOf(nom), (navigateur.examiner(lotDepuis(listOf(local)), destination) as ExamenDepot.Pret).plan.existants)
 
-            // Annuler au milieu d'un gros fichier : l'envoi s'arrête, la session sert encore.
+            // Cancel halfway through a large file: the upload stops, the session still works.
             val enorme = File(local.parentFile, "enorme.bin").apply { writeBytes(Random(3).nextBytes(60_000_000)) }
             var annule = false
             val plan2 = (navigateur.examiner(lotDepuis(listOf(enorme)), essai) as ExamenDepot.Pret).plan
@@ -91,7 +90,7 @@ class DepotMaterielTest {
             val apres = navigateur.lister(essai) as LectureDossier.Lue
             println("Après l'annulation : ${apres.entrees.map { "${it.nom} ${it.taille}" }}")
 
-            // Là où le shell n'écrit pas, le refus du téléviseur arrive tel quel, fichier par fichier.
+            // Where the shell cannot write, the TV's error comes back as is, file by file.
             val refuse = navigateur.deposer(plan.copy(destination = "/system", lot = lotDepuis(listOf(File(local, "a.txt")))))
             println("Vers /system : $refuse")
             assertEquals(0, refuse.envoyes)

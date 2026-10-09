@@ -6,15 +6,15 @@ import net.jolabs40.tvslim.shell.SortieBinaire
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-/** Pourquoi une capture n'a pas abouti — chaque application le dit dans sa langue. */
+/** Why a screenshot failed; each app localizes the message. */
 enum class CauseCapture {
-    /** Aucune session, ou la connexion a lâché pendant la lecture. */
+    /** No session, or the connection dropped while reading. */
     CONNEXION,
 
-    /** `screencap` a répondu par un code d'erreur. */
+    /** `screencap` returned an error code. */
     REFUSEE,
 
-    /** La sortie n'est pas un PNG : un Android qui ne connaît pas `-p`, ou une sortie tronquée. */
+    /** Output is not a PNG: an Android without `-p`, or truncated output. */
     ILLISIBLE,
 }
 
@@ -25,11 +25,11 @@ sealed interface ResultatCapture {
 }
 
 /**
- * La capture de l'écran du téléviseur, comme `adb exec-out screencap -p` : le PNG arrive par la sortie standard,
- * sans rien écrire sur le téléviseur.
+ * Captures the TV screen like `adb exec-out screencap -p`: the PNG comes through stdout and nothing is written
+ * on the TV.
  *
- * Ce que protège un DRM — Netflix, la plupart des chaînes — sort en noir : c'est le téléviseur qui le décide, et
- * rien ne permet de le distinguer d'un écran réellement noir.
+ * DRM-protected content (Netflix, most channels) comes out black. The TV decides this, and it cannot be told
+ * apart from a genuinely black screen.
  */
 class CaptureEcran(private val lecteur: LecteurBinaire) {
 
@@ -58,8 +58,8 @@ class CaptureEcran(private val lecteur: LecteurBinaire) {
         private val HORODATAGE = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")
 
         /**
-         * Largeur et hauteur d'un PNG, lues dans son en-tête `IHDR` ; `null` si ce n'en est pas un. Un PNG
-         * qu'un shell aurait traduit — `\n` devenu `\r\n` — échoue ici, sur sa signature.
+         * Reads width and height from the PNG `IHDR` header; `null` if not a PNG. A PNG mangled by a shell
+         * (`\n` turned into `\r\n`) fails here on its signature.
          */
         fun dimensions(octets: ByteArray): Pair<Int, Int>? {
             if (octets.size < 24) return null
@@ -71,8 +71,8 @@ class CaptureEcran(private val lecteur: LecteurBinaire) {
         }
 
         /**
-         * Le nom d'une capture ou d'une vidéo : l'appareil et l'instant, sans rien que Windows ou Android
-         * refusent dans un nom de fichier — « TVSlim-TCL-Smart-TV-Pro-2026-10-04_19-15-30.png ».
+         * File name for a screenshot or video: device and timestamp, with nothing Windows or Android rejects
+         * in a file name, e.g. `TVSlim-TCL-Smart-TV-Pro-2026-10-04_19-15-30.png`.
          */
         fun nomFichier(infos: InfosAppareil, instant: LocalDateTime, extension: String): String =
             "TVSlim-${infos.nomPourFichier.take(60)}-${instant.format(HORODATAGE)}.$extension"

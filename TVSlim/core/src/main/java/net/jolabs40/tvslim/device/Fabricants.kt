@@ -1,37 +1,33 @@
 package net.jolabs40.tvslim.device
 
-/** Ce que l'on dit de l'appareil joint. */
 enum class TypeAppareil {
     TELEVISEUR,
     BOX,
 
-    /** Un téléphone, ou une tablette : rien de ce que le catalogue décrit n'est écrit pour eux. */
+    /** Phones and tablets: nothing in the catalogue is written for them. */
     TELEPHONE,
     TABLETTE,
     ;
 
-    /** Ce pour quoi le catalogue est écrit : un téléviseur, ou une box branchée sur lui. Les profils n'agissent que là. */
+    /** What the catalogue is written for: a TV, or a box plugged into one. Profiles only apply there. */
     val pourLeCatalogue: Boolean get() = this == TELEVISEUR || this == BOX
 }
 
 /**
- * Les fabricants reconnus, pour nommer l'appareil et montrer son logo.
+ * Recognized manufacturers, used to name the device and show its logo.
  *
- * Sur un téléviseur sous licence, `ro.product.manufacturer` porte le vrai fabricant — le sous-traitant
- * — et `ro.product.brand` la marque vendue : Philips sort en `TPV`, Panasonic en `SCBC`, les box
- * Thomson en `SkyworthDigital`. La marque se lit donc d'abord, le fabricant ensuite, sans tenir compte
- * de la casse : Google répond `google`, certaines Xiaomi `xiaomi`.
+ * On licensed TVs `ro.product.manufacturer` holds the actual maker (the contractor) and `ro.product.brand`
+ * the brand sold: Philips reports `TPV`, Panasonic `SCBC`, Thomson boxes `SkyworthDigital`. So the brand is
+ * checked first, then the manufacturer, ignoring case (Google reports `google`, some Xiaomi `xiaomi`).
  *
- * Valeurs relevées dans des dumps de firmware et des rapports de bugs publics (Kodi, Jellyfin,
- * media3) en septembre 2026. Sharp, Grundig et Toshiba n'ont pas pu être vérifiés en Europe : ils
- * sont reconnus à leur nom, que leur marque porte ailleurs.
+ * Values taken from firmware dumps and public bug reports (Kodi, Jellyfin, media3). Sharp, Grundig and
+ * Toshiba could not be checked on European devices and are matched on their name only.
  */
 enum class Fabricant(
     val nom: String,
     val type: TypeAppareil,
-    /** Ce que la marque ou le fabricant contient, en minuscules et sans ponctuation. */
+    /** Substrings of the brand or manufacturer, lowercase, without punctuation. */
     private val signes: List<String>,
-    /** Faux quand l'appareil est nommé sans logo. */
     val aUnLogo: Boolean = true,
 ) {
     TCL("TCL", TypeAppareil.TELEVISEUR, listOf("tcl")),
@@ -45,7 +41,7 @@ enum class Fabricant(
     HAIER("Haier", TypeAppareil.TELEVISEUR, listOf("haier")),
     PANASONIC("Panasonic", TypeAppareil.TELEVISEUR, listOf("panasonic")),
 
-    // Reconnus, mais sans logo : aucun logotype officiel utilisable n'existe pour Thomson.
+    // Recognized but shown without a logo: there is no usable official Thomson logo.
     THOMSON("Thomson", TypeAppareil.TELEVISEUR, listOf("thomson"), aUnLogo = false),
     NOKIA("Nokia", TypeAppareil.TELEVISEUR, listOf("nokia"), aUnLogo = false),
     SKYWORTH("Skyworth", TypeAppareil.TELEVISEUR, listOf("skyworth"), aUnLogo = false),
@@ -57,13 +53,13 @@ enum class Fabricant(
     ;
 
     /**
-     * Vrai quand un segment du nom de paquet porte la marque : « com.tcl.tv », « com.nvidia.ota ».
-     * Sert à reconnaître, parmi les paquets que le catalogue ignore, ceux du constructeur.
+     * True when a segment of the package name carries the brand (`com.tcl.tv`, `com.nvidia.ota`). Used to
+     * spot the manufacturer's packages among those the catalogue does not know.
      */
     fun signePaquet(paquet: String): Boolean =
         paquet.lowercase().split('.').any { segment -> signes.any { segment.startsWith(it) } }
 
-    /** Téléviseur ou box : Xiaomi fait les deux, et le modèle le dit (« MIBOX4 », « Mi TV Stick »). */
+    /** TV or box: Xiaomi makes both, and the model says which ("MIBOX4", "Mi TV Stick"). */
     fun typePour(modele: String): TypeAppareil {
         val nomModele = normaliser(modele)
         return if (this == XIAOMI && MOTS_DE_BOX.any { it in nomModele }) TypeAppareil.BOX else type
@@ -72,14 +68,11 @@ enum class Fabricant(
     companion object {
         private val MOTS_DE_BOX = listOf("box", "stick")
 
-        /** La marque vendue d'abord, le fabricant ensuite. `null` pour une marque inconnue. */
+        /** Brand sold first, then manufacturer. `null` for an unknown brand. */
         fun identifier(marqueCommerciale: String, fabricant: String): Fabricant? =
             reconnaitre(marqueCommerciale) ?: reconnaitre(fabricant)
 
-        /**
-         * Depuis le nom retenu d'un appareil déjà joint (« TCL Smart TV Pro ») : il commence par sa
-         * marque, voir [InfosAppareil.nomAffiche].
-         */
+        /** From the stored name of a known device ("TCL Smart TV Pro"); see [InfosAppareil.nomAffiche]. */
         fun depuisNom(nom: String): Fabricant? = reconnaitre(nom.trim().substringBefore(' '))
 
         private fun reconnaitre(texte: String): Fabricant? {

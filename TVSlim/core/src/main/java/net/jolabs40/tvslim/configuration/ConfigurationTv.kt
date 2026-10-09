@@ -8,27 +8,26 @@ import net.jolabs40.tvslim.device.InfosAppareil
 import java.time.LocalDate
 
 /**
- * La configuration d'un téléviseur, sauvegardée pour être réinjectée plus tard : après une remise à
- * zéro, une mise à jour qui a tout réactivé, ou sur un second appareil du même modèle.
+ * A TV's configuration, saved to be reapplied later: after a factory reset, after an update that
+ * re-enabled everything, or on a second device of the same model.
  *
- * Elle ne retient que ce que TV Slim sait rétablir — l'état des paquets du catalogue et l'écran
- * d'accueil — dans un fichier JSON lisible, que l'application Windows et le compagnon Android écrivent
- * et relisent à l'identique.
+ * Holds only what TV Slim can restore (catalogue package states and the home screen), as readable JSON
+ * that the Windows app and the Android companion write and read identically.
  */
 @Serializable
 data class ConfigurationTv(
-    /** Toujours [APPLICATION] : un autre fichier JSON n'est pas une configuration. */
+    /** Always [APPLICATION]; any other JSON file is not a configuration. */
     val application: String,
-    /** Version du format. Un fichier plus récent que l'application est refusé plutôt que mal lu. */
+    /** Format version. A file newer than the app is rejected rather than misread. */
     val format: Int,
-    /** Instant de la sauvegarde, en millisecondes depuis l'époque Unix. */
+    /** Save time, in milliseconds since the Unix epoch. */
     val sauvegardeLe: Long,
     val appareil: AppareilSauvegarde = AppareilSauvegarde(),
-    /** L'écran d'accueil en place au moment de la sauvegarde. */
+    /** Home screen at save time. */
     val accueil: AccueilSauvegarde? = null,
-    /** Paquets du catalogue désactivés au moment de la sauvegarde. */
+    /** Catalogue packages disabled at save time. */
     val desactives: List<String> = emptyList(),
-    /** Paquets du catalogue présents et actifs : réactivés s'ils ne le sont plus. */
+    /** Catalogue packages present and enabled; re-enabled if they no longer are. */
     val actifs: List<String> = emptyList(),
 ) {
     companion object {
@@ -37,7 +36,7 @@ data class ConfigurationTv(
     }
 }
 
-/** L'appareil d'où vient la sauvegarde : pour le dire avant de réinjecter, rien de plus. */
+/** Source device of the backup, only shown before reapplying. */
 @Serializable
 data class AppareilSauvegarde(
     val nom: String = "",
@@ -48,11 +47,11 @@ data class AppareilSauvegarde(
 data class AccueilSauvegarde(
     val paquet: String,
     val composant: String = "",
-    /** Son nom lisible au moment de la sauvegarde : un launcher absent se nomme encore. */
+    /** Display name at save time, so a launcher missing on the target can still be named. */
     val nom: String = "",
 )
 
-/** La configuration du téléviseur tel qu'il vient d'être lu : chaque paquet du catalogue, et l'accueil. */
+/** Builds the configuration of the TV as just read: every catalogue package, and the home screen. */
 fun Catalogue.configurationDe(
     infos: InfosAppareil,
     etats: Map<String, EtatPaquet>,
@@ -60,7 +59,7 @@ fun Catalogue.configurationDe(
 ): ConfigurationTv {
     fun dansLEtat(voulu: EtatPaquet) = entrees.map { it.paquet }.distinct().filter { etats[it] == voulu }
 
-    // « android » est le sélecteur que montre Android quand aucun accueil n'est choisi : rien à rétablir.
+    // "android" is the chooser Android shows when no home screen is set: nothing to restore.
     val accueil = infos.accueilActuel.takeIf { it.isNotBlank() && it != "android" }?.let { paquet ->
         AccueilSauvegarde(
             paquet = paquet,
@@ -79,26 +78,26 @@ fun Catalogue.configurationDe(
     )
 }
 
-/** Écrit et relit une [ConfigurationTv] : le format du fichier ne se décide qu'ici. */
+/** Writes and reads a [ConfigurationTv]. The file format is defined here and nowhere else. */
 object FichierConfiguration {
 
     private val json = Json {
         prettyPrint = true
         encodeDefaults = true
-        // Une version future pourra ajouter des champs sans rendre ses fichiers illisibles ici.
+        // Lets a future version add fields without making its files unreadable here.
         ignoreUnknownKeys = true
     }
 
     fun ecrire(configuration: ConfigurationTv): String =
         json.encodeToString(ConfigurationTv.serializer(), configuration)
 
-    /** La configuration que contient [texte], ou null si ce n'en est pas une que cette version sait lire. */
+    /** Parses [texte], or returns null if it is not a configuration this version can read. */
     fun lire(texte: String): ConfigurationTv? =
         runCatching { json.decodeFromString(ConfigurationTv.serializer(), texte) }
             .getOrNull()
             ?.takeIf { it.application == ConfigurationTv.APPLICATION && it.format in 1..ConfigurationTv.FORMAT }
 
-    /** « TVSlim-TCL-Smart-TV-Pro-2026-09-13.json » : l'appareil et le jour, sans caractère qui gêne. */
+    /** Suggested file name such as `TVSlim-TCL-Smart-TV-Pro-2026-09-13.json`: device and date, filename-safe. */
     fun nomPropose(infos: InfosAppareil, jour: LocalDate = LocalDate.now()): String =
         "TVSlim-${infos.nomPourFichier}-$jour.json"
 }

@@ -56,10 +56,8 @@ import java.time.format.FormatStyle
 import java.util.Locale
 
 /**
- * Dernier arrêt avant d'agir.
- *
- * Le catalogue connaît les effets de bord — « la touche Netflix devient inopérante » — et ils sont
- * affichés ici, au moment de décider. Rien ne part tant que ce n'est pas validé.
+ * Last stop before acting. Side effects known to the catalogue ("the Netflix button stops working") are
+ * shown here, when the decision is made. Nothing is sent until confirmed.
  */
 @Composable
 fun ConfirmationDialogue(
@@ -146,8 +144,8 @@ fun ConfirmationDialogue(
 }
 
 /**
- * Ce que la configuration va changer, rangé par nature : ce qui revient, ce qui part — effets de bord
- * compris —, l'écran d'accueil, et ce que ce téléviseur n'a pas.
+ * What the configuration will change, grouped: what comes back, what goes (side effects included), the
+ * home screen, and what this TV lacks.
  */
 @Composable
 private fun Reinjection(plan: PlanReinjection, derive: Boolean) {
@@ -158,7 +156,7 @@ private fun Reinjection(plan: PlanReinjection, derive: Boolean) {
             .format(Instant.ofEpochMilli(sauvegarde.sauvegardeLe).atZone(ZoneId.systemDefault()))
     }
     Text(
-        // Une dérive n'a ni date ni appareil d'origine : son plan vient du journal de ce téléviseur.
+        // Drift has no date or source device: its plan comes from this TV's journal.
         text = if (derive) {
             stringResource(Res.string.confirm_drift_source)
         } else {
@@ -205,10 +203,7 @@ private fun Reinjection(plan: PlanReinjection, derive: Boolean) {
     }
 }
 
-/**
- * L'application qui arrive, et ce qu'elle remplace : une mise à jour ne se confond pas avec un retour en
- * arrière, qu'Android refusera.
- */
+/** The incoming app and what it replaces, so an update is not mistaken for a downgrade, which Android refuses. */
 @Composable
 private fun ApercuInstallation(apk: ApkChoisi) {
     val manifeste = apk.manifeste

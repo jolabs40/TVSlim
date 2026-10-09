@@ -4,21 +4,21 @@ import net.jolabs40.tvslim.shell.ResultatShell
 
 enum class NatureEntree { DOSSIER, FICHIER, AUTRE }
 
-/** Une entrée d'un dossier du téléviseur, telle que `stat` la décrit. */
+/** An entry of a TV folder, as described by `stat`. */
 data class EntreeDistante(
     val nom: String,
-    /** Pour un lien symbolique, la nature de sa cible : `/sdcard` se parcourt comme un dossier. */
+    /** For a symlink, the type of its target, so `/sdcard` browses like a folder. */
     val nature: NatureEntree,
-    /** En octets ; sans signification pour un dossier. */
+    /** In bytes; meaningless for a folder. */
     val taille: Long,
-    /** Dernière modification, en millisecondes. */
+    /** Last modified time in milliseconds. */
     val date: Long,
     val lien: Boolean = false,
 ) {
     val dossier: Boolean get() = nature == NatureEntree.DOSSIER
 }
 
-/** Ce que la lecture d'un dossier a donné. */
+/** Result of listing a folder. */
 sealed interface LectureDossier {
     val chemin: String
 
@@ -26,23 +26,23 @@ sealed interface LectureDossier {
 
     data class Introuvable(override val chemin: String) : LectureDossier
 
-    /** Le dossier existe, mais Android ne laisse pas le shell d'ADB l'ouvrir : `/data`, le plus souvent. */
+    /** The folder exists but Android does not let the ADB shell open it (usually `/data`). */
     data class Refusee(override val chemin: String) : LectureDossier
 
-    /** [motif] : ce qu'ont répondu la connexion ou le téléviseur, tel quel. */
+    /** [motif]: the raw answer from the connection or the TV. */
     data class Echouee(override val chemin: String, val motif: String) : LectureDossier
 }
 
 enum class NatureRaccourci { INTERNE, TELECHARGEMENTS, FILMS, MUSIQUE, IMAGES, VOLUME, TEMPORAIRE, RACINE }
 
-/** Un dossier qu'on atteint d'un clic. Chaque application le nomme dans sa langue ; un volume, par son nom. */
+/** A one-click folder shortcut. Each app localizes its label; a volume shows its own name. */
 data class Raccourci(val nature: NatureRaccourci, val chemin: String) {
     val nom: String get() = CheminDistant.nom(chemin)
 
     companion object {
         /**
-         * `/sdcard` plutôt que `/storage/emulated/0` : c'est le chemin que donnent les tutoriels, et il mène au
-         * même endroit. `/data/local/tmp` est le seul dossier hors du stockage partagé où le shell écrive.
+         * `/sdcard` rather than `/storage/emulated/0`: it is the path tutorials give, and leads to the same
+         * place. `/data/local/tmp` is the only folder outside shared storage where the shell can write.
          */
         fun avecVolumes(volumes: List<String>): List<Raccourci> = buildList {
             add(Raccourci(NatureRaccourci.INTERNE, DOSSIER_DE_DEPART))
@@ -57,25 +57,25 @@ data class Raccourci(val nature: NatureRaccourci, val chemin: String) {
     }
 }
 
-/** Le stockage partagé : celui que voient les applications, et le dossier où l'on arrive. */
+/** Shared storage as apps see it; the starting folder. */
 const val DOSSIER_DE_DEPART = "/sdcard"
 
 /**
- * La commande qui lit un dossier, et la lecture de sa réponse.
+ * Builds the folder listing command and parses its output.
  *
- * `stat -c` plutôt que `ls -l` : les colonnes de `ls` ne disent pas où finit la date et où commence un nom qui
- * contient des espaces. `find -printf` aurait suffi seul, mais la toybox d'Android le refuse — éprouvé sur la
- * TCL (toybox 0.8.9) et la Shield (0.8.3), le 2026-10-03.
+ * `stat -c` rather than `ls -l`, whose columns do not show where the date ends and a name with spaces begins.
+ * `find -printf` alone would do, but Android's toybox lacks it (tested with toybox 0.8.9 on the TCL and 0.8.3
+ * on the Shield).
  *
- * Une ligne `E|mode|taille|date|nom` par entrée, le nom en dernier pour qu'il garde ses `|`, puis une ligne
- * `D|nom` par lien qui mène à un dossier : `[ -d ]` suit le lien sans lancer un `stat` de plus.
+ * One `E|mode|size|date|name` line per entry, name last so it may contain `|`, then one `D|name` line per link
+ * that leads to a folder: `[ -d ]` follows the link without another `stat`.
  */
 internal object LecteurDossier {
 
-    /** Le dossier n'existe pas, ou n'en est pas un. */
+    /** The folder does not exist, or is not a folder. */
     private const val CODE_INTROUVABLE = 2
 
-    /** Il existe, mais on ne peut ni y entrer ni l'énumérer. */
+    /** It exists but cannot be entered or listed. */
     private const val CODE_REFUSE = 3
 
     private const val MASQUE_TYPE = 0xF000
@@ -84,8 +84,8 @@ internal object LecteurDossier {
     private const val TYPE_LIEN = 0xA000
 
     /**
-     * Le shell du téléviseur (mksh) n'étend pas `.*` en `.` ni `..` ; un motif qui ne trouve rien reste tel
-     * quel, et `stat` s'en plaint sur une sortie d'erreur qu'on jette.
+     * The TV shell (mksh) does not expand `.*` to `.` or `..`. A pattern with no match stays literal and
+     * `stat` complains on stderr, which is discarded.
      */
     fun commande(chemin: String): String {
         val cite = citer(chemin)
@@ -102,7 +102,7 @@ internal object LecteurDossier {
         else -> LectureDossier.Echouee(chemin, reponse.sortie.ifBlank { "Code de retour ${reponse.code}." })
     }
 
-    /** Les dossiers d'abord, puis les fichiers, chacun par ordre alphabétique sans égard à la casse. */
+    /** Folders first, then files, each sorted case-insensitively. */
     fun entrees(sortie: String): List<EntreeDistante> {
         val lignes = sortie.lines()
         val liensVersDossier = lignes.filter { it.startsWith("D|") }.map { it.substring(2) }.toSet()
@@ -133,7 +133,7 @@ internal object LecteurDossier {
         )
     }
 
-    /** Les volumes amovibles — clé USB, carte SD — se montent sous `/storage`, à côté du stockage interne. */
+    /** Removable volumes (USB drive, SD card) are mounted under `/storage`, next to internal storage. */
     const val COMMANDE_VOLUMES = "ls /storage"
 
     fun volumes(sortie: String): List<String> =

@@ -3,26 +3,25 @@ package net.jolabs40.tvslim.device
 import java.net.URLEncoder
 
 /**
- * Proposer au catalogue ce qu'il ignore : l'inventaire exporté, joint à une issue GitHub ouverte sur le
- * modèle `nouvel-appareil.yml`. Rien ne part tout seul — la personne voit le formulaire, y joint le fichier
- * et l'envoie elle-même, depuis son propre compte.
+ * Proposes unknown packages for the catalogue: the exported inventory, attached to a GitHub issue opened from
+ * the `nouvel-appareil.yml` template. Nothing is sent automatically; the user sees the form, attaches the file
+ * and submits it from their own account.
  */
 object PropositionCatalogue {
 
-    /** Le dépôt de TV Slim. La version Windows passe le sien, tiré de sa configuration de build. */
+    /** The Windows build passes its own repository, from its build configuration. */
     const val DEPOT = "jolabs40/TVSlim"
 
-    /** Le modèle d'issue, dans `.github/ISSUE_TEMPLATE` à la racine du dépôt. */
+    /** Issue template, in `.github/ISSUE_TEMPLATE` at the repository root. */
     const val MODELE = "nouvel-appareil.yml"
 
     /**
-     * Proposé dès qu'un paquet du constructeur échappe au catalogue, quelle que soit la marque : c'est là
-     * qu'est ce qu'on vient chercher. Les inconnus d'Android — surcouches, modules APEX — n'en valent pas
-     * la peine, et un appareil déjà décrit n'a plus rien à proposer.
+     * Offered as soon as a manufacturer package is missing from the catalogue, whatever the brand. Unknown
+     * Android packages (overlays, APEX modules) are not worth it.
      */
     fun aProposer(inconnus: List<PaquetInconnu>): Boolean = inconnus.any { it.origine == OriginePaquet.CONSTRUCTEUR }
 
-    /** Le formulaire, titre et appareil déjà remplis : `device` est l'identifiant du champ dans le modèle. */
+    /** The issue form with title and device prefilled; `device` is the field id in the template. */
     fun lien(infos: InfosAppareil, depot: String = DEPOT): String {
         val version = infos.versionAndroid.takeIf { it.isNotBlank() }?.let { " (Android $it)" }.orEmpty()
         val parametres = listOf(
@@ -34,6 +33,6 @@ object PropositionCatalogue {
             parametres.joinToString("&") { (cle, valeur) -> "$cle=${encoder(valeur)}" }
     }
 
-    /** `URLEncoder` écrit l'espace « + », que GitHub garderait tel quel dans un champ : « %20 » partout. */
+    /** `URLEncoder` encodes spaces as `+`, which GitHub would keep literally in a form field; use `%20`. */
     private fun encoder(texte: String): String = URLEncoder.encode(texte, "UTF-8").replace("+", "%20")
 }

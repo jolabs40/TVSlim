@@ -2,30 +2,22 @@ package net.jolabs40.tvslim.device
 
 import net.jolabs40.tvslim.shell.ExecuteurCommande
 
-/** Ce qu'une seule interrogation du téléviseur rapporte. */
+/** Result of a single query of the TV. */
 data class Photographie(
     val infos: InfosAppareil = InfosAppareil.VIDE,
     val etats: Map<String, EtatPaquet> = emptyMap(),
     /**
-     * Chaque paquet livré avec l'appareil — tout sauf ce que la personne a installé —, actif ou
-     * désactivé. Vide quand la liste des applications tierces manque : sans elle, on ne saurait pas
-     * les distinguer, et une application installée passerait pour un paquet du constructeur.
+     * Every package shipped with the device (all but user-installed ones), enabled or disabled. Empty when
+     * the third-party list is missing: without it, an installed app would pass for a manufacturer package.
      */
     val paquetsSysteme: Map<String, EtatPaquet> = emptyMap(),
-    /** Les paquets qui ont une icône dans le menu d'un téléphone (`category.LAUNCHER`), désactivés compris. */
+    /** Packages with an icon in a phone's app menu (`category.LAUNCHER`), disabled ones included. */
     val applicationsMenu: Set<String> = emptySet(),
 )
 
 /**
- * Lit l'état d'un téléviseur **à distance**, uniquement par commandes shell — c'est la
- * contrepartie de la lecture locale par `PackageManager` que fait l'application installée sur
- * le téléviseur.
- *
- * Tout tient en **une seule commande** : sur une liaison réseau, chaque aller-retour se paie,
- * et la version en six appels relisait deux fois la liste des paquets. Les sections sont
- * séparées par des marqueurs improbables dans une sortie de `pm`.
- *
- * Toutes les commandes sont en lecture seule : rien ici ne modifie l'appareil.
+ * Reads a TV's state over the shell, read-only (the TV app reads it locally through `PackageManager`).
+ * The snapshot is a single command to save network round trips, split into sections by `@@TVSLIM_` markers.
  */
 class LecteurDistant(private val executeur: ExecuteurCommande) {
 
@@ -41,7 +33,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         val actifs = paquets(sections[MARQUEUR_ACTIFS])
         val proprietes = sections[MARQUEUR_PROPRIETES].orEmpty().map { it.trim() }
         val memoire = memoire(sections[MARQUEUR_MEMOIRE])
-        // Null quand la section manque, et non vide : « aucune application tierce » serait faux.
+        // Null rather than empty when the section is missing: "no third-party app" would be wrong.
         val tiers = sections[MARQUEUR_TIERS]?.let(::paquets)
 
         return Photographie(
@@ -66,7 +58,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
                     actifs = actifs,
                 ),
                 caracteristiques = sections[MARQUEUR_CARACTERISTIQUES].orEmpty().firstOrNull()?.trim().orEmpty(),
-                // Null quand la section manque : « aucune fonction déclarée » dirait « pas d'écran tactile ».
+                // Null when the section is missing: "no declared feature" would mean "no touchscreen".
                 fonctions = sections[MARQUEUR_FONCTIONS]?.let(::fonctions),
             ),
             etats = paquetsSurveilles.associateWith { paquet ->
@@ -85,11 +77,8 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     }
 
     /**
-     * Répartition de la mémoire et poids de chaque processus.
-     *
-     * Séparée de la photographie : `dumpsys meminfo` est nettement plus lourd que le reste, et
-     * n'intéresse que l'écran qui l'affiche. Le chiffre retenu est le PSS, la seule mesure qui
-     * ne compte pas deux fois la mémoire partagée entre processus.
+     * Memory breakdown and per-process usage, kept out of the snapshot because `dumpsys meminfo` is heavy.
+     * Uses PSS, the only measure that does not count shared memory twice.
      */
     suspend fun memoire(): RepartitionMemoire {
         val sortie = executeur.executer("dumpsys meminfo")
@@ -135,24 +124,20 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         )
     }
 
-    /**
-     * Occupation du stockage interne, et poids de chaque application. À la demande, comme la
-     * mémoire : seul l'onglet qui l'affiche en a besoin.
-     */
+    /** Internal storage usage and per-app size, on demand like [memoire]. */
     suspend fun stockage(): RepartitionStockage {
         val sortie = executeur.executer(COMMANDE_STOCKAGE)
         return if (sortie.reussi) LectureStockage.interpreter(sortie.sortie) else RepartitionStockage()
     }
 
     /**
-     * Ce que chaque paquet déclare au système — emplacement, identité, services sensibles, icône —, pour
-     * l'inventaire des inconnus : à la demande, comme la mémoire. Le code de sortie n'est que celui de la
-     * dernière requête ; chaque section se lit pour elle-même, quoi qu'il vaille.
+     * Per-package indices for the unknown-packages inventory. The exit code is only the last query's, so
+     * sections are parsed regardless of it.
      */
     suspend fun indices(): Map<String, IndicesPaquet> =
         LectureIndices.interpreter(executeur.executer(LectureIndices.COMMANDE).sortie)
 
-    /** Empreinte, produit et langue d'usine du firmware, pour l'inventaire des inconnus : à la demande aussi. */
+    /** Firmware identity for the unknown-packages inventory. */
     suspend fun firmware(): Firmware {
         val sortie = executeur.executer(LectureFirmware.COMMANDE)
         return if (sortie.reussi) LectureFirmware.interpreter(sortie.sortie) else Firmware()
@@ -163,17 +148,16 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     private fun premierNombre(ligne: String): Long =
         NOMBRE.find(ligne)?.let { nombre(it.groupValues[1]) } ?: 0L
 
-    /** Une seule question, très courte : ce paquet est-il installé ? Sert à guetter une pose. */
     /**
-     * Le paquet de l'accueil en place, relu seul : après un `set-home-activity`, pour savoir s'il a pris —
-     * tant que l'accueil d'usine est actif, Android répond `Success` sans rien changer. Vide si la lecture
-     * échoue.
+     * Current home package, read after `set-home-activity` to check it took effect: while the factory home
+     * is enabled, Android answers `Success` and changes nothing. Empty on failure.
      */
     suspend fun accueilActuel(): String {
         val sortie = executeur.executer(COMMANDE_ACCUEIL)
         return if (sortie.reussi) accueil(sortie.sortie.lines()) else ""
     }
 
+    /** Cheap installed check, polled while waiting for an install. */
     suspend fun estInstalle(paquet: String): Boolean {
         val sortie = executeur.executer("pm list packages --user 0 $paquet")
         return sortie.reussi &&
@@ -181,15 +165,12 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     }
 
     /**
-     * Permissions qu'une application déclare, et celles qu'elle a effectivement obtenues.
+     * Permissions an app requests and those it was granted, checked before `pm grant` so that a permission
+     * missing from the manifest is rejected here with a message rather than on the TV with a Java exception.
      *
-     * Sert avant un `pm grant` : le manifeste fait foi, et une permission qui n'y figure pas se
-     * refuse ici, avec une phrase, plutôt que sur le téléviseur, avec une exception Java.
-     *
-     * `dumpsys package` range les permissions en sections indentées — `requested permissions:`
-     * énumère ce que le manifeste demande, `install permissions:` et `runtime permissions:` ce
-     * qui est réellement accordé. `declared permissions:` liste au contraire ce que
-     * l'application *définit* pour les autres : elle ne nous intéresse pas.
+     * Parses the indented `dumpsys package` sections: `requested permissions:` (the manifest),
+     * `install permissions:` and `runtime permissions:` (granted). `declared permissions:`, defined for other
+     * apps, is ignored.
      */
     suspend fun permissions(paquet: String): PermissionsPaquet {
         if (!IDENTIFIANT.matches(paquet)) return PermissionsPaquet()
@@ -204,9 +185,8 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         sortie.sortie.lineSequence().forEach { ligne ->
             val nette = ligne.trim()
 
-            // Un en-tête de section : une ligne qui se termine par « : » sans rien porter
-            // d'autre. « User 0: ceDataInode=… » n'en est pas un, et sépare pourtant les
-            // permissions d'installation de celles d'exécution.
+            // Section header: a line ending in ":" with nothing else on it. "User 0: ceDataInode=..."
+            // is not one, even though it separates install permissions from runtime ones.
             if (nette.endsWith(":") && !nette.contains("granted=")) {
                 val titre = nette.lowercase()
                 section = when {
@@ -216,16 +196,15 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
 
                     else -> SectionPermissions.AUCUNE
                 }
-                // Seul un paquet réellement installé porte ces sections : `dumpsys` répond
-                // « Unable to find package » et rien d'autre pour les autres.
+                // Only an installed package has these sections; for any other, `dumpsys` prints
+                // "Unable to find package" and nothing else.
                 if (section != SectionPermissions.AUCUNE) trouve = true
                 return@forEach
             }
             if (section == SectionPermissions.AUCUNE) return@forEach
 
-            // Tout ce qui n'est pas un nom de permission est ignoré sans quitter la section :
-            // `dumpsys` y glisse des lignes de service, et en sortir trop tôt ferait manquer
-            // les permissions suivantes.
+            // Skip anything that is not a permission name without leaving the section: `dumpsys`
+            // inserts service lines there, and leaving early would miss the permissions after them.
             val trouvee = LIGNE_PERMISSION.find(nette) ?: return@forEach
             val nom = trouvee.groupValues[1]
             if (section == SectionPermissions.DEMANDEES) {
@@ -239,16 +218,13 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     }
 
     /**
-     * Mode d'un app-op : « allow », « ignore », « deny » ou « default ».
+     * Mode of an app-op: `allow`, `ignore`, `deny` or `default`.
      *
-     * Certaines permissions ne suffisent pas à elles seules — `PACKAGE_USAGE_STATS` est aussi
-     * gouvernée par l'app-op `GET_USAGE_STATS`. Tant que celui-ci vaut « default », la
-     * permission tranche ; posé à « ignore », il la contredit, et l'application ne voit rien
-     * malgré un `pm grant` réussi.
+     * `PACKAGE_USAGE_STATS` is also governed by the `GET_USAGE_STATS` app-op: at `default` the permission
+     * decides, at `ignore` the app sees nothing despite a successful `pm grant`.
      *
-     * Trois sorties possibles, toutes rencontrées sur du vrai matériel :
-     * « GET_USAGE_STATS: allow; time=… », « No operations. » suivi de « Default mode: default »,
-     * ou une ligne « Error: … » quand le paquet ou l'op n'existe pas.
+     * Outputs seen on real hardware: `GET_USAGE_STATS: allow; time=...`, `No operations.` then
+     * `Default mode: default`, or `Error: ...` when the package or op does not exist.
      */
     suspend fun modeAppOp(paquet: String, appOp: String): String {
         if (!IDENTIFIANT.matches(paquet) || !IDENTIFIANT.matches(appOp)) return ""
@@ -272,7 +248,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     private fun paquets(lignes: List<String>?): Set<String> =
         lignes.orEmpty().map { it.removePrefix("package:") }.filter { it.isNotBlank() }.toSet()
 
-    /** Mémoire totale et disponible, en mégaoctets, lues dans /proc/meminfo. */
+    /** Total and available memory in MB, from /proc/meminfo. */
     private fun memoire(lignes: List<String>?): Pair<Long, Long> {
         fun valeur(cle: String): Long = lignes.orEmpty()
             .firstOrNull { it.startsWith(cle) }
@@ -286,13 +262,13 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     private fun accueil(lignes: List<String>?): String =
         lignes.orEmpty().lastOrNull { it.contains('/') }?.substringBefore('/').orEmpty()
 
-    /** Le composant entier de l'accueil en place : ce que `set-home-activity` saurait rétablir. */
+    /** Full component of the current home, as `set-home-activity` needs it to restore it. */
     private fun composantAccueil(lignes: List<String>?): String =
         lignes.orEmpty().lastOrNull { COMPOSANT.matches(it) }.orEmpty()
 
     /**
-     * Applications capables de servir d'écran d'accueil, hors accueils d'usine du catalogue.
-     * Sert au garde-fou : sans launcher tiers, l'accueil d'origine ne doit pas être désactivé.
+     * Apps that can act as home screen, excluding the catalogue's factory homes. Used by the safeguard:
+     * without a third-party launcher, the stock home must not be disabled.
      */
     private fun launchers(
         lignes: List<String>?,
@@ -305,14 +281,12 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             .distinctBy { it.paquet }
 
     /**
-     * Les écrans d'accueil livrés avec l'appareil, **désactivés compris** — uniquement pour les
-     * montrer : le garde-fou, lui, ne regarde que [launchers].
+     * Factory home screens, disabled ones included, for display only (the safeguard uses [launchers]).
      *
-     * `query-activities` ne rend un paquet désactivé qu'avec `MATCH_DISABLED_COMPONENTS` : relevé sur
-     * la TCL, Google TV coupé n'apparaît qu'ainsi. Est « d'usine » ce que la personne n'a pas installé
-     * (`pm list packages -3`), hors écrans de repli, assistants de configuration et provisionnement,
-     * qui répondent aussi à HOME sans servir d'accueil. Sans la liste des applications tierces, on
-     * s'en tient aux accueils que le catalogue connaît.
+     * `query-activities` returns a disabled package only with `MATCH_DISABLED_COMPONENTS`, as seen on the TCL
+     * with Google TV disabled. "Factory" means absent from `pm list packages -3`, minus fallback screens, setup
+     * wizards and provisioning, which also answer HOME. Without the third-party list, only the catalogue's
+     * homes are kept.
      */
     private fun accueilsUsine(
         lignes: List<String>?,
@@ -322,14 +296,14 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         actifs: Set<String>,
     ): List<AccueilUsine> {
         val trouves = activitesAccueil(lignes)
-            // Un Android qui ignore le drapeau répond par son aide, où traînent des « a/b ».
+            // An Android that ignores the flag prints its help text, which contains "a/b" strings.
             .filter { COMPOSANT.matches(it.composant) }
             .filterNot { estUnRepliSysteme(it.priorite, it.composant) || estUnAssistant(it.paquet) }
             .filter { activite -> if (tiers == null) activite.paquet in paquetsDAccueil else activite.paquet !in tiers }
             .distinctBy { it.paquet }
             .map { AccueilUsine(it.paquet, it.composant, actif = it.paquet !in desactives) }
 
-        // Faute de réponse, les accueils du catalogue présents sur l'appareil restent au moins nommés.
+        // Without an answer, the catalogue's homes present on the device are still listed by name.
         val duCatalogue = paquetsDAccueil
             .filter { (it in desactives || it in actifs) && !estUnAssistant(it) }
             .filter { paquet -> trouves.none { it.paquet == paquet } }
@@ -338,7 +312,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         return trouves + duCatalogue
     }
 
-    /** Chaque composant d'une sortie de `query-activities --brief`, avec la priorité annoncée avant lui. */
+    /** Each component in a `query-activities --brief` output, with the priority printed before it. */
     private fun activitesAccueil(lignes: List<String>?): List<ActiviteAccueil> {
         val trouvees = mutableListOf<ActiviteAccueil>()
         var priorite = 0
@@ -355,25 +329,23 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     }
 
     /**
-     * Assistants de configuration, provisionnement, sélecteur du système, aiguilleurs du constructeur : HOME
-     * sans être un accueil. Chez Philips, `org.droidtv.homeintentresolver` reçoit HOME en priorité 100 et
-     * choisit où envoyer la touche (relevé le 2026-10-04) : le proposer comme écran d'accueil n'aurait aucun sens.
+     * Setup wizards, provisioning, the system chooser and manufacturer dispatchers handle HOME without being
+     * a home screen. On Philips, `org.droidtv.homeintentresolver` takes HOME at priority 100 and routes the
+     * key elsewhere.
      */
     private fun estUnAssistant(paquet: String): Boolean =
         paquet == "android" || ASSISTANT.containsMatchIn(paquet)
 
     /**
-     * `FallbackHome` répond aussi à `category.HOME`, mais n'affiche qu'un écran vide le temps
-     * du démarrage : le prendre pour un écran d'accueil de remplacement laisserait désactiver
-     * l'accueil d'usine et démarrer sur du vide. Android le trahit par sa priorité négative.
+     * `FallbackHome` answers `category.HOME` but only shows a blank screen during boot; treating it as a
+     * replacement home would allow disabling the stock home and booting into nothing. Android gives it a
+     * negative priority.
      */
     private fun estUnRepliSysteme(priorite: Int, composant: String): Boolean =
         priorite < 0 || composant.contains("FallbackHome", ignoreCase = true)
 
-    /** Où l'on se trouve dans la sortie de `dumpsys package`. */
     private enum class SectionPermissions { AUCUNE, DEMANDEES, ACCORDEES }
 
-    /** Une activité qui répond à `category.HOME`, et la priorité qu'elle y déclare. */
     private data class ActiviteAccueil(val priorite: Int, val composant: String) {
         val paquet: String get() = composant.substringBefore('/')
     }
@@ -381,27 +353,27 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
     internal companion object {
         private val PRIORITE = Regex("""priority=(-?\d+)""")
 
-        /** « paquet/.Activité » : un composant, et rien d'autre — surtout pas une ligne d'aide. */
+        /** `package/.Activity`: a component and nothing else, in particular not a help line. */
         private val COMPOSANT = Regex("""[A-Za-z0-9_.]+/[A-Za-z0-9_.]+""")
 
         private val ASSISTANT = Regex("setup|provision|intentresolver", RegexOption.IGNORE_CASE)
 
-        /** `MATCH_DISABLED_COMPONENTS` : sans lui, un accueil désactivé n'existe plus pour Android. */
+        /** `MATCH_DISABLED_COMPONENTS`: without it, a disabled home does not exist for Android. */
         private const val AVEC_DESACTIVES = 0x200
 
-        /** « android.permission.DUMP » seul, ou suivi de « : granted=true ». */
+        /** `android.permission.DUMP` alone, or followed by `: granted=true`. */
         private val LIGNE_PERMISSION =
             Regex("""^([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+)(?::(.*))?$""")
 
-        /** Un nom de paquet, et rien d'autre : la commande part dans un shell. */
+        /** A package name and nothing else: the command goes to a shell. */
         private val IDENTIFIANT = Regex("""[A-Za-z0-9_.]+""")
 
-        /** « 161,015K: com.spocky.projengmenu (pid 4799 state 14 oom 150 / activities) » */
+        /** `161,015K: com.spocky.projengmenu (pid 4799 state 14 oom 150 / activities)` */
         private val PROCESSUS = Regex("""^([\d,]+)K:\s+(\S+)\s+\(pid\s+(\d+)""")
         private val NOMBRE = Regex("""([\d,]+)K""")
         private val CACHE = Regex("""([\d,]+)K cached pss""")
 
-        /** Range chaque ligne sous le dernier marqueur rencontré, débarrassée de ses blancs ; les lignes vides sautent. */
+        /** Files each trimmed line under the last marker seen; blank lines are dropped. */
         internal fun decouper(sortie: String): Map<String, List<String>> {
             val sections = mutableMapOf<String, MutableList<String>>()
             var courante: MutableList<String>? = null
@@ -416,8 +388,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             return sections
         }
 
-        // Surtout pas de « # » : dans un shell, un mot qui commence par # ouvre un commentaire
-        // et avale tout le reste de la ligne — la commande entière se réduisait à un echo vide.
+        // Never `#`: a shell word starting with # comments out the rest of the line, i.e. the whole command.
         const val PREFIXE_MARQUEUR = "@@TVSLIM_"
         const val MARQUEUR_DESACTIVES = "@@TVSLIM_D"
         const val MARQUEUR_ACTIFS = "@@TVSLIM_E"
@@ -427,31 +398,27 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
         const val MARQUEUR_LAUNCHERS = "@@TVSLIM_L"
 
         /**
-         * La marque a sa section à elle : une propriété vide n'y laisse qu'une section vide, là où
-         * elle décalerait les quatre lignes de [MARQUEUR_PROPRIETES], les lignes blanches étant
-         * écartées au découpage.
+         * Own section for the brand: an empty value in [MARQUEUR_PROPRIETES] would shift its four lines, since
+         * blank lines are dropped.
          */
         const val MARQUEUR_MARQUE = "@@TVSLIM_B"
 
-        /** Les activités d'accueil, désactivées comprises : de quoi retrouver l'accueil d'usine coupé. */
+        /** Home activities, disabled ones included, to find a disabled factory home. */
         const val MARQUEUR_ACCUEILS_TOUS = "@@TVSLIM_U"
 
-        /** Les applications installées par la personne : tout le reste est venu avec l'appareil. */
+        /** Apps installed by the user; everything else came with the device. */
         const val MARQUEUR_TIERS = "@@TVSLIM_T"
 
-        /**
-         * Le genre d'appareil, tel qu'il le déclare — voir [InfosAppareil.typeAppareil]. Chacun sa section : une
-         * propriété vide ne décale rien.
-         */
+        /** Declared device kind, see [InfosAppareil.typeAppareil]. Own section so an empty value shifts nothing. */
         const val MARQUEUR_CARACTERISTIQUES = "@@TVSLIM_C"
 
         /**
-         * Les applications du menu d'un téléphone, désactivées comprises — sans le drapeau, une application coupée
-         * disparaîtrait de la liste, et ne s'y réactiverait plus. Voir `Catalogue.avecApplicationsDuMenu`.
+         * A phone's menu apps, disabled ones included so they stay listed and can be re-enabled. See
+         * `Catalogue.avecApplicationsDuMenu`.
          */
         const val MARQUEUR_MENU = "@@TVSLIM_A"
 
-        /** « com.google.android.youtube/com.google.android.apps.youtube.app.WatchWhileActivity » → le paquet. */
+        /** `com.google.android.youtube/com.google.android.apps.youtube.app.WatchWhileActivity` -> the package. */
         internal fun applicationsMenu(lignes: List<String>): Set<String> = lignes
             .filter { '/' in it && !it.startsWith("priority") }
             .map { it.substringBefore('/').trim() }
@@ -459,21 +426,21 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             .toSet()
         const val MARQUEUR_FONCTIONS = "@@TVSLIM_F"
 
-        /** « feature:android.software.leanback », « feature:android.hardware.touchscreen=1 » → le nom seul. */
+        /** `feature:android.software.leanback`, `feature:android.hardware.touchscreen=1` -> the bare name. */
         internal fun fonctions(lignes: List<String>): Set<String> = lignes
             .map { it.removePrefix("feature:").substringBefore('=').trim() }
             .filter { it in InfosAppareil.FONCTIONS_LUES }
             .toSet()
 
-        /** `df` après `diskstats` : certains appareils ne donnent pas la ligne « Data-Free ». */
         const val COMMANDE_ACCUEIL =
             "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
 
+        /** `df` after `diskstats`: some devices omit the `Data-Free` line. */
         const val COMMANDE_STOCKAGE = "dumpsys diskstats; echo ${LectureStockage.MARQUEUR_DF}; df -k /data"
 
-        // `--user 0` partout : sans lui, `pm list packages -e` compte actif un paquet actif dans N'IMPORTE
-        // QUEL profil. La TCL en porte un second, jamais ouvert (`new_user`, n° 10) : ce qu'on y a coupé
-        // pour le profil principal y reste actif (relevé le 2026-10-06). `pm disable-user` vise déjà 0.
+        // `--user 0` everywhere: without it, `pm list packages -e` reports a package as enabled if it is
+        // enabled in any profile. The TCL has a second, never-opened profile (`new_user`, id 10) where
+        // packages disabled for the main profile stay enabled. `pm disable-user` already targets user 0.
         val COMMANDE = listOf(
             "echo $MARQUEUR_DESACTIVES",
             "pm list packages -d --user 0",
@@ -503,7 +470,7 @@ class LecteurDistant(private val executeur: ExecuteurCommande) {
             "echo $MARQUEUR_MENU",
             "cmd package query-activities --brief --query-flags $AVEC_DESACTIVES " +
                 "-a android.intent.action.MAIN -c android.intent.category.LAUNCHER",
-            // En dernier : le code de retour de la commande entière est le sien.
+            // Last, so its exit code is the exit code of the whole command.
             "echo $MARQUEUR_TIERS",
             "pm list packages -3 --user 0",
         ).joinToString("; ")

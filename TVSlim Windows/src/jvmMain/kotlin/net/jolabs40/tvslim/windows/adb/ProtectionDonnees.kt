@@ -3,20 +3,18 @@ package net.jolabs40.tvslim.windows.adb
 import com.sun.jna.platform.win32.Crypt32Util
 import com.sun.jna.platform.win32.WinCrypt
 
-/** Chiffre au repos ce qui ne doit se relire que sous ce compte, sur cette machine. */
+/** Encrypts data at rest so it can only be read back by this user on this machine. */
 interface ProtectionDonnees {
     fun proteger(donnees: ByteArray): ByteArray
     fun lever(protegees: ByteArray): ByteArray
 }
 
 /**
- * DPAPI : Windows chiffre avec une clé dérivée de la session de l'utilisateur. Le fichier copié
- * sur une autre machine, sauvegardé dans un nuage ou lu depuis un autre compte ne se déchiffre
- * pas. C'est le pendant du keystore Android, qui protège la même clé sur le téléphone.
+ * DPAPI: Windows encrypts with a key derived from the user's logon credentials. The file cannot be decrypted on
+ * another machine, from a cloud backup or from another account. Counterpart of the Android keystore on the phone.
  *
- * Honnêtement : cela ne protège pas d'un programme malveillant lancé sous le même compte — rien
- * ne le peut, sur un poste ordinaire. L'entropie n'est pas un secret (le code est public) ; elle
- * évite seulement qu'une autre application de ce compte relise ces octets par mégarde.
+ * It does not protect against malware running under the same account. The entropy is not a secret (the code is
+ * public); it only keeps other apps of this account from decrypting these bytes by accident.
  */
 object ProtectionDpapi : ProtectionDonnees {
 

@@ -8,9 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /*
- * Le vert menthe et le bleu du compagnon, étendus à toute la palette. Le téléphone s'en remet à
- * Material You ; un bureau n'en a pas, et les rôles laissés par défaut tireraient vers le mauve
- * de Material — d'où les surfaces teintées de vert, en clair comme en sombre.
+ * The companion's mint green and blue, extended to the whole palette. The phone relies on Material You; a
+ * desktop has none, and default roles would lean toward Material's purple, hence green-tinted surfaces in
+ * both light and dark themes.
  */
 
 private val schemaClair = lightColorScheme(
@@ -69,7 +69,7 @@ private val schemaSombre = darkColorScheme(
     surfaceContainerHighest = Color(0xFF313539),
 )
 
-/** Couleurs des pastilles de risque, hors palette Material pour rester lisibles d'un coup d'œil. */
+/** Risk dot colors, outside the Material palette so they read at a glance. */
 object CouleursRisque {
     val aucun = Color(0xFF2E9E6B)
     val faible = Color(0xFF9AA83A)

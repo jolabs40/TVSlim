@@ -10,14 +10,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/**
- * Ce que le catalogue ignore : le reconnaître, le ranger par origine, et en tirer un inventaire qu'on
- * peut transmettre. Rien ici ne propose de désactiver quoi que ce soit.
- */
+/** Packages missing from the catalogue: detection, grouping by origin, and the exported inventory. Read-only. */
 class PaquetsInconnusTest {
 
     @Test
-    fun `l'origine d'un paquet se devine a son nom et a la marque de l'appareil`() {
+    fun `a package origin is guessed from its name and the device brand`() {
         assertEquals(OriginePaquet.ANDROID, OriginePaquet.de("com.google.android.katniss", Fabricant.PHILIPS))
         assertEquals(OriginePaquet.ANDROID, OriginePaquet.de("com.android.tv.settings", Fabricant.TCL))
         assertEquals(OriginePaquet.ANDROID, OriginePaquet.de("android", null))
@@ -26,19 +23,19 @@ class PaquetsInconnusTest {
         assertEquals(OriginePaquet.CONSTRUCTEUR, OriginePaquet.de("com.tcl.tv.tclhome_passive", Fabricant.TCL))
         assertEquals(OriginePaquet.CONSTRUCTEUR, OriginePaquet.de("com.sony.dtv.tvx", Fabricant.SONY))
         assertEquals(OriginePaquet.CONSTRUCTEUR, OriginePaquet.de("com.nvidia.ota", Fabricant.NVIDIA))
-        // Un fondeur de puces est du côté du constructeur, quelle que soit la marque.
+        // Chipmaker packages count as manufacturer packages, whatever the brand.
         assertEquals(OriginePaquet.CONSTRUCTEUR, OriginePaquet.de("com.mediatek.wwtv.tvcenter", Fabricant.PHILIPS))
         assertEquals(OriginePaquet.CONSTRUCTEUR, OriginePaquet.de("com.droidlogic.tvinput", null))
 
         assertEquals(OriginePaquet.AUTRE, OriginePaquet.de("com.netflix.ninja", Fabricant.TCL))
-        // Le paquet d'une autre marque n'est pas celui du constructeur de cet appareil.
+        // Another brand's package is not this device's manufacturer package.
         assertEquals(OriginePaquet.AUTRE, OriginePaquet.de("org.droidtv.playtv", Fabricant.TCL))
         assertEquals(OriginePaquet.AUTRE, OriginePaquet.de("com.amazon.amazonvideo.livingroom", Fabricant.TCL))
         assertEquals(OriginePaquet.CONSTRUCTEUR, OriginePaquet.de("com.amazon.tv.launcher", Fabricant.AMAZON))
     }
 
     @Test
-    fun `l'origine d'une entree du catalogue suit la marque qu'il lui donne`() {
+    fun `a catalogue entry origin follows the brand the catalogue gives it`() {
         fun entree(marque: String, paquet: String = "a.b.c") =
             EntreePaquet(paquet = paquet, nom = "", description = "", categorie = "", marque = marque)
 
@@ -51,7 +48,7 @@ class PaquetsInconnusTest {
     }
 
     @Test
-    fun `seul ce que le catalogue ignore est inconnu, range du constructeur a l'inconnu`() {
+    fun `only what the catalogue lacks is unknown, sorted from manufacturer to other`() {
         val catalogue = Catalogue(
             entrees = listOf(EntreePaquet("com.tcl.pub", "Pub", "", "test")),
             proteges = listOf(PaquetProtege("com.tcl.tv", "Tuner.")),
@@ -85,7 +82,7 @@ class PaquetsInconnusTest {
         assertEquals(EtatPaquet.DESACTIVE, inconnus.first { it.paquet == "com.tcl.tv.tclhome_passive" }.etat)
         assertEquals("com.mediatek", inconnus.first().famille)
 
-        // Le cadre et ses surcouches forment une seule famille, pas une par paquet.
+        // The framework and its overlays form a single family, not one per package.
         fun famille(paquet: String) = PaquetInconnu(paquet, EtatPaquet.ACTIF, OriginePaquet.ANDROID).famille
         assertEquals("android", famille("android"))
         assertEquals("android", famille("android.auto_generated_rro_vendor__"))
@@ -94,7 +91,7 @@ class PaquetsInconnusTest {
     }
 
     @Test
-    fun `l'inventaire dit l'appareil et range chaque paquet par origine et par famille`() {
+    fun `the inventory names the device and groups each package by origin and family`() {
         val philips = InfosAppareil(
             marque = "TPV",
             marqueCommerciale = "Philips",
@@ -167,7 +164,7 @@ class PaquetsInconnusTest {
         assertTrue(rapport, rapport.contains("- Lu sur l'appareil : indices ADB, mémoire vive, stockage, firmware\n"))
         assertTrue(rapport, rapport.indexOf("## Constructeur") < rapport.indexOf("## Android"))
         assertTrue(rapport, rapport.contains("### org.droidtv (2)"))
-        // La mémoire réunit les processus du paquet ; les déclarations vont de la plus grave à la moins grave.
+        // Memory sums the package's processes; declarations are listed most sensitive first.
         assertTrue(
             rapport,
             rapport.contains("| `org.droidtv.playtv` | actif | system/priv-app | système | entrée TV, démarrage | oui | 50 Mo | 52 Mo |"),
@@ -178,7 +175,7 @@ class PaquetsInconnusTest {
             rapport.contains("| `com.google.android.katniss` | actif | product/priv-app, mise à jour | appli | — | non | — | — |"),
         )
 
-        // Les entrées du catalogue présentes viennent après les inconnus, rangées par nom ; les absentes n'y sont pas.
+        // Catalogue entries on the device come after the unknown ones, sorted by name; absent ones are left out.
         assertTrue(rapport, rapport.indexOf("## Déjà au catalogue (2)") > rapport.indexOf("## Android"))
         assertTrue(
             rapport,
@@ -188,7 +185,7 @@ class PaquetsInconnusTest {
         )
         assertFalse(rapport, rapport.contains("com.tcl.pub"))
 
-        // Rien de relu : l'inventaire se fait quand même, et dit ce qui manque.
+        // Nothing extra read: the inventory is still written, and says what is missing.
         val nu = RapportInconnus.markdown(philips, inconnus, "TV Slim Remote 1.2.0")
         assertTrue(
             nu,
@@ -202,8 +199,8 @@ class PaquetsInconnusTest {
     }
 
     @Test
-    fun `le firmware se lit propriete par propriete, et une valeur vide ne decale rien`() {
-        // Sortie réelle de l'émulateur Android TV 16 (2026-09-14), le produit vidé pour l'occasion.
+    fun `firmware is read property by property, and an empty value shifts nothing`() {
+        // Real output from the Android TV 16 emulator, with the product emptied for the test.
         val firmware = LectureFirmware.interpreter(
             """
             @@TVSLIM_EMPREINTE

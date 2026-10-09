@@ -9,24 +9,24 @@ import java.net.NoRouteToHostException
 import java.net.SocketTimeoutException
 
 /**
- * Ce que le compagnon dit d'une connexion ratée. Les chaînes d'exceptions reprennent celles de
- * dadb 2.0.0, dont celle relevée sur la TCL pendant une demande d'autorisation en attente.
+ * How the companion classifies a failed connection. Exception chains mirror dadb 2.0.0's, including
+ * one seen on the TCL while an authorization prompt was pending.
  */
 class DiagnosticConnexionTest {
 
-    /** Même nom simple que l'enveloppe de dadb : c'est sur lui que le diagnostic la reconnaît. */
+    /** Same simple name as dadb's wrapper, which is what the diagnosis matches on. */
     private class AdbConnectException(message: String, cause: Throwable) : IOException(message, cause)
 
     @Test
-    fun `une autorisation en attente n'est pas prise pour un televiseur injoignable`() {
-        // Relevé sur la TCL le 2026-09-13, dialogue d'autorisation ouvert à l'écran.
+    fun `a pending authorization is not mistaken for an unreachable TV`() {
+        // Seen on the TCL with the authorization dialog on screen.
         val erreur = AdbConnectException("Connection handshake failed", SocketTimeoutException("Read timed out"))
 
         assertEquals(ProblemeConnexion.DELAI, diagnostiquer(erreur))
     }
 
     @Test
-    fun `personne ne repond a l'adresse`() {
+    fun `nobody answers at the address`() {
         val erreur = AdbConnectException("Failed to connect to 192.168.2.99:5555", SocketTimeoutException("Connect timed out"))
 
         assertEquals(ProblemeConnexion.INJOIGNABLE, diagnostiquer(erreur))
@@ -34,26 +34,26 @@ class DiagnosticConnexionTest {
     }
 
     @Test
-    fun `le port est ferme`() {
+    fun `the port is closed`() {
         val erreur = AdbConnectException("Failed to connect", ConnectException("Connection refused: connect"))
 
         assertEquals(ProblemeConnexion.REFUSEE, diagnostiquer(erreur))
     }
 
     @Test
-    fun `le televiseur ferme la connexion pendant la poignee de main`() {
+    fun `the TV closes the connection during the handshake`() {
         val erreur = AdbConnectException("Connection handshake failed", EOFException())
 
         assertEquals(ProblemeConnexion.NON_AUTORISEE, diagnostiquer(erreur))
     }
 
     @Test
-    fun `la surveillance l'emporte sur l'exception qu'elle a provoquee`() {
+    fun `the watchdog takes precedence over the exception it caused`() {
         assertEquals(ProblemeConnexion.DELAI, diagnostiquer(java.net.SocketException("Socket closed"), delaiDepasse = true))
     }
 
     @Test
-    fun `le reste n'est pas deguise`() {
+    fun `other errors are not disguised`() {
         assertEquals(ProblemeConnexion.AUTRE, diagnostiquer(IllegalStateException("inattendu")))
     }
 }

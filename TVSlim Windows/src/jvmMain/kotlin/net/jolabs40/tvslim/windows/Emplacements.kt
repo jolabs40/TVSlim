@@ -3,15 +3,15 @@ package net.jolabs40.tvslim.windows
 import java.io.File
 
 /**
- * Où l'application range ce qu'elle garde d'une session à l'autre.
+ * Folders for persistent data.
  *
- * Rien dans le dossier d'installation : une mise à jour le remplace, une désinstallation
- * l'efface, et le journal — ce qui rend chaque intervention réversible — doit survivre aux deux.
+ * Nothing goes in the install folder: an update replaces it and an uninstall deletes it, and the journal (what
+ * makes every change reversible) must survive both.
  */
 class Emplacements(
-    /** Données de l'utilisateur : journaux, mesures, clé ADB, préférences, traces. */
+    /** User data: journals, measurements, ADB key, preferences, traces. */
     val donnees: File,
-    /** Fichiers jetables : les installateurs téléchargés par la mise à jour, scrcpy s'il a fallu le télécharger. */
+    /** Disposable files: downloaded installers, scrcpy if it had to be downloaded. */
     val local: File,
 ) {
     val journaux = File(donnees, "journaux")
@@ -22,13 +22,13 @@ class Emplacements(
     val telechargements = File(local, "mises-a-jour")
     val scrcpy = File(local, "scrcpy")
 
-    /** Noms et icônes des applications, par paquet et par version : voir `CacheApplicationsFichiers`. */
+    /** App names and icons, per package and version (see `CacheApplicationsFichiers`). */
     val icones = File(local, "icones")
 
     companion object {
         private const val NOM = "TVSlim"
 
-        /** `%APPDATA%\TVSlim` pour les données, `%LOCALAPPDATA%\TVSlim` pour les téléchargements. */
+        /** `%APPDATA%\TVSlim` for data, `%LOCALAPPDATA%\TVSlim` for downloads. */
         fun windows(): Emplacements {
             val maison = System.getProperty("user.home")
             val itinerant = System.getenv("APPDATA")?.takeIf { it.isNotBlank() }

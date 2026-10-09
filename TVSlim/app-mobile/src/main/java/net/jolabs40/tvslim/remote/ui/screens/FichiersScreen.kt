@@ -78,7 +78,6 @@ import net.jolabs40.tvslim.remote.ui.EnvoiEnAttente
 import java.text.DateFormat
 import java.util.Date
 
-/** Ce que l'onglet Fichiers demande au pilote. */
 data class ActionsFichiers(
     val onDemarrer: () -> Unit,
     val onOuvrir: (String) -> Unit,
@@ -90,19 +89,16 @@ data class ActionsFichiers(
     val onConfirmer: () -> Unit,
     val onAnnulerConfirmation: () -> Unit,
     val onArreter: () -> Unit,
-    /** Ce qui attend part dans le dossier affiché : examen, puis confirmation. */
+    /** Sends the pending items to the displayed folder: examine, then confirm. */
     val onEnvoyerIci: () -> Unit,
     val onAbandonnerEnvoi: () -> Unit,
 )
 
 /**
- * Les dossiers du téléviseur : des raccourcis, le fil du chemin, la liste, et « Envoyer au téléviseur » pour y
- * déposer des documents ou un dossier du téléphone. Un appui sur un dossier y entre ; Retour remonte, jusqu'au
- * stockage interne.
+ * Browses the TV's folders and sends phone documents or a folder there. Back goes up, as far as internal storage.
  *
- * On choisit d'abord quoi envoyer, puis où : tant que [enAttente] n'est pas parti, un bandeau dit ce qui attend
- * et qu'il faut ouvrir le dossier de destination, et la barre du bas l'y envoie en le nommant. Retour, au
- * stockage interne, y renonce.
+ * What to send is picked first, then where: while [enAttente] is pending, a banner asks to open the destination
+ * folder and the bottom bar sends there. Back at internal storage drops it.
  */
 @Composable
 fun FichiersScreen(connecte: Boolean, etat: EtatExplorateur, enAttente: EnvoiEnAttente?, actions: ActionsFichiers) {
@@ -116,9 +112,8 @@ fun FichiersScreen(connecte: Boolean, etat: EtatExplorateur, enAttente: EnvoiEnA
         }
         return
     }
-    // Première visite sur ce téléviseur : le stockage interne se lit sans qu'on le demande.
     LaunchedEffect(Unit) { actions.onDemarrer() }
-    // Déclaré d'abord, il ne sert qu'une fois qu'on ne peut plus remonter.
+    // Declared first, so it only gets Back once there is no folder left to go up to.
     BackHandler(enabled = enAttente != null) { actions.onAbandonnerEnvoi() }
     BackHandler(enabled = etat.parent != null && etat.chemin != DOSSIER_DE_DEPART) { actions.onRemonter() }
 
@@ -179,7 +174,7 @@ fun FichiersScreen(connecte: Boolean, etat: EtatExplorateur, enAttente: EnvoiEnA
         }
         when {
             enAttente != null -> BarreDestination(
-                // La racine n'a pas de nom : elle se dit « / ».
+                // The root has no name: shown as `/`.
                 dossier = CheminDistant.nom(etat.chemin).ifEmpty { CheminDistant.RACINE },
                 actif = ouvert && !etat.occupe,
                 onAnnuler = actions.onAbandonnerEnvoi,
@@ -196,7 +191,6 @@ fun FichiersScreen(connecte: Boolean, etat: EtatExplorateur, enAttente: EnvoiEnA
     }
 }
 
-/** Ce qui attend, et ce qu'il reste à faire : ouvrir le dossier du téléviseur qui le recevra. */
 @Composable
 private fun BandeauEnAttente(attente: EnvoiEnAttente) {
     Card(
@@ -235,7 +229,7 @@ private fun BandeauEnAttente(attente: EnvoiEnAttente) {
     }
 }
 
-/** Renoncer, ou envoyer dans le dossier affiché — qu'elle nomme, pour qu'on sache où ça part. */
+/** Names the displayed folder, so it is clear where the files go. */
 @Composable
 private fun BarreDestination(
     dossier: String,
@@ -264,7 +258,6 @@ private fun BarreDestination(
     }
 }
 
-/** Les dossiers qu'on cherche le plus, et les volumes branchés — clé USB, carte SD —, en une ligne qui défile. */
 @Composable
 private fun Raccourcis(etat: EtatExplorateur, onOuvrir: (String) -> Unit) {
     LazyRow(
@@ -302,7 +295,6 @@ private fun iconeRaccourci(nature: NatureRaccourci): ImageVector = when (nature)
     else -> Icons.Filled.Folder
 }
 
-/** Remonter, le fil du chemin — chaque étape s'ouvre d'un appui —, puis créer, taper un chemin, relire. */
 @Composable
 private fun BarreChemin(
     etat: EtatExplorateur,
@@ -312,7 +304,7 @@ private fun BarreChemin(
     onAllerA: () -> Unit,
 ) {
     val defilement = rememberScrollState()
-    // Le fil se lit par la fin : c'est là qu'on est.
+    // Keep the end of the breadcrumb, the current folder, in view.
     LaunchedEffect(etat.chemin) { defilement.scrollTo(defilement.maxValue) }
     Row(modifier = Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = actions.onRemonter, enabled = etat.parent != null) {
@@ -350,7 +342,7 @@ private fun BarreChemin(
     }
 }
 
-/** Un bouton, deux choix : des documents un à un, ou un dossier entier. La destination se choisit ensuite. */
+/** Documents or a whole folder; the destination is picked afterwards. */
 @Composable
 private fun EnvoyerAuTeleviseur(onFichiers: () -> Unit, onDossier: () -> Unit, modifier: Modifier = Modifier) {
     var menu by remember { mutableStateOf(false) }
@@ -392,7 +384,7 @@ private fun Envoi(avancee: AvanceeDepot, onArreter: () -> Unit) {
                     avancee.rang.coerceAtLeast(1),
                     avancee.nombre,
                 ),
-                // Une taille inconnue ne fait pas avancer la barre : on compte alors les fichiers.
+                // Total size unknown: count files instead.
                 fraction = if (avancee.total > 0) {
                     avancee.envoye.toFloat() / avancee.total
                 } else {
@@ -431,10 +423,10 @@ private fun Avancement(texte: String, fraction: Float?) {
     }
 }
 
-/** Ce que le dernier envoi n'a pas déposé, et pourquoi : la bannière passe, la carte reste jusqu'au suivant. */
+/** Failures of the last send. The banner goes away; this card stays until the next send. */
 @Composable
 private fun Echecs(resultat: ResultatDepot) {
-    // Un refus sans un mot du téléviseur se dit dans la langue de l'écran.
+    // A refusal with no message from the TV gets a localized one.
     val refuse = stringResource(R.string.files_refused_silent)
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -469,8 +461,7 @@ private fun Liste(etat: EtatExplorateur, onOuvrir: (String) -> Unit) {
                 Constat(stringResource(R.string.files_empty))
             } else {
                 val format = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
-                // De la place en bas pour le bouton flottant, ou la barre de destination : ni l'un ni l'autre ne
-                // doit cacher la dernière ligne.
+                // Bottom padding so neither the FAB nor the destination bar hides the last row.
                 LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 88.dp)) {
                     items(lecture.entrees, key = { it.nom }) { entree ->
                         LigneEntree(
@@ -482,7 +473,7 @@ private fun Liste(etat: EtatExplorateur, onOuvrir: (String) -> Unit) {
                 }
             }
         }
-        // Une relecture du même dossier garde la liste à l'écran : un trait suffit à dire qu'elle se fait.
+        // Reloading the same folder keeps the list on screen; a thin bar shows the reload.
         if (etat.chargement && etat.lecture != null) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
         }
@@ -491,7 +482,7 @@ private fun Liste(etat: EtatExplorateur, onOuvrir: (String) -> Unit) {
 
 @Composable
 private fun LigneEntree(entree: EntreeDistante, date: String, onOuvrir: () -> Unit) {
-    // Un nom qui commence par un point est caché sur Android aussi : il reste là, en retrait.
+    // Dot files are hidden on Android too: listed, but dimmed.
     val couleur = if (entree.nom.startsWith('.')) {
         MaterialTheme.colorScheme.onSurfaceVariant
     } else {
@@ -559,5 +550,5 @@ private fun Constat(texte: String) {
     }
 }
 
-/** Au-delà, la carte deviendrait la page : la liste complète n'apprendrait rien de plus. */
+/** Beyond this the card would take over the page. */
 private const val ECHECS_MAX = 20

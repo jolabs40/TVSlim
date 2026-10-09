@@ -9,7 +9,7 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 import javax.imageio.ImageIO
 
-/** Met une capture dans le presse-papiers de Windows, comme une image : elle se colle dans Paint, Word, un courriel. */
+/** Puts a screenshot on the Windows clipboard as an image. */
 object PressePapiers {
 
     fun copierImage(png: ByteArray) {

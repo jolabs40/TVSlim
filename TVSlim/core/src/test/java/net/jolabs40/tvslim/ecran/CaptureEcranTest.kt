@@ -10,13 +10,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDateTime
 
-/**
- * La capture d'écran se lit par la sortie standard de `screencap -p` : ce test vérifie qu'on n'accepte qu'un vrai
- * PNG, et qu'on dit pourquoi quand ce n'en est pas un.
- */
+/** The screenshot is read from the stdout of `screencap -p`; only a real PNG is accepted. */
 class CaptureEcranTest {
 
-    /** L'en-tête d'un PNG de 1920 × 1080 : signature, puis le bloc IHDR. */
+    /** Header of a 1920x1080 PNG: signature, then the IHDR chunk. */
     private val png1080p = byteArrayOf(
         0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
         0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
@@ -34,7 +31,7 @@ class CaptureEcranTest {
     }
 
     @Test
-    fun `un PNG complet donne la capture et ses dimensions`() = runTest {
+    fun `a complete PNG gives the screenshot and its dimensions`() = runTest {
         val tv = Televiseur(SortieBinaire(0, png1080p))
 
         val resultat = CaptureEcran(tv).capturer() as ResultatCapture.Reussie
@@ -46,8 +43,8 @@ class CaptureEcranTest {
     }
 
     @Test
-    fun `un PNG dont les fins de ligne ont ete traduites est refuse`() = runTest {
-        // Ce qu'un shell avec terminal fait d'un PNG : chaque \n précédé d'un \r.
+    fun `a PNG with translated line endings is rejected`() = runTest {
+        // What a shell with a terminal does to a PNG: every \n gets a \r before it.
         val traduit = png1080p.copyOf(6) + byteArrayOf(0x0D, 0x0D, 0x0A, 0x1A, 0x0D, 0x0A) + png1080p.copyOfRange(8, 29)
 
         val resultat = CaptureEcran(Televiseur(SortieBinaire(0, traduit))).capturer()
@@ -56,7 +53,7 @@ class CaptureEcranTest {
     }
 
     @Test
-    fun `une sortie texte dit ce que le televiseur a repondu`() = runTest {
+    fun `a text output reports what the tv answered`() = runTest {
         val tv = Televiseur(SortieBinaire(0, "/system/bin/sh: screencap: inaccessible or not found".toByteArray()))
 
         val resultat = CaptureEcran(tv).capturer() as ResultatCapture.Echouee
@@ -66,7 +63,7 @@ class CaptureEcranTest {
     }
 
     @Test
-    fun `un code d'erreur et une connexion perdue se distinguent`() = runTest {
+    fun `an error code and a lost connection are told apart`() = runTest {
         val refusee = CaptureEcran(Televiseur(SortieBinaire(1, ByteArray(0), erreurs = "Permission denial\n"))).capturer()
         val coupee = CaptureEcran(Televiseur(SortieBinaire(null, ByteArray(0), motif = "délai dépassé"))).capturer()
 
@@ -75,14 +72,14 @@ class CaptureEcranTest {
     }
 
     @Test
-    fun `les dimensions ne se lisent que sur un PNG`() {
+    fun `dimensions are only read from a PNG`() {
         assertEquals(1920 to 1080, CaptureEcran.dimensions(png1080p))
         assertNull(CaptureEcran.dimensions(png1080p.copyOf(20)))
         assertNull(CaptureEcran.dimensions(ByteArray(0)))
     }
 
     @Test
-    fun `le nom de fichier porte l'appareil et l'instant, sans caractere interdit`() {
+    fun `the file name holds the device and the time, without forbidden characters`() {
         val instant = LocalDateTime.of(2026, 10, 4, 19, 15, 30)
         val tcl = InfosAppareil(marque = "TCL", modele = "Smart TV Pro")
         val bizarre = InfosAppareil(marque = "Philips", modele = "55PUS8807/12 : \"test\"")

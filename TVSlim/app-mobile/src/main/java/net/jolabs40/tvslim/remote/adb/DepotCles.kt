@@ -8,22 +8,21 @@ import java.io.File
 import java.util.Base64
 
 /**
- * Garde la paire de clés ADB du compagnon.
+ * Stores the app's ADB key pair.
  *
- * Cette clé privée vaut un accès shell complet à tous les téléviseurs qui l'ont autorisée : elle
- * mérite mieux qu'un fichier en clair dans `filesDir`, où le moindre appareil rooté ou une
- * sauvegarde trop bavarde la lirait. Elle est donc conservée **chiffrée**, la clé maître vivant
- * dans le keystore Android — matériel quand l'appareil en dispose.
+ * The private key grants full shell access to every TV that authorized it, so it is not kept in plain text in
+ * `filesDir` (readable on a rooted device or through backups). It is stored encrypted, with the master key in
+ * the Android keystore (hardware-backed when available).
  *
- * dadb signe en `RSA/ECB/NoPadding` et exige donc une vraie `PrivateKey`. On génère une fois par
- * ses soins, on range le DER au coffre, on efface les fichiers en clair : ensuite la clé n'existe
- * plus qu'en mémoire, reconstruite à la demande via `AdbKeyPair(PrivateKey, ByteArray)`.
+ * dadb signs with `RSA/ECB/NoPadding` and needs a real `PrivateKey`. dadb generates the pair once, the DER goes
+ * into encrypted storage and the plain files are deleted; afterwards the key only exists in memory, rebuilt
+ * through `AdbKeyPair(PrivateKey, ByteArray)`.
  */
 class DepotCles(
     private val contexte: Context,
-    /** Nom du coffre. Un test doit en prendre un autre : il en efface le contenu. */
+    /** Tests must use a different name: they wipe the store. */
     private val nomCoffre: String = COFFRE,
-    /** Emplacement d'une clé laissée en clair par une version précédente. */
+    /** Where older versions left the key in plain text. */
     private val ancienDossier: File = File(contexte.filesDir, "adb"),
 ) {
 
@@ -40,7 +39,7 @@ class DepotCles(
         )
     }
 
-    /** La paire du compagnon, créée à la première demande et gardée chiffrée ensuite. */
+    /** Returns the key pair, creating it on first use. */
     @Synchronized
     fun paire(): AdbKeyPair {
         reprendreAncienneCleEnClair()
@@ -51,8 +50,8 @@ class DepotCles(
     }
 
     /**
-     * Fabrique la paire, la met au coffre, puis efface les fichiers que dadb a écrits en clair.
-     * C'est le seul instant où le secret touche le disque sans protection.
+     * Generates the pair, stores it encrypted, then deletes the plain files dadb wrote. This is the only moment
+     * the key touches the disk unprotected.
      */
     private fun creer(): AdbKeyPair {
         val dossier = File(contexte.cacheDir, "cles-temporaires").apply { mkdirs() }
@@ -75,9 +74,8 @@ class DepotCles(
     }
 
     /**
-     * Reprend la clé laissée en clair par une version précédente, puis la supprime. Sans cela,
-     * la mise à jour laisserait le secret exposé tout en croyant l'avoir protégé — et changer de
-     * clé obligerait à réautoriser chaque téléviseur à la télécommande.
+     * Migrates a plain-text key left by an older version, then deletes it. Generating a new key instead would
+     * force re-authorizing every TV with the remote.
      */
     private fun reprendreAncienneCleEnClair() {
         val privee = File(ancienDossier, "adbkey")
@@ -88,8 +86,7 @@ class DepotCles(
             val reprise = runCatching {
                 ranger(derDepuisPem(privee.readText()), publique.readBytes())
             }
-            // Effacer une clé qu'on n'a pas su ranger, ce serait la perdre — et obliger à
-            // réautoriser le débogage à la télécommande sur chaque téléviseur. On la laisse.
+            // Never delete a key that could not be stored: losing it means re-authorizing every TV.
             if (reprise.getOrDefault(false) != true) return
         }
         privee.delete()
@@ -98,8 +95,8 @@ class DepotCles(
     }
 
     /**
-     * Écriture **synchrone** : `apply()` diffère l'écriture disque, et un processus tué entre
-     * temps laisserait un coffre vide alors qu'on vient d'effacer la clé en clair.
+     * Synchronous `commit()`: `apply()` defers the disk write, and a process killed meanwhile would leave an
+     * empty store after the plain key was deleted.
      */
     private fun ranger(der: ByteArray, publique: ByteArray): Boolean = coffre.edit()
         .putString(CLE_PRIVEE, encoder(der))

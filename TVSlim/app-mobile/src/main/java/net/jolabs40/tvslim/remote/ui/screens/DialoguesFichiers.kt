@@ -39,7 +39,7 @@ import net.jolabs40.tvslim.fichiers.PlanDepot
 import net.jolabs40.tvslim.remote.R
 import java.util.Locale
 
-/** Ce qui va partir, et où : rien ne part sans cette confirmation. */
+/** Nothing is sent without this confirmation. */
 @Composable
 fun ConfirmationDepot(plan: PlanDepot, onConfirmer: () -> Unit, onAnnuler: () -> Unit) {
     val racines = plan.lot.racines.entries.sortedWith(
@@ -94,10 +94,7 @@ fun ConfirmationDepot(plan: PlanDepot, onConfirmer: () -> Unit, onAnnuler: () ->
     )
 }
 
-/**
- * Un champ, une action : nommer un dossier, ou taper le chemin où aller. Le clavier ne corrige ni ne
- * capitalise — un nom de dossier ou un chemin n'est pas une phrase —, et sa touche d'action valide.
- */
+/** One-field dialog for a folder name or a path. No autocorrect or capitalization; the IME action submits. */
 @Composable
 fun DialogueSaisie(
     titre: String,
@@ -139,7 +136,7 @@ fun DialogueSaisie(
     LaunchedEffect(Unit) { focus.requestFocus() }
 }
 
-/** Une taille de fichier à la façon de la langue : « 48,3 Mo », « 912 ko », « 17 o ». */
+/** Localized file size, such as `48.3 MB`, `912 kB` or `17 B`. */
 @Composable
 fun tailleLisible(octets: Long): String = when {
     octets < KILO -> stringResource(R.string.file_size_bytes, octets.toInt())
@@ -150,7 +147,7 @@ fun tailleLisible(octets: Long): String = when {
 
 private fun decimale(octets: Long, unite: Long): String = String.format(Locale.getDefault(), "%.1f", octets.toDouble() / unite)
 
-/** Les unités décimales d'Android : 1 ko = 1 000 o. */
+/** Decimal units, as Android uses them: 1 kB = 1000 B. */
 private const val KILO = 1_000L
 
 private const val RACINES_MAX = 8

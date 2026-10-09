@@ -11,13 +11,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Chaque launcher que le catalogue sait nommer, et chaque fabricant annoncé avec un logo, doit avoir
- * son image : sans elle, la carte retomberait sur l'icône neutre ou sur le nom écrit.
+ * Every launcher the catalogue names, and every manufacturer flagged with a logo, needs an image, or the card falls
+ * back to the generic icon or the plain name.
  */
 class LogosTest {
 
     @Test
-    fun `chaque launcher du catalogue a son logo`() = runTest {
+    fun `every catalog launcher has a logo`() = runTest {
         val catalogue = CatalogueRepository { "en" }.catalogue()
         val ids = catalogue.launchers.map { it.id } + catalogue.launchersConnus.map { it.id }
 
@@ -28,7 +28,7 @@ class LogosTest {
     }
 
     @Test
-    fun `chaque fabricant annonce avec un logo en a un, et eux seuls`() {
+    fun `every manufacturer flagged with a logo has one, and only those`() {
         val sansLogo = Fabricant.entries.filter { it.aUnLogo && it !in LOGOS_FABRICANTS }
 
         assertTrue("Fabricants sans logo : $sansLogo", sansLogo.isEmpty())
@@ -36,9 +36,9 @@ class LogosTest {
     }
 
     @Test
-    fun `dix fabricants de televiseurs et cinq de box ont leur logo`() {
+    fun `ten TV makers and five box makers have a logo`() {
         val televiseurs = LOGOS_FABRICANTS.keys.filter { it.type == TypeAppareil.TELEVISEUR }
-        // Xiaomi fait les deux : ses box (Mi Box, TV Stick) comptent parmi les cinq.
+        // Xiaomi makes both; its boxes (Mi Box, TV Stick) count among the five.
         val box = LOGOS_FABRICANTS.keys.filter { it.type == TypeAppareil.BOX || it == Fabricant.XIAOMI }
 
         assertEquals(10, televiseurs.size)

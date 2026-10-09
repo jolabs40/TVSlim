@@ -1,42 +1,36 @@
 package net.jolabs40.tvslim.device
 
 /**
- * Ce qu'une application déclare au système et qui rend sa désactivation risquée, du plus grave au
- * moins grave. Chacune se lit par une requête d'intention, qui répond pour tous les paquets à la fois.
+ * What an app declares to the system that makes disabling it risky, most serious first. Each is read with
+ * an intent query that answers for all packages at once.
  */
 enum class DeclarationSensible {
-    /** Un service d'entrée TV : le tuner, les prises HDMI, les chaînes d'un partenaire. */
+    /** TV input service: tuner, HDMI inputs, a partner's channels. */
     ENTREE_TV,
 
-    /** Un service d'accessibilité : lecteur d'écran, aide auditive… */
+    /** Accessibility service: screen reader, hearing aid... */
     ACCESSIBILITE,
 
-    /** Une méthode de saisie : la couper peut priver le téléviseur de tout clavier. */
+    /** Input method: disabling it can leave the TV without any keyboard. */
     CLAVIER,
 
-    /** Un récepteur du démarrage : l'application se lance avec l'appareil. */
+    /** Boot receiver: the app starts with the device. */
     DEMARRAGE,
 }
 
-/**
- * Ce qu'ADB dit d'un paquet, pour juger s'il est prudent d'y toucher avant de le décrire au catalogue.
- * Tout se relève d'un coup, en lecture seule, par [LectureIndices].
- */
+/** What ADB reports about a package, to judge whether it is safe to touch. Read by [LectureIndices]. */
 data class IndicesPaquet(
-    /** Le fichier d'usine de l'application : celui du système, même quand une mise à jour le recouvre. */
+    /** The factory APK, on the system partition even when an update overrides it. */
     val chemin: String = "",
-    /** Une version plus récente installée par-dessus celle d'usine, dans /data/app. */
+    /** A newer version is installed over the factory one, in /data/app. */
     val misAJour: Boolean = false,
-    /** L'identifiant Linux sous lequel elle tourne ; null quand Android ne l'a pas donné. */
+    /** Linux UID the app runs under; null when Android did not report it. */
     val uid: Int? = null,
     val declarations: Set<DeclarationSensible> = emptySet(),
-    /** Une entrée dans le menu des applications, celui d'Android TV ou le classique. */
+    /** Has an entry in the app menu, Android TV's or the classic one. */
     val icone: Boolean = false,
 ) {
-    /**
-     * La partition et le dossier — « system_ext/app », « product/priv-app », « data/app » — : d'où vient
-     * l'application, sans la longueur du chemin entier.
-     */
+    /** Partition and folder (`system_ext/app`, `product/priv-app`, `data/app`) rather than the full path. */
     val emplacement: String
         get() {
             val dossiers = chemin.split('/').filter { it.isNotEmpty() }.dropLast(1)
@@ -44,13 +38,13 @@ data class IndicesPaquet(
             return (if (rang >= 0) dossiers.take(rang + 1) else dossiers.take(2)).joinToString("/")
         }
 
-    /** Installée dans un `priv-app` : Android lui accorde des permissions qu'il refuse aux autres. */
+    /** Installed in a `priv-app` folder: Android grants it permissions it denies to other apps. */
     val privilegiee: Boolean get() = "/priv-app/" in chemin
 
-    /** Tourne sous l'identité du système (UID 1000) : ce qu'elle fait, le système le fait. */
+    /** Runs as the system user (UID 1000): whatever it does, the system does. */
     val droitsSysteme: Boolean get() = uid == UID_SYSTEME
 
-    /** Un identifiant réservé à la plateforme — système, téléphonie, Bluetooth, NFC — plutôt qu'à une application. */
+    /** A UID reserved for the platform (system, telephony, Bluetooth, NFC) rather than for an app. */
     val uidReserve: Boolean get() = uid != null && uid < PREMIER_UID_APPLICATION
 
     companion object {
@@ -62,21 +56,20 @@ data class IndicesPaquet(
 }
 
 /**
- * Relève les indices de tous les paquets en une seule commande, comme la photographie : chemins et
- * identifiants, chemins d'usine, une requête d'intention par déclaration sensible, puis les icônes du
- * menu. Rien que des lectures — sur la TCL, moins d'une seconde pour 77 Ko de sortie (2026-09-13).
+ * Reads the indices of every package in one read-only command: paths and UIDs, factory paths, one intent
+ * query per sensitive declaration, then menu icons. Under a second for 77 KB of output on the TCL.
  */
 object LectureIndices {
 
     const val MARQUEUR_FICHIERS = "@@TVSLIM_FICHIERS"
 
-    /** La version d'usine d'une application mise à jour : sans elle, on ne verrait que /data/app. */
+    /** Factory version of an updated app; without it only the /data/app copy would show. */
     const val MARQUEUR_USINE = "@@TVSLIM_USINE"
     const val MARQUEUR_ICONES = "@@TVSLIM_ICONES"
 
     fun marqueur(declaration: DeclarationSensible): String = "@@TVSLIM_${declaration.name}"
 
-    /** `MATCH_DISABLED_COMPONENTS` : un paquet désactivé déclare toujours ce qu'il ferait une fois réactivé. */
+    /** `MATCH_DISABLED_COMPONENTS`: a disabled package still declares what it would do once re-enabled. */
     private const val AVEC_DESACTIVES = 0x200
 
     private val REQUETES: Map<DeclarationSensible, List<String>> = mapOf(
@@ -125,13 +118,13 @@ object LectureIndices {
 
     private data class Fichier(val chemin: String, val uid: Int?)
 
-    /** « package:/system_ext/app/TGuard/TGuard.apk=com.tcl.guard uid:1000 », l'uid seulement avec `-U`. */
+    /** `package:/system_ext/app/TGuard/TGuard.apk=com.tcl.guard uid:1000`, the uid only with `-U`. */
     private fun fichiers(lignes: List<String>?): Map<String, Fichier> =
         lignes.orEmpty()
             .mapNotNull { LIGNE_FICHIER.matchEntire(it) }
             .associate { it.groupValues[2] to Fichier(it.groupValues[1], it.groupValues[3].toIntOrNull()) }
 
-    /** Les paquets nommés par les composants d'une sortie `--brief` : « com.tcl.tvinput/.TunerInputService ». */
+    /** Packages named by the components of a `--brief` output, like `com.tcl.tvinput/.TunerInputService`. */
     private fun paquetsDesComposants(lignes: List<String>?): Set<String> =
         lignes.orEmpty().mapNotNull { COMPOSANT.matchEntire(it)?.groupValues?.get(1) }.toSet()
 
@@ -145,8 +138,8 @@ object LectureIndices {
         "cmd package query-activities --brief --query-flags $AVEC_DESACTIVES -a android.intent.action.MAIN -c $categorie"
 
     /**
-     * Le chemin court jusqu'au **dernier** « = » : ceux de /data/app en portent (« ~~taEQ…Xw==/ »), un nom
-     * de paquet jamais. Un identifiant par utilisateur (« uid:10118,1010118 ») : le premier suffit.
+     * The path runs up to the last `=`: /data/app paths contain some (`~~taEQ...Xw==/`), package names never
+     * do. One UID per user (`uid:10118,1010118`); the first is enough.
      */
     private val LIGNE_FICHIER = Regex("""package:(.+)=([A-Za-z0-9_.]+)(?:\s+uid:(\d+)\S*)?""")
 

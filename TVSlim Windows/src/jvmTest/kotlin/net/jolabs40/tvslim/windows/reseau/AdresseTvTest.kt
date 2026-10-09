@@ -7,29 +7,28 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Vers qui l'application se connecte, et où elle écrit. Reprend les cas du compagnon Android
- * (`CodeAppairageTest`), plus la forme `tvslim://` — rejouable ici, `java.net.URI` étant sur
- * toutes les JVM — et la saisie d'un bloc propre au bureau.
+ * Which hosts the app connects to, and where it writes. Mirrors the Android companion's `CodeAppairageTest`, plus
+ * the `tvslim://` form (testable here since `java.net.URI` is on every JVM) and the desktop's single-field input.
  */
 class AdresseTvTest {
 
-    // --- Vers qui l'on se connecte --------------------------------------------------------
+    // --- Connection targets ---------------------------------------------------------------
 
     @Test
-    fun `les adresses des reseaux prives sont acceptees`() {
+    fun `private network addresses are accepted`() {
         listOf(
-            "192.168.2.135", // la TCL
+            "192.168.2.135", // the TCL
             "192.168.1.1",
             "10.0.0.1",
             "172.16.0.1",
             "172.31.255.255",
-            "169.254.3.4", // lien-local, quand le DHCP n'a pas répondu
-            "127.0.0.1", // boucle locale, pour un émulateur
+            "169.254.3.4", // link-local, when DHCP did not answer
+            "127.0.0.1", // loopback, for an emulator
         ).forEach { assertTrue(it, estSurLeReseauLocal(it)) }
     }
 
     @Test
-    fun `tout ce qui n'est pas une adresse privee est refuse`() {
+    fun `anything that is not a private address is rejected`() {
         listOf(
             "8.8.8.8",
             "172.15.0.1",
@@ -44,7 +43,7 @@ class AdresseTvTest {
     }
 
     @Test
-    fun `le lien de l'application TV donne l'adresse et le port`() {
+    fun `the TV app link yields the address and port`() {
         assertEquals(
             AdresseTv("192.168.2.135", 5555),
             lireCodeAppairage("tvslim://connect?host=192.168.2.135&port=5555"),
@@ -56,59 +55,59 @@ class AdresseTvTest {
     }
 
     @Test
-    fun `un lien vers un hote exterieur ne donne rien`() {
+    fun `a link to an outside host yields nothing`() {
         assertNull(lireCodeAppairage("tvslim://connect?host=exemple.invalide&port=5555"))
         assertNull(lireCodeAppairage("tvslim://connect?host=8.8.8.8"))
         assertNull(lireCodeAppairage("tvslim://connect"))
     }
 
     @Test
-    fun `une adresse seule prend le port ADB par defaut`() {
+    fun `a bare address gets the default ADB port`() {
         assertEquals(AdresseTv("192.168.2.135", 5555), lireCodeAppairage("192.168.2.135"))
     }
 
     @Test
-    fun `un port impossible ne donne aucune adresse`() {
+    fun `an impossible port yields no address`() {
         assertNull(lireCodeAppairage("192.168.2.135:0"))
         assertNull(lireCodeAppairage("192.168.2.135:70000"))
     }
 
-    // --- Saisie manuelle --------------------------------------------------------------------
+    // --- Manual input -----------------------------------------------------------------------
 
     @Test
-    fun `une saisie d'un bloc est decoupee en hote et port`() {
+    fun `a single-field input is split into host and port`() {
         assertEquals(AdresseTv("192.168.2.135", 5037), interpreterSaisie(" 192.168.2.135:5037 ", "5555"))
     }
 
     @Test
-    fun `sans port colle, le champ port fait foi`() {
+    fun `without an attached port, the port field wins`() {
         assertEquals(AdresseTv("192.168.2.135", 5556), interpreterSaisie("192.168.2.135", "5556"))
         assertEquals(AdresseTv("192.168.2.135", 5555), interpreterSaisie("192.168.2.135", ""))
     }
 
     @Test
-    fun `une adresse tapee n'est pas filtree, un nom d'hote reste possible`() {
+    fun `a typed address is not filtered, so a hostname still works`() {
         assertEquals(AdresseTv("tv-salon.local", 5555), interpreterSaisie("tv-salon.local", "5555"))
     }
 
     @Test
-    fun `une saisie vide ou un port colle invalide ne donne rien`() {
+    fun `blank input or an invalid attached port yields nothing`() {
         assertNull(interpreterSaisie("   ", "5555"))
         assertNull(interpreterSaisie("192.168.2.135:", "5555"))
         assertNull(interpreterSaisie(":5555", "5555"))
     }
 
-    // --- Où l'on écrit ------------------------------------------------------------------------
+    // --- File keys ----------------------------------------------------------------------------
 
     @Test
-    fun `une adresse IPv4 donne la meme cle que sur le telephone`() {
+    fun `an IPv4 address gives the same key as on the phone`() {
         listOf("192.168.2.135", "192.168.2.193", "192.168.2.153").forEach {
             assertEquals(it.replace('.', '_'), cleDeFichier(it))
         }
     }
 
     @Test
-    fun `une barre ne peut pas ouvrir de sous-dossier`() {
+    fun `a slash cannot open a subfolder`() {
         assertEquals("a_b", cleDeFichier("a/b"))
         assertEquals("a_b", cleDeFichier("a\\b"))
         assertEquals("___etc_passwd", cleDeFichier("../etc/passwd"))

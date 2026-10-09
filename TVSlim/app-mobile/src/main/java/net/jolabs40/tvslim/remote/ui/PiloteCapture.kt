@@ -26,24 +26,23 @@ import java.io.File
 import java.io.IOException
 import java.time.LocalDateTime
 
-/** Une capture enregistrée sur le téléphone : de quoi la montrer et la partager. */
+/** A screenshot saved on the phone. */
 class CaptureTelephone(
     val uri: Uri,
     val png: ByteArray,
     val largeur: Int,
     val hauteur: Int,
-    /** Où la trouver, dit à la personne : « Images/TV Slim », ou le dossier de l'application. */
+    /** Location shown to the user: `Pictures/TV Slim`, or the app's own folder. */
     val emplacement: String,
 )
 
 data class EtatCapture(val enCours: Boolean = false, val derniere: CaptureTelephone? = null)
 
 /**
- * La capture d'écran du téléviseur depuis le téléphone, par la session ADB du compagnon.
+ * Takes a TV screenshot over the app's ADB session.
  *
- * Android 10 et plus : dans la galerie, `Images/TV Slim`, sans aucune permission. Avant : dans le dossier de
- * l'application, partagé par un `FileProvider` — la galerie demanderait la permission de stockage, que le
- * compagnon ne réclame pas.
+ * Android 10+: saved to the gallery under `Pictures/TV Slim`, no permission needed. Older versions: saved in the
+ * app's folder and shared through a `FileProvider`, since the gallery would need the storage permission.
  */
 class PiloteCapture(
     private val contexte: Context,
@@ -83,7 +82,7 @@ class PiloteCapture(
         }
     }
 
-    /** Android 10 et plus : MediaStore, sans permission, marqué en attente tant que l'écriture n'est pas finie. */
+    /** Android 10+: MediaStore without permission, marked pending until the write completes. */
     private fun dansLaGalerie(nom: String, png: ByteArray): Pair<Uri, String> {
         val resolveur = contexte.contentResolver
         val valeurs = ContentValues().apply {
@@ -104,7 +103,7 @@ class PiloteCapture(
         return uri to "${Environment.DIRECTORY_PICTURES}/$SOUS_DOSSIER"
     }
 
-    /** Avant Android 10 : le dossier d'images propre à l'application, lisible sans permission. */
+    /** Before Android 10: the app-specific pictures folder, accessible without permission. */
     private fun dansLApplication(nom: String, png: ByteArray): Pair<Uri, String> {
         val dossier = File(contexte.getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: contexte.filesDir, SOUS_DOSSIER)
         dossier.mkdirs()
@@ -113,7 +112,7 @@ class PiloteCapture(
         return uri to dossier.path
     }
 
-    /** Le partage d'Android : messagerie, courriel, Drive… la permission de lire ne vaut que pour cette image. */
+    /** Android share sheet; read permission is granted for this image only. */
     fun intentionPartage(capture: CaptureTelephone): Intent =
         Intent.createChooser(
             Intent(Intent.ACTION_SEND).apply {

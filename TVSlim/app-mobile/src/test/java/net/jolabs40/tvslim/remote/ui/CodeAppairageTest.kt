@@ -7,82 +7,81 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Ce qu'un code scanné a le droit de faire faire à l'application.
+ * What a scanned code is allowed to make the app do.
  *
- * Le contenu vient d'une image, et une image se fabrique : un autocollant se scanne aussi bien
- * qu'un écran de téléviseur. Deux portes s'ouvraient là — vers qui le compagnon se connecte, et
- * où il écrit — et ce sont elles qui sont vérifiées ici.
+ * The content comes from an image, and a sticker scans as well as a TV screen. It decides where the
+ * companion connects and where it writes, and both are checked here.
  *
- * La forme `tvslim://…` n'est pas rejouée : elle passe par `android.net.Uri`, absent d'une JVM
- * nue. Le filtre qu'elle traverse ensuite est le même, et il est éprouvé sur les deux autres.
+ * The `tvslim://` form is not covered: it goes through `android.net.Uri`, missing from a plain JVM.
+ * It then hits the same filter, which is tested through the other two forms.
  */
 class CodeAppairageTest {
 
-    // --- Vers qui l'on se connecte --------------------------------------------------------
+    // --- Connection targets ---------------------------------------------------------------
 
     @Test
-    fun `les adresses des reseaux prives sont acceptees`() {
+    fun `private network addresses are accepted`() {
         listOf(
-            "192.168.2.135", // la TCL
+            "192.168.2.135", // the TCL
             "192.168.1.1",
             "10.0.0.1",
             "172.16.0.1",
             "172.31.255.255",
-            "169.254.3.4", // lien-local, quand le DHCP n'a pas repondu
-            "127.0.0.1", // boucle locale, pour un emulateur
+            "169.254.3.4", // link-local, when DHCP did not answer
+            "127.0.0.1", // loopback, for an emulator
         ).forEach { assertTrue(it, estSurLeReseauLocal(it)) }
     }
 
     @Test
-    fun `tout ce qui n'est pas une adresse privee est refuse`() {
+    fun `anything that is not a private address is rejected`() {
         listOf(
-            "8.8.8.8", // une adresse publique, parfaitement valide
-            "172.15.0.1", // juste sous la plage privee
-            "172.32.0.1", // juste au-dessus
-            "exemple.invalide", // un nom : le televiseur n'en publie jamais
-            "192.168.2", // tronquee
-            "192.168.2.135.7", // trop d'octets
-            "999.1.1.1", // hors bornes
-            "192.168.2.135 ", // une espace de trop
+            "8.8.8.8", // public, perfectly valid
+            "172.15.0.1", // just below the private range
+            "172.32.0.1", // just above it
+            "exemple.invalide", // a hostname: the TV never advertises one
+            "192.168.2", // truncated
+            "192.168.2.135.7", // too many octets
+            "999.1.1.1", // out of range
+            "192.168.2.135 ", // trailing space
             "",
         ).forEach { assertFalse(it, estSurLeReseauLocal(it)) }
     }
 
     @Test
-    fun `une adresse seule prend le port ADB par defaut`() {
+    fun `a bare address gets the default ADB port`() {
         assertEquals(AdresseTv("192.168.2.135", 5555), lireCodeAppairage("192.168.2.135"))
     }
 
     @Test
-    fun `un port explicite est retenu, les espaces autour sont ignores`() {
+    fun `an explicit port is kept and surrounding spaces are ignored`() {
         assertEquals(AdresseTv("192.168.2.135", 5037), lireCodeAppairage("  192.168.2.135:5037  "))
     }
 
     @Test
-    fun `un hote hors du reseau local ne donne aucune adresse`() {
+    fun `a host outside the local network yields no address`() {
         assertNull(lireCodeAppairage("exemple.invalide"))
         assertNull(lireCodeAppairage("8.8.8.8:5555"))
     }
 
     @Test
-    fun `un port impossible ne donne aucune adresse`() {
+    fun `an impossible port yields no address`() {
         assertNull(lireCodeAppairage("192.168.2.135:0"))
         assertNull(lireCodeAppairage("192.168.2.135:70000"))
     }
 
-    // --- Ou l'on ecrit --------------------------------------------------------------------
+    // --- File keys ------------------------------------------------------------------------
 
     @Test
-    fun `une adresse IPv4 donne la meme cle qu'avant, les journaux restent retrouves`() {
-        // L'ancienne regle etait `hote.replace('.', '_')`. Elle doit rendre le meme resultat,
-        // sans quoi le journal et les mesures de chaque televiseur deja visite seraient perdus.
+    fun `an IPv4 address gives the same key as before, so existing journals are still found`() {
+        // Must match `hote.replace('.', '_')` for IPv4, or the journal and measurements of every TV
+        // already visited would be lost.
         listOf("192.168.2.135", "192.168.2.193", "192.168.2.153").forEach {
             assertEquals(it.replace('.', '_'), cleDeFichier(it))
         }
     }
 
     @Test
-    fun `une barre ne peut plus ouvrir de sous-dossier`() {
+    fun `a slash cannot open a subfolder`() {
         assertEquals("a_b", cleDeFichier("a/b"))
         assertEquals("a_b", cleDeFichier("a\\b"))
         assertEquals("___etc_passwd", cleDeFichier("../etc/passwd"))

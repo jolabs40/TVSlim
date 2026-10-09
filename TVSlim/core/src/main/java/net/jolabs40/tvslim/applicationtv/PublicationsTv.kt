@@ -15,7 +15,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.coroutines.coroutineContext
 
-/** La dernière application TV publiée : sa version, et l'APK à télécharger. */
+/** A published TV app release and its APK. */
 data class PublicationTv(
     val version: String,
     val versionCode: Long,
@@ -24,16 +24,16 @@ data class PublicationTv(
     val taille: Long,
 )
 
-/** GitHub, ou ce qui le remplace dans un test. */
+/** GitHub, or a fake in tests. */
 interface SourcePublications {
-    /** Le JSON de `GET /repos/{dépôt}/releases`. */
+    /** JSON of `GET /repos/{repo}/releases`. */
     suspend fun publications(): String
 
-    /** Télécharge [url] dans [cible], sans jamais dépasser [tailleMax] octets. */
+    /** Downloads [url] to [cible], failing beyond [tailleMax] bytes. */
     suspend fun telecharger(url: String, cible: File, tailleMax: Long, progression: (recus: Long, total: Long) -> Unit)
 }
 
-/** Un fichier plus gros que ce qu'on attend d'une application TV : on cesse de le lire. */
+/** Thrown when a download is larger than any TV app should be; reading stops there. */
 class TelechargementTropGros(val taille: Long) : IOException("Fichier trop gros : $taille octets")
 
 object ChoixPublicationTv {
@@ -58,9 +58,8 @@ object ChoixPublicationTv {
     private val TAG = Regex("""android-v(\d{1,3})\.(\d{1,2})\.(\d{1,2})""")
 
     /**
-     * La plus haute publication `android-vX.Y.Z` qui porte `TVSlim-TV-X.Y.Z.apk` — ni brouillon, ni
-     * préversion. Le lien doit mener aux téléchargements du dépôt lui-même : la réponse de l'API se lit,
-     * elle ne se croit pas sur parole.
+     * Picks the highest `android-vX.Y.Z` release (no draft, no prerelease) that carries `TVSlim-TV-X.Y.Z.apk`.
+     * The download URL must point to this repository's own release downloads; the API response is not trusted.
      */
     fun choisir(reponse: String, depot: String = DEPOT): PublicationTv? {
         val publications = runCatching { json.decodeFromString<List<Publication>>(reponse) }.getOrNull() ?: return null
@@ -79,18 +78,15 @@ object ChoixPublicationTv {
             .maxByOrNull { it.versionCode }
     }
 
-    /** Le versionCode qu'en tire le build : X·10 000 + Y·100 + Z (`TVSlim/build.gradle.kts`). */
+    /** Same formula as the build (`TVSlim/build.gradle.kts`): X * 10000 + Y * 100 + Z. */
     fun versionCode(majeur: Int, mineur: Int, correctif: Int): Long = majeur * 10_000L + mineur * 100L + correctif
 
     const val DEPOT = "jolabs40/TVSlim"
 }
 
-/**
- * GitHub, en HTTPS et rien d'autre : la liste des publications, puis l'APK. `HttpURLConnection` existe
- * sur Android comme sous Windows : le noyau s'en sert sans dépendre de l'un ou de l'autre.
- */
+/** Fetches the release list and the APK from GitHub, HTTPS only. `HttpURLConnection` works on Android and the JVM. */
 class SourceGithub(
-    /** « TVSlim/1.1.0 » : GitHub exige un User-Agent, autant qu'il dise qui demande. */
+    /** User-Agent such as `TVSlim/1.1.0`; GitHub requires one. */
     private val agent: String,
     private val depot: String = ChoixPublicationTv.DEPOT,
 ) : SourcePublications {
@@ -115,7 +111,7 @@ class SourceGithub(
         tailleMax: Long,
         progression: (recus: Long, total: Long) -> Unit,
     ) = withContext(Dispatchers.IO) {
-        // GitHub renvoie vers son stockage : HttpURLConnection suit, mais jamais de HTTPS vers HTTP.
+        // GitHub redirects to its storage. HttpURLConnection follows, but never from HTTPS to HTTP.
         val connexion = ouvrir(url)
         try {
             if (connexion.responseCode != 200) throw IOException("Téléchargement : HTTP ${connexion.responseCode}")
@@ -166,7 +162,7 @@ class SourceGithub(
     }
 
     private companion object {
-        /** Trente publications et leurs fichiers tiennent en quelques centaines de kilo-octets. */
+        /** Thirty releases with their assets fit in a few hundred KB. */
         const val TAILLE_MAX_LISTE = 4L * 1024 * 1024
     }
 }

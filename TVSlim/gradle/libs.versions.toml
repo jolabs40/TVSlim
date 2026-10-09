@@ -35,7 +35,7 @@ compose-foundation = { group = "androidx.compose.foundation", name = "foundation
 compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
-# Compose for TV (Material 3 pour TV)
+# Compose for TV (Material 3)
 tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
 
 # Navigation
@@ -54,24 +54,24 @@ hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-com
 # DataStore
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 
-# Coroutines / sérialisation
+# Coroutines / serialization
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 
-# Génération locale des QR codes côté téléviseur (aucun appel réseau)
+# QR codes generated locally on the TV (no network call)
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 
-# Lecture du QR côté téléphone : interface fournie par Google Play services,
-# donc aucune permission caméra à demander.
+# QR scanning on the phone: the scanner UI comes from Google Play services,
+# so no camera permission is needed.
 code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "codeScanner" }
 
-# ModuleInstall : pré-télécharge l'interface de scan avant qu'on en ait besoin.
+# ModuleInstall: downloads the scanner UI before it is needed.
 play-services-base = { group = "com.google.android.gms", name = "play-services-base", version.ref = "playServicesBase" }
 
-# Chiffrement au repos de la clé ADB, avec une clé maître du keystore Android.
+# Encrypts the ADB key at rest with a master key from the Android keystore.
 security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
-# Client ADB pur Kotlin : le compagnon parle au téléviseur sans binaire adb
+# Pure Kotlin ADB client: the companion talks to the TV without an adb binary
 dadb = { group = "dev.mobile", name = "dadb", version.ref = "dadb" }
 
 # Tests

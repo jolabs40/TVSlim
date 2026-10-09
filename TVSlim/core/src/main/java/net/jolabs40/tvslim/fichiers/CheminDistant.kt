@@ -1,20 +1,19 @@
 package net.jolabs40.tvslim.fichiers
 
 /**
- * Les chemins du téléviseur : à la façon d'Unix, séparés par `/`, et toujours absolus ici.
+ * TV-side paths: Unix style, `/`-separated, always absolute here.
  *
- * Ils partent dans des commandes shell, et un nom de fichier vient de la personne — d'un dossier glissé
- * depuis l'Explorateur, d'un document choisi sur le téléphone. Rien ne l'empêche de porter une apostrophe ou
- * un point-virgule : [citer] l'y fait entrer intact.
+ * They end up in shell commands, and file names come from the user (a folder dragged from Explorer, a
+ * document picked on the phone), so they may contain a quote or a semicolon. [citer] passes them intact.
  */
 object CheminDistant {
 
     const val RACINE = "/"
 
-    /** La limite d'un nom sur les systèmes de fichiers d'Android, en octets et non en caractères. */
+    /** Maximum name length on Android file systems, in bytes rather than characters. */
     private const val NOM_MAX_OCTETS = 255
 
-    /** Ramène un chemin à sa forme simple : ni `//`, ni `.`, ni `..`, ni `/` final. Un chemin relatif part de la racine. */
+    /** Normalizes a path: no `//`, `.`, `..` or trailing `/`. A relative path starts from the root. */
     fun normaliser(chemin: String): String {
         val etapes = mutableListOf<String>()
         chemin.split('/').forEach { etape ->
@@ -29,13 +28,13 @@ object CheminDistant {
 
     fun joindre(dossier: String, nom: String): String = if (dossier == RACINE) "/$nom" else "$dossier/$nom"
 
-    /** Le dossier qui contient [chemin] ; la racine n'en a pas. */
+    /** Parent folder of [chemin]; null for the root. */
     fun parent(chemin: String): String? =
         if (chemin == RACINE) null else chemin.substringBeforeLast('/').ifEmpty { RACINE }
 
     fun nom(chemin: String): String = chemin.substringAfterLast('/')
 
-    /** Le fil d'Ariane, de la racine à [chemin] : chaque étape avec son nom et son chemin complet. */
+    /** Breadcrumb from the root to [chemin]: each step with its name and full path. */
     fun etapes(chemin: String): List<EtapeChemin> {
         val etapes = mutableListOf(EtapeChemin(RACINE, RACINE))
         var courant = RACINE
@@ -47,11 +46,11 @@ object CheminDistant {
     }
 
     /**
-     * Un nom qu'on accepte de créer sur le téléviseur : ni vide, ni `.` ou `..`, sans `/` ni caractère de
-     * contrôle, et 255 octets au plus.
+     * Whether a name may be created on the TV: not empty, not `.` or `..`, no `/` or control character, and
+     * at most 255 bytes.
      *
-     * Android prendrait un caractère de contrôle, mais un saut de ligne casserait la lecture des dossiers, qui
-     * va ligne par ligne : le fichier deviendrait illisible depuis TV Slim.
+     * Android accepts control characters, but a newline would break the line-based folder listing and make
+     * the file unreadable from TV Slim.
      */
     fun nomValide(nom: String): Boolean =
         nom.isNotEmpty() &&
@@ -63,5 +62,5 @@ object CheminDistant {
 
 data class EtapeChemin(val nom: String, val chemin: String)
 
-/** Entre apostrophes, pour le shell : la seule à traiter est l'apostrophe elle-même, qu'on ferme puis rouvre. */
+/** Single-quotes [texte] for the shell. Only the quote itself needs handling: close, escape, reopen. */
 fun citer(texte: String): String = "'" + texte.replace("'", "'\\''") + "'"

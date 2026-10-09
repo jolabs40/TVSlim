@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
-# Construit le site puis le publie sur l'Hébergement Web Infomaniak, comme startlightlauncher.com.
-#   bash deploy.sh            construit et publie
-#   bash deploy.sh --sec      montre ce qui changerait, sans rien écrire
-# Passe par l'alias SSH `infomaniak` (~/.ssh/config). Pas de rsync sur le PC : l'archive part par ssh,
-# et c'est le rsync du serveur qui synchronise — d'où --delete sans risque de laisser traîner une page
-# retirée (un paquet sorti du catalogue, par exemple).
+# Builds the site and publishes it to Infomaniak web hosting.
+#   bash deploy.sh            build and publish
+#   bash deploy.sh --sec      dry run, shows what would change
+# Uses the SSH alias `infomaniak` (~/.ssh/config). There is no rsync on the PC: the archive goes over ssh
+# and the server's rsync does the sync, so --delete also removes pages that no longer exist.
 #
-# À relancer après chaque publication GitHub : les liens de téléchargement se lisent à la construction.
-# Et après chaque changement du catalogue : l'encyclopédie des paquets en est tirée.
+# Rerun after every GitHub release (download links are read at build time) and after every catalogue
+# change (the package pages are generated from it).
 #
-# Les pages changées sont signalées à IndexNow (Bing, Yandex, Seznam…). La clé n'est pas un secret : le
-# protocole veut qu'elle soit publiée, dans public/<clé>.txt.
-# --checksum : rsync compare le CONTENU, pas la date — chaque build réécrit toutes les pages.
+# Changed pages are submitted to IndexNow. The key is not a secret: the protocol requires it to be
+# published, in public/<key>.txt.
+# --checksum: compare content, not mtime, since every build rewrites every page.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -23,7 +22,7 @@ SEC=''
 
 npm run build
 
-# .user.ini et la page de maintenance appartiennent à Infomaniak : jamais touchés.
+# .user.ini and the maintenance page belong to Infomaniak: never touched.
 CHANGES=$(tar -C dist -czf - . | ssh infomaniak "set -e
   mkdir -p ~/tmp
   T=\$(mktemp -d ~/tmp/tvslim-site.XXXXXX)
@@ -41,7 +40,7 @@ if [ -n "$SEC" ]; then
 fi
 echo "Publié : $SITE/"
 
-# Les pages changées : « >f… fr/packages/x/index.html » donne $SITE/fr/packages/x/.
+# Changed pages: ">f... fr/packages/x/index.html" becomes $SITE/fr/packages/x/.
 URLS=$(printf '%s\n' "$CHANGES" | sed -nE "s#^>f[^ ]* +((.*/)?)index\.html\$#$SITE/\1#p")
 if [ -z "$URLS" ]; then
   echo "IndexNow : aucune page changée, rien à signaler."
@@ -51,5 +50,5 @@ LIST=$(printf '%s\n' "$URLS" | sed 's/.*/"&"/' | paste -sd, -)
 BODY="{\"host\":\"tvslim.app\",\"key\":\"$INDEXNOW_KEY\",\"keyLocation\":\"$SITE/$INDEXNOW_KEY.txt\",\"urlList\":[$LIST]}"
 CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST 'https://api.indexnow.org/indexnow' \
   -H 'Content-Type: application/json; charset=utf-8' -d "$BODY") || CODE='échec'
-# 200 ou 202 : reçu. Un échec n'annule pas la publication, qui est faite.
+# 200 or 202 means received. A failure here does not undo the publish.
 echo "IndexNow : $(printf '%s\n' "$URLS" | wc -l | tr -d ' ') page(s) signalée(s), réponse $CODE"

@@ -6,8 +6,8 @@ pluginManagement {
     }
 }
 plugins {
-    // Fournit à la demande le JDK 21 d'Adoptium : c'est lui qui porte jpackage, absent du JBR
-    // d'Android Studio, et donc lui qui fabrique l'installateur.
+    // Provisions the Adoptium JDK 21 on demand: it has jpackage, which Android Studio's JBR lacks,
+    // so it builds the installer.
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
 }
 dependencyResolutionManagement {

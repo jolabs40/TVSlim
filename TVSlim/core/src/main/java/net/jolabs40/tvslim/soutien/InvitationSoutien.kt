@@ -10,15 +10,15 @@ import net.jolabs40.tvslim.fichiers.SignalFichiers
 import net.jolabs40.tvslim.installation.ResultatInstallation
 import net.jolabs40.tvslim.moteur.ResultatAction
 
-/** Ce que l'application retient de ses invitations, sur l'appareil et nulle part ailleurs. */
+/** What the app remembers about its invitations, stored on the device only. */
 data class MemoireSoutien(
-    /** La personne a dit avoir déjà donné : on la croit, et on ne lui redemande plus rien. */
+    /** The user said they already donated: taken at their word, never asked again. */
     val donDeclare: Boolean = false,
-    /** Quand la dernière invitation s'est montrée ; 0 tant qu'aucune ne l'a fait. */
+    /** When the last invitation was shown; 0 if never. */
     val derniereInvitation: Long = 0L,
 )
 
-/** Où chaque application range [MemoireSoutien] : un fichier JSON sous Windows, le DataStore sur le téléphone. */
+/** Storage for [MemoireSoutien]: a JSON file on Windows, DataStore on the phone. */
 interface MagasinSoutien {
     suspend fun lireSoutien(): MemoireSoutien
 
@@ -26,31 +26,30 @@ interface MagasinSoutien {
 }
 
 /**
- * L'invitation à offrir un café, après un service rendu : un débloat, un transfert de fichiers ou une
- * installation qui ont abouti sans accroc.
+ * The invitation to buy a coffee after a successful debloat, file transfer or installation.
  *
- * TV Slim ne parle qu'à GitHub — c'est écrit dans le README — et ne peut donc pas savoir qui a donné. La
- * personne le dit elle-même, d'un bouton, et c'est définitif. Ouvrir la page de soutien est l'affaire du
- * navigateur, après un clic : l'application n'appelle jamais Ko-fi elle-même.
+ * TV Slim only talks to GitHub (as the README states), so it cannot know who donated. The user says so
+ * with a button, and that is final. The support page opens in the browser after a click; the app never
+ * calls Ko-fi itself.
  */
 object InvitationSoutien {
     const val LIEN = "https://ko-fi.com/jolabs40"
 
-    /** Entre deux invitations : un service rendu chaque jour ne vaut pas une demande chaque jour. */
+    /** Minimum time between invitations, so daily use does not mean a daily request. */
     const val INTERVALLE_MS: Long = 30L * 24 * 60 * 60 * 1000
 
     fun aProposer(memoire: MemoireSoutien, maintenant: Long): Boolean {
         if (memoire.donDeclare) return false
         if (memoire.derniereInvitation <= 0L) return true
         val ecoule = maintenant - memoire.derniereInvitation
-        // Une horloge revenue en arrière ne doit pas taire l'invitation pendant des années.
+        // A clock set backwards must not silence the invitation for years.
         return ecoule < 0 || ecoule >= INTERVALLE_MS
     }
 
-    /** Un débloat, ou une configuration réinjectée, dont chaque action a abouti. */
+    /** A debloat or reapplied configuration where every action succeeded. */
     fun merite(resultats: List<ResultatAction>): Boolean = resultats.isNotEmpty() && resultats.all { it.reussi }
 
-    /** Un envoi vers le téléviseur, ou une copie vers l'ordinateur, arrivé au bout sans un fichier refusé. */
+    /** An upload to the TV or a copy to the PC that completed with no rejected file. */
     fun merite(depot: ResultatDepot): Boolean = depot.complet && depot.envoyes > 0
 
     fun merite(signal: SignalFichiers): Boolean = signal is SignalFichiers.Depot && merite(signal.resultat)
@@ -59,11 +58,11 @@ object InvitationSoutien {
 }
 
 /**
- * Le bandeau de soutien, dans les deux applications : il se montre après un service rendu, au plus une fois
- * par [InvitationSoutien.INTERVALLE_MS], et plus jamais une fois le don déclaré.
+ * The support banner, in both apps: shown after a successful action, at most once per
+ * [InvitationSoutien.INTERVALLE_MS], and never again once a donation is declared.
  *
- * L'invitation est datée au moment où elle se montre, et non quand on la ferme : une fenêtre fermée sans
- * répondre ne doit pas la faire revenir au service suivant.
+ * The invitation is timestamped when shown, not when dismissed, so closing it without answering does
+ * not bring it back on the next action.
  */
 class PiloteSoutien(
     private val magasin: MagasinSoutien,
@@ -74,7 +73,7 @@ class PiloteSoutien(
     private val _visible = MutableStateFlow(false)
     val visible: StateFlow<Boolean> = _visible.asStateFlow()
 
-    /** Un service vient d'être rendu : l'invitation se montre, si son heure est venue. */
+    /** Called after a successful action; shows the invitation if it is due. */
     fun remercier() {
         if (_visible.value) return
         portee.launch {
@@ -86,12 +85,12 @@ class PiloteSoutien(
         }
     }
 
-    /** « Plus tard », ou la page de soutien ouverte : le bandeau s'efface jusqu'à la prochaine échéance. */
+    /** "Later", or the support page was opened: hides the banner until the next invitation is due. */
     fun ecarter() {
         _visible.value = false
     }
 
-    /** « J'ai déjà fait un don » : plus d'invitation, jamais. */
+    /** "I already donated": no more invitations, ever. */
     fun declarerDon() {
         _visible.value = false
         portee.launch { magasin.ecrireSoutien(magasin.lireSoutien().copy(donDeclare = true)) }

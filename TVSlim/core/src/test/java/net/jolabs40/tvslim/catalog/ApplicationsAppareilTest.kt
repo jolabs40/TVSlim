@@ -11,8 +11,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Sur un téléphone, les applications préinstallées du menu deviennent désactivables une à une ; sur un téléviseur,
- * rien ne change. Relevé du Pixel 9a le 2026-10-04 : YouTube, YouTube Music, préinstallés ; Spotify, installé.
+ * On a phone, preinstalled launcher apps can be disabled one by one; on a TV nothing changes. Data from a Pixel 9a:
+ * YouTube and YouTube Music preinstalled, Spotify user-installed.
  */
 class ApplicationsAppareilTest {
 
@@ -47,12 +47,12 @@ class ApplicationsAppareilTest {
         "com.google.android.youtube",
         "com.google.android.apps.youtube.music",
         "com.android.settings",
-        // Installé par la personne : absent des paquets système, il ne vient pas.
+        // User-installed, so not among the system packages: left out.
         "com.spotify.music",
     )
 
     @Test
-    fun `sur un telephone, les applications preinstallees du menu deviennent des entrees non eprouvees`() {
+    fun `on a phone, preinstalled launcher apps become untested entries`() {
         val vu = catalogue.avecApplicationsDuMenu(pixel, systeme, menu)
 
         val ajoutees = vu.entrees.filter { it.categorie == CATEGORIE_APPAREIL }
@@ -60,24 +60,24 @@ class ApplicationsAppareilTest {
             listOf("com.google.android.apps.youtube.music", "com.google.android.youtube"),
             ajoutees.map { it.paquet },
         )
-        // Jamais cochées par un profil, et marquées comme telles.
+        // Never selected by a profile, and flagged as such.
         assertTrue(ajoutees.none { it.eprouve })
-        // La liste noire l'emporte, et un service sans icône — le téléphone — n'est pas proposé.
+        // The blocklist wins, and a package with no launcher icon (the phone app) is not offered.
         assertFalse(vu.entrees.any { it.paquet == "com.android.settings" || it.paquet == "com.android.phone" })
         assertFalse(vu.entrees.any { it.paquet == "com.spotify.music" })
-        // Elles ne sont plus parmi les inconnus.
+        // No longer listed as unknown.
         assertFalse(vu.paquetsInconnus(systeme, null).any { it.paquet == "com.google.android.youtube" })
     }
 
     @Test
-    fun `sur un televiseur, rien ne change`() {
+    fun `on a TV, nothing changes`() {
         assertSame(catalogue, catalogue.avecApplicationsDuMenu(tcl, systeme, menu))
-        // Rien de lu, la marque décide : un Pixel non encore lu passe pour une box, donc rien n'est ajouté.
+        // With nothing read yet the brand decides: an unread Pixel passes for a box, so nothing is added.
         assertSame(catalogue, catalogue.avecApplicationsDuMenu(InfosAppareil(marque = "Google"), systeme, menu))
     }
 
     @Test
-    fun `le menu se lit dans la reponse de query-activities`() {
+    fun `launcher apps are parsed from the query-activities output`() {
         val lignes = listOf(
             "priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true",
             "com.google.android.youtube/com.google.android.apps.youtube.app.WatchWhileActivity",

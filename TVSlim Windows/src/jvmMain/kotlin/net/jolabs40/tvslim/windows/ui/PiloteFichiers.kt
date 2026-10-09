@@ -49,15 +49,14 @@ import net.jolabs40.tvslim.windows.ressources.files_sent_interrupted
 import java.io.File
 
 /**
- * L'onglet Fichiers : l'explorateur du noyau, partagé avec le compagnon, et ce que Windows y ajoute — les
- * fichiers du disque, glissés ou choisis, le dossier où copier ceux du téléviseur, et les mots pour dire ce qui
- * s'est passé.
+ * Files tab: the core's explorer, shared with the companion, plus the Windows side (local files dropped or
+ * picked, the destination of copies from the TV) and the messages.
  */
 class PiloteFichiers(
     client: ClientAdb,
     portee: CoroutineScope,
     private val afficher: (MessageUi) -> Unit,
-    /** Un envoi ou une copie arrivés au bout : le bandeau de soutien peut se montrer. */
+    /** An upload or copy completed: the support banner may show. */
     private val remercier: () -> Unit,
 ) {
 
@@ -67,8 +66,8 @@ class PiloteFichiers(
     }
 
     init {
-        // Ce qu'on a lu appartient au téléviseur : se déconnecter, ou en joindre un autre, l'oublie. Une reprise
-        // sur le même téléviseur, non.
+        // What was read belongs to the TV: forget it on disconnect or when switching TVs, but not when
+        // reconnecting to the same one.
         portee.launch {
             client.connexion
                 .map { if (it.etat == EtatConnexion.DECONNECTE) "" else it.hote }
@@ -78,15 +77,15 @@ class PiloteFichiers(
         }
     }
 
-    /** Ce qu'on glisse dans la fenêtre, ou qu'on choisit, part dans le dossier où l'on est. */
+    /** Uploads dropped or picked files to the current folder. */
     fun deposer(elements: List<File>) {
         if (elements.isEmpty()) return
         explorateur.examiner { withContext(Dispatchers.IO) { lotDepuis(elements) } }
     }
 
     /**
-     * Copie [entree] vers le disque. [choix] est le fichier désigné dans « Enregistrer sous » pour un fichier — son
-     * nom peut différer —, le dossier qui recevra l'autre pour un dossier.
+     * Copies [entree] to disk. For a file, [choix] is the file picked in the save dialog (its name may differ);
+     * for a folder, it is the folder that receives it.
      */
     fun copier(entree: EntreeDistante, choix: File) {
         val absolu = choix.absoluteFile
@@ -150,7 +149,7 @@ class PiloteFichiers(
     }
 
     private companion object {
-        /** Au-delà, la bannière déborderait : la carte de l'onglet garde la liste complète. */
+        /** More would overflow the snackbar; the tab's card keeps the full list. */
         const val MAX_ECHECS = 4
     }
 }

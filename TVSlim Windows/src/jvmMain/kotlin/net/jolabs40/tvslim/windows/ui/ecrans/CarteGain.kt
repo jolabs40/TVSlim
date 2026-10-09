@@ -33,10 +33,10 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Ce que l'intervention a changé, mesuré et non promis.
+ * What the debloat changed, measured rather than promised.
  *
- * La première lecture faite sur un téléviseur devient le point de départ ; toutes les suivantes s'y
- * comparent, d'une session à l'autre. Un chiffre de mémoire libre isolé ne dit rien.
+ * The first reading on a TV becomes the baseline and every later one, across sessions, is compared to it:
+ * a single free-memory figure means nothing on its own.
  */
 @Composable
 fun CarteGain(
@@ -94,7 +94,7 @@ private fun Comparaison(libelle: String, avant: String, maintenant: String, delt
                 style = MaterialTheme.typography.bodySmall,
             )
         }
-        // Un gain se lit d'un coup d'œil ; une perte aussi, et elle mérite la même franchise.
+        // Losses are shown as plainly as gains.
         Text(
             text = if (delta >= 0) {
                 stringResource(Res.string.gain_delta_plus, delta)

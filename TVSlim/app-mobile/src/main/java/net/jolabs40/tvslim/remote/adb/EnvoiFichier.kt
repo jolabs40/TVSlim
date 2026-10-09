@@ -13,11 +13,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Exécute un envoi de dadb sous un délai de **silence**, et non de durée : un film de plusieurs gigaoctets prend
- * son temps, et c'est normal ; une liaison qui ne fait plus rien passer pendant [silenceMaxMs], non.
+ * Runs a dadb upload with an inactivity timeout rather than a total one: a multi-gigabyte file may take long,
+ * but nothing sent for [silenceMaxMs] means the link is dead.
  *
- * Même principe que `sousSurveillance` : seule la fermeture de la session débloque une écriture de socket
- * suspendue, et elle se fait depuis un autre fil. Le même fichier vit dans la version Windows.
+ * Like `sousSurveillance`, only closing the session from another thread unblocks a stuck socket write.
+ * The Windows app has the same file.
  */
 internal suspend fun <T> sousVeille(
     active: Dadb,
@@ -42,12 +42,12 @@ internal suspend fun <T> sousVeille(
 
 internal class SilenceProlonge(cause: Throwable) : IOException("plus rien ne passe", cause)
 
-/** Levée par la source quand la personne arrête l'envoi : dadb l'interrompt, et ferme son flux. */
+/** Thrown by the source when the user cancels; dadb aborts and closes its stream. */
 internal class EnvoiAnnule : IOException("envoi annulé")
 
 /**
- * La source d'un fichier qui part : elle compte les octets — dadb ne dit rien pendant un envoi —, note que la
- * liaison vit, et s'arrête net quand [annule] devient vrai.
+ * Upload source that counts bytes (dadb reports no progress), records link activity, and stops as soon as
+ * [annule] returns true.
  */
 internal class SourceEnvoi(
     source: Source,
@@ -60,7 +60,7 @@ internal class SourceEnvoi(
     private var envoye = 0L
     private var signale = 0L
 
-    /** Un signe par centième, et pas moins de 64 Ko : l'écran n'a que faire de dix mille mises à jour. */
+    /** Progress step: 1% of the file, at least 64 KiB. */
     private val pas = maxOf(taille / 100, 64L * 1024)
 
     override fun read(sink: Buffer, byteCount: Long): Long {

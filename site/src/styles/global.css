@@ -1,6 +1,5 @@
-/* tvslim.app — un seul thème, sombre, celui de l'application et du logo : fond #101418, vert menthe et
-   bleu. Rouge et jaune ne servent qu'à ce qu'on retire ou qui présente un risque, comme dans le logo.
-   Mise en page : une colonne de 1120 px, des sections qui alternent texte et preuve (captures, tableaux). */
+/* tvslim.app: a single dark theme matching the app and logo (#101418, mint, blue). Red and yellow are
+   reserved for what gets removed or carries a risk, as in the logo. Layout: one 1120 px column. */
 :root {
   --bg: #0c1013;
   --surface: #141a1f;
@@ -70,7 +69,7 @@ section + section { border-top: 1px solid var(--line); }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; min-width: 0; }
 .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
 
-/* Le nom d'un paquet : c'est la matière du sujet, toujours en chasse fixe. */
+/* Package names are always monospace. */
 .pkg { font: 500 0.9em var(--mono); color: var(--muted); overflow-wrap: anywhere; }
 
 .badge {

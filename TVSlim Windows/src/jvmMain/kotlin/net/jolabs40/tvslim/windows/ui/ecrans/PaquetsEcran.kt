@@ -86,9 +86,8 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * L'onglet Paquets : le catalogue filtré sur ce que le téléviseur porte réellement, les profils,
- * l'application en lot. Mêmes informations que sur le téléphone ; le bureau y ajoute un volet de
- * détail, où chaque paquet se lit en entier sans rien cocher par mégarde.
+ * Packages tab: the catalogue filtered to what the TV actually has, profiles, batch apply. Same information
+ * as on the phone, plus a detail pane where a package can be read in full without ticking it by mistake.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -127,7 +126,7 @@ fun PaquetsEcran(
             )
         }
 
-        // Un téléphone, une tablette : le catalogue n'est pas écrit pour eux, et aucun profil n'y agit.
+        // Phone or tablet: the catalogue is not written for them and no profile applies.
         val pourLeCatalogue = etat.infos.typeAppareil.pourLeCatalogue
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -146,9 +145,8 @@ fun PaquetsEcran(
                     singleLine = true,
                     modifier = Modifier.weight(1f).widthIn(max = 480.dp),
                 )
-                // La configuration du téléviseur — launcher et paquets — se sauvegarde et se réinjecte
-                // d'ici : une sauvegarde est un profil qu'on s'est fait soi-même. Sur cette ligne, le
-                // champ de recherche cède la place ; la ligne des filtres, elle, n'en a pas.
+                // Save and reapply the TV configuration (launcher and packages): a save is a self-made
+                // profile. The search field shrinks to make room here; the filter row has no room left.
                 OutlinedButton(onClick = onSauvegarder, enabled = !etat.travailEnCours) {
                     Text(stringResource(Res.string.config_save))
                 }
@@ -172,8 +170,8 @@ fun PaquetsEcran(
                     onFiltre = onFiltre,
                 )
                 Spacer(Modifier.weight(1f))
-                // Une liste déroulante plutôt qu'une rangée de boutons : cinq profils aux noms longs
-                // passaient sur deux lignes, et chacun peut désormais dire ce qu'il coche.
+                // A dropdown rather than a row of buttons: five long profile names wrapped onto two
+                // lines, and the dropdown has room to describe what each one selects.
                 ListeProfils(
                     profils = etat.catalogue.profils,
                     selectionVide = etat.selection.isEmpty(),
@@ -205,7 +203,7 @@ fun PaquetsEcran(
                                 onReactiver = { onReactiver(ligne.entree.paquet) },
                             )
                         }
-                        // Après le catalogue, ce qu'il ne connaît pas : montré, jamais proposé à la désactivation.
+                        // Then the packages the catalogue does not know: shown, never offered for disabling.
                         if (etat.inconnus.isNotEmpty()) {
                             sectionInconnus(
                                 affiches = inconnus,
@@ -233,12 +231,12 @@ fun PaquetsEcran(
     }
 }
 
-/** Tous, actifs ou désactivés : un seul interrupteur à trois positions plutôt que trois boutons. */
+/** All, enabled or disabled: one three-way toggle rather than three buttons. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FiltreEtat(filtre: Filtre, actifs: Int, desactives: Int, onFiltre: (Filtre) -> Unit) {
-    // Largeur fixe et sans coche : la rangée prend sinon la largeur minimale de ses libellés, et
-    // « Désactivés (55) » y perdait son compteur.
+    // Fixed width and no check mark: otherwise the row shrinks to its labels' minimum width and a label
+    // like "Disabled (55)" loses its count.
     SingleChoiceSegmentedButtonRow(modifier = Modifier.width(456.dp)) {
         Filtre.entries.forEachIndexed { rang, choix ->
             SegmentedButton(
@@ -260,7 +258,7 @@ private fun FiltreEtat(filtre: Filtre, actifs: Int, desactives: Int, onFiltre: (
     }
 }
 
-/** Un téléphone ou une tablette est joint : ce que le catalogue ne fera pas pour lui, et ce qui reste possible. */
+/** Shown for a phone or tablet: what the catalogue will not do for it, and what remains possible. */
 @Composable
 private fun BandeauHorsTeleviseur() {
     Surface(
@@ -280,9 +278,9 @@ private fun BandeauHorsTeleviseur() {
 }
 
 /**
- * Les profils, en liste déroulante. En choisir un coche tout ce qu'il couvre, sans rien décocher ;
- * sa description, sous son nom, dit ce qu'on perd en l'appliquant. Le champ rappelle le dernier
- * profil appliqué, tant que la sélection n'a pas été vidée.
+ * Profile dropdown. Picking one selects everything it covers without unselecting anything; the description
+ * under each name says what applying it costs. The field shows the last applied profile until the selection
+ * is cleared.
  */
 @Composable
 private fun ListeProfils(profils: List<Profil>, selectionVide: Boolean, actif: Boolean, onProfil: (Profil) -> Unit) {
@@ -302,7 +300,7 @@ private fun ListeProfils(profils: List<Profil>, selectionVide: Boolean, actif: B
             },
             modifier = Modifier.fillMaxWidth(),
         )
-        // Un champ en lecture seule garde le clic pour lui : une surface transparente le reçoit.
+        // A read-only text field swallows clicks, so a transparent overlay receives them.
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -343,8 +341,8 @@ private fun ListeProfils(profils: List<Profil>, selectionVide: Boolean, actif: B
 }
 
 /**
- * Une ligne du catalogue. Un clic l'ouvre dans le volet de détail ; la case, elle, coche. Un paquet
- * déjà désactivé ne se coche pas : il se réactive, d'un bouton explicite.
+ * A catalogue row. A click opens it in the detail pane; only the checkbox selects. An already disabled
+ * package cannot be selected: it is re-enabled with an explicit button.
  */
 @Composable
 private fun VuePaquet(
@@ -382,7 +380,7 @@ private fun VuePaquet(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                // Décrit d'après un inventaire envoyé : aucun profil ne le coche, le volet dit pourquoi.
+                // Described from a submitted inventory: no profile selects it, and the detail pane says why.
                 if (!ligne.entree.eprouve) {
                     Text(
                         text = stringResource(Res.string.packages_untested),

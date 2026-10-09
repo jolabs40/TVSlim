@@ -18,28 +18,26 @@ import net.jolabs40.tvslim.windows.ressources.apk_cause_unsigned
 import org.jetbrains.compose.resources.StringResource
 import java.util.Locale
 
-/** Où en est l'installation d'un APK. */
 sealed interface PhaseInstallation {
-    /** Lecture du fichier et du téléviseur, avant la confirmation. */
+    /** Reading the file and the TV, before confirmation. */
     data object Examen : PhaseInstallation
 
     data class Envoi(val envoye: Long, val total: Long) : PhaseInstallation
 
-    /** Tout est parti : Android vérifie l'application et l'installe. */
+    /** Upload done; Android is verifying and installing the app. */
     data object Installation : PhaseInstallation
 }
 
-/** Ce que la carte « Installer une application » affiche. Le pendant de celle du compagnon. */
+/** State of the "Install an app" card, mirroring the companion's. */
 @Immutable
 data class EtatInstallation(
     val phase: PhaseInstallation? = null,
-    /** Le bilan de la dernière installation, qui reste lisible une fois la bannière passée. */
+    /** Outcome of the last install, still readable after the snackbar is gone. */
     val derniere: ResultatInstallation? = null,
 ) {
     val occupee: Boolean get() = phase != null
 }
 
-/** Un refus d'Android, dit dans la langue de la personne. */
 fun CauseEchec.ressource(): StringResource = when (this) {
     CauseEchec.SIGNATURE_DIFFERENTE -> Res.string.apk_cause_signature
     CauseEchec.RETROGRADATION -> Res.string.apk_cause_downgrade
@@ -54,5 +52,5 @@ fun CauseEchec.ressource(): StringResource = when (this) {
     CauseEchec.AUTRE -> Res.string.apk_cause_other
 }
 
-/** Des octets en mégaoctets, à une décimale et à la façon de la langue : « 48,3 » en français. */
+/** Bytes as megabytes, one decimal, in the default locale ("48,3" in French). */
 fun megaoctets(octets: Long): String = String.format(Locale.getDefault(), "%.1f", octets / 1_000_000.0)

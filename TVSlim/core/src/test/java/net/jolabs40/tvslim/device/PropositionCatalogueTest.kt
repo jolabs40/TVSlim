@@ -6,11 +6,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** Quand proposer un inventaire au catalogue, et le formulaire qu'on ouvre pour cela. */
+/** When to suggest an inventory for the catalogue, and the issue form it opens. */
 class PropositionCatalogueTest {
 
     @Test
-    fun `seuls les paquets du constructeur valent une proposition`() {
+    fun `only manufacturer packages warrant a suggestion`() {
         fun inconnu(origine: OriginePaquet) = PaquetInconnu("a.b.${origine.name.lowercase()}", EtatPaquet.ACTIF, origine)
 
         assertFalse(PropositionCatalogue.aProposer(emptyList()))
@@ -19,7 +19,7 @@ class PropositionCatalogueTest {
     }
 
     @Test
-    fun `le lien ouvre le modele, titre et appareil remplis et encodes`() {
+    fun `the link opens the template with title and device filled in and encoded`() {
         val philips = InfosAppareil(
             marque = "TPV",
             marqueCommerciale = "Philips",
@@ -33,7 +33,7 @@ class PropositionCatalogueTest {
                 "&device=Philips%2055PUS8807%2F12",
             PropositionCatalogue.lien(philips),
         )
-        // Un appareil qu'on n'a pas su lire : le formulaire s'ouvre quand même, sans champ vide dans l'adresse.
+        // Unreadable device: the form still opens, with no empty field in the URL.
         assertEquals(
             "https://github.com/autre/depot/issues/new?template=nouvel-appareil.yml&title=Catalogue%3A%20%3F",
             PropositionCatalogue.lien(InfosAppareil.VIDE, depot = "autre/depot"),
@@ -41,8 +41,8 @@ class PropositionCatalogueTest {
     }
 
     @Test
-    fun `le modele d'issue existe, avec le champ que le lien remplit`() {
-        // Les deux builds lancent les tests du noyau depuis TVSlim/core : la racine du dépôt est deux crans au-dessus.
+    fun `the issue template exists, with the field the link fills in`() {
+        // Both builds run core tests from TVSlim/core, so the repository root is two levels up.
         val modele = File("../../.github/ISSUE_TEMPLATE/${PropositionCatalogue.MODELE}")
 
         assertTrue("Modèle d'issue introuvable : ${modele.absolutePath}", modele.isFile)

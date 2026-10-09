@@ -10,8 +10,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * La sélection décide de ce qui va être désactivé sur un téléviseur : elle ne doit jamais cocher un
- * paquet qui n'est pas actif. Mêmes cas que le compagnon Android, sur l'état de la fenêtre.
+ * The selection decides what gets disabled on a TV, so it must never check a package that is not active. Same
+ * cases as the Android companion, run against the window state.
  */
 class SelectionTest {
 
@@ -26,7 +26,7 @@ class SelectionTest {
         Profil(id = "doux", nom = "Doux", description = "", categories = categories.toList())
 
     @Test
-    fun `basculer coche puis decoche un paquet actif`() {
+    fun `toggling checks then unchecks an active package`() {
         val depart = etat("com.tcl.pub" to EtatPaquet.ACTIF)
 
         val coche = depart.avecBascule("com.tcl.pub")
@@ -36,7 +36,7 @@ class SelectionTest {
     }
 
     @Test
-    fun `un paquet deja desactive ou absent ne se coche pas`() {
+    fun `an already disabled or missing package cannot be checked`() {
         val depart = etat(
             "com.deja.eteint" to EtatPaquet.DESACTIVE,
             "com.pas.installe" to EtatPaquet.ABSENT,
@@ -48,7 +48,7 @@ class SelectionTest {
     }
 
     @Test
-    fun `un profil ne coche que sa categorie, et seulement l actif`() {
+    fun `a profile only checks its category, and only active packages`() {
         val depart = EtatApp(
             lignes = listOf(
                 LignePaquet(entree("com.a", "bloatware_tcl"), EtatPaquet.ACTIF),
@@ -63,7 +63,7 @@ class SelectionTest {
     }
 
     @Test
-    fun `un profil s ajoute a la selection en cours plutot que de la remplacer`() {
+    fun `a profile adds to the current selection instead of replacing it`() {
         val depart = EtatApp(
             lignes = listOf(
                 LignePaquet(entree("com.a", "expert"), EtatPaquet.ACTIF, selectionne = true),
@@ -77,7 +77,7 @@ class SelectionTest {
     }
 
     @Test
-    fun `un profil ne coche jamais une entree non eprouvee, qui reste cochable a la main`() {
+    fun `a profile never checks an untested entry, which can still be checked by hand`() {
         val depart = EtatApp(
             lignes = listOf(
                 LignePaquet(entree("com.a"), EtatPaquet.ACTIF),
@@ -95,7 +95,7 @@ class SelectionTest {
     }
 
     @Test
-    fun `tout decocher ne laisse rien`() {
+    fun `unchecking all leaves nothing selected`() {
         val depart = etat("com.a" to EtatPaquet.ACTIF, "com.b" to EtatPaquet.ACTIF)
             .avecBascule("com.a")
             .avecBascule("com.b")
@@ -104,7 +104,7 @@ class SelectionTest {
     }
 
     @Test
-    fun `la liste n'affiche ni les absents ni ce que le filtre ecarte`() {
+    fun `the list shows neither missing packages nor filtered-out ones`() {
         val depart = etat(
             "com.actif" to EtatPaquet.ACTIF,
             "com.eteint" to EtatPaquet.DESACTIVE,
@@ -121,7 +121,7 @@ class SelectionTest {
     }
 
     @Test
-    fun `le volet de detail ne parle pas d'un paquet que la recherche a masque`() {
+    fun `the detail pane ignores a package hidden by the search`() {
         val depart = etat("com.netflix" to EtatPaquet.ACTIF, "com.tcl.pub" to EtatPaquet.ACTIF)
             .copy(paquetDetaille = "com.netflix")
 

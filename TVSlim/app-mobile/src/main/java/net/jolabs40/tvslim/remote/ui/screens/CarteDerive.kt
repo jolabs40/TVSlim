@@ -19,10 +19,9 @@ import net.jolabs40.tvslim.configuration.PlanReinjection
 import net.jolabs40.tvslim.remote.R
 
 /**
- * Le téléviseur a défait seul une partie de ce que TV Slim avait réglé — cf. `planDeDerive`.
+ * Shown when the TV has undone part of TV Slim's changes on its own (see `planDeDerive`).
  *
- * Elle ne dit que l'essentiel, et un seul bouton : le détail paquet par paquet, effets de bord compris,
- * vient dans la confirmation, la même que pour une configuration réinjectée.
+ * The per-package detail, side effects included, is left to the confirmation shared with configuration restore.
  */
 @Composable
 fun CarteDerive(plan: PlanReinjection, onReprendre: () -> Unit) {
@@ -67,7 +66,6 @@ fun CarteDerive(plan: PlanReinjection, onReprendre: () -> Unit) {
     }
 }
 
-/** Les trois premiers noms, puis « … » : la liste entière est dans la confirmation. */
 private fun resume(noms: List<String>): String =
     noms.take(NOMS_MONTRES).joinToString(", ") + if (noms.size > NOMS_MONTRES) ", …" else ""
 

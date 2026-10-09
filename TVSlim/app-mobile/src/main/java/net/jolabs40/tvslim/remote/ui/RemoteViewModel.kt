@@ -46,10 +46,10 @@ import java.io.File
 import javax.inject.Inject
 
 /**
- * Pilote du compagnon : une connexion ADB, un catalogue, un journal par téléviseur.
+ * Main view model: one ADB connection, one catalogue, one log per TV.
  *
- * Le moteur de débloat vient du noyau partagé et ne sait pas d'où viennent ses privilèges —
- * ici, d'une session ADB ouverte depuis le téléphone.
+ * The debloat engine comes from the shared core and is unaware of where its privileges come from (here, an ADB
+ * session opened from the phone).
  */
 @HiltViewModel
 class RemoteViewModel @Inject constructor(
@@ -70,10 +70,6 @@ class RemoteViewModel @Inject constructor(
     private var moteur: MoteurDebloat? = null
     private var installationApk: InstallationApk? = null
 
-    /**
-     * Les permissions privilégiées ont leur propre pilote : leur état — un paquet, une
-     * permission, ce que le téléviseur en dit — n'a rien à voir avec celui du débloat.
-     */
     val permissions = PilotePermissions(
         contexte = contexte,
         lecteur = lecteur,
@@ -82,13 +78,9 @@ class RemoteViewModel @Inject constructor(
         afficher = ::afficher,
     )
 
-    /** Le bandeau de soutien, après un débloat, un transfert ou une installation qui ont abouti. */
+    /** Support banner, shown after a successful debloat, transfer or install. */
     val soutien = PiloteSoutien(preferences, viewModelScope)
 
-    /**
-     * L'écran d'accueil — fiche du launcher, guet de son installation — et la configuration qu'on
-     * sauvegarde puis réinjecte ont aussi le leur : ils ne partagent que l'état et le moteur.
-     */
     val configuration = PiloteConfiguration(
         contexte = contexte,
         lecteur = lecteur,
@@ -106,10 +98,10 @@ class RemoteViewModel @Inject constructor(
         remercier = soutien::remercier,
     )
 
-    /** L'onglet Fichiers : il suit lui-même la connexion, et oublie ce qu'il a lu quand le téléviseur change. */
+    /** Files tab; follows the connection itself and forgets what it read when the TV changes. */
     val fichiers = PiloteFichiers(contexte, client, viewModelScope, ::afficher, soutien::remercier)
 
-    /** L'onglet Applications : noms et icônes lus par l'aide, gardés en cache ; il suit lui-même la connexion. */
+    /** Apps tab; names and icons come from the helper and are cached. Follows the connection itself. */
     val applications = PiloteApplications(
         contexte = contexte,
         client = client,
@@ -122,7 +114,7 @@ class RemoteViewModel @Inject constructor(
         remercier = soutien::remercier,
     )
 
-    /** L'application TV Slim du téléviseur, installée depuis GitHub : son propre pilote, comme les permissions. */
+    /** The TV Slim app on the TV, installed from GitHub. */
     val applicationTv = PiloteApplicationTv(
         contexte = contexte,
         client = client,
@@ -134,23 +126,23 @@ class RemoteViewModel @Inject constructor(
         remercier = soutien::remercier,
     )
 
-    /** La capture d'écran du téléviseur, depuis la barre du haut. */
+    /** TV screenshot, from the top bar. */
     val capture = PiloteCapture(contexte, client, viewModelScope, { _etat.value.infos }, { _etat.value.connecte }, ::afficher)
 
-    /** Une seule observation de journal à la fois : sinon celui de la TV précédente écrirait encore. */
+    /** One log observer at a time, otherwise the previous TV's log would keep writing into the state. */
     private var suiviJournal: Job? = null
 
-    /** Une reconnexion silencieuse à la fois, sinon le retour à l'écran en lancerait une chaque fois. */
+    /** One silent reconnect at a time, otherwise each return to the screen would start another. */
     private var reprise: Job? = null
 
-    /** Le guet du retour d'un téléviseur qu'on vient de redémarrer. */
+    /** Waits for a rebooted TV to come back. */
     private var redemarrage: Job? = null
 
-    /** Les lectures d'avance de la connexion, et la seconde session qui les porte : une à la fois. */
+    /** Prefetch on connect and the second session carrying it; one at a time. */
     private var prechargement: Job? = null
     private var sessionSeconde: ClientAdb? = null
 
-    /** La découverte mDNS ne tourne que pendant qu'on regarde l'écran de connexion. */
+    /** mDNS discovery, running only while the connection screen is shown. */
     private var veille: Job? = null
 
     init {
@@ -161,11 +153,9 @@ class RemoteViewModel @Inject constructor(
             permissions.etat.collect { lues -> _etat.update { it.copy(permissions = lues) } }
         }
         viewModelScope.launch {
-            // Les lectures d'abord, la mise à jour ensuite. `update` est une boucle de
-            // comparaison-et-échange : elle rejoue son bloc quand quelqu'un d'autre a écrit
-            // entre-temps — et il y a quelqu'un, les deux `collect` ci-dessus alimentant le
-            // même état au même instant. Quatre lectures disque rejouées, au mieux du travail
-            // refait, au pire un état reconstruit sur une photographie périmée.
+            // Read first, then update. `update` is a compare-and-set loop that replays its block on concurrent
+            // writes, and the two collectors above write at the same time: disk reads inside it could be
+            // repeated or applied to a stale snapshot.
             val hote = preferences.dernierHote()
             val port = preferences.dernierPort()
             val noms = preferences.nomsConnus()
@@ -181,18 +171,14 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Cherche les téléviseurs qui s'annoncent sur le réseau. Un appareil dont le débogage
-     * réseau est actif publie un service `_adb._tcp` : autant s'en servir plutôt que d'exiger
-     * une adresse IP ou un QR code.
-     */
+    /** Discovers TVs announcing `_adb._tcp` on the network (network debugging enabled). */
     fun chercherAppareils() {
         if (veille?.isActive == true) return
         veille = viewModelScope.launch {
             decouverte.flux().collect { appareils ->
                 _etat.update { courant ->
                     courant.copy(
-                        // Le nom du cast d'abord, celui retenu d'une visite précédente ensuite.
+                        // Cast name first, then the name remembered from a previous connection.
                         detectes = appareils.map { appareil ->
                             appareil.copy(
                                 nomConvivial = appareil.nomConvivial
@@ -210,7 +196,6 @@ class RemoteViewModel @Inject constructor(
         veille = null
     }
 
-    /** Se connecte à un appareil trouvé sur le réseau, sans rien saisir. */
     fun connecterA(appareil: AppareilDecouvert) {
         _etat.update { it.copy(hoteSaisi = appareil.hote, portSaisi = appareil.port.toString()) }
         connecter()
@@ -244,16 +229,13 @@ class RemoteViewModel @Inject constructor(
     }
 
     /**
-     * Retente le dernier téléviseur au retour dans l'application, sans le demander.
+     * Silently reconnects to the last TV when the app comes back to the foreground.
      *
-     * Une session ADB ne survit pas à la mise en veille du téléviseur ; retrouver l'application
-     * déconnectée après avoir simplement changé de fenêtre n'a aucun sens, alors que la clé est
-     * autorisée et que l'adresse est connue. En cas d'échec — téléviseur éteint, le cas le plus
-     * banal — rien ne s'affiche : la personne n'a rien demandé.
+     * An ADB session does not survive TV standby. The key is authorized and the address known, so there is no
+     * reason to show a disconnected app. Failure (usually a TV that is off) shows nothing.
      */
     fun reprendreConnexion() {
-        // Connecté, mais sans rien de lu : la lecture précédente a été coupée par la mise en veille du
-        // téléphone. On relit plutôt que de laisser une fiche vide.
+        // Connected but nothing read: phone standby cut the previous read. Read again.
         if (_etat.value.connecte) {
             if (_etat.value.infos.marque.isBlank() && _etat.value.infos.modele.isBlank()) {
                 rafraichir()
@@ -261,7 +243,7 @@ class RemoteViewModel @Inject constructor(
             }
             return
         }
-        // Pendant un redémarrage, c'est son guet qui se reconnecte : pas de course entre les deux.
+        // During a reboot, the reboot watcher reconnects; avoid racing it.
         if (reprise?.isActive == true || _etat.value.redemarrage) return
         reprise = viewModelScope.launch {
             val hote = _etat.value.hoteSaisi.ifBlank { preferences.dernierHote() }
@@ -275,7 +257,7 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
-    /** Applique le contenu d'un code scanné, puis se connecte dans la foulée. */
+    /** Applies a scanned pairing code, then connects. */
     fun appliquerScan(valeur: String) {
         val adresse = lireCodeAppairage(valeur)
         if (adresse == null) {
@@ -326,26 +308,26 @@ class RemoteViewModel @Inject constructor(
                 .map { it.paquet }
                 .toSet()
 
-            // Une seule commande pour tout : sur une liaison réseau, chaque aller-retour se paie.
+            // A single command for everything: each network round trip costs.
             val photo = lecteur.photographie(
                 paquetsSurveilles = catalogue.entrees.map { it.paquet },
                 paquetsDAccueil = paquetsDAccueil,
             )
-            // Une lecture coupée en route — l'application mise en veille par Android, la session tombée — rend
-            // une photographie vide : elle ne remplace pas ce qu'on savait déjà (relevé le 2026-10-06).
+            // A read cut short (app suspended by Android, session dropped) returns an empty snapshot; keep the
+            // previous state instead.
             if (photo.infos.marque.isBlank() && photo.infos.modele.isBlank()) {
                 _etat.update { it.copy(chargement = false) }
                 return@launch
             }
             val selection = _etat.value.selection.map { it.entree.paquet }.toSet()
 
-            // Le modèle vient d'être lu : on le retient pour nommer l'appareil la prochaine fois.
+            // Remember the model to name the device next time.
             val nom = photo.infos.nomAffiche
             val hote = _etat.value.connexion.hote
             if (nom.isNotBlank()) preferences.retenirNom(hote, nom)
 
-            // Chaque photographie sert aussi de mesure : la première fait référence, et c'est
-            // à elle qu'on comparera l'appareil une fois dégraissé.
+            // Every snapshot is also a measurement; the first one is the baseline the debloated device is
+            // compared with.
             mesures?.enregistrer(
                 Mesure(
                     horodatage = System.currentTimeMillis(),
@@ -356,7 +338,7 @@ class RemoteViewModel @Inject constructor(
                 ),
             )
 
-            // Un téléphone ajoute ses applications du menu au catalogue : voir avecApplicationsDuMenu.
+            // On a phone, launcher apps are added to the catalogue (see avecApplicationsDuMenu).
             val vu = catalogue.avecApplicationsDuMenu(photo.infos, photo.paquetsSysteme, photo.applicationsMenu)
             _etat.update { courant ->
                 courant.copy(
@@ -373,7 +355,7 @@ class RemoteViewModel @Inject constructor(
                                 etatPaquet == EtatPaquet.ACTIF,
                         )
                     },
-                    // Ce que le catalogue ne décrit pas : montré à part, sans rien proposer.
+                    // Packages missing from the catalogue: listed separately, no action offered.
                     inconnus = vu.paquetsInconnus(photo.paquetsSysteme, photo.infos.fabricant),
                 )
             }
@@ -388,7 +370,7 @@ class RemoteViewModel @Inject constructor(
 
     // --- Confirmation ---------------------------------------------------------------------
 
-    /** Demande confirmation avant de désactiver : rien ne part tant que ce n'est pas validé. */
+    /** Asks for confirmation before disabling; nothing is sent until confirmed. */
     fun demanderApplication() {
         val courant = _etat.value
         val choisies = courant.selection.map { it.entree }
@@ -458,7 +440,7 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
-    /** Annule une action précise du journal, sans toucher au reste. */
+    /** Undoes a single log entry. */
     fun annulerAction(action: ActionJournal) {
         when (action.type) {
             TypeAction.DESACTIVATION -> reactiver(listOf(action.cible))
@@ -467,21 +449,20 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
-    /** Lit la répartition de la mémoire. Séparé du rafraîchissement : la commande est lourde. */
+    /** Reads the memory breakdown. Kept out of [rafraichir] because the command is heavy. */
     fun rafraichirMemoire() {
         if (!_etat.value.connecte) return
         viewModelScope.launch { lireMemoire(lecteur) }
     }
 
-    /** Lit l'occupation du stockage, à part comme la mémoire. */
     fun rafraichirStockage() {
         if (!_etat.value.connecte) return
         viewModelScope.launch { lireStockage(lecteur) }
     }
 
     /**
-     * Une lecture de la mémoire à la fois, qu'elle vienne de l'onglet ou de la connexion : `dumpsys meminfo` tient
-     * six secondes sur la TCL, l'onglet ouvert pendant la lecture d'avance l'attend plutôt que de la refaire.
+     * One memory read at a time, from the tab or the prefetch: `dumpsys meminfo` takes six seconds on the TCL,
+     * so a tab opened during the prefetch waits for it instead of starting another.
      */
     private suspend fun lireMemoire(source: LecteurDistant) {
         if (_etat.value.memoireEnLecture) return
@@ -506,18 +487,17 @@ class RemoteViewModel @Inject constructor(
     }
 
     /**
-     * Tout lire dès la connexion — applications, mémoire, stockage — par une seconde session ADB : la principale
-     * reste libre pour ce qu'on demande pendant ce temps, et l'onglet qu'on ouvre trouve sa lecture faite, ou en
-     * cours, au lieu de la lancer. Seul ce qui manque est lu ; un échec ne se dit pas, l'onglet relira à la demande.
+     * Prefetches apps, memory and storage on connect through a second ADB session, leaving the main one free for
+     * user actions; tabs then find their data read or being read. Only missing data is read; failures are silent
+     * and the tab reads again on demand.
      *
-     * Les applications d'abord : rapides une fois les icônes en cache, et attendues aussi par le choix d'une
-     * application dans les permissions privilégiées.
+     * Apps come first: fast once icons are cached, and also needed by the permissions card's app picker.
      */
     private fun precharger() {
         val precedent = prechargement
         arreterPrechargement()
         prechargement = viewModelScope.launch {
-            // Le précédent rend d'abord ses drapeaux : sa session fermée, il ne tarde pas.
+            // Let the previous prefetch reset its flags first; its session is closed, so it ends quickly.
             precedent?.join()
             val seconde = client.ouvrirSeconde() ?: return@launch
             sessionSeconde = seconde
@@ -533,7 +513,7 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
-    /** Fermer la seconde session est ce qui interrompt la lecture en cours : annuler la tâche n'y suffirait pas. */
+    /** Closing the second session is what interrupts the read in progress; cancelling the job is not enough. */
     private fun arreterPrechargement() {
         prechargement?.cancel()
         prechargement = null
@@ -541,7 +521,7 @@ class RemoteViewModel @Inject constructor(
         sessionSeconde = null
     }
 
-    /** Arrête les processus d'une application, sans rien changer à son état d'installation. */
+    /** Stops an app's processes without changing its enabled state. */
     fun forcerArret(paquet: String) {
         val moteurActif = moteur ?: return
         viewModelScope.launch {
@@ -590,10 +570,7 @@ class RemoteViewModel @Inject constructor(
         rafraichir()
     }
 
-    /**
-     * Repart d'une page blanche : l'état actuel devient le « avant ». Utile après une remise à
-     * zéro du téléviseur, ou quand on veut mesurer une nouvelle passe.
-     */
+    /** Makes the current state the new baseline, e.g. after a factory reset or before a new pass. */
     fun redefinirReference() {
         val actives = mesures ?: return
         viewModelScope.launch {
@@ -602,13 +579,11 @@ class RemoteViewModel @Inject constructor(
         }
     }
 
-    /** Redémarrer le téléviseur : une confirmation d'abord, qui dit ce que ça interrompt. */
     fun demanderRedemarrage() = _etat.update { it.copy(confirmation = Confirmation.Redemarrage) }
 
     /**
-     * L'ordre part une seule fois (`Redemarrage`, dans le noyau), la session est fermée proprement, puis on
-     * guette le retour du téléviseur pour s'y reconnecter sans rien demander : la carte de dérive dira
-     * ensuite si le redémarrage a défait quelque chose.
+     * Sends the reboot once (the core's `Redemarrage`), closes the session, then waits for the TV to come back and
+     * reconnects silently. The drift card then shows whether the reboot undid anything.
      */
     private fun redemarrer() {
         val journalActif = journal ?: return
@@ -649,7 +624,7 @@ class RemoteViewModel @Inject constructor(
         relevees.charger()
         mesures = relevees
 
-        // Ce qu'on avait lu de la mémoire et du stockage date d'une autre session, peut-être d'un autre téléviseur.
+        // Memory and storage read earlier belong to another session, possibly another TV.
         _etat.update { it.copy(memoire = RepartitionMemoire(), stockage = RepartitionStockage()) }
         suiviJournal = viewModelScope.launch {
             launch {
@@ -663,13 +638,13 @@ class RemoteViewModel @Inject constructor(
 
     private fun afficher(texte: String) = _etat.update { it.copy(message = texte) }
 
-    /** La seconde session ne survit pas à l'écran : la principale, partagée, reste ouverte. */
+    /** Closes the second session; the main one is a shared singleton and stays open. */
     override fun onCleared() = arreterPrechargement()
 
     private companion object {
         const val MAX_ECHECS = 4
 
-        /** Un téléviseur met plus de vingt secondes à rouvrir ADB : inutile de frapper avant. */
+        /** A TV takes over twenty seconds to reopen ADB; no point trying earlier. */
         const val ATTENTE_REDEMARRAGE_MS = 20_000L
         const val DELAI_RETOUR_MS = 180_000L
         const val PAS_RETOUR_MS = 5_000L

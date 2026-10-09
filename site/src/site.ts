@@ -1,6 +1,6 @@
-// Ce que tout le site partage : adresses, chemins par langue, et les textes de l'en-tête et du pied.
-// Les faits (fonctions, garde-fous, confidentialité) viennent des README : rien d'affirmé qui ne
-// soit vrai, et les mêmes libellés que l'interface.
+// Site-wide constants: URLs, per-language paths, header and footer text.
+// Facts (features, safeguards, privacy) come from the READMEs: claim nothing untrue, and use the same
+// labels as the app UI.
 
 export type Lang = 'en' | 'fr';
 export const LANGS: Lang[] = ['en', 'fr'];
@@ -12,17 +12,17 @@ export const RELEASES = `${REPO}/releases`;
 export const ANDROID_RELEASES = `${REPO}/releases?q=android&expanded=true`;
 export const ISSUE_DEVICE = `${REPO}/issues/new?template=nouvel-appareil.yml`;
 export const KOFI = 'https://ko-fi.com/jolabs40';
-/** L'adresse de contact, la même que dans « À propos » des deux applications. */
+/** Same contact address as the About screen of both apps. */
 export const CONTACT = 'support@tvslim.app';
 export const STARTLIGHT = 'https://startlightlauncher.com';
 export const OG_IMAGE = `${SITE}/og.png`;
-/** L'éditeur, le même @id sur tvslim.app et startlightlauncher.com : les deux sites parlent du même. */
+/** Publisher @id, shared with startlightlauncher.com so both sites refer to the same organization. */
 export const ORG_ID = 'https://jolabs40.net/#org';
-/** Empreinte du certificat des deux APK — `empreinteCertificat` de TVSlim/gradle.properties. */
+/** Signing certificate fingerprint of both APKs, `empreinteCertificat` in TVSlim/gradle.properties. */
 export const CERT_SHA256 =
   '42:96:BD:A0:51:8F:1A:59:1D:66:91:4E:6B:AB:7B:2F:0D:00:30:BE:6D:6C:79:8E:F3:AE:D5:D2:79:CF:96:F8';
 
-/** Le chemin d'une page dans une langue : l'anglais à la racine, le français sous /fr. */
+/** English pages live at the root, French ones under /fr. */
 export const path = (lang: Lang, p: string) => (lang === 'en' ? p : `/fr${p}`);
 export const url = (lang: Lang, p: string) => SITE + path(lang, p);
 

@@ -80,10 +80,10 @@ class InstallateurMiseAJourTest {
         File("C:\\Users\\Zoë O'Brien\\AppData\\Local\\TVSlim\\mises-a-jour\\TVSlim-Windows-1.2.3.msi")
     private val exeDelicat = File("C:\\Users\\Zoë O'Brien\\AppData\\Local\\TV Slim\\TV Slim.exe")
 
-    // --- Préparation ----------------------------------------------------------------------------
+    // --- Preparation ----------------------------------------------------------------------------
 
     @Test
-    fun `un installateur bien signe est rendu pret a installer`() = runTest {
+    fun `a correctly signed installer is returned ready to install`() = runTest {
         val telechargements = dossier.newFolder("maj")
         var verifie = false
 
@@ -94,7 +94,7 @@ class InstallateurMiseAJourTest {
     }
 
     @Test
-    fun `un installateur mal signe est supprime et jamais rendu`() = runTest {
+    fun `a badly signed installer is deleted and never returned`() = runTest {
         val telechargements = dossier.newFolder("maj")
 
         val erreur = runCatching {
@@ -105,10 +105,10 @@ class InstallateurMiseAJourTest {
         assertEquals(emptyList<String>(), telechargements.list()!!.filter { it.endsWith(".msi") })
     }
 
-    // --- Relais -----------------------------------------------------------------------------------
+    // --- Relay ------------------------------------------------------------------------------------
 
     @Test
-    fun `le relais attend l'application et son lanceur, installe en silence puis relance`() {
+    fun `the relay waits for the app and its launcher, installs silently, then relaunches`() {
         val script = InstallateurMiseAJour.scriptRelais(listOf(4242, 4243), msiDelicat, exeDelicat)
 
         assertTrue(script.contains("Wait-Process -Id 4242,4243"))
@@ -119,14 +119,14 @@ class InstallateurMiseAJourTest {
     }
 
     @Test
-    fun `sans executable connu, l'installation se fait sans relance`() {
+    fun `without a known executable, it installs without relaunching`() {
         val script = InstallateurMiseAJour.scriptRelais(listOf(1), File("C:\\x\\a.msi"), null)
 
         assertEquals(1, Regex("Start-Process").findAll(script).count())
     }
 
     @Test
-    fun `le relais nait par WMI, sans un seul guillemet double sur la ligne de commande`() {
+    fun `the relay is spawned through WMI, with no double quote on the command line`() {
         val script = InstallateurMiseAJour.scriptRelais(listOf(4242), msiDelicat, exeDelicat)
         val commande = InstallateurMiseAJour.commandeLancement(script)
 
@@ -137,12 +137,12 @@ class InstallateurMiseAJourTest {
     }
 
     @Test
-    fun `l'application elle-meme figure parmi les processus a attendre`() {
+    fun `the app itself is among the processes to wait for`() {
         assertTrue(ProcessHandle.current().pid() in InstallateurMiseAJour.processusAAttendre())
     }
 
     @Test
-    fun `le relais et son lanceur sont des scripts PowerShell valides`() {
+    fun `the relay and its launcher are valid PowerShell scripts`() {
         assumeTrue(windows)
         val script = InstallateurMiseAJour.scriptRelais(
             listOf(4242, 4243),
@@ -165,16 +165,16 @@ class InstallateurMiseAJourTest {
     }
 
     /**
-     * Les deux couches de littéraux, traversées pour de vrai : WMI crée un PowerShell qui écrit un
-     * fichier dans un dossier dont le nom porte une espace, une apostrophe et un accent.
+     * Goes through both quoting layers for real: WMI starts a PowerShell that writes a file into a folder whose
+     * name has a space, an apostrophe and an accent.
      */
     @Test
-    fun `WMI cree le processus avec la ligne de commande intacte`() {
+    fun `WMI creates the process with the command line intact`() {
         assumeTrue(windows)
         val cible = File(dossier.newFolder("Zoë O'Brien"), "temoin.txt")
         val script = "Set-Content -Path '${cible.absolutePath.replace("'", "''")}' -Value 'relais-ok'"
 
-        // Borné de bout en bout : un WMI qui ne répond pas ne doit jamais figer la CI.
+        // Bounded end to end: an unresponsive WMI must never hang CI.
         val journal = File(dossier.root, "lancement.log")
         val lancement = ProcessBuilder(InstallateurMiseAJour.commandeLancement(script))
             .redirectErrorStream(true)

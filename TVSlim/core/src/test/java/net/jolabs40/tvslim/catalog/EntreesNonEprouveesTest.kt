@@ -7,15 +7,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Une entrée décrite d'après un inventaire envoyé, sans qu'on ait vu ce que coûte sa désactivation : elle se
- * montre et se désactive une à une, mais aucun profil ne la coche.
+ * Untested entries, described from a submitted inventory without seeing what disabling them breaks. They can be
+ * disabled one by one, but no profile selects them.
  */
 class EntreesNonEprouveesTest {
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     @Test
-    fun `une entree est eprouvee tant que le catalogue ne dit pas le contraire`() {
+    fun `an entry is tested unless the catalog says otherwise`() {
         val entree = json.decodeFromString(
             EntreePaquet.serializer(),
             """{"paquet":"com.tcl.pub","nom":"Pub","description":"","categorie":"bloatware_tcl"}""",
@@ -25,7 +25,7 @@ class EntreesNonEprouveesTest {
     }
 
     @Test
-    fun `un profil ne couvre jamais une entree non eprouvee, meme traduite`() {
+    fun `a profile never covers an untested entry, even once translated`() {
         val catalogue = Catalogue(
             entrees = listOf(
                 EntreePaquet("com.tcl.pub", "Pub", "", "pub"),
@@ -36,7 +36,7 @@ class EntreesNonEprouveesTest {
         val profil = Profil(id = "pub", nom = "Pub", description = "", categories = listOf("pub"))
 
         assertEquals(listOf("com.tcl.pub"), catalogue.entreesDuProfil(profil).map { it.paquet })
-        // La traduction change le texte, jamais le statut.
+        // Translation changes the text, never the status.
         val traduite = catalogue.entrees.single { it.paquet == "org.droidtv.welcome" }
         assertEquals("Accueil", traduite.nom)
         assertFalse(traduite.eprouve)

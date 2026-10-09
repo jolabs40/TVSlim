@@ -11,17 +11,15 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Gardien de démarrage — la raison d'être de cette application sur le téléviseur.
+ * Boot guard entry point, the main reason this app exists on the TV.
  *
- * Certains réglages reviennent à leur valeur d'usine à **chaque redémarrage** —
- * `low_power_standby_enabled` au premier chef, qui rend l'appareil injoignable en réseau
- * pendant la veille. Aucun compagnon mobile ne peut corriger cela : il n'est pas là au
- * démarrage. Ce récepteur, si — là où le fabricant laisse passer BOOT_COMPLETED. Sur une TCL, qui le
- * filtre, c'est StartLight qui prend le relais, par [PassageActivity] ; [GardienDemarrage] ne travaille
- * qu'une fois par allumage, quelle que soit la porte.
+ * Some settings reset to factory values on every reboot, notably `low_power_standby_enabled`, which makes
+ * the device unreachable over the network in standby. The phone is not there at boot to fix it; this
+ * receiver is, where the manufacturer lets BOOT_COMPLETED through. TCL filters it, so there StartLight
+ * opens [PassageActivity] instead. [GardienDemarrage] runs once per boot whichever path triggers it.
  *
- * Il repose sur `WRITE_SECURE_SETTINGS`, accordée une seule fois par ADB, qui survit aux
- * redémarrages. Il guette aussi la **dérive** — cf. [GardienDerive].
+ * Relies on `WRITE_SECURE_SETTINGS`, granted once over ADB, which survives reboots. Also checks for drift
+ * ([GardienDerive]).
  */
 @AndroidEntryPoint
 class DemarrageReceiver : BroadcastReceiver() {

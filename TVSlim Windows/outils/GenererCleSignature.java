@@ -5,20 +5,18 @@ import java.security.KeyPairGenerator;
 import java.util.Base64;
 
 /**
- * Crée la paire de clés Ed25519 qui signe les mises à jour de TV Slim.
+ * Generates the Ed25519 key pair that signs TV Slim updates.
  *
  * <pre>
  *   java outils/GenererCleSignature.java cle-publique.txt > cle-privee.json
  * </pre>
  *
- * La clé publique n'a rien de secret : elle est écrite dans le fichier indiqué, et se recopie dans
- * gradle.properties (clePubliqueMisesAJour). La clé privée sort sur la sortie standard, en JSON
- * ({"prive": "…"}), pour aller directement dans un coffre ou dans le secret GitHub
- * TVSLIM_CLE_SIGNATURE sans s'afficher nulle part.
+ * The public key is written to the given file and copied into gradle.properties (clePubliqueMisesAJour).
+ * The private key goes to stdout as JSON ({"prive": "..."}) so it can go straight into a vault or the
+ * TVSLIM_CLE_SIGNATURE GitHub secret without being displayed.
  *
- * À ne lancer qu'une fois par lignée de publication : changer de clé rend toutes les versions déjà
- * installées incapables de vérifier les suivantes. Une version publiée ailleurs (fork) génère la
- * sienne, et remplace la clé publique avant sa première publication.
+ * Run once per release line: changing the key leaves every installed version unable to verify the next
+ * ones. A fork that publishes its own builds generates its own key and replaces the public key first.
  */
 public class GenererCleSignature {
 

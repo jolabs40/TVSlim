@@ -7,15 +7,14 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 /**
- * Garde la paire de clés ADB de l'application.
+ * Stores the app's ADB key pair.
  *
- * La clé privée vaut un accès shell complet à chaque téléviseur qui l'a autorisée : elle dort
- * chiffrée par DPAPI ([ProtectionDpapi]), jamais en clair — le même principe que sur le
- * téléphone, où c'est le keystore Android qui la garde.
+ * The private key grants full shell access to every TV that authorized it, so it is stored encrypted with
+ * DPAPI ([ProtectionDpapi]), never in plain text (the phone uses the Android keystore).
  *
- * dadb signe en `RSA/ECB/NoPadding` et exige une vraie `PrivateKey` : on génère une fois par ses
- * soins, on chiffre le DER, on efface ce qu'il a écrit en clair. Ensuite la clé n'existe plus
- * qu'en mémoire, reconstruite via `AdbKeyPair(PrivateKey, ByteArray)`.
+ * dadb signs with `RSA/ECB/NoPadding` and needs a real `PrivateKey`: the pair is generated once by dadb, its DER
+ * is encrypted and the plain-text files are deleted. After that the key only exists in memory, rebuilt with
+ * `AdbKeyPair(PrivateKey, ByteArray)`.
  */
 class DepotCles(
     private val dossier: File,
@@ -28,7 +27,7 @@ class DepotCles(
     @Volatile
     private var enMemoire: AdbKeyPair? = null
 
-    /** La paire de l'application, créée à la première demande et gardée chiffrée ensuite. */
+    /** Returns the key pair, creating and storing it on first use. */
     @Synchronized
     fun paire(): AdbKeyPair {
         enMemoire?.let { return it }
@@ -43,9 +42,8 @@ class DepotCles(
             val der = protection.lever(fichierPrive.readBytes())
             AdbKeyPair(clePriveeDepuisDer(der), fichierPublic.readBytes())
         }.getOrElse { erreur ->
-            // Une clé illisible — profil Windows restauré sur une autre machine, fichier abîmé —
-            // n'est pas effacée mais mise de côté. Une nouvelle la remplace, et chaque téléviseur
-            // redemandera simplement l'autorisation.
+            // An unreadable key (profile restored on another machine, corrupt file) is set aside, not deleted.
+            // A new one replaces it and each TV will ask for authorization again.
             Traces.avertir(TAG, "Clé ADB illisible, une nouvelle va la remplacer", erreur)
             val suffixe = ".illisible-${System.currentTimeMillis()}"
             fichierPrive.renameTo(File(dossier, FICHIER_PRIVE + suffixe))
@@ -55,8 +53,8 @@ class DepotCles(
     }
 
     /**
-     * Fabrique la paire, la chiffre, puis efface les fichiers que dadb a écrits en clair. C'est le
-     * seul instant où le secret touche le disque sans protection.
+     * Generates the pair, encrypts it, then deletes the plain-text files dadb wrote. This is the only moment the
+     * secret is on disk unprotected.
      */
     private fun creer(): AdbKeyPair {
         dossier.mkdirs()
@@ -67,8 +65,8 @@ class DepotCles(
             AdbKeyPair.generate(prive, publique)
             val der = derDepuisPem(prive.readText())
             val octetsPublics = publique.readBytes()
-            // La clé privée d'abord : sans sa moitié publique, une paire écrite à moitié est
-            // ignorée à la lecture suivante, et simplement refaite.
+            // Private key first: a half-written pair without its public file is ignored on the next read and
+            // regenerated.
             ecrireAtomiquement(fichierPrive, protection.proteger(der))
             ecrireAtomiquement(fichierPublic, octetsPublics)
             return AdbKeyPair(clePriveeDepuisDer(der), octetsPublics)

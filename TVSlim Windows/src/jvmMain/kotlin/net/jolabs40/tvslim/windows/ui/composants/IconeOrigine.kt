@@ -23,13 +23,10 @@ import net.jolabs40.tvslim.windows.ressources.origin_other
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
-/** Le vert du robot Android : il se lit sur les deux thèmes. */
+/** Android robot green, readable on both themes. */
 private val VERT_ANDROID = Color(0xFF3DDC84)
 
-/**
- * D'où vient un paquet, devant son nom : le robot pour Android, l'usine pour le constructeur de
- * l'appareil (ou de sa puce), une grille pour le reste.
- */
+/** Package origin: robot for Android, factory for the device (or chip) maker, grid for the rest. */
 @Composable
 fun IconeOrigine(origine: OriginePaquet, modifier: Modifier = Modifier, taille: Dp = 18.dp) {
     val teinte = when (origine) {
@@ -60,7 +57,7 @@ fun libelleOrigine(origine: OriginePaquet): String = stringResource(
     },
 )
 
-/** Les trois icônes et ce qu'elles veulent dire, sur une ligne. */
+/** One-line legend of the origin icons. */
 @Composable
 fun LegendeOrigines(modifier: Modifier = Modifier) {
     Row(

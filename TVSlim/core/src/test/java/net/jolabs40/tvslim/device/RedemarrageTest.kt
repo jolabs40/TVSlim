@@ -10,7 +10,7 @@ import org.junit.Test
 import java.io.File
 import java.io.IOException
 
-/** Le redémarrage : une seule commande, jamais rejouée, et une ligne au journal. */
+/** Reboot: a single command, never retried, and one journal entry. */
 class RedemarrageTest {
 
     private class Televiseur(private val panne: Boolean = false) : ExecuteurDirect {
@@ -26,7 +26,7 @@ class RedemarrageTest {
     private fun journal() = JournalRepository(File.createTempFile("journal", ".json").also { it.delete() })
 
     @Test
-    fun `un redemarrage normal, une seule fois, consigne sans annulation`() = runTest {
+    fun `a normal reboot runs once and is logged without an undo`() = runTest {
         val tv = Televiseur()
         val journal = journal()
 
@@ -40,7 +40,7 @@ class RedemarrageTest {
     }
 
     @Test
-    fun `la connexion qui tombe en pleine commande est l'issue attendue`() = runTest {
+    fun `the connection dropping mid-command is the expected outcome`() = runTest {
         val tv = Televiseur(panne = true)
         val journal = journal()
 

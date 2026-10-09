@@ -9,9 +9,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Les indices qu'ADB donne sur chaque paquet. La sortie suit le format relevé sur la TCL sous Android 14
- * le 2026-09-13 — chemins d'usine et mis à jour, un identifiant par utilisateur, sorties `--brief` des
- * requêtes d'intention —, recomposée autour de quelques paquets.
+ * Per-package hints from ADB. The output follows the format read on the TCL (Android 14): factory and
+ * updated paths, one uid per user, `--brief` intent queries. Trimmed to a few packages.
  */
 class IndicesPaquetsTest {
 
@@ -60,7 +59,7 @@ class IndicesPaquetsTest {
     """.trimIndent()
 
     @Test
-    fun `chaque paquet porte son emplacement, son identite et ce qu'il declare`() {
+    fun `each package carries its location, its identity and what it declares`() {
         val indices = LectureIndices.interpreter(sortieTcl)
 
         val guard = indices.getValue("com.tcl.guard")
@@ -70,7 +69,7 @@ class IndicesPaquetsTest {
         assertFalse(guard.icone)
         assertEquals(setOf(DeclarationSensible.DEMARRAGE), guard.declarations)
 
-        // Mise à jour : l'emplacement est celui de la version d'usine, pas celui de /data/app.
+        // Updated: the location is the factory one, not /data/app.
         val katniss = indices.getValue("com.google.android.katniss")
         assertEquals("/product/priv-app/Katniss/Katniss.apk", katniss.chemin)
         assertEquals("product/priv-app", katniss.emplacement)
@@ -88,13 +87,13 @@ class IndicesPaquetsTest {
         assertTrue(elementSecurise.uidReserve)
         assertFalse(elementSecurise.droitsSysteme)
 
-        // Un identifiant par utilisateur : le premier est celui de l'utilisateur principal.
+        // One uid per user: the first one belongs to the main user.
         val surcouche = indices.getValue("com.mediatek.android.tv.mdns.offload.overlay")
         assertEquals(10118, surcouche.uid)
         assertEquals("product/overlay", surcouche.emplacement)
         assertEquals("apex/com.android.tethering/priv-app", indices.getValue("com.android.connectivity.resources").emplacement)
 
-        // Installée par la personne : sans version d'usine, le chemin reste celui de /data/app.
+        // User-installed, no factory version: the path stays in /data/app.
         val bouton = indices.getValue("flar2.homebutton")
         assertEquals("data/app", bouton.emplacement)
         assertFalse(bouton.misAJour)
@@ -103,13 +102,13 @@ class IndicesPaquetsTest {
     }
 
     @Test
-    fun `sans marqueur, rien n'est invente`() {
+    fun `without a marker, nothing is made up`() {
         assertTrue(LectureIndices.interpreter("").isEmpty())
         assertTrue(LectureIndices.interpreter("/system/bin/sh: cmd: not found").isEmpty())
     }
 
     @Test
-    fun `la commande annonce chaque section sans ouvrir de commentaire shell`() {
+    fun `the command announces each section without starting a shell comment`() {
         val commande = LectureIndices.COMMANDE
         assertTrue(commande, commande.split(' ', ';').map { it.trim() }.none { it.startsWith("#") })
 
@@ -121,8 +120,8 @@ class IndicesPaquetsTest {
     }
 
     @Test
-    fun `une derniere requete en echec n'efface pas les sections deja lues`() = runTest {
-        // Le code de sortie d'une commande composée est celui de sa dernière requête.
+    fun `a failing last query does not discard the sections already read`() = runTest {
+        // A compound command exits with the code of its last query.
         val lecteur = LecteurDistant(
             object : ExecuteurCommande {
                 override suspend fun executer(commande: String) = ResultatShell(code = 255, sortie = sortieTcl)

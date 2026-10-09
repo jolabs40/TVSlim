@@ -16,14 +16,14 @@ import net.jolabs40.tvslim.shell.ExecuteurCommande
 import java.io.File
 import java.io.IOException
 
-/** Où en est l'application TV Slim du téléviseur. */
+/** State of the TV Slim app on the TV. */
 enum class EtatApplicationTv { ABSENTE, MISE_A_JOUR, SANS_AUTORISATION, A_JOUR }
 
 data class SituationTv(
     val installee: VersionInstallee? = null,
-    /** `WRITE_SECURE_SETTINGS` accordée : sans elle, le gardien ne réapplique rien. */
+    /** `WRITE_SECURE_SETTINGS` granted; without it the boot guard cannot reapply anything. */
     val autorisee: Boolean = false,
-    /** La dernière publication, si GitHub a répondu. */
+    /** Latest release, if GitHub answered. */
     val disponible: PublicationTv? = null,
 ) {
     val etat: EtatApplicationTv
@@ -35,7 +35,7 @@ data class SituationTv(
         }
 }
 
-/** Ce que l'installation est en train de faire, pour la barre d'avancement. */
+/** Current installation step, for the progress bar. */
 sealed interface EtapeTv {
     data object Recherche : EtapeTv
     data class Telechargement(val recus: Long, val total: Long) : EtapeTv
@@ -45,15 +45,15 @@ sealed interface EtapeTv {
     data object Gardien : EtapeTv
 }
 
-/** Pourquoi rien n'a été installé — ou pourquoi l'installation s'est arrêtée en route. */
+/** Why nothing was installed, or why the installation stopped midway. */
 enum class MotifTv {
     INTROUVABLE, RESEAU, TROP_GROS, CERTIFICAT, PAQUET, ANDROID_TROP_ANCIEN, TELEVISEUR_INJOIGNABLE, INSTALLATION,
 }
 
 sealed interface ResultatTv {
     /**
-     * Installée. [autorisee] : `WRITE_SECURE_SETTINGS` accordée ; [gardien] : le gardien a confirmé son
-     * activation — faux face à une application TV qui ne connaît pas encore la commande (1.0.0).
+     * Installed. [autorisee]: `WRITE_SECURE_SETTINGS` granted. [gardien]: the boot guard confirmed it is on; false
+     * with a TV app too old to know the command (1.0.0).
      */
     data class Reussi(val version: String, val autorisee: Boolean, val gardien: Boolean) : ResultatTv
 
@@ -61,12 +61,11 @@ sealed interface ResultatTv {
 }
 
 /**
- * L'application TV Slim du téléviseur, installée depuis la dernière publication GitHub, en une fois :
- * télécharger, vérifier que l'APK est bien le nôtre, l'installer, lui accorder ce que seul ADB accorde,
- * la lancer, et allumer son gardien de démarrage.
+ * Installs the TV app from the latest GitHub release in one go: download, check the APK is ours, install,
+ * grant what only ADB can grant, launch it, and turn on its boot guard.
  *
- * Rien ne part vers le téléviseur avant que le certificat de l'APK n'ait été comparé à [empreinteAttendue]
- * — celle de `empreinteCertificat`, que la CI vérifie aussi avant de publier.
+ * Nothing is sent to the TV before the APK certificate matches [empreinteAttendue] (`empreinteCertificat`,
+ * which CI also checks before publishing).
  */
 class ApplicationTv(
     private val executeur: ExecuteurCommande,
@@ -75,14 +74,11 @@ class ApplicationTv(
     private val lecteur: LecteurDistant,
     private val source: SourcePublications,
     private val empreinteAttendue: String,
-    /** Où poser l'APK le temps de l'envoyer : effacé ensuite, quoi qu'il arrive. */
+    /** Where the APK is kept while it is sent; the file is always deleted afterwards. */
     private val dossier: File,
 ) {
 
-    /**
-     * Ce que porte le téléviseur, comparé à [disponible] — la dernière publication, que l'appelant a
-     * demandée à GitHub ([derniere]) ou non : sans elle, la situation reste lisible.
-     */
+    /** Reads what the TV has, compared with [disponible] (the latest release from [derniere], or null). */
     suspend fun situation(disponible: PublicationTv?): SituationTv {
         val versions = executeur.executer("dumpsys package $PAQUET | grep -E '^ +version(Code|Name)='")
         val installee = InstallationApk.versionInstallee(versions.sortie)
@@ -90,7 +86,7 @@ class ApplicationTv(
         return SituationTv(installee, autorisee, disponible)
     }
 
-    /** La dernière application TV publiée sur GitHub ; null s'il ne répond pas. */
+    /** Latest TV app release on GitHub, or null when GitHub does not answer. */
     suspend fun derniere(): PublicationTv? = try {
         ChoixPublicationTv.choisir(source.publications())
     } catch (annulation: CancellationException) {
@@ -152,20 +148,16 @@ class ApplicationTv(
         }
     }
 
-    /**
-     * Pour une application TV déjà installée : ce qui suit l'installation, sans rien retélécharger —
-     * l'autorisation qui lui manque, un lancement, et le gardien.
-     */
+    /** Runs the post-install steps (grant, launch, boot guard) for a TV app that is already installed. */
     suspend fun autoriser(version: String, surEtape: (EtapeTv) -> Unit = {}): ResultatTv = finaliser(version, surEtape)
 
     private suspend fun finaliser(version: String, surEtape: (EtapeTv) -> Unit): ResultatTv.Reussi {
         surEtape(EtapeTv.Autorisation)
         val autorisee = accorder()
 
-        // Lancée une fois, elle quitte l'état « arrêtée » où Android laisse une application jamais
-        // ouverte — et qui ne reçoit pas BOOT_COMPLETED : sans ce lancement, le gardien dormirait.
-        // Seulement si elle y est : une mise à jour garde l'application hors de cet état, et l'ouvrir
-        // au premier plan couperait pour rien ce que regarde le téléviseur.
+        // An app never opened stays in the stopped state and does not receive BOOT_COMPLETED, so the guard
+        // would never run. Launch it only when stopped: an update keeps it out of that state, and opening it
+        // in the foreground would interrupt whatever the TV is showing.
         surEtape(EtapeTv.Gardien)
         if (arretee(executeur.executer(COMMANDE_ETAT).sortie)) executeur.executer("am start -n $PAQUET/.MainActivity")
         val gardien = executeur.executer(COMMANDE_GARDIEN).sortie.contains("result=$GARDIEN_ACTIVE")
@@ -173,9 +165,8 @@ class ApplicationTv(
     }
 
     /**
-     * `WRITE_SECURE_SETTINGS`, la raison d'être de l'application TV, et l'affichage des notifications
-     * qu'Android 13 demande pour qu'elle prévienne d'une dérive. Toutes deux passent par le moteur, donc
-     * au journal, chacune avec sa commande d'annulation.
+     * Grants `WRITE_SECURE_SETTINGS` and, on Android 13+, `POST_NOTIFICATIONS` so the TV app can report drift.
+     * Both go through the engine, so each is journaled with its undo command.
      */
     private suspend fun accorder(): Boolean {
         val permissions = lecteur.permissions(PAQUET)
@@ -194,21 +185,20 @@ class ApplicationTv(
         const val POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS"
 
         /**
-         * Le récepteur de l'application TV n'accepte que ce que lui envoie un détenteur de
-         * `WRITE_SECURE_SETTINGS` — le shell d'ADB, pas une application du téléviseur. Il répond par ce
-         * code quand le gardien est allumé.
+         * The TV app's receiver only accepts this broadcast from a holder of `WRITE_SECURE_SETTINGS` (the ADB
+         * shell, not another app). It replies with result [GARDIEN_ACTIVE] once the guard is on.
          */
         const val ACTION_GARDIEN = "net.jolabs40.tvslim.action.ACTIVER_GARDIEN"
         const val GARDIEN_ACTIVE = 1
         const val COMMANDE_GARDIEN = "am broadcast -a $ACTION_GARDIEN -n $PAQUET/.system.ActivationGardienReceiver"
 
-        /** L'état de l'application pour chaque profil : `User 0: … stopped=false notLaunched=false …`. */
+        /** Package state for user 0: `User 0: ... stopped=false notLaunched=false ...`. */
         const val COMMANDE_ETAT = "dumpsys package $PAQUET | grep -E '^ +User 0:'"
 
         /**
-         * Vrai si l'application est « arrêtée » dans le profil principal — jamais ouverte, ou arrêtée de force.
-         * Seul le profil 0 compte : le second profil d'une TCL, jamais ouvert, la dit arrêtée à jamais. Illisible,
-         * on la tient pour arrêtée : la lancer pour rien ne coûte qu'un écran, ne pas la lancer coûterait le gardien.
+         * True if the app is stopped for user 0 (never opened, or force-stopped). Only user 0 counts: the TCL's
+         * second profile, never opened, reports it stopped forever. Unreadable output counts as stopped: a needless
+         * launch costs one screen, a missed one costs the guard.
          */
         fun arretee(sortie: String): Boolean {
             val ligne = sortie.lineSequence()
@@ -220,7 +210,7 @@ class ApplicationTv(
 
         private const val NOM_LOCAL = "tvslim-tv.apk"
 
-        /** L'APK du téléviseur pèse 1,3 Mo : cinquante laissent de la marge, sans laisser tout passer. */
+        /** The TV APK is about 1.3 MB; 50 MB leaves headroom without accepting anything. */
         const val TAILLE_MAX = 50L * 1024 * 1024
     }
 }

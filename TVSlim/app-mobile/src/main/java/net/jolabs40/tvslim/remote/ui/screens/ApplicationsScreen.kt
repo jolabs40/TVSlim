@@ -44,7 +44,6 @@ import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.ConfirmationApplication
 import net.jolabs40.tvslim.remote.ui.EtatApplications
 
-/** Ce que l'onglet Applications demande au pilote. */
 class ActionsApplicationsUi(
     val onCharger: () -> Unit,
     val onRecherche: (String) -> Unit,
@@ -56,14 +55,11 @@ class ActionsApplicationsUi(
     val onDesinstaller: (ApplicationAppareil) -> Unit,
     val onConfirmer: () -> Unit,
     val onAnnuler: () -> Unit,
-    /** L'entrée du catalogue qui permet de désactiver une application ; `null` : elle ne se désactive pas d'ici. */
+    /** The catalogue entry that allows disabling the app, or `null` if it cannot be disabled from here. */
     val desactivable: (ApplicationAppareil) -> EntreePaquet?,
 )
 
-/**
- * L'onglet Applications du compagnon : la liste, avec icônes et noms ; un appui ouvre les actions de l'application.
- * La première lecture se lance d'elle-même, les noms et les icônes arrivent au fil de l'eau.
- */
+/** Tapping an app opens its actions. The list loads on first display; names and icons fill in as they arrive. */
 @Composable
 fun ApplicationsScreen(connecte: Boolean, etat: EtatApplications, actions: ActionsApplicationsUi) {
     if (!connecte) {
@@ -175,7 +171,7 @@ private fun Etiquettes(application: ApplicationAppareil) {
     }
 }
 
-/** L'icône lue sur l'appareil, ou le robot d'Android tant qu'elle ne l'est pas. Le choix d'une application, dans les permissions, s'en sert aussi. */
+/** The icon read from the device, or the Android robot until it arrives. Also used by the permissions app picker. */
 @Composable
 internal fun IconeApplication(application: ApplicationAppareil, taille: Int) {
     val image: ImageBitmap? = remember(application.paquet, application.icone) {
@@ -195,7 +191,6 @@ internal fun IconeApplication(application: ApplicationAppareil, taille: Int) {
     }
 }
 
-/** Les actions d'une application, selon ce qu'elle permet. */
 @Composable
 private fun ActionsDialogue(
     application: ApplicationAppareil,

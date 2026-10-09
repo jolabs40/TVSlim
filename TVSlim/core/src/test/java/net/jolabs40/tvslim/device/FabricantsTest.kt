@@ -6,37 +6,37 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * Reconnaître le fabricant d'un appareil sur ce qu'il déclare. Les couples marque / fabricant viennent
- * de relevés réels : c'est sur eux qu'une lecture naïve de `ro.product.manufacturer` se tromperait.
+ * Manufacturer detection. The brand/manufacturer pairs come from real devices, where a naive read of
+ * `ro.product.manufacturer` would be wrong.
  */
 class FabricantsTest {
 
     @Test
-    fun `la marque vendue l'emporte sur le sous-traitant`() {
+    fun `the retail brand wins over the contract manufacturer`() {
         assertEquals(Fabricant.PHILIPS, Fabricant.identifier(marqueCommerciale = "Philips", fabricant = "TPV"))
         assertEquals(Fabricant.PANASONIC, Fabricant.identifier(marqueCommerciale = "PANASONIC", fabricant = "SCBC"))
         assertEquals(Fabricant.THOMSON, Fabricant.identifier(marqueCommerciale = "Thomson", fabricant = "SkyworthDigital"))
     }
 
     @Test
-    fun `sans marque connue, le fabricant suffit, quelle que soit la casse`() {
+    fun `without a known brand, the manufacturer is enough, whatever its letter case`() {
         assertEquals(Fabricant.TCL, Fabricant.identifier(marqueCommerciale = "", fabricant = "TCL"))
         assertEquals(Fabricant.GOOGLE, Fabricant.identifier(marqueCommerciale = "google", fabricant = "Google"))
         assertEquals(Fabricant.XIAOMI, Fabricant.identifier(marqueCommerciale = "", fabricant = "xiaomi"))
         assertEquals(Fabricant.PHILIPS, Fabricant.identifier(marqueCommerciale = "", fabricant = "TPV"))
-        // Une marque cliente inconnue (VEON) laisse parler le fabricant.
+        // An unknown client brand (VEON) falls back to the manufacturer.
         assertEquals(Fabricant.SKYWORTH, Fabricant.identifier(marqueCommerciale = "VEON", fabricant = "skyworth"))
     }
 
     @Test
-    fun `une marque inconnue n'est jamais devinee`() {
+    fun `an unknown brand is never guessed`() {
         assertNull(Fabricant.identifier(marqueCommerciale = "Formuler", fabricant = "Formuler"))
         assertNull(Fabricant.identifier(marqueCommerciale = "", fabricant = "SEI Robotics"))
         assertNull(Fabricant.identifier(marqueCommerciale = "", fabricant = ""))
     }
 
     @Test
-    fun `xiaomi fait televiseurs et box, et le modele tranche`() {
+    fun `xiaomi makes both tvs and boxes, and the model decides`() {
         assertEquals(TypeAppareil.BOX, InfosAppareil(marque = "Xiaomi", modele = "MIBOX4").typeAppareil)
         assertEquals(TypeAppareil.BOX, InfosAppareil(marque = "Xiaomi", modele = "Mi TV Stick").typeAppareil)
         assertEquals(TypeAppareil.TELEVISEUR, InfosAppareil(marque = "Xiaomi", modele = "MiTV-MOOQ0").typeAppareil)
@@ -45,32 +45,32 @@ class FabricantsTest {
     }
 
     @Test
-    fun `ce que l'appareil declare l'emporte sur sa marque`() {
+    fun `what the device declares wins over its brand`() {
         val tactile = setOf(InfosAppareil.FONCTION_TACTILE)
         val leanback = setOf(InfosAppareil.FONCTION_LEANBACK, InfosAppareil.FONCTION_TELEVISION)
 
-        // Relevé le 2026-10-04 : le Pixel 9a déclare « nosdcard » et un écran tactile, sans leanback.
+        // Read from a Pixel 9a: `nosdcard` and a touchscreen, no leanback.
         val pixel = InfosAppareil(marque = "Google", marqueCommerciale = "google", modele = "Pixel 9a",
             caracteristiques = "nosdcard", fonctions = tactile)
         assertEquals(TypeAppareil.TELEPHONE, pixel.typeAppareil)
         assertFalse(pixel.typeAppareil.pourLeCatalogue)
-        // Le même Google, en Chromecast, reste une box ; la TCL, un téléviseur.
+        // A Google Chromecast is still a box, the TCL a TV.
         assertEquals(TypeAppareil.BOX, InfosAppareil(marque = "Google", modele = "Chromecast", fonctions = leanback).typeAppareil)
         assertEquals(TypeAppareil.TELEVISEUR,
             InfosAppareil(marque = "TCL", modele = "Smart TV Pro", caracteristiques = "tv", fonctions = leanback).typeAppareil)
         assertEquals(TypeAppareil.TABLETTE,
             InfosAppareil(marque = "samsung", modele = "SM-X200", caracteristiques = "tablet", fonctions = tactile).typeAppareil)
-        // Un Fire TV sans leanback, ou une box inconnue sans écran tactile, restent du côté des téléviseurs.
+        // A Fire TV without leanback, or an unknown box without a touchscreen, still counts as a TV device.
         assertEquals(TypeAppareil.BOX,
             InfosAppareil(marque = "Amazon", modele = "AFTKA", fonctions = setOf(InfosAppareil.FONCTION_FIRE_TV)).typeAppareil)
         assertEquals(TypeAppareil.TELEVISEUR,
             InfosAppareil(marque = "Formuler", modele = "Z11", caracteristiques = "default", fonctions = emptySet()).typeAppareil)
-        // Rien de lu : la marque décide, comme avant.
+        // Nothing read: the brand decides.
         assertEquals(TypeAppareil.BOX, InfosAppareil(marque = "Google", modele = "Pixel 9a").typeAppareil)
     }
 
     @Test
-    fun `seules les fonctions qui disent le genre d'appareil sont gardees`() {
+    fun `only the features that tell the device type are kept`() {
         assertEquals(
             setOf(InfosAppareil.FONCTION_LEANBACK, InfosAppareil.FONCTION_TACTILE),
             LecteurDistant.fonctions(
@@ -86,12 +86,12 @@ class FabricantsTest {
     }
 
     @Test
-    fun `le nom retenu porte la marque vendue, et la marque s'y relit`() {
+    fun `the display name carries the retail brand, which can be read back from it`() {
         val philips = InfosAppareil(marque = "TPV", marqueCommerciale = "Philips", modele = "55PUS8807/12")
         assertEquals("Philips 55PUS8807/12", philips.nomAffiche)
         assertEquals(Fabricant.PHILIPS, Fabricant.depuisNom(philips.nomAffiche))
 
-        // Le nom déjà retenu pour la TCL ne change pas : les préférences restent valables.
+        // The TCL's name must not change: saved preferences are keyed on it.
         val tcl = InfosAppareil(marque = "TCL", marqueCommerciale = "TCL", modele = "Smart TV Pro")
         assertEquals("TCL Smart TV Pro", tcl.nomAffiche)
 
@@ -101,12 +101,12 @@ class FabricantsTest {
     }
 
     @Test
-    fun `un modele qui porte deja la marque ne la repete pas`() {
-        // La Philips relevée le 2026-10-04 : ro.product.manufacturer TPV, ro.product.model « Philips Google TV TA1 ».
+    fun `a model that already contains the brand does not repeat it`() {
+        // Real Philips: ro.product.manufacturer TPV, ro.product.model "Philips Google TV TA1".
         val philips = InfosAppareil(marque = "TPV", marqueCommerciale = "Philips", modele = "Philips Google TV TA1")
         assertEquals("Philips Google TV TA1", philips.nomAffiche)
         assertEquals(Fabricant.PHILIPS, Fabricant.depuisNom(philips.nomAffiche))
-        // Un mot qui commence seulement comme la marque n'est pas la marque.
+        // A word that merely starts with the brand is not the brand.
         assertEquals("TCL TCLink 4K", InfosAppareil(marque = "TCL", modele = "TCLink 4K").nomAffiche)
     }
 }

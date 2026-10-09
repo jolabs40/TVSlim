@@ -7,18 +7,18 @@ import java.nio.ByteOrder
 import java.security.MessageDigest
 
 /**
- * Le certificat qui signe un APK, lu dans son bloc de signature — schéma v3, sinon v2.
+ * Reads the certificate that signs an APK from its signing block (scheme v3, else v2).
  *
- * La signature elle-même n'est pas vérifiée ici : Android le fera à l'installation, et refusera un APK
- * dont la signature ne correspond pas au certificat qu'il porte. Comparer l'empreinte de ce certificat à
- * celle qu'on attend suffit donc à n'envoyer au téléviseur que nos propres APK : un fichier substitué
- * en route porterait un autre certificat, ou une signature qu'Android rejetterait.
+ * The signature itself is not verified here: Android does that at install time and rejects an APK whose
+ * signature does not match its certificate. Comparing this certificate's fingerprint with the expected
+ * one is therefore enough to send only our own APKs to the TV: a file swapped in transit would carry
+ * another certificate, or a signature Android rejects.
  *
- * Format : https://source.android.com/docs/security/features/apksigning/v2#apk-signing-block
+ * Format: https://source.android.com/docs/security/features/apksigning/v2#apk-signing-block
  */
 object SignatureApk {
 
-    /** L'empreinte SHA-256 du certificat du premier signataire, en hexadécimal minuscule ; null sans bloc lisible. */
+    /** SHA-256 of the first signer's certificate, lowercase hex; null without a readable signing block. */
     fun empreinteCertificat(fichier: File): String? =
         runCatching { RandomAccessFile(fichier, "r").use(::lire) }.getOrNull()
 
@@ -26,7 +26,7 @@ object SignatureApk {
         val taille = f.length()
         if (taille < TAILLE_FIN_REPERTOIRE) return null
 
-        // La fin du répertoire central se cherche à rebours : un commentaire de 64 Ko au plus la suit.
+        // Search backwards for the end of central directory record: a comment of up to 64 KB may follow it.
         val queue = minOf(taille, TAILLE_FIN_REPERTOIRE + 0xFFFFL).toInt()
         val fin = lireOctets(f, taille - queue, queue)
         val b = ByteBuffer.wrap(fin).order(ByteOrder.LITTLE_ENDIAN)
@@ -34,7 +34,7 @@ object SignatureApk {
             ?: return null
         val debutRepertoire = b.getInt(eocd + 16).toLong() and 0xFFFFFFFFL
 
-        // Le bloc de signature finit juste avant le répertoire central : sa taille, puis « APK Sig Block 42 ».
+        // The signing block ends right before the central directory with its size, then "APK Sig Block 42".
         if (debutRepertoire < 32) return null
         val pied = lireOctets(f, debutRepertoire - 24, 24)
         if (String(pied, 8, 16, Charsets.US_ASCII) != MAGIE) return null
@@ -43,7 +43,7 @@ object SignatureApk {
         val tete = lireOctets(f, debutRepertoire - tailleBloc - 8, 8)
         if (ByteBuffer.wrap(tete).order(ByteOrder.LITTLE_ENDIAN).getLong(0) != tailleBloc) return null
 
-        // Entre les deux tailles, des paires : longueur sur 8 octets, identifiant sur 4, valeur.
+        // Between the two size fields: pairs of 8-byte length, 4-byte ID, value.
         val paires = ByteBuffer.wrap(lireOctets(f, debutRepertoire - tailleBloc, (tailleBloc - 24).toInt()))
             .order(ByteOrder.LITTLE_ENDIAN)
         val valeurs = HashMap<Int, ByteBuffer>()
@@ -58,20 +58,20 @@ object SignatureApk {
     }
 
     /**
-     * v2 et v3 commencent pareil : la suite des signataires ; dans le premier, ses données signées ;
-     * dans celles-ci, les condensats puis les certificats — le premier est celui du signataire.
+     * v2 and v3 start the same way: the signer sequence; in the first signer, its signed data; in that,
+     * the digests then the certificates, the first of which is the signer's.
      */
     private fun premierCertificat(schema: ByteBuffer): ByteArray? {
         val signataires = prefixee(schema) ?: return null
         val signataire = prefixee(signataires) ?: return null
         val donnees = prefixee(signataire) ?: return null
-        prefixee(donnees) ?: return null // condensats
+        prefixee(donnees) ?: return null // digests
         val certificats = prefixee(donnees) ?: return null
         val certificat = prefixee(certificats) ?: return null
         return ByteArray(certificat.remaining()).also { certificat.get(it) }
     }
 
-    /** Une suite précédée de sa longueur sur 4 octets ; null si elle déborde de ce qui reste. */
+    /** Reads a sequence prefixed by its 4-byte length; null if it overflows what is left. */
     private fun prefixee(source: ByteBuffer): ByteBuffer? {
         if (source.remaining() < 4) return null
         val longueur = source.getInt()
@@ -102,6 +102,6 @@ object SignatureApk {
     private const val ID_V2 = 0x7109871a
     private const val ID_V3 = 0xf05368c0.toInt()
 
-    /** Un bloc de signature pèse quelques kilo-octets : au-delà, le fichier est fabriqué. */
+    /** A signing block weighs a few KB; anything above this cap is crafted. */
     private const val TAILLE_MAX_BLOC = 16L * 1024 * 1024
 }

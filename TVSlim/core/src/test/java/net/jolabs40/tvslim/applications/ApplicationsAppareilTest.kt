@@ -18,8 +18,8 @@ import java.nio.file.Files
 import java.util.Base64
 
 /**
- * L'onglet Applications contre un appareil simulé : ce que l'aide rend, ce qu'on en garde, et ce qu'on refuse. La vraie
- * aide a été éprouvée sur la TCL et le Pixel (46 et 227 applications), puis par `ApplicationsMaterielTest`.
+ * The Applications tab against a fake device. The real helper is covered on hardware by `ApplicationsMaterielTest`
+ * (TCL, 46 apps; Pixel, 227).
  */
 class ApplicationsAppareilTest {
 
@@ -34,7 +34,7 @@ class ApplicationsAppareilTest {
         WARNING: linker: something noisy
     """.trimIndent()
 
-    /** Un appareil qui répond à l'aide, et note ce qu'on lui demande. */
+    /** Answers the helper's commands and records every command it receives. */
     private inner class Appareil(
         val reponseListe: String = liste,
         val tiers: Set<String> = setOf("com.spocky.projengmenu", "net.jolabs40.tvslim"),
@@ -84,7 +84,7 @@ class ApplicationsAppareilTest {
     private fun aide(): InputStream = ByteArrayInputStream(byteArrayOf(1, 2, 3))
 
     @Test
-    fun `la liste puis les details, et l'aide effacee a la fin`() = runTest {
+    fun `reads the list then the details, and deletes the helper at the end`() = runTest {
         val appareil = Appareil()
         val etapes = mutableListOf<Pair<Int, Int>>()
 
@@ -97,7 +97,7 @@ class ApplicationsAppareilTest {
         assertEquals("Nom de com.google.android.youtube.tv", youtube.nom)
         assertTrue(youtube.icone!!.contentEquals(icone))
         assertTrue(youtube.systeme)
-        // Un paquet que l'aide n'a pas su lire garde son nom de paquet, sans icône.
+        // A package the helper failed to read keeps its package name and has no icon.
         val tvslim = resultat.applications.single { it.paquet == "net.jolabs40.tvslim" }
         assertEquals("net.jolabs40.tvslim", tvslim.nom)
         assertNull(tvslim.icone)
@@ -107,7 +107,7 @@ class ApplicationsAppareilTest {
     }
 
     @Test
-    fun `ce que le cache connait ne se relit pas`() = runTest {
+    fun `packages already in the cache are not read again`() = runTest {
         val cache = CacheMemoire()
         cache.ecrire("com.google.android.youtube.tv", 1234, DetailsApplication("YouTube", icone))
         cache.ecrire("com.spocky.projengmenu", 95, DetailsApplication("Projectivy", icone))
@@ -121,7 +121,7 @@ class ApplicationsAppareilTest {
     }
 
     @Test
-    fun `une aide d'une autre version est refusee`() = runTest {
+    fun `a helper reporting another version is rejected`() = runTest {
         val appareil = Appareil(reponseListe = "TVSLIM_AIDE 2\nA\tx\t1\t0\t1\t-")
 
         val resultat = LecteurApplications(appareil, appareil, ::aide, CacheMemoire()).lire()
@@ -131,7 +131,7 @@ class ApplicationsAppareilTest {
     }
 
     @Test
-    fun `sans l'aide dans les ressources, rien ne part`() = runTest {
+    fun `without the helper in the resources, nothing is sent`() = runTest {
         val appareil = Appareil()
 
         val resultat = LecteurApplications(appareil, appareil, { null }, CacheMemoire()).lire()
@@ -141,7 +141,7 @@ class ApplicationsAppareilTest {
     }
 
     @Test
-    fun `seule une application installee se desinstalle, et le journal le garde`() = runTest {
+    fun `only a user-installed app can be uninstalled, and the journal records it`() = runTest {
         val appareil = Appareil()
         val journal = JournalRepository(Files.createTempFile("journal", ".json").toFile().apply { delete() })
         val actions = ActionsApplications(appareil) { journal }
@@ -159,7 +159,7 @@ class ApplicationsAppareilTest {
     }
 
     @Test
-    fun `ouvrir passe par l'activite du menu, entre apostrophes`() = runTest {
+    fun `open starts the launcher activity, single-quoted`() = runTest {
         val appareil = Appareil()
         val actions = ActionsApplications(appareil) { null }
         val youtube = LecteurApplications.lireListe(liste).single { it.paquet == "com.google.android.youtube.tv" }
@@ -170,7 +170,7 @@ class ApplicationsAppareilTest {
     }
 
     @Test
-    fun `le cache sur le disque relit noms et icones`() {
+    fun `the disk cache reads back names and icons`() {
         val dossier = Files.createTempDirectory("cache-applications").toFile()
         try {
             CacheApplicationsFichiers(dossier).ecrire("com.a", 3, DetailsApplication("A", icone))
@@ -186,10 +186,10 @@ class ApplicationsAppareilTest {
     }
 
     @Test
-    fun `l'aide embarquee est dans les ressources du noyau`() {
+    fun `the bundled helper is in the core assets`() {
         val aide = File("src/main/assets/${LecteurApplications.CHEMIN_RESSOURCE}")
         assertTrue("${aide.absolutePath} : lancer ./gradlew :aide:copierDansLeNoyau", aide.isFile)
-        // Un APK : une archive zip, avec son code.
+        // An APK is a zip archive holding classes.dex.
         val octets = aide.readBytes()
         assertEquals('P'.code.toByte(), octets[0])
         assertEquals('K'.code.toByte(), octets[1])

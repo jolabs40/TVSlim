@@ -79,9 +79,8 @@ import org.jetbrains.skia.Image as ImageSkia
 import java.io.File
 
 /**
- * Les trois boutons de l'écran du téléviseur, dans la barre du haut : visibles depuis chaque onglet. Pendant un
- * miroir ou un enregistrement, le bouton concerné devient celui qui l'arrête. Enregistrer ferme le miroir ; le
- * miroir attend la fin d'un enregistrement.
+ * Screenshot, mirror and record buttons in the top bar, visible from every tab. While mirroring or recording, the
+ * matching button turns into its stop button. Recording closes the mirror; the mirror waits for a recording to end.
  */
 @Composable
 fun ActionsEcran(
@@ -146,7 +145,7 @@ fun ActionsEcran(
     }
 }
 
-/** Le temps écoulé depuis le début de l'enregistrement — et la limite, sur un Android d'avant la 14. */
+/** Elapsed recording time, plus the limit before Android 14. */
 @Composable
 private fun Chrono(enCours: PhaseEnregistrement.EnCours) {
     var maintenant by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -167,7 +166,7 @@ private fun Chrono(enCours: PhaseEnregistrement.EnCours) {
 
 private fun duree(secondes: Long): String = "%d:%02d".format(secondes / 60, secondes % 60)
 
-/** Une roue à la place d'un bouton, le temps d'une opération ; pleine d'autant que [progression] le dit. */
+/** A spinner in place of a button during an operation, filled according to [progression]. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Attente(libelle: String, progression: Float? = null) {
@@ -198,7 +197,7 @@ private fun Infobulle(libelle: String) {
     }
 }
 
-/** Un bouton d'icône, son nom en infobulle : une icône seule ne dit pas toujours ce qu'elle fait. */
+/** Icon button with its name as a tooltip, since an icon alone is not always clear. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BoutonEcran(
@@ -219,7 +218,7 @@ private fun BoutonEcran(
     }
 }
 
-/** L'aperçu d'une capture tout juste enregistrée : où elle est, la copier, ouvrir son dossier. */
+/** Preview of a screenshot just saved. */
 @Composable
 fun ApercuCaptureDialogue(
     capture: CaptureFaite,
@@ -265,8 +264,8 @@ fun ApercuCaptureDialogue(
 }
 
 /**
- * scrcpy manque : ce que TV Slim va télécharger, d'où, et la seconde autorisation que le téléviseur demandera.
- * Pendant le téléchargement, la même fenêtre en montre l'avancée.
+ * scrcpy is missing: what TV Slim will download, from where, and the second authorization the TV will ask for.
+ * The same dialog then shows download progress.
  */
 @Composable
 fun TelechargementScrcpyDialogue(
@@ -298,7 +297,7 @@ fun TelechargementScrcpyDialogue(
     )
 }
 
-/** Un enregistrement vient de se terminer : où est la vidéo. */
+/** Where the video of a finished recording was saved. */
 @Composable
 fun VideoEnregistreeDialogue(video: File, onOuvrirDossier: () -> Unit, onFermer: () -> Unit) {
     AlertDialog(
@@ -306,7 +305,7 @@ fun VideoEnregistreeDialogue(video: File, onOuvrirDossier: () -> Unit, onFermer:
         icon = { Icon(painterResource(Res.drawable.baseline_videocam_24), contentDescription = null) },
         title = { Text(stringResource(Res.string.video_title)) },
         text = {
-            // Assez large pour qu'un chemin de dossier tienne sur une ligne.
+            // Wide enough for a folder path to fit on one line.
             Box(modifier = Modifier.width(460.dp)) {
                 SelectionContainer {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -326,7 +325,7 @@ fun VideoEnregistreeDialogue(video: File, onOuvrirDossier: () -> Unit, onFermer:
     )
 }
 
-/** TV Slim se ferme pendant un enregistrement : il copie d'abord la vidéo, et le dit. */
+/** Shown when TV Slim is closed during a recording: the video is copied first. */
 @Composable
 fun FermetureDialogue(phase: PhaseEnregistrement) {
     AlertDialog(

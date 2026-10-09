@@ -35,9 +35,9 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Le symbole de Ko-fi — la tasse au cœur —, tel que Ko-fi le publie dans ses ressources de marque, sans teinte : il se
- * reconnaît à ses couleurs, et son intérieur blanc le garde lisible sur le thème sombre. Plus large que haut, il tient
- * dans la boîte de 24 dp d'une icône. Fichiers ramenés à 24 dp de large dans chaque `drawable-*dpi`.
+ * Ko-fi's cup symbol as published in its brand assets, untinted: its colors make it recognizable and its white
+ * inside keeps it readable on the dark theme. Wider than tall, it fits a 24 dp icon box; the files are scaled to
+ * 24 dp wide in each `drawable-*dpi`.
  */
 @Composable
 fun SymboleKofi(contentDescription: String?, modifier: Modifier = Modifier, taille: Dp = 24.dp) {
@@ -49,8 +49,8 @@ fun SymboleKofi(contentDescription: String?, modifier: Modifier = Modifier, tail
 }
 
 /**
- * Le symbole de Ko-fi dans la barre du haut, visible depuis chaque onglet, qui ouvre la page de soutien. Discret par principe : rien ne
- * clignote, rien ne revient seul — c'est le bandeau qui remercie après un service rendu.
+ * Ko-fi button in the top bar, on every tab, opening the support page. Deliberately quiet: nothing blinks or
+ * reappears on its own; thanking after a successful action is the banner's job.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -79,8 +79,8 @@ fun BoutonSoutien(onClick: () -> Unit) {
 }
 
 /**
- * Le bandeau de soutien, sous celui des mises à jour : il se montre après un service rendu, et seulement quand
- * `PiloteSoutien` le décide. Il ne bloque rien, et chacun de ses trois boutons le referme.
+ * Support banner, below the update banner. Shown after a successful action, only when `PiloteSoutien` decides.
+ * It blocks nothing, and each of its three buttons dismisses it.
  */
 @Composable
 fun BanniereSoutien(

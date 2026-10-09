@@ -8,11 +8,10 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Garde-fou de la traduction du catalogue.
+ * Checks the catalogue translation.
  *
- * Le vrai risque n'est pas que la fusion soit fausse — elle tient en quelques lignes — mais
- * qu'on ajoute un paquet au fichier de base en oubliant sa traduction. Ces tests lisent les
- * fichiers livrés, pas des données de démonstration : ils échouent le jour où l'oubli arrive.
+ * The real risk is a package added to the base file without its translation. These tests read the shipped
+ * files, not sample data, so they fail as soon as one is missing.
  */
 class TraductionsTest {
 
@@ -29,13 +28,13 @@ class TraductionsTest {
     private fun fichier(nom: String) = File("src/main/assets/$nom").readText()
 
     @Test
-    fun `chaque entree du catalogue a sa traduction francaise`() {
+    fun `every catalog entry has a French translation`() {
         val manquantes = base.entrees.map { it.paquet }.filterNot { it in francais.entrees }
         assertTrue("Entrées sans traduction française : $manquantes", manquantes.isEmpty())
     }
 
     @Test
-    fun `chaque categorie, profil, reglage et paquet protege est traduit`() {
+    fun `every category, profile, setting and protected package is translated`() {
         assertTrue(
             "Catégories non traduites : " +
                 base.categories.map { it.id }.filterNot { it in francais.categories },
@@ -62,7 +61,7 @@ class TraductionsTest {
     }
 
     @Test
-    fun `les points forts d'un launcher recommande sont traduits un pour un`() {
+    fun `recommended launcher highlights are translated one for one`() {
         base.launchers.forEach { launcher ->
             val traduits = francais.launchers[launcher.paquet]?.pointsForts.orEmpty()
             assertEquals("Points forts de ${launcher.nom}", launcher.pointsForts.size, traduits.size)
@@ -72,7 +71,7 @@ class TraductionsTest {
     }
 
     @Test
-    fun `la traduction ne traduit pas ce qui ne doit pas l'etre`() {
+    fun `translation leaves non-text fields alone`() {
         val traduit = base.traduit(francais)
 
         assertEquals(base.entrees.size, traduit.entrees.size)
@@ -82,7 +81,7 @@ class TraductionsTest {
         val katnissFr = traduit.entrees.first { it.paquet == "com.google.android.katniss" }
 
         assertEquals("Assistant Google", katnissFr.nom)
-        // Tout ce qui n'est pas du texte reste intact : c'est de la donnée, pas de la traduction.
+        // Non-text fields are data and stay unchanged.
         assertEquals(katnissBase.risque, katnissFr.risque)
         assertEquals(katnissBase.tailleMo, katnissFr.tailleMo)
         assertEquals(katnissBase.categorie, katnissFr.categorie)
@@ -90,7 +89,7 @@ class TraductionsTest {
     }
 
     @Test
-    fun `une entree absente de la traduction retombe sur l'anglais`() {
+    fun `an entry missing from the translation falls back to English`() {
         val partielle = Traductions(
             langue = "fr",
             entrees = mapOf("com.google.android.katniss" to TexteEntree(nom = "Assistant Google")),
@@ -98,12 +97,12 @@ class TraductionsTest {
         val traduit = base.traduit(partielle)
 
         assertEquals("Assistant Google", traduit.entrees.first { it.paquet == "com.google.android.katniss" }.nom)
-        // Description non fournie : l'anglais est conservé plutôt qu'un texte vide.
+        // No translated description: the English one is kept rather than an empty string.
         assertEquals(
             base.entrees.first { it.paquet == "com.google.android.katniss" }.description,
             traduit.entrees.first { it.paquet == "com.google.android.katniss" }.description,
         )
-        // Entrée absente de la traduction : inchangée.
+        // Entry missing from the translation: unchanged.
         assertEquals(
             base.entrees.first { it.paquet == "com.tcl.channelplus" }.description,
             traduit.entrees.first { it.paquet == "com.tcl.channelplus" }.description,
@@ -111,12 +110,12 @@ class TraductionsTest {
     }
 
     @Test
-    fun `les garde-fous survivent a la traduction`() {
+    fun `safeguards survive translation`() {
         val traduit = base.traduit(francais)
 
         assertTrue(traduit.estProtege("com.android.location.fused"))
         assertNotNull(traduit.motifProtection("com.tcl.suspension"))
-        // L'ordre d'application de l'écran d'accueil est une règle, pas un texte.
+        // The home screen ordering is a rule, so translation must not touch it.
         val setupwraith = traduit.entrees.first { it.paquet == "com.google.android.tungsten.setupwraith" }
         val launcherx = traduit.entrees.first { it.paquet == "com.google.android.apps.tv.launcherx" }
         assertTrue(setupwraith.ordre < launcherx.ordre)

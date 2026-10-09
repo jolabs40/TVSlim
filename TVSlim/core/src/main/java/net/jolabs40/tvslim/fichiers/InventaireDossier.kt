@@ -2,10 +2,10 @@ package net.jolabs40.tvslim.fichiers
 
 import net.jolabs40.tvslim.shell.ResultatShell
 
-/** Un fichier trouvé dans un dossier du téléviseur, son chemin relatif à ce dossier. */
+/** A file found in a TV folder, with its path relative to that folder. */
 data class FichierInventaire(val chemin: String, val taille: Long, val date: Long)
 
-/** Le contenu d'un dossier du téléviseur, à toute profondeur : ses sous-dossiers, vides compris, et ses fichiers. */
+/** Recursive contents of a TV folder: subfolders (empty ones included) and files. */
 data class Inventaire(val dossiers: List<String>, val fichiers: List<FichierInventaire>) {
     val taille: Long get() = fichiers.sumOf { it.taille }
 }
@@ -19,12 +19,11 @@ internal sealed interface LectureInventaire {
 }
 
 /**
- * Ce que contient un dossier, avant de le copier ou de l'effacer — et la commande qui l'efface.
+ * Lists a folder recursively before it is copied or deleted, and builds the delete command.
  *
- * `find -exec stat {} +` plutôt que `find -printf`, que la toybox d'Android refuse : une ligne
- * `D|0|date|./chemin` par dossier, `F|taille|date|./chemin` par fichier, le chemin en dernier pour qu'il garde
- * ses `|`. Ni l'un ni l'autre `find` ne suit les liens : un lien n'est ni copié, ni parcouru. Éprouvé sur la TCL
- * (toybox 0.8.9) et la Shield (0.8.3), le 2026-10-04.
+ * Uses `find -exec stat {} +` because Android's toybox `find` has no `-printf`. One line per entry,
+ * `D|0|date|./path` or `F|size|date|./path`, path last so it may contain `|`. Symlinks are not followed.
+ * Tested with toybox 0.8.9 (TCL) and 0.8.3 (Shield).
  */
 internal object InventaireDossier {
 
@@ -33,24 +32,24 @@ internal object InventaireDossier {
     private const val CODE_PROTEGE = 5
 
     /**
-     * Les stockages qu'on n'efface jamais d'un bloc : le stockage interne sous ses trois noms, chaque volume de
-     * `/storage` — clé USB, carte SD —, le dossier `Android` des applications, et `/data/local/tmp`.
+     * Storage roots never deleted wholesale: internal storage under its three names, each `/storage` volume
+     * (USB drive, SD card), the apps' `Android` folder, and `/data/local/tmp`.
      */
     private const val RACINES = "/sdcard /sdcard/Android /storage/* /storage/emulated/* " +
         "/storage/emulated/0 /storage/self/primary /data/local/tmp"
 
     /**
-     * Sort en [CODE_PROTEGE] si le dossier cité est l'un des [RACINES], ou en contient un — `/storage/emulated`
-     * contient le stockage interne. Les chemins sont comparés une fois les liens résolus : `/sdcard`,
-     * `/storage/self/primary` et `/storage/emulated/0` sont le même dossier. Un `rm -rf` arrivé à la racine
-     * effacerait tout ce que le shell d'ADB a le droit d'effacer.
+     * Exits with [CODE_PROTEGE] if the quoted folder is one of [RACINES] or contains one (`/storage/emulated`
+     * contains internal storage). Paths are compared after resolving links: `/sdcard`, `/storage/self/primary`
+     * and `/storage/emulated/0` are the same folder. An `rm -rf` reaching a root would delete everything the
+     * ADB shell is allowed to delete.
      */
     private fun garde(cite: String): String =
         "c=\$(readlink -f $cite); [ -n \"\$c\" ] || exit $CODE_INTROUVABLE; " +
             "for r in $RACINES; do r=\$(readlink -f \"\$r\") && " +
             "case \"\$r/\" in \"\${c%/}/\"*) exit $CODE_PROTEGE;; esac; done"
 
-    /** [garde] : avant une suppression, refuser d'emblée ce que [commandeSuppression] refuserait. */
+    /** [garde]: before a delete, rejects up front what [commandeSuppression] would refuse. */
     fun commande(chemin: String, garde: Boolean): String {
         val cite = citer(chemin)
         return (if (garde) garde(cite) + "; " else "") +
@@ -61,9 +60,8 @@ internal object InventaireDossier {
     }
 
     /**
-     * `rm -f` et `rm -rf` se rejouent sans risque après une rupture — ce qui est parti ne se retrouve pas —, et
-     * passent donc par le chemin ordinaire. Un lien perd son `-r` : `rm` ne le suit pas, mais rien ne sert de
-     * l'y inviter.
+     * `rm -f` and `rm -rf` are safe to replay after a disconnect (what is gone stays gone), so they go through
+     * the regular command path. A link gets no `-r`: `rm` would not follow it anyway.
      */
     fun commandeSuppression(chemin: String, nature: NatureSuppression): String {
         val cite = citer(chemin)
@@ -87,7 +85,7 @@ internal object InventaireDossier {
         else -> SuppressionEntree(IssueSuppression.ECHEC, nom, reponse.sortie.ifBlank { "Code de retour ${reponse.code}." })
     }
 
-    /** Les dossiers parents d'abord ; le dossier lui-même (`.`) n'y figure pas. */
+    /** Parent folders first; the folder itself (`.`) is not included. */
     fun inventaire(sortie: String): Inventaire {
         val dossiers = mutableListOf<String>()
         val fichiers = mutableListOf<FichierInventaire>()

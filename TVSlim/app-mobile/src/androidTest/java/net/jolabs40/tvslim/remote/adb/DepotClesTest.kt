@@ -17,12 +17,11 @@ import java.io.File
 import java.util.Base64
 
 /**
- * Le coffre de clés ne se vérifie que sur un vrai appareil : `EncryptedSharedPreferences`
- * s'appuie sur le keystore Android, absent d'une JVM de bureau.
+ * The key store can only be tested on a real device: `EncryptedSharedPreferences` relies on the
+ * Android keystore, which a desktop JVM lacks.
  *
- * Ce qui se joue ici n'est pas cosmétique. Perdre la clé privée, c'est devoir réautoriser le
- * débogage à la télécommande sur chaque téléviseur ; la laisser en clair, c'est offrir un accès
- * shell complet à qui lit le stockage de l'application.
+ * Losing the private key means re-authorizing debugging with the remote on every TV; leaving it in
+ * plaintext gives full shell access to anyone who can read the app's storage.
  */
 @RunWith(AndroidJUnit4::class)
 class DepotClesTest {
@@ -30,8 +29,8 @@ class DepotClesTest {
     private val contexte: Context = ApplicationProvider.getApplicationContext()
 
     /**
-     * Coffre et dossier dédiés : ces tests tournent dans le processus de l'application, et
-     * vider le coffre réel ferait perdre à la personne l'autorisation de ses téléviseurs.
+     * Dedicated store and folder: these tests run in the app's process, and clearing the real
+     * store would lose the user's authorization on their TVs.
      */
     private val ancienDossier get() = File(contexte.filesDir, "adb-test")
 
@@ -44,7 +43,7 @@ class DepotClesTest {
         File(contexte.cacheDir, "cles-temporaires").deleteRecursively()
     }
 
-    /** Relit le coffre comme le ferait l'application, sans passer par le dépôt. */
+    /** Reads the encrypted store directly, bypassing `DepotCles`. */
     private fun auCoffre(nom: String): ByteArray? {
         val cleMaitre = MasterKey.Builder(contexte)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -60,11 +59,11 @@ class DepotClesTest {
     }
 
     @Test
-    fun la_cle_survit_a_une_seconde_demande() {
+    fun key_survives_a_second_request() {
         depot().paire()
         val premiere = auCoffre("publique")
 
-        // Un second dépôt, comme après un redémarrage de l'application.
+        // A second store instance, as after an app restart.
         depot().paire()
 
         assertNotNull(premiere)
@@ -76,7 +75,7 @@ class DepotClesTest {
     }
 
     @Test
-    fun rien_ne_traine_en_clair_apres_generation() {
+    fun nothing_left_in_plaintext_after_generation() {
         depot().paire()
 
         assertFalse(File(ancienDossier, "adbkey").exists())
@@ -85,8 +84,8 @@ class DepotClesTest {
     }
 
     @Test
-    fun une_ancienne_cle_en_clair_est_reprise_puis_effacee() {
-        // Ce qu'une version précédente laissait sur le disque.
+    fun old_plaintext_key_is_migrated_then_deleted() {
+        // What an older version left on disk.
         ancienDossier.mkdirs()
         val privee = File(ancienDossier, "adbkey")
         val publique = File(ancienDossier, "adbkey.pub")
@@ -107,11 +106,11 @@ class DepotClesTest {
     }
 
     @Test
-    fun la_cle_du_coffre_reste_utilisable_par_dadb() {
+    fun stored_key_remains_usable_by_dadb() {
         val paire = depot().paire()
 
-        // Si la reconstruction en mémoire était fautive, dadb ne saurait pas signer la
-        // demande d'authentification et le téléviseur refuserait la connexion.
+        // If the in-memory rebuild were wrong, dadb could not sign the auth request and the TV
+        // would refuse the connection.
         assertNotNull(paire)
         assertEquals("RSA", clePriveeDepuisDer(auCoffre("privee")!!).algorithm)
     }

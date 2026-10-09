@@ -1,6 +1,6 @@
-// Les dernières publications, lues sur GitHub au moment de construire le site : les liens de
-// téléchargement visent les vrais fichiers. Sans réseau, la page renvoie vers la liste des publications.
-// ⚠️ Une nouvelle version n'apparaît ici qu'après une reconstruction du site (deploy.sh).
+// Latest releases, read from GitHub at build time so the download links point at the actual files.
+// Without network, the links fall back to the releases list.
+// A new version only shows up here once the site is rebuilt (deploy.sh).
 
 export interface Fichier {
   nom: string;

@@ -37,12 +37,12 @@ import net.jolabs40.tvslim.windows.ui.composants.TexteSecondaire
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * L'application TV Slim du téléviseur : à quoi elle sert, où elle en est, et un seul bouton pour
- * l'installer, la mettre à jour ou lui rendre son autorisation. La même carte que sur le téléphone.
+ * The TV Slim app on the TV: what it does, its status, and a single button to install, update or
+ * re-authorize it. Same card as on the phone.
  */
 @Composable
 fun CarteApplicationTv(etat: EtatApplicationTvUi, hote: String, actions: ActionsApplicationTv) {
-    // Relue à chaque téléviseur : la carte ne s'affiche que face à un téléviseur ou une box.
+    // Re-read for each TV; the card is only shown for a TV or a box.
     LaunchedEffect(hote) { actions.onLire() }
 
     CarteSection(titre = stringResource(Res.string.tvapp_title)) {

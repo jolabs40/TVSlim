@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.CaptureTelephone
 
-/** L'appareil photo de la barre du haut : capture l'écran du téléviseur joint. */
 @Composable
 fun BoutonCapture(enCours: Boolean, onCapturer: () -> Unit) {
     if (enCours) {
@@ -43,7 +42,6 @@ fun BoutonCapture(enCours: Boolean, onCapturer: () -> Unit) {
     }
 }
 
-/** L'aperçu d'une capture tout juste enregistrée : où elle est, et la partager. */
 @Composable
 fun ApercuCaptureDialogue(capture: CaptureTelephone, onPartager: () -> Unit, onFermer: () -> Unit) {
     val image = remember(capture) { BitmapFactory.decodeByteArray(capture.png, 0, capture.png.size)?.asImageBitmap() }
