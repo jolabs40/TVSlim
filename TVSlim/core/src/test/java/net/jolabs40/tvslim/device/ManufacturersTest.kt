@@ -41,7 +41,7 @@ class ManufacturersTest {
         assertEquals(DeviceType.BOX, DeviceInfo(brand = "Xiaomi", model = "Mi TV Stick").deviceType)
         assertEquals(DeviceType.TV, DeviceInfo(brand = "Xiaomi", model = "MiTV-MOOQ0").deviceType)
         assertEquals(DeviceType.BOX, DeviceInfo(brand = "NVIDIA", model = "SHIELD Android TV").deviceType)
-        assertEquals(DeviceType.TV, DeviceInfo(brand = "Inconnue", model = "X1").deviceType)
+        assertEquals(DeviceType.TV, DeviceInfo(brand = "Unknown", model = "X1").deviceType)
     }
 
     @Test

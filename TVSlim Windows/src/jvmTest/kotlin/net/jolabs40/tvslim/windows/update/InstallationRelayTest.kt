@@ -10,10 +10,10 @@ import java.io.File
  * the current version, then relaunches the app. Opt-in, on a machine where an older version is installed and
  * running:
  *
- *     ./gradlew jvmTest --tests "*RelaisInstallationTest*" --rerun \
- *         -PrelaisMsi=C:\…\TVSlim-Windows-0.9.1.msi \
- *         -PrelaisExe="C:\Users\…\AppData\Local\TV Slim\TV Slim.exe" \
- *         -PrelaisPid=<app pid>,<launcher pid>
+ *     ./gradlew jvmTest --tests "*InstallationRelayTest*" --rerun \
+ *         -PrelayMsi=C:\…\TVSlim-Windows-0.9.1.msi \
+ *         -PrelayExe="C:\Users\…\AppData\Local\TV Slim\TV Slim.exe" \
+ *         -PrelayPid=<app pid>,<launcher pid>
  *
  * The test returns as soon as WMI has created the relay. Closing the app then lets the install proceed; the
  * result is in `installation.log`.
@@ -23,7 +23,7 @@ class InstallationRelayTest {
     @Test
     fun `WMI creates the relay that will install the next version`() {
         val msi = System.getProperty("tvslim.relay.msi")
-        assumeTrue("-PrelaisMsi=<installateur> pour éprouver le relais", msi != null)
+        assumeTrue("-PrelayMsi=<installer> to try the relay", msi != null)
         val executable = System.getProperty("tvslim.relay.exe")?.let(::File)
         val pids = System.getProperty("tvslim.relay.pid").orEmpty()
             .split(',').mapNotNull { it.trim().toLongOrNull() }
@@ -32,8 +32,8 @@ class InstallationRelayTest {
 
         File(System.getProperty("tvslim.captures"), "relais.txt").apply {
             parentFile.mkdirs()
-            writeText("pids attendus=$pids\nrelais accepté par WMI=$accepted\n")
+            writeText("expected pids=$pids\nrelay accepted by WMI=$accepted\n")
         }
-        assertTrue("WMI n'a pas créé le relais", accepted)
+        assertTrue("WMI did not create the relay", accepted)
     }
 }

@@ -198,7 +198,7 @@ def outfit_font(path: str | None) -> Path:
     digest = hashlib.sha256(cache.read_bytes()).hexdigest()
     if digest != FONT_SHA256:
         cache.unlink()
-        raise SystemExit(f"Police inattendue ({digest}) : rien n'est écrit.")
+        raise SystemExit(f"Unexpected font ({digest}): nothing written.")
     return cache
 
 
@@ -368,10 +368,10 @@ def write_file(relative_path: str, content) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     # --police is the former spelling, kept so existing commands still work.
-    parser.add_argument("--font", "--police", dest="font", help="Outfit[wght].ttf, si elle est déjà sur le disque")
+    parser.add_argument("--font", "--police", dest="font", help="Outfit[wght].ttf, if it is already on disk")
     args = parser.parse_args()
 
-    print("Logo de TV Slim :")
+    print("TV Slim logo:")
     write_file("docs/logo/tvslim.svg", svg(full_icon(), 108, 108, "TV Slim"))
     write_file("docs/logo/tvslim-petit.svg", svg(full_icon(small=True), 108, 108, "TV Slim, 24 px et moins"))
 

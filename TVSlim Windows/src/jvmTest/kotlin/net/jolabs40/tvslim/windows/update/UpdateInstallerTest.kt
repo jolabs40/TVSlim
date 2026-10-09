@@ -35,7 +35,7 @@ class UpdateInstallerTest {
     private val windows = System.getProperty("os.name").startsWith("Windows")
 
     private fun sign(bytes: ByteArray, version: String, key: PrivateKey): String {
-        val file = File(folder.root, "a-signer").apply { writeBytes(bytes) }
+        val file = File(folder.root, "to-sign").apply { writeBytes(bytes) }
         val message = SignatureVerification.message(version, SignatureVerification.fingerprint(file))
         return Signature.getInstance("Ed25519").run {
             initSign(key)
@@ -53,8 +53,8 @@ class UpdateInstallerTest {
             exchange.responseBody.use { it.write(bytes) }
         }
         serve("/msi") { content }
-        serve("/bonne.sig") { sign(content, "1.2.3", tvSlimKey.private).toByteArray() }
-        serve("/mauvaise.sig") { sign(content, "1.2.3", otherKey.private).toByteArray() }
+        serve("/good.sig") { sign(content, "1.2.3", tvSlimKey.private).toByteArray() }
+        serve("/bad.sig") { sign(content, "1.2.3", otherKey.private).toByteArray() }
         server.start()
     }
 
@@ -84,10 +84,10 @@ class UpdateInstallerTest {
 
     @Test
     fun `a correctly signed installer is returned ready to install`() = runTest {
-        val downloads = folder.newFolder("maj")
+        val downloads = folder.newFolder("updates")
         var verified = false
 
-        val msi = installer(downloads).prepare(update("bonne.sig"), {}, { verified = true })
+        val msi = installer(downloads).prepare(update("good.sig"), {}, { verified = true })
 
         assertTrue(verified)
         assertTrue(msi.readBytes().contentEquals(content))
@@ -95,10 +95,10 @@ class UpdateInstallerTest {
 
     @Test
     fun `a badly signed installer is deleted and never returned`() = runTest {
-        val downloads = folder.newFolder("maj")
+        val downloads = folder.newFolder("updates")
 
         val error = runCatching {
-            installer(downloads).prepare(update("mauvaise.sig"), {}, {})
+            installer(downloads).prepare(update("bad.sig"), {}, {})
         }.exceptionOrNull()
 
         assertTrue(error is UpdateInstaller.InvalidSignature)
@@ -113,8 +113,8 @@ class UpdateInstallerTest {
 
         assertTrue(script.contains("Wait-Process -Id 4242,4243"))
         assertTrue(script.contains("'/passive'"))
-        assertTrue("apostrophe doublée dans un littéral", script.contains("Zoë O''Brien"))
-        assertFalse("aucun guillemet double", script.contains('"'))
+        assertTrue("apostrophe doubled inside a literal", script.contains("Zoë O''Brien"))
+        assertFalse("no double quote", script.contains('"'))
         assertEquals(2, Regex("Start-Process").findAll(script).count())
     }
 
@@ -133,7 +133,7 @@ class UpdateInstallerTest {
         assertEquals("powershell.exe", command.first())
         assertTrue(command.last().contains("Invoke-CimMethod -ClassName Win32_Process -MethodName Create"))
         assertTrue(command.none { '"' in it })
-        assertTrue("apostrophes doublées deux fois", command.last().contains("Zoë O''''Brien"))
+        assertTrue("apostrophes doubled twice", command.last().contains("Zoë O''''Brien"))
     }
 
     @Test
@@ -151,7 +151,7 @@ class UpdateInstallerTest {
         )
         val launcher = UpdateInstaller.launchCommand(script).last()
 
-        listOf("relais" to script, "lanceur" to launcher).forEach { (name, content) ->
+        listOf("relay" to script, "launcher" to launcher).forEach { (name, content) ->
             val file = File(folder.root, "$name.ps1").apply { writeText(content, Charsets.UTF_8) }
             val analysis = ProcessBuilder(
                 "powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
@@ -160,7 +160,7 @@ class UpdateInstallerTest {
             ).redirectErrorStream(true).start()
             val output = analysis.inputStream.bufferedReader().readText().trim()
             analysis.waitFor()
-            assertEquals("$name : aucune erreur d'analyse attendue — $output", "0", output.lines().last().trim())
+            assertEquals("$name: no parse error expected, $output", "0", output.lines().last().trim())
         }
     }
 
@@ -171,23 +171,23 @@ class UpdateInstallerTest {
     @Test
     fun `WMI creates the process with the command line intact`() {
         assumeTrue(windows)
-        val target = File(folder.newFolder("Zoë O'Brien"), "temoin.txt")
-        val script = "Set-Content -Path '${target.absolutePath.replace("'", "''")}' -Value 'relais-ok'"
+        val target = File(folder.newFolder("Zoë O'Brien"), "marker.txt")
+        val script = "Set-Content -Path '${target.absolutePath.replace("'", "''")}' -Value 'relay-ok'"
 
         // Bounded end to end: an unresponsive WMI must never hang CI.
-        val journal = File(folder.root, "lancement.log")
+        val journal = File(folder.root, "launch.log")
         val launch = ProcessBuilder(UpdateInstaller.launchCommand(script))
             .redirectErrorStream(true)
             .redirectOutput(journal)
             .start()
         val finished = launch.waitFor(90, TimeUnit.SECONDS)
         if (!finished) launch.destroyForcibly()
-        assertTrue("WMI n'a pas répondu en 90 s : ${journal.readText()}", finished)
-        assertEquals("WMI doit accepter la création : ${journal.readText()}", 0, launch.exitValue())
+        assertTrue("WMI did not answer within 90 s: ${journal.readText()}", finished)
+        assertEquals("WMI must accept the creation: ${journal.readText()}", 0, launch.exitValue())
 
         val limit = System.currentTimeMillis() + 60_000
         while (!target.exists() && System.currentTimeMillis() < limit) Thread.sleep(200)
-        assertTrue("le relais créé par WMI n'a rien écrit", target.exists())
-        assertEquals("relais-ok", target.readText().trim())
+        assertTrue("the relay created by WMI wrote nothing", target.exists())
+        assertEquals("relay-ok", target.readText().trim())
     }
 }

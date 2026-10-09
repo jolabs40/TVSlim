@@ -30,31 +30,31 @@ class TranslationsTest {
     @Test
     fun `every catalog entry has a French translation`() {
         val missing = base.entries.map { it.packageName }.filterNot { it in french.entries }
-        assertTrue("Entrées sans traduction française : $missing", missing.isEmpty())
+        assertTrue("Entries without a French translation: $missing", missing.isEmpty())
     }
 
     @Test
     fun `every category, profile, setting and protected package is translated`() {
         assertTrue(
-            "Catégories non traduites : " +
+            "Untranslated categories: " +
                 base.categories.map { it.id }.filterNot { it in french.categories },
             base.categories.all { it.id in french.categories },
         )
         assertTrue(
-            "Profils non traduits : " + base.profiles.map { it.id }.filterNot { it in french.profiles },
+            "Untranslated profiles: " + base.profiles.map { it.id }.filterNot { it in french.profiles },
             base.profiles.all { it.id in french.profiles },
         )
         assertTrue(
-            "Réglages non traduits : " + base.settings.map { it.key }.filterNot { it in french.settings },
+            "Untranslated settings: " + base.settings.map { it.key }.filterNot { it in french.settings },
             base.settings.all { it.key in french.settings },
         )
         assertTrue(
-            "Launchers non traduits : " +
+            "Untranslated launchers: " +
                 base.launchers.map { it.packageName }.filterNot { it in french.launchers },
             base.launchers.all { it.packageName in french.launchers },
         )
         assertTrue(
-            "Paquets protégés non traduits : " +
+            "Untranslated protected packages: " +
                 base.protectedPackages.map { it.packageName }.filterNot { it in french.protectedPackages },
             base.protectedPackages.all { it.packageName in french.protectedPackages },
         )
@@ -64,7 +64,7 @@ class TranslationsTest {
     fun `recommended launcher highlights are translated one for one`() {
         base.launchers.forEach { launcher ->
             val translated = french.launchers[launcher.packageName]?.highlights.orEmpty()
-            assertEquals("Points forts de ${launcher.name}", launcher.highlights.size, translated.size)
+            assertEquals("Highlights of ${launcher.name}", launcher.highlights.size, translated.size)
         }
         val startlight = base.translated(french).launchers.first { it.id == "startlight" }
         assertTrue(startlight.highlights.all { it.isNotBlank() })

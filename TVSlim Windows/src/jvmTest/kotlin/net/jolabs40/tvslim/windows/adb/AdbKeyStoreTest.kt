@@ -24,11 +24,11 @@ class AdbKeyStoreTest {
     private object InvertedProtection : DataProtection {
         override fun protect(data: ByteArray) = data.reversedArray() + MARK
         override fun unprotect(protectedData: ByteArray): ByteArray {
-            require(protectedData.takeLast(MARK.size).toByteArray().contentEquals(MARK)) { "non protégé" }
+            require(protectedData.takeLast(MARK.size).toByteArray().contentEquals(MARK)) { "not protected" }
             return protectedData.copyOfRange(0, protectedData.size - MARK.size).reversedArray()
         }
 
-        private val MARK = "#protege".toByteArray()
+        private val MARK = "#protected".toByteArray()
     }
 
     /** Both key files' bytes: if unchanged, the key was read back, not regenerated. */
@@ -37,7 +37,7 @@ class AdbKeyStoreTest {
 
     @Test
     fun `a created pair reads back identically from another store`() {
-        val keys = folder.newFolder("cles")
+        val keys = folder.newFolder("keys")
         assertNotNull(AdbKeyStore(keys, InvertedProtection).pair())
         val before = fingerprint(keys)
 
@@ -49,7 +49,7 @@ class AdbKeyStoreTest {
 
     @Test
     fun `no plaintext key is left on disk`() {
-        val keys = folder.newFolder("cles")
+        val keys = folder.newFolder("keys")
         AdbKeyStore(keys, InvertedProtection).pair()
 
         val files = keys.walkTopDown().filter { it.isFile }.map { it.name }.toSet()
@@ -63,9 +63,9 @@ class AdbKeyStoreTest {
 
     @Test
     fun `an unreadable key is set aside, not deleted`() {
-        val keys = folder.newFolder("cles")
+        val keys = folder.newFolder("keys")
         AdbKeyStore(keys, InvertedProtection).pair()
-        File(keys, "adbkey.dpapi").writeText("abîmé")
+        File(keys, "adbkey.dpapi").writeText("corrupt")
 
         val fresh = AdbKeyStore(keys, InvertedProtection).pair()
 
@@ -77,7 +77,7 @@ class AdbKeyStoreTest {
     @Test
     fun `DPAPI encrypts and decrypts under this account`() {
         assumeTrue(System.getProperty("os.name").startsWith("Windows"))
-        val secret = "une clé qui ne doit pas se lire".toByteArray()
+        val secret = "a key that must stay unreadable".toByteArray()
 
         val protectedItem = DpapiProtection.protect(secret)
 
@@ -88,7 +88,7 @@ class AdbKeyStoreTest {
     @Test
     fun `the real pair is stored and read back with DPAPI`() {
         assumeTrue(System.getProperty("os.name").startsWith("Windows"))
-        val keys = folder.newFolder("cles")
+        val keys = folder.newFolder("keys")
         assertNotNull(AdbKeyStore(keys).pair())
         val before = fingerprint(keys)
 

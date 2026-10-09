@@ -21,9 +21,9 @@ class ShizukuRelaunchTest {
         val command = ShizukuRelaunch.COMMAND
 
         assertTrue(command.contains("pm path ${ShizukuRelaunch.PACKAGE_NAME}"))
-        assertTrue("l'ABI doit rester un motif", command.contains("/lib/*/libshizuku.so"))
-        assertFalse("aucun chemin d'installation en dur", command.contains("/data/app/"))
-        assertFalse("aucune ABI figée", command.contains("/lib/arm/"))
+        assertTrue("the ABI must stay a wildcard", command.contains("/lib/*/libshizuku.so"))
+        assertFalse("no hardcoded install path", command.contains("/data/app/"))
+        assertFalse("no fixed ABI", command.contains("/lib/arm/"))
     }
 
     /**

@@ -34,7 +34,7 @@ class RemoteReaderTest {
             .filter { it.startsWith("#") }
 
         assertTrue(
-            "Ces mots feraient taire tout le reste de la ligne : $commentWords",
+            "These words would silence the rest of the line: $commentWords",
             commentWords.isEmpty(),
         )
     }
@@ -45,7 +45,7 @@ class RemoteReaderTest {
             .map { RemoteReader.MARKER_PREFIX + it.removePrefix("_") }
         markers.forEach { marker ->
             assertTrue(
-                "La commande doit annoncer $marker",
+                "The command must announce $marker",
                 RemoteReader.COMMAND.contains("echo $marker"),
             )
         }
@@ -83,13 +83,13 @@ class RemoteReaderTest {
         """.trimIndent()
 
         val photo = RemoteReader(FixedExecutor(output)).snapshot(
-            watchedPackages = listOf("com.tcl.gallery", "com.spocky.projengmenu", "absent.ici"),
+            watchedPackages = listOf("com.tcl.gallery", "com.spocky.projengmenu", "absent.here"),
             homePackages = setOf("com.google.android.apps.tv.launcherx"),
         )
 
         assertEquals(PackageState.DISABLED, photo.states["com.tcl.gallery"])
         assertEquals(PackageState.ACTIVE, photo.states["com.spocky.projengmenu"])
-        assertEquals(PackageState.ABSENT, photo.states["absent.ici"])
+        assertEquals(PackageState.ABSENT, photo.states["absent.here"])
 
         assertEquals("TCL", photo.info.brand)
         assertEquals("TCL", photo.info.retailBrand)
@@ -145,7 +145,7 @@ class RemoteReaderTest {
         )
 
         assertTrue(
-            "Aucun launcher tiers ici : ${photo.info.thirdPartyLaunchers.map { it.packageName }}",
+            "No third-party launcher here: ${photo.info.thirdPartyLaunchers.map { it.packageName }}",
             photo.info.thirdPartyLaunchers.isEmpty(),
         )
     }
@@ -370,7 +370,7 @@ class RemoteReaderTest {
         // The package is reported absent for lack of anything better, but nothing may suggest a healthy TV.
         assertEquals(PackageState.ABSENT, photo.states["com.tcl.gallery"])
         assertEquals(0, photo.info.installedPackages)
-        assertFalse("Aucune propriété ne doit être inventée", photo.info.model.isNotBlank())
+        assertFalse("No property may be made up", photo.info.model.isNotBlank())
     }
     @Test
     fun `requested permissions are told apart from those actually granted`() = runTest {
@@ -405,7 +405,7 @@ class RemoteReaderTest {
         assertTrue(fetched.packageFound)
         assertTrue(fetched.isDeclared("android.permission.DUMP"))
         assertFalse(
-            "DUMP est demandée mais pas encore accordée",
+            "DUMP is requested but not granted yet",
             fetched.isGranted("android.permission.DUMP"),
         )
         assertEquals(
@@ -417,7 +417,7 @@ class RemoteReaderTest {
             fetched.granted,
         )
         assertFalse(
-            "Une permission que l'application définit n'est pas une permission qu'elle demande",
+            "A permission the app defines is not a permission it requests",
             fetched.isDeclared("net.jolabs40.hippietv.permission.RECEVOIR"),
         )
     }
@@ -435,20 +435,20 @@ class RemoteReaderTest {
     fun `an app-op mode is read in all three output forms`() = runTest {
         // The three outputs seen on a real device.
         val wasSet = RemoteReader(FixedExecutor("GET_USAGE_STATS: allow; time=+13m59s344ms ago"))
-        assertEquals("allow", wasSet.appOpMode("com.exemple", "GET_USAGE_STATS"))
+        assertEquals("allow", wasSet.appOpMode("com.example", "GET_USAGE_STATS"))
 
         val neverSet = RemoteReader(FixedExecutor("No operations." + System.lineSeparator() + "Default mode: default"))
-        assertEquals("default", neverSet.appOpMode("com.exemple", "GET_USAGE_STATS"))
+        assertEquals("default", neverSet.appOpMode("com.example", "GET_USAGE_STATS"))
 
-        val failed = RemoteReader(FixedExecutor("Error: No UID for com.exemple in user 0"))
-        assertEquals("", failed.appOpMode("com.exemple", "GET_USAGE_STATS"))
+        val failed = RemoteReader(FixedExecutor("Error: No UID for com.example in user 0"))
+        assertEquals("", failed.appOpMode("com.example", "GET_USAGE_STATS"))
     }
 
     @Test
     fun `an app-op with a suspicious name never reaches the shell`() = runTest {
         val executor = FixedExecutor("GET_USAGE_STATS: allow")
 
-        val mode = RemoteReader(executor).appOpMode("com.exemple", "GET_USAGE_STATS; reboot")
+        val mode = RemoteReader(executor).appOpMode("com.example", "GET_USAGE_STATS; reboot")
 
         assertEquals("", mode)
         assertEquals(null, executor.incoming)

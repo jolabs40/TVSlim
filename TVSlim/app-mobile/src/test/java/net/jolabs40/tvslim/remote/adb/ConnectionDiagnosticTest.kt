@@ -54,6 +54,6 @@ class ConnectionDiagnosticTest {
 
     @Test
     fun `other errors are not disguised`() {
-        assertEquals(ConnectionProblem.OTHER, diagnose(IllegalStateException("inattendu")))
+        assertEquals(ConnectionProblem.OTHER, diagnose(IllegalStateException("unexpected")))
     }
 }

@@ -59,9 +59,9 @@ private const val TAG = "App"
 fun main() {
     val locations = Locations.windows()
     AppLog.writeTo(locations.traces)
-    AppLog.info(TAG, "Démarrage de TV Slim ${AppInfo.VERSION}")
+    AppLog.info(TAG, "Starting TV Slim ${AppInfo.VERSION}")
     Thread.setDefaultUncaughtExceptionHandler { _, error ->
-        AppLog.warn(TAG, "Erreur non rattrapée", error)
+        AppLog.warn(TAG, "Uncaught error", error)
     }
 
     val client = AdbClient(AdbKeyStore(locations.keys))
@@ -179,19 +179,19 @@ fun main() {
 private fun openLink(link: String) {
     val isEmail = link.startsWith("mailto:")
     if (!link.startsWith("https://") && !isEmail) return
-    thread(isDaemon = true, name = "ouverture-lien") {
+    thread(isDaemon = true, name = "open-link") {
         // Without a mail client nothing opens; the address is still shown on the button.
         runCatching { if (isEmail) Desktop.getDesktop().mail(URI(link)) else Desktop.getDesktop().browse(URI(link)) }
-            .onFailure { AppLog.warn(TAG, "Lien non ouvert", it) }
+            .onFailure { AppLog.warn(TAG, "Link not opened", it) }
     }
 }
 
 private fun openFolder(folder: File) {
-    thread(isDaemon = true, name = "ouverture-dossier") {
+    thread(isDaemon = true, name = "open-folder") {
         runCatching {
             folder.mkdirs()
             Desktop.getDesktop().open(folder)
-        }.onFailure { AppLog.warn(TAG, "Dossier non ouvert", it) }
+        }.onFailure { AppLog.warn(TAG, "Folder not opened", it) }
     }
 }
 
@@ -244,7 +244,7 @@ private fun chooseMultiple(parent: Frame, title: String): List<File> {
  */
 private fun chooseFolder(parent: Frame, title: String, folder: File = documentsFolder()): File? {
     runCatching { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) }
-        .onFailure { AppLog.warn(TAG, "Apparence de Windows indisponible", it) }
+        .onFailure { AppLog.warn(TAG, "Windows look and feel unavailable", it) }
     val choice = JFileChooser(folder).apply {
         dialogTitle = title
         fileSelectionMode = JFileChooser.DIRECTORIES_ONLY

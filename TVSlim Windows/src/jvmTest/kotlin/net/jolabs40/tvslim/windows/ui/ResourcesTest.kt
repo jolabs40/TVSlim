@@ -41,8 +41,8 @@ class ResourcesTest {
         val english = texts("values")
         val french = texts("values-fr")
 
-        assertEquals("Absents en français", emptySet<String>(), english.keys - french.keys)
-        assertEquals("Absents en anglais", emptySet<String>(), french.keys - english.keys)
+        assertEquals("Missing in French", emptySet<String>(), english.keys - french.keys)
+        assertEquals("Missing in English", emptySet<String>(), french.keys - english.keys)
     }
 
     @Test

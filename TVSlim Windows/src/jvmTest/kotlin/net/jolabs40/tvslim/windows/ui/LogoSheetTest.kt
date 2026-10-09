@@ -118,7 +118,7 @@ import javax.imageio.ImageIO
  * once (Startlight missing, installed, no third-party launcher; a Philips reporting itself as "TPV"; a box).
  * Opt-in:
  *
- *     ./gradlew jvmTest --tests "*PlancheLogosTest*" -Pplanche=1 --rerun
+ *     ./gradlew jvmTest --tests "*LogoSheetTest*" -PlogoSheet=1 --rerun
  */
 class LogoSheetTest {
 
@@ -132,7 +132,7 @@ class LogoSheetTest {
     @OptIn(ExperimentalLayoutApi::class)
     @Test
     fun `contact sheet of logos and the cards that show them`() {
-        assumeTrue("-Pplanche=1 pour produire la planche", System.getProperty("tvslim.logoSheet") != null)
+        assumeTrue("-PlogoSheet=1 to render the sheet", System.getProperty("tvslim.logoSheet") != null)
         output.mkdirs()
         Locale.setDefault(Locale.FRANCE)
         val catalog = runBlocking { CatalogRepository { "fr" }.catalog() }
@@ -143,12 +143,12 @@ class LogoSheetTest {
                 brand = "TCL",
                 model = "Smart TV Pro",
                 currentHome = home,
-                thirdPartyLaunchers = installed.map { InstalledLauncher(packageName = it, name = it, component = "$it/.Accueil") },
+                thirdPartyLaunchers = installed.map { InstalledLauncher(packageName = it, name = it, component = "$it/.Home") },
             ),
         )
 
         render("10-accueil-recommandation", 720, 980) {
-            HomeCard(state("com.spocky.projengmenu", "com.spocky.projengmenu", "com.exemple.launcher.inconnu"), {}, {}, {})
+            HomeCard(state("com.spocky.projengmenu", "com.spocky.projengmenu", "com.example.launcher.unknown"), {}, {}, {})
         }
         render("11-accueil-startlight-installe", 720, 520) {
             HomeCard(state("net.jolabs40.startlight.debug", "net.jolabs40.startlight.debug", "me.efesser.flauncher"), {}, {}, {})
@@ -239,7 +239,7 @@ class LogoSheetTest {
                 model = "Smart TV Pro",
                 currentHome = "net.jolabs40.startlight.debug",
                 thirdPartyLaunchers = listOf("com.spocky.projengmenu", "net.jolabs40.startlight.debug")
-                    .map { InstalledLauncher(packageName = it, name = it, component = "$it/.Accueil") },
+                    .map { InstalledLauncher(packageName = it, name = it, component = "$it/.Home") },
                 factoryHomes = listOf(FactoryHome(launcherx, "$launcherx/.home.HomeActivity", active = false)),
             ),
         )
@@ -508,7 +508,7 @@ class LogoSheetTest {
                 "C:\\Users\\Camille\\Downloads" + path.split('/').filter { it.isNotEmpty() }.joinToString("") { "\\$it" }
             override fun exists(path: String) = true
             override fun createFolder(path: String) = Unit
-            override fun write(path: String) = error("rien ne s'écrit")
+            override fun write(path: String) = error("nothing is written")
         }
         render("38-fichiers-copie-confirmation", 900, 520, frame = false) {
             DownloadConfirmation(
@@ -601,7 +601,7 @@ class LogoSheetTest {
                 model = "Pixel 9a",
                 currentHome = "com.teslacoilsw.launcher",
                 thirdPartyLaunchers = listOf("net.jolabs40.startlight.debug", "com.teslacoilsw.launcher")
-                    .map { InstalledLauncher(packageName = it, name = it, component = "$it/.Accueil") },
+                    .map { InstalledLauncher(packageName = it, name = it, component = "$it/.Home") },
                 characteristics = "nosdcard",
                 features = setOf(DeviceInfo.FEATURE_TOUCHSCREEN),
             ),

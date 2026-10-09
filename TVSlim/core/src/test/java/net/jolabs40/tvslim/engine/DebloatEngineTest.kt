@@ -53,7 +53,7 @@ class DebloatEngineTest {
 
     private val catalog = Catalog(
         protectedPackages = listOf(
-            ProtectedPackage("com.android.location.fused", "Boucle de redémarrage."),
+            ProtectedPackage("com.android.location.fused", "Boot loop."),
         ),
     )
 
@@ -71,7 +71,7 @@ class DebloatEngineTest {
 
         assertFalse(results.single().succeeded)
         assertTrue(results.single().reason is EngineReason.Protected)
-        assertTrue("Aucune commande ne doit partir : ${spy.commands}", spy.commands.isEmpty())
+        assertTrue("No command may be sent: ${spy.commands}", spy.commands.isEmpty())
     }
 
     @Test
@@ -111,7 +111,7 @@ class DebloatEngineTest {
 
         assertEquals(2, spy.commands.size)
         assertTrue(
-            "setupwraith doit passer en premier : ${spy.commands}",
+            "setupwraith must go first: ${spy.commands}",
             spy.commands[0].contains("setupwraith"),
         )
         assertTrue(spy.commands[1].contains("launcherx"))
@@ -123,19 +123,19 @@ class DebloatEngineTest {
         val engine = DebloatEngine(spy, journal())
 
         val results = engine.disable(
-            entries = listOf(entry("absent.du.televiseur"), entry("deja.coupe")),
+            entries = listOf(entry("absent.from.tv"), entry("already.disabled")),
             catalog = catalog,
             states = mapOf(
-                "absent.du.televiseur" to PackageState.ABSENT,
-                "deja.coupe" to PackageState.DISABLED,
+                "absent.from.tv" to PackageState.ABSENT,
+                "already.disabled" to PackageState.DISABLED,
             ),
             launchersAvailable = true,
         )
 
         assertTrue(spy.commands.isEmpty())
-        assertFalse(results.first { it.packageName == "absent.du.televiseur" }.succeeded)
+        assertFalse(results.first { it.packageName == "absent.from.tv" }.succeeded)
         // Already disabled counts as success: the target state is reached.
-        assertTrue(results.first { it.packageName == "deja.coupe" }.succeeded)
+        assertTrue(results.first { it.packageName == "already.disabled" }.succeeded)
     }
 
     @Test
@@ -152,7 +152,7 @@ class DebloatEngineTest {
         )
 
         assertEquals("pm disable-user --user 0 com.tcl.gallery", spy.commands.single())
-        assertFalse("Aucun uninstall, jamais", spy.commands.any { it.contains("uninstall") })
+        assertFalse("Never uninstall", spy.commands.any { it.contains("uninstall") })
 
         val action = logbook.actions.value.single()
         assertEquals(ActionType.DISABLING, action.type)
@@ -204,7 +204,7 @@ class DebloatEngineTest {
         engine.enable(listOf("com.tcl.gallery"))
 
         assertTrue(
-            "Le paquet réactivé sort de la liste à restaurer",
+            "The re-enabled package leaves the restore list",
             logbook.activelyDisabledPackages().isEmpty(),
         )
         assertEquals(2, logbook.actions.value.size)
@@ -219,7 +219,7 @@ class DebloatEngineTest {
         engine.writeSetting(
             key = "low_power_standby_enabled",
             scope = "global",
-            name = "Veille",
+            name = "Standby",
             rawValue = "0",
             previousValue = "1",
         )
@@ -249,8 +249,8 @@ class DebloatEngineTest {
         )
 
         assertFalse(result.succeeded)
-        assertTrue("Rien ne part vers le téléviseur", spy.commands.isEmpty())
-        assertTrue("Un refus ne se journalise pas", logbook.actions.value.isEmpty())
+        assertTrue("Nothing is sent to the TV", spy.commands.isEmpty())
+        assertTrue("A refusal is not journaled", logbook.actions.value.isEmpty())
     }
 
     @Test
@@ -265,7 +265,7 @@ class DebloatEngineTest {
         )
 
         assertFalse(result.succeeded)
-        assertTrue("Le point-virgule ne doit jamais atteindre le shell", spy.commands.isEmpty())
+        assertTrue("The semicolon must never reach the shell", spy.commands.isEmpty())
     }
 
     @Test
@@ -314,7 +314,7 @@ class DebloatEngineTest {
             declaredPermissions = setOf("android.permission.DUMP"),
         )
 
-        assertFalse("Une sortie inattendue reste un échec", result.succeeded)
+        assertFalse("Unexpected output is still a failure", result.succeeded)
         assertFalse(logbook.actions.value.single().succeeded)
     }
 
@@ -365,7 +365,7 @@ class DebloatEngineTest {
         val result = engine.setAppOp(
             packageName = "com.tcl.gallery",
             appOp = "GET_USAGE_STATS",
-            mode = "autorise",
+            mode = "allowed",
             previousMode = "default",
         )
 
@@ -399,7 +399,7 @@ class DebloatEngineTest {
         val engine = DebloatEngine(spy, journal())
 
         val result = engine.setHome(
-            component = "com.exemple/.Main; rm -rf /sdcard",
+            component = "com.example/.Main; rm -rf /sdcard",
             oldHome = "com.tcl.launcher/.Home",
         )
 
@@ -415,7 +415,7 @@ class DebloatEngineTest {
 
         val result = engine.setHome(
             component = "com.spocky.projengmenu/.MainActivity",
-            oldHome = "n'importe quoi",
+            oldHome = "it's nonsense",
         )
 
         assertFalse(result.succeeded)
@@ -453,7 +453,7 @@ class DebloatEngineTest {
         val spy = SpyExecutor()
         val engine = DebloatEngine(spy, journal())
 
-        val result = engine.openStoreListing("com.spocky.projengmenu&id=autre")
+        val result = engine.openStoreListing("com.spocky.projengmenu&id=other")
 
         assertFalse(result.succeeded)
         assertTrue(spy.commands.isEmpty())

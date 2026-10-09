@@ -32,7 +32,7 @@ object AppLog {
     fun info(tag: String, message: String) = write("INFO ", tag, message, null)
 
     fun warn(tag: String, message: String, error: Throwable? = null) =
-        write("AVERT", tag, message, error)
+        write("WARN ", tag, message, error)
 
     @Synchronized
     private fun write(level: String, tag: String, message: String, error: Throwable?) {
@@ -63,4 +63,4 @@ object AppLog {
 }
 
 /** Returns the detail suffix, or nothing unless [AppLog.verbose]. */
-internal fun detail(text: String): String = if (AppLog.verbose) " : $text" else ""
+internal fun detail(text: String): String = if (AppLog.verbose) ": $text" else ""

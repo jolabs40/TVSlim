@@ -87,7 +87,7 @@ class TvAppTest {
         var downloads = 0
 
         override suspend fun releases(): String {
-            if (failing) throw IOException("hors ligne")
+            if (failing) throw IOException("offline")
             return """[{"tag_name":"android-v1.1.0","assets":[{"name":"TVSlim-TV-1.1.0.apk",""" +
                 """"browser_download_url":"https://github.com/jolabs40/TVSlim/releases/download/android-v1.1.0/TVSlim-TV-1.1.0.apk","size":12375}]}]"""
         }
@@ -123,11 +123,11 @@ class TvAppTest {
         assertEquals(1, tv.uploads.size)
         val order = listOf("pm grant ${TvApp.PACKAGE_NAME} ${TvApp.WRITE_SECURE_SETTINGS}", "am start", "am broadcast")
             .map { start -> tv.commands.indexOfFirst { it.startsWith(start) } }
-        assertTrue("Ordre : accorder, lancer, gardien — $order", order.all { it >= 0 } && order == order.sorted())
-        assertTrue("Android 13 et plus : les notifications aussi", tv.commands.any { it.endsWith(TvApp.POST_NOTIFICATIONS) })
+        assertTrue("Order: grant, launch, guardian: $order", order.all { it >= 0 } && order == order.sorted())
+        assertTrue("Android 13 and later: notifications too", tv.commands.any { it.endsWith(TvApp.POST_NOTIFICATIONS) })
         assertTrue(steps.first() is TvStep.Checking)
         assertTrue(steps.any { it is TvStep.Verification } && steps.any { it is TvStep.Upload })
-        assertFalse("L'APK téléchargé ne reste pas sur le disque", File(folder, "tvslim-tv.apk").exists())
+        assertFalse("The downloaded APK does not stay on disk", File(folder, "tvslim-tv.apk").exists())
 
         val types = journal.actions.value.map { it.type }
         assertEquals(listOf(ActionType.INSTALLATION, ActionType.PERMISSION, ActionType.PERMISSION), types)
@@ -142,7 +142,7 @@ class TvAppTest {
         assertEquals(TvReason.CERTIFICATE, (result as TvResult.Failed).reason)
         assertEquals(ApkSignatureTest.KEY_B, result.detail)
         assertTrue(tv.uploads.isEmpty())
-        assertTrue("Aucune commande n'a modifié le téléviseur", tv.commands.none { it.startsWith("pm ") || it.startsWith("am ") })
+        assertTrue("No command changed the TV", tv.commands.none { it.startsWith("pm ") || it.startsWith("am ") })
         assertFalse(File(folder, "tvslim-tv.apk").exists())
     }
 
@@ -191,7 +191,7 @@ class TvAppTest {
         assertEquals(TvAppState.UPDATE, old.state)
 
         val withoutGithub = application(FakeTv(installed = true)).situation(available = null)
-        assertEquals("Sans GitHub, l'autorisation manquante se dit encore", TvAppState.NO_PERMISSION, withoutGithub.state)
+        assertEquals("Without GitHub, the missing permission is still reported", TvAppState.NO_PERMISSION, withoutGithub.state)
     }
 
     @Test
@@ -215,7 +215,7 @@ class TvAppTest {
 
         assertEquals(TvResult.Succeeded("1.1.0", authorized = true, guardian = true), result)
         assertEquals(1, tv.uploads.size)
-        assertTrue("Rien ne passe au premier plan : ${tv.commands}", tv.commands.none { it.startsWith("am start") })
+        assertTrue("Nothing comes to the foreground: ${tv.commands}", tv.commands.none { it.startsWith("am start") })
         assertTrue(tv.commands.any { it.startsWith("am broadcast") })
     }
 
@@ -236,7 +236,7 @@ class TvAppTest {
         """.trimMargin()
         assertFalse(TvApp.isStopped(tcl))
         assertTrue(TvApp.isStopped("    User 0: ceDataInode=1 installed=true stopped=true notLaunched=true enabled=0"))
-        assertTrue("Jamais ouverte, même non arrêtée de force", TvApp.isStopped("    User 0: installed=true stopped=false notLaunched=true"))
-        assertTrue("Illisible : on la lance, comme avant", TvApp.isStopped(""))
+        assertTrue("Never opened, even if not force-stopped", TvApp.isStopped("    User 0: installed=true stopped=false notLaunched=true"))
+        assertTrue("Unreadable: launch it, as before", TvApp.isStopped(""))
     }
 }

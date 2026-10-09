@@ -77,7 +77,7 @@ class TvDiscovery @Inject constructor(
                 service,
                 object : NsdManager.ResolveListener {
                     override fun onResolveFailed(info: NsdServiceInfo?, code: Int) {
-                        Log.w(TAG, "Résolution impossible ($code)" + detail(info?.serviceName.orEmpty()))
+                        Log.w(TAG, "Resolve failed ($code)" + detail(info?.serviceName.orEmpty()))
                         resolutionInProgress.set(false)
                         resolveNext()
                     }
@@ -87,7 +87,7 @@ class TvDiscovery @Inject constructor(
                         if (address != null && address.substringBefore('%') in phoneAddresses()) {
                             // The phone's own wireless debugging is announced too. It is not a TV, and its
                             // encrypted connection used to hang the app.
-                            Log.d(TAG, "Le téléphone lui-même, écarté" + detail("$address:${info.port}"))
+                            Log.d(TAG, "The phone itself, skipped" + detail("$address:${info.port}"))
                         } else if (address != null) {
                             if (info.serviceType.contains(TYPE_CAST.trim('.'))) {
                                 friendlyName(info)?.let { namesByHost[address] = it }
@@ -110,7 +110,7 @@ class TvDiscovery @Inject constructor(
         // One listener per type: NsdManager rejects a listener that is already registered.
         fun listener() = object : NsdManager.DiscoveryListener {
             override fun onStartDiscoveryFailed(type: String?, code: Int) {
-                Log.w(TAG, "Découverte impossible ($code)" + detail(type.orEmpty()))
+                Log.w(TAG, "Discovery failed ($code)" + detail(type.orEmpty()))
             }
 
             override fun onStopDiscoveryFailed(type: String?, code: Int) = Unit
@@ -144,7 +144,7 @@ class TvDiscovery @Inject constructor(
     }
 
     private companion object {
-        const val TAG = "TVSlim/Decouverte"
+        const val TAG = "TVSlim/Discovery"
 
         /** Classic network debugging (TVs on port 5555), the only kind dadb can connect to. */
         const val TYPE_ADB = "_adb._tcp"

@@ -34,7 +34,7 @@ interface ReleaseSource {
 }
 
 /** Thrown when a download is larger than any TV app should be; reading stops there. */
-class DownloadTooLarge(val size: Long) : IOException("Fichier trop gros : $size octets")
+class DownloadTooLarge(val size: Long) : IOException("File too large: $size bytes")
 
 object TvReleaseChoice {
 
@@ -96,7 +96,7 @@ class GithubSource(
         connection.setRequestProperty("Accept", "application/vnd.github+json")
         connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
         try {
-            if (connection.responseCode != 200) throw IOException("GitHub : HTTP ${connection.responseCode}")
+            if (connection.responseCode != 200) throw IOException("GitHub: HTTP ${connection.responseCode}")
             val buffer = ByteArrayOutputStream()
             connection.inputStream.use { copy(it, buffer, MAX_LIST_SIZE, total = -1) { _, _ -> } }
             buffer.toString(Charsets.UTF_8.name())
@@ -114,8 +114,8 @@ class GithubSource(
         // GitHub redirects to its storage. HttpURLConnection follows, but never from HTTPS to HTTP.
         val connection = open(url)
         try {
-            if (connection.responseCode != 200) throw IOException("Téléchargement : HTTP ${connection.responseCode}")
-            if (connection.url.protocol != "https") throw IOException("Téléchargement redirigé hors HTTPS")
+            if (connection.responseCode != 200) throw IOException("Download: HTTP ${connection.responseCode}")
+            if (connection.url.protocol != "https") throw IOException("Download redirected outside HTTPS")
             val announced = connection.contentLengthLong
             if (announced > maxSize) throw DownloadTooLarge(announced)
             target.parentFile?.mkdirs()
@@ -132,7 +132,7 @@ class GithubSource(
 
     private fun open(address: String): HttpURLConnection {
         val url = URL(address)
-        if (url.protocol != "https") throw IOException("Adresse non HTTPS : $address")
+        if (url.protocol != "https") throw IOException("Not an HTTPS address: $address")
         return (url.openConnection() as HttpURLConnection).apply {
             connectTimeout = 15_000
             readTimeout = 30_000

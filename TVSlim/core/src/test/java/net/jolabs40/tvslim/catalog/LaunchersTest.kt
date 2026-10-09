@@ -65,8 +65,8 @@ class LaunchersTest {
         assertEquals("Projectivy Launcher", catalog.launcherName("com.spocky.projengmenu"))
         assertEquals("projectivy", catalog.launcherId("com.spocky.projengmenu"))
 
-        assertNull(catalog.launcherName("com.inconnu.launcher"))
-        assertNull(catalog.launcherId("com.inconnu.launcher"))
+        assertNull(catalog.launcherName("com.unknown.launcher"))
+        assertNull(catalog.launcherId("com.unknown.launcher"))
     }
 
     @Test
@@ -75,11 +75,11 @@ class LaunchersTest {
             .decodeFromString(Catalog.serializer(), File("src/main/assets/catalogue.json").readText())
 
         val ids = shipped.launchers.map { it.id } + shipped.knownLaunchers.map { it.id }
-        assertTrue("Un launcher sans identifiant n'aurait pas de logo : $ids", ids.none { it.isBlank() })
-        assertEquals("Identifiants en double : $ids", ids.size, ids.toSet().size)
+        assertTrue("A launcher without an id would have no logo: $ids", ids.none { it.isBlank() })
+        assertEquals("Duplicate ids: $ids", ids.size, ids.toSet().size)
 
         val packages = shipped.launchers.flatMap { listOf(it.packageName) + it.variants } +
             shipped.knownLaunchers.flatMap { it.packages }
-        assertEquals("Paquet cité deux fois : $packages", packages.size, packages.toSet().size)
+        assertEquals("Package listed twice: $packages", packages.size, packages.toSet().size)
     }
 }

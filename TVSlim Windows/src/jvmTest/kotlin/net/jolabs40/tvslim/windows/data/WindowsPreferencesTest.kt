@@ -47,7 +47,7 @@ class WindowsPreferencesTest {
 
     @Test
     fun `a corrupt file yields defaults instead of blocking startup`() = runTest {
-        file().writeText("{ pas du json")
+        file().writeText("{ not json")
 
         val fetched = WindowsPreferences(file()).read()
 

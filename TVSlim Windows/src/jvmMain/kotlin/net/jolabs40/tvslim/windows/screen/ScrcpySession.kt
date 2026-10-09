@@ -24,7 +24,7 @@ class ScrcpySession private constructor(private val process: Process) {
     private val lines = mutableListOf<String>()
 
     init {
-        thread(isDaemon = true, name = "scrcpy-sortie") {
+        thread(isDaemon = true, name = "scrcpy-output") {
             runCatching {
                 process.inputStream.bufferedReader().forEachLine { line ->
                     synchronized(lines) {
@@ -48,7 +48,7 @@ class ScrcpySession private constructor(private val process: Process) {
         if (!process.isAlive) return
         closeWindows(process.pid())
         if (!process.waitFor(waitMs, TimeUnit.MILLISECONDS)) {
-            AppLog.warn(TAG, "scrcpy ne s'est pas fermé : arrêt forcé")
+            AppLog.warn(TAG, "scrcpy did not close, killing it")
             process.destroyForcibly()
         }
     }
@@ -59,7 +59,7 @@ class ScrcpySession private constructor(private val process: Process) {
         const val STOP_WAIT_MS = 8_000L
 
         fun start(exe: File, arguments: List<String>): ScrcpySession {
-            AppLog.info(TAG, "Lancement du miroir scrcpy")
+            AppLog.info(TAG, "Starting scrcpy mirror")
             val process = ProcessBuilder(listOf(exe.absolutePath) + arguments)
                 .directory(exe.parentFile)
                 .redirectErrorStream(true)
@@ -81,7 +81,7 @@ class ScrcpySession private constructor(private val process: Process) {
                     },
                     null,
                 )
-            }.onFailure { AppLog.warn(TAG, "Fenêtre de scrcpy non fermée", it) }
+            }.onFailure { AppLog.warn(TAG, "scrcpy window not closed", it) }
         }
     }
 }

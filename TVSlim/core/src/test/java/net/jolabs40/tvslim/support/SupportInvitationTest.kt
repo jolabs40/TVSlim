@@ -50,8 +50,8 @@ class SupportInvitationTest {
 
     @Test
     fun `only a batch where every action succeeded earns a thank you`() {
-        val ok = ActionResult("com.tcl.ad", "Publicité", succeeded = true)
-        val failed = ActionResult("com.tcl.x", "Refusé", succeeded = false, message = "protégé")
+        val ok = ActionResult("com.tcl.ad", "Ads", succeeded = true)
+        val failed = ActionResult("com.tcl.x", "Refused", succeeded = false, message = "protected")
 
         assertTrue(SupportInvitation.deserves(listOf(ok, ok.copy(packageName = "com.tcl.b"))))
         assertFalse(SupportInvitation.deserves(listOf(ok, failed)))
@@ -66,7 +66,7 @@ class SupportInvitationTest {
         assertTrue(SupportInvitation.deserves(upload.copy(direction = TransferDirection.DOWNLOAD)))
         assertFalse(SupportInvitation.deserves(upload.copy(cancelled = true)))
         assertFalse(SupportInvitation.deserves(upload.copy(interrupted = true)))
-        assertFalse(SupportInvitation.deserves(upload.copy(sentCount = 2, failures = listOf(UploadFailure("a.txt", "refusé")))))
+        assertFalse(SupportInvitation.deserves(upload.copy(sentCount = 2, failures = listOf(UploadFailure("a.txt", "refused")))))
         assertFalse(SupportInvitation.deserves(upload.copy(sentCount = 0, count = 0)))
 
         assertTrue(SupportInvitation.deserves(FilesSignal.Upload(upload)))

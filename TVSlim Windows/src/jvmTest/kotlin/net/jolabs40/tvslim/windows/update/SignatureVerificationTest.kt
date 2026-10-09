@@ -27,7 +27,7 @@ class SignatureVerificationTest {
     private val publicKey = Base64.getEncoder().encodeToString(pair.public.encoded)
     private val privateKey = Base64.getEncoder().encodeToString(pair.private.encoded)
 
-    private fun installer(content: String = "un installateur MSI, en vrai") =
+    private fun installer(content: String = "a real MSI installer") =
         folder.newFile("TVSlim-Windows-1.2.3.msi").apply { writeText(content) }
 
     private fun signWithTool(file: File, version: String): String {
@@ -45,7 +45,7 @@ class SignatureVerificationTest {
     /** Runs the release verification tool as is and returns its exit code. */
     private fun verifyWithTool(file: File, version: String, publicKeyBase64: String): Int {
         val properties = File(folder.newFolder(), "gradle.properties").apply {
-            writeText("# clé de test\nupdatesPublicKey=$publicKeyBase64\n")
+            writeText("# test key\nupdatesPublicKey=$publicKeyBase64\n")
         }
         val java = File(System.getProperty("java.home"), "bin/java").path
         val tool = File(System.getProperty("tvslim.project"), "tools/VerifyUpdate.java").path
@@ -75,7 +75,7 @@ class SignatureVerificationTest {
     @Test
     fun `the public key embedded in the app is a readable Ed25519 key`() {
         val key = AppInfo.UPDATE_PUBLIC_KEY
-        assertTrue("aucune clé publique : toutes les mises à jour seraient refusées", key.isNotBlank())
+        assertTrue("no public key: every update would be rejected", key.isNotBlank())
 
         val loaded = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(Base64.getDecoder().decode(key)))
 
@@ -116,7 +116,7 @@ class SignatureVerificationTest {
             .encodeToString(KeyPairGenerator.getInstance("Ed25519").generateKeyPair().public.encoded)
 
         assertFalse(SignatureVerification.check(msi, "1.2.3", signature, otherKey))
-        assertFalse(SignatureVerification.check(msi, "1.2.3", "pas de la base64 !", publicKey))
+        assertFalse(SignatureVerification.check(msi, "1.2.3", "not base64!", publicKey))
         assertFalse(SignatureVerification.check(msi, "1.2.3", signature, ""))
     }
 }

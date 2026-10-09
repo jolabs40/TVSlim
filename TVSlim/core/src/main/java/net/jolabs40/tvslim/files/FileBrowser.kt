@@ -185,7 +185,7 @@ class FileBrowser(
         cancelled: () -> Boolean = { false },
         onProgress: (UploadProgress) -> Unit = {},
     ): UploadResult {
-        val fileReceiver = checkNotNull(fileReceiver) { "Cette application ne copie rien vers l'appareil." }
+        val fileReceiver = checkNotNull(fileReceiver) { "This app does not copy files from the TV." }
         val files = plan.files
         val summary = UploadResult(plan.destination, sentCount = 0, count = files.size, direction = TransferDirection.DOWNLOAD)
 

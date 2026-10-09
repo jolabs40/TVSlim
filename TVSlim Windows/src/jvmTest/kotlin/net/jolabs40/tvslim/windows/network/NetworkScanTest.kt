@@ -19,8 +19,8 @@ class NetworkScanTest {
         assertEquals(253, hosts.size)
         assertEquals("192.168.2.1", hosts.first())
         assertEquals("192.168.2.254", hosts.last())
-        assertFalse("l'ordinateur ne se sonde pas lui-même", "192.168.2.10" in hosts)
-        assertFalse("ni l'adresse de diffusion", "192.168.2.255" in hosts)
+        assertFalse("the computer does not probe itself", "192.168.2.10" in hosts)
+        assertFalse("nor the broadcast address", "192.168.2.255" in hosts)
     }
 
     @Test
@@ -42,7 +42,7 @@ class NetworkScanTest {
         assertTrue(neighborHosts("8.8.8.8", 24).isEmpty())
         assertTrue(neighborHosts("127.0.0.1", 8).isEmpty())
         assertTrue(neighborHosts("169.254.10.20", 16).isEmpty())
-        assertTrue(neighborHosts("pas une adresse", 24).isEmpty())
+        assertTrue(neighborHosts("not an address", 24).isEmpty())
     }
 
     @Test

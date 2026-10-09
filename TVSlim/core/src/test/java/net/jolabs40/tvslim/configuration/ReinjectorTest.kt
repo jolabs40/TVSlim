@@ -94,7 +94,7 @@ class ReinjectorTest {
             ),
             spy.commands,
         )
-        assertTrue("Tout doit réussir : $results", results.all { it.succeeded })
+        assertTrue("Everything must succeed: $results", results.all { it.succeeded })
         assertEquals(4 to 4, steps.last())
     }
 

@@ -39,10 +39,10 @@ internal suspend fun <T> underWatch(
     }
 }
 
-internal class ProlongedSilence(cause: Throwable) : IOException("plus rien ne passe", cause)
+internal class ProlongedSilence(cause: Throwable) : IOException("no data moving", cause)
 
 /** Thrown by the source when the user cancels; dadb aborts the transfer and closes its stream. */
-internal class UploadCancelled : IOException("envoi annulé")
+internal class UploadCancelled : IOException("upload cancelled")
 
 /**
  * Upload source that counts bytes (dadb reports no progress), records activity for [underWatch], and stops as

@@ -16,7 +16,7 @@ android {
         minSdk = 26
         targetSdk = 36
         // Same version for both apps: see the root build.gradle.kts.
-        versionCode = rootProject.extra["codeDeVersion"] as Int
+        versionCode = rootProject.extra["appVersionCode"] as Int
         versionName = rootProject.extra["appVersion"] as String
         // Expected certificate of the TV APK downloaded from GitHub, the one CI checks before publishing.
         // An APK without it is never sent to the TV.

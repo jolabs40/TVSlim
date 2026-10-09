@@ -66,18 +66,18 @@ class ApkFileTest {
     fun `a file that is not an APK is rejected without an exception`() {
         val text = Files.createTempFile("tvslim", ".apk").toFile().apply {
             deleteOnExit()
-            writeText("pas une archive")
+            writeText("not an archive")
         }
 
         assertEquals(ApkAnalysis.NotAnApk, ApkFile.analyze(text))
-        assertEquals(ApkAnalysis.NotAnApk, ApkFile.analyze(archive("notes.txt" to "bonjour".toByteArray())))
+        assertEquals(ApkAnalysis.NotAnApk, ApkFile.analyze(archive("notes.txt" to "hello".toByteArray())))
         assertEquals(ApkAnalysis.NotAnApk, ApkFile.analyze(archive("AndroidManifest.xml" to "<manifest/>".toByteArray())))
     }
 
     @Test
     fun `a truncated or corrupt manifest does not crash the parser`() {
         listOf(0, 8, 64, 500, manifest.size - 1).forEach { size ->
-            assertNull("tronqué à $size octets", BinaryManifest.read(manifest.copyOf(size)))
+            assertNull("truncated at $size bytes", BinaryManifest.read(manifest.copyOf(size)))
         }
         // A zero-size chunk would make the parser loop forever.
         val loop = manifest.copyOf().also { bytes -> (12..15).forEach { bytes[it] = 0 } }

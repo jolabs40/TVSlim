@@ -27,7 +27,7 @@ val core = layout.projectDirectory.dir("../TVSlim/core")
 
 /** Exposes version and repository to the code without depending on the jpackage launcher. */
 val generateAppInfo by tasks.registering {
-    val folder = layout.buildDirectory.dir("generated/infosApp/kotlin")
+    val folder = layout.buildDirectory.dir("generated/appInfo/kotlin")
     val version = appVersion
     val repository = githubRepository
     val publicKeyBase64 = updatesPublicKey
@@ -35,9 +35,9 @@ val generateAppInfo by tasks.registering {
     val fingerprint = certificateFingerprint
     inputs.property("version", version)
     inputs.property("repository", repository)
-    inputs.property("clePublique", publicKeyBase64)
-    inputs.property("licence", license)
-    inputs.property("empreinte", fingerprint)
+    inputs.property("publicKey", publicKeyBase64)
+    inputs.property("license", license)
+    inputs.property("fingerprint", fingerprint)
     outputs.dir(folder)
     doLast {
         val file = folder.get().file("net/jolabs40/tvslim/windows/AppInfo.kt").asFile
@@ -103,14 +103,14 @@ kotlin {
 }
 
 tasks.named<Test>("jvmTest") {
-    // TraductionsTest opens `src/main/assets/...` by a relative path, so tests run from the core
+    // TranslationsTest opens `src/main/assets/...` by a relative path, so tests run from the core
     // folder as in the Android build. Windows-only tests work in temp folders and do not care.
     workingDir = core.asFile
     // For tests that read the Windows project's own files.
     systemProperty("tvslim.project", layout.projectDirectory.asFile.absolutePath)
     // Opt-in: screenshots on a real TV, -Phardware=192.168.2.135
     providers.gradleProperty("hardware").orNull?.let { systemProperty("tvslim.hardware", it) }
-    // Opt-in: logo and card sheet, no TV needed, -Pplanche=1
+    // Opt-in: logo and card sheet, no TV needed, -PlogoSheet=1
     providers.gradleProperty("logoSheet").orNull?.let { systemProperty("tvslim.logoSheet", it) }
     // Opt-in, with -Phardware: installs a real APK, -Papk=path.apk
     providers.gradleProperty("apk").orNull?.let { systemProperty("tvslim.apk", it) }
@@ -120,7 +120,7 @@ tasks.named<Test>("jvmTest") {
     providers.gradleProperty("scrcpy").orNull?.let { systemProperty("tvslim.scrcpy", it) }
     // Opt-in, with -Phardware: updates the TV app from GitHub, -PtvApp=1
     providers.gradleProperty("tvApp").orNull?.let { systemProperty("tvslim.tvApp", it) }
-    // Opt-in: runs the real update relay, -PrelaisMsi=... -PrelaisExe=...
+    // Opt-in: runs the real update relay, -PrelayMsi=... -PrelayExe=...
     providers.gradleProperty("relayMsi").orNull?.let { systemProperty("tvslim.relay.msi", it) }
     providers.gradleProperty("relayExe").orNull?.let { systemProperty("tvslim.relay.exe", it) }
     providers.gradleProperty("relayPid").orNull?.let { systemProperty("tvslim.relay.pid", it) }

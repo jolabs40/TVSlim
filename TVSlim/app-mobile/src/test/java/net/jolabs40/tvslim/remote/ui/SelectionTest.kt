@@ -26,7 +26,7 @@ class SelectionTest {
     )
 
     private fun profile(vararg categories: String) =
-        Profile(id = "doux", name = "Doux", description = "", categories = categories.toList())
+        Profile(id = "gentle", name = "Gentle", description = "", categories = categories.toList())
 
     @Test
     fun `toggling checks then unchecks an active package`() {
@@ -41,11 +41,11 @@ class SelectionTest {
     @Test
     fun `an already disabled or missing package cannot be checked`() {
         val start = state(
-            "com.deja.eteint" to PackageState.DISABLED,
-            "com.pas.installe" to PackageState.ABSENT,
+            "com.already.disabled" to PackageState.DISABLED,
+            "com.not.installed" to PackageState.ABSENT,
         )
 
-        val after = start.withToggled("com.deja.eteint").withToggled("com.pas.installe")
+        val after = start.withToggled("com.already.disabled").withToggled("com.not.installed")
 
         assertTrue(after.selection.isEmpty())
     }

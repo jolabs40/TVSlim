@@ -22,12 +22,12 @@ public class GenerateSigningKey {
 
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 1) {
-            System.err.println("usage : java GenererCleSignature.java <fichier-cle-publique>");
+            System.err.println("usage: java GenerateSigningKey.java <public-key-file>");
             System.exit(2);
         }
         Path publicKey = Path.of(arguments[0]);
         if (Files.exists(publicKey)) {
-            System.err.println(publicKey + " existe déjà : rien n'a été généré.");
+            System.err.println(publicKey + " already exists: nothing was generated.");
             System.exit(2);
         }
 

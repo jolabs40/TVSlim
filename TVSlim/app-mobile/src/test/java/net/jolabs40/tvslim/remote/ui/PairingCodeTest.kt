@@ -38,7 +38,7 @@ class PairingCodeTest {
             "8.8.8.8", // public, perfectly valid
             "172.15.0.1", // just below the private range
             "172.32.0.1", // just above it
-            "exemple.invalide", // a hostname: the TV never advertises one
+            "example.invalid", // a hostname: the TV never advertises one
             "192.168.2", // truncated
             "192.168.2.135.7", // too many octets
             "999.1.1.1", // out of range
@@ -59,7 +59,7 @@ class PairingCodeTest {
 
     @Test
     fun `a host outside the local network yields no address`() {
-        assertNull(readPairingCode("exemple.invalide"))
+        assertNull(readPairingCode("example.invalid"))
         assertNull(readPairingCode("8.8.8.8:5555"))
     }
 

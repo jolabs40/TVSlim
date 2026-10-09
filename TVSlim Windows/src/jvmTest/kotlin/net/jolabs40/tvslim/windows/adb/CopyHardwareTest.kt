@@ -29,9 +29,9 @@ import kotlin.random.Random
 
 /**
  * Copy to PC and delete on a real TV, through the app's ADB client and the shared core. Opt-in because it writes
- * and deletes, only in a `tvslim-copied-...` folder under Download and in `/data/local/tmp`:
+ * and deletes, only in a `tvslim-copy-...` folder under Download and in `/data/local/tmp`:
  *
- *     ./gradlew jvmTest --tests "*CopieMaterielTest*" '-Pmateriel=192.168.2.135' -Pdepot=1 --rerun
+ *     ./gradlew jvmTest --tests "*CopyHardwareTest*" '-Phardware=192.168.2.135' -Pupload=1 --rerun
  *
  * The whole-storage guard is only exercised read-only, or with `echo` in place of `rm`: a bug would wipe the TV's
  * storage.
@@ -43,23 +43,23 @@ class CopyHardwareTest {
     @Test
     fun `copy to PC, stop, delete, and the guard holds`() = runBlocking<Unit> {
         assumeTrue(
-            "-Pmateriel=<adresse> -Pdepot=1 pour écrire et effacer sur un vrai téléviseur",
+            "-Phardware=<address> -Pupload=1 to write and delete on a real TV",
             host != null && System.getProperty("tvslim.upload") != null,
         )
         val client = AdbClient(AdbKeyStore(Locations.windows().keys))
-        assertTrue("Connexion à $host : ${client.connection.value}", client.connect(host!!))
+        assertTrue("Connection to $host: ${client.connection.value}", client.connect(host!!))
         val browser = FileBrowser(client, client, client)
-        val name = "tvslim-copie-${System.currentTimeMillis()}"
+        val name = "tvslim-copy-${System.currentTimeMillis()}"
         val downloads = "/sdcard/Download"
         val trial = "$downloads/$name"
         val tempDir = "/data/local/tmp/$name"
 
-        val local = Files.createTempDirectory("tvslim-copie").toFile()
+        val local = Files.createTempDirectory("tvslim-copy").toFile()
         val source = File(local, "source/$name").apply { mkdirs() }
-        File(source, "a.txt").writeText("bonjour")
-        val big = File(source, "sous/b.bin").apply { parentFile.mkdirs(); writeBytes(Random(7).nextBytes(5_000_000)) }
-        File(source, "vide").mkdirs()
-        val huge = File(local, "enorme.bin").apply { writeBytes(Random(3).nextBytes(60_000_000)) }
+        File(source, "a.txt").writeText("hello")
+        val big = File(source, "sub/b.bin").apply { parentFile.mkdirs(); writeBytes(Random(7).nextBytes(5_000_000)) }
+        File(source, "empty").mkdirs()
+        val huge = File(local, "huge.bin").apply { writeBytes(Random(3).nextBytes(60_000_000)) }
         val pc = File(local, "pc").apply { mkdirs() }
 
         try {
@@ -72,53 +72,53 @@ class CopyHardwareTest {
             // 1. The whole folder, including a subfolder and an empty folder, under names Windows accepts.
             val folder = entry(browser, downloads, name)
             val plan = ready(browser.prepareDownload(downloads, folder, DiskTarget(pc), name))
-            println("Plan : ${plan.files.size} fichiers, ${plan.size} octets, dossiers ${plan.folders}")
+            println("Plan: ${plan.files.size} files, ${plan.size} bytes, folders ${plan.folders}")
             assertEquals(3, plan.files.size)
-            assertTrue(plan.folders.containsAll(listOf(name, "$name/sous", "$name/vide")))
+            assertTrue(plan.folders.containsAll(listOf(name, "$name/sub", "$name/empty")))
             assertFalse(plan.alreadyExists)
 
             val start = System.currentTimeMillis()
             val copied = browser.download(plan)
-            println("Copie en ${System.currentTimeMillis() - start} ms : $copied")
+            println("Copied in ${System.currentTimeMillis() - start} ms: $copied")
             assertTrue(copied.toString(), copied.complete)
             val arrived = File(pc, name)
-            assertEquals("bonjour", File(arrived, "a.txt").readText())
-            assertEquals(fingerprint(big), fingerprint(File(arrived, "sous/b.bin")))
-            assertEquals(fingerprint(huge), fingerprint(File(arrived, "enorme.bin")))
-            assertTrue(File(arrived, "vide").isDirectory)
+            assertEquals("hello", File(arrived, "a.txt").readText())
+            assertEquals(fingerprint(big), fingerprint(File(arrived, "sub/b.bin")))
+            assertEquals(fingerprint(huge), fingerprint(File(arrived, "huge.bin")))
+            assertTrue(File(arrived, "empty").isDirectory)
             val tvDate = (browser.listFolder(trial) as FolderRead.Read).entries.single { it.name == "a.txt" }.date
-            assertEquals("La date du téléviseur, à la seconde", tvDate / 1000, File(arrived, "a.txt").lastModified() / 1000)
-            assertTrue("Aucun fichier provisoire", arrived.walk().none { it.name.endsWith(DiskTarget.TEMPORARY_SUFFIX) })
+            assertEquals("The TV's date, to the second", tvDate / 1000, File(arrived, "a.txt").lastModified() / 1000)
+            assertTrue("No temporary file", arrived.walk().none { it.name.endsWith(DiskTarget.TEMPORARY_SUFFIX) })
 
             // 1b. Names Android allows and Windows rejects. Shared storage rejects them too ("Operation not
             // permitted" for a `:`), so they are created in /data/local/tmp.
-            val names = "$tempDir-noms"
+            val names = "$tempDir-names"
             val creation = client.execute(
                 "mkdir ${quote(names)} && printf apostrophe > ${quote("$names/l'été 12:30.txt")} && printf nul > ${quote("$names/NUL.txt")}",
             )
             assertTrue(creation.toString(), creation.succeeded)
-            val namesFolder = entry(browser, "/data/local/tmp", "$name-noms")
-            val namesPlan = ready(browser.prepareDownload("/data/local/tmp", namesFolder, DiskTarget(pc), "noms"))
+            val namesFolder = entry(browser, "/data/local/tmp", "$name-names")
+            val namesPlan = ready(browser.prepareDownload("/data/local/tmp", namesFolder, DiskTarget(pc), "names"))
             assertTrue(browser.download(namesPlan).complete)
-            assertEquals("apostrophe", File(pc, "noms/l'été 12_30.txt").readText())
-            assertEquals("nul", File(pc, "noms/_NUL.txt").readText())
+            assertEquals("apostrophe", File(pc, "names/l'été 12_30.txt").readText())
+            assertEquals("nul", File(pc, "names/_NUL.txt").readText())
 
             // 2. Stop halfway through a large file: nothing lands, the previous copy stays, the session still works.
-            val bigRemote = entry(browser, trial, "enorme.bin")
-            val bigPlan = ready(browser.prepareDownload(trial, bigRemote, DiskTarget(arrived), "enorme.bin"))
+            val bigRemote = entry(browser, trial, "huge.bin")
+            val bigPlan = ready(browser.prepareDownload(trial, bigRemote, DiskTarget(arrived), "huge.bin"))
             var cancelled = false
             val stopped = browser.download(bigPlan, cancelled = { cancelled }) { if (it.sent > 5_000_000) cancelled = true }
-            println("Arrêtée : $stopped")
+            println("Stopped: $stopped")
             assertTrue(stopped.cancelled)
-            assertEquals("Le fichier précédent est intact", fingerprint(huge), fingerprint(File(arrived, "enorme.bin")))
+            assertEquals("The previous file is intact", fingerprint(huge), fingerprint(File(arrived, "huge.bin")))
             assertTrue(arrived.walk().none { it.name.endsWith(DiskTarget.TEMPORARY_SUFFIX) })
             assertEquals(ConnectionState.CONNECTED, client.connection.value.state)
-            assertEquals("encore", client.execute("echo encore").output)
+            assertEquals("again", client.execute("echo again").output)
 
             // 3. A missing file: the TV's error comes back as is, and the session survives.
-            val ghost = RemoteEntry("fantome.bin", EntryKind.FILE, 1, 0L)
+            val ghost = RemoteEntry("ghost.bin", EntryKind.FILE, 1, 0L)
             val absent = browser.download(ready(browser.prepareDownload(trial, ghost, DiskTarget(pc), "f.bin")))
-            println("Fichier absent : ${absent.failures}")
+            println("Missing file: ${absent.failures}")
             assertEquals(1, absent.failures.size)
             assertFalse(absent.interrupted)
             assertFalse(File(pc, "f.bin").exists())
@@ -138,13 +138,13 @@ class CopyHardwareTest {
             }
             // The delete command carries the same guard, exercised with echo in place of rm.
             val guardTrial = FolderInventory.deletionCommand("/storage/emulated/0", DeletionKind.FOLDER)
-                .replace("; rm -rf ", "; echo PASSE ")
+                .replace("; rm -rf ", "; echo PASSED ")
             val guard = client.execute(guardTrial)
-            assertEquals("Garde : $guard", 5, guard.code)
-            assertFalse(guard.output.contains("PASSE"))
+            assertEquals("Guard: $guard", 5, guard.code)
+            assertFalse(guard.output.contains("PASSED"))
             // An ordinary folder passes, with its contents.
             val ordinary = browser.prepareDeletion(downloads, folder) as DeletionReview.Ready
-            println("Suppression du dossier d'essai : ${ordinary.plan}")
+            println("Deleting the test folder: ${ordinary.plan}")
             assertEquals(DeletionPlan(trial, DeletionKind.FOLDER, 3, 2, ordinary.plan.size), ordinary.plan)
 
             // 5. A file is deleted; a symlink is deleted without its target.
@@ -152,16 +152,16 @@ class CopyHardwareTest {
             assertEquals(DeletionOutcome.DELETED, browser.delete(file.plan).outcome)
             assertTrue((browser.listFolder(trial) as FolderRead.Read).entries.none { it.name == "a.txt" })
 
-            val target = "$tempDir-cible"
-            val link = "$tempDir-lien"
+            val target = "$tempDir-target"
+            val link = "$tempDir-link"
             client.execute("mkdir ${quote(target)} && touch ${quote("$target/x")} && ln -s ${quote(target)} ${quote(link)}")
-            val linkEntry = entry(browser, "/data/local/tmp", "$name-lien")
-            assertTrue("Un lien vers un dossier", linkEntry.link && linkEntry.folder)
+            val linkEntry = entry(browser, "/data/local/tmp", "$name-link")
+            assertTrue("A link to a folder", linkEntry.link && linkEntry.folder)
             val linkPlan = browser.prepareDeletion("/data/local/tmp", linkEntry) as DeletionReview.Ready
             assertEquals(DeletionKind.LINK, linkPlan.plan.kind)
             assertEquals(DeletionOutcome.DELETED, browser.delete(linkPlan.plan).outcome)
             val leftover = client.execute("[ ! -L ${quote(link)} ] && [ -f ${quote("$target/x")} ] && echo intact")
-            assertEquals("Le lien est parti, sa cible et son contenu sont là", "intact", leftover.output)
+            assertEquals("The link is gone, its target and contents remain", "intact", leftover.output)
 
             // 6. The test folder itself, through the app's code path.
             assertEquals(DeletionOutcome.DELETED, browser.delete(ordinary.plan).outcome)
@@ -169,11 +169,11 @@ class CopyHardwareTest {
 
             // 7. What the shell cannot delete: the TV's error as is. /proc can never be deleted.
             val rejection = browser.delete(DeletionPlan("/proc/version", DeletionKind.FILE))
-            println("Effacer /proc/version : $rejection")
+            println("Delete /proc/version: $rejection")
             assertEquals(DeletionOutcome.FAILED, rejection.outcome)
         } finally {
-            val leftovers = listOf(trial, "$tempDir-cible", "$tempDir-lien", "$tempDir-noms").joinToString(" ") { quote(it) }
-            println("Nettoyage : ${client.execute("rm -rf $leftovers")}")
+            val leftovers = listOf(trial, "$tempDir-target", "$tempDir-link", "$tempDir-names").joinToString(" ") { quote(it) }
+            println("Cleanup: ${client.execute("rm -rf $leftovers")}")
             client.disconnect()
             local.deleteRecursively()
         }

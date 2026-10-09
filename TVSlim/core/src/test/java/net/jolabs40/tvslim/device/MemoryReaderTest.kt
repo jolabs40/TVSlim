@@ -77,10 +77,10 @@ class MemoryReaderTest {
         fun processes(name: String) = memory.processes.first { it.name == name }
 
         assertTrue(processes("com.spocky.projengmenu").isApp)
-        assertFalse("system n'est pas une application", processes("system").isApp)
-        assertFalse("surfaceflinger non plus", processes("surfaceflinger").isApp)
+        assertFalse("system is not an app", processes("system").isApp)
+        assertFalse("nor is surfaceflinger", processes("surfaceflinger").isApp)
         assertFalse(
-            "un service du fabricant non plus",
+            "nor is a vendor service",
             processes("vendor.nvidia.hardware.graphics.composer@2.0-service").isApp,
         )
     }

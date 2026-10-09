@@ -114,7 +114,7 @@ class AdbClient(
                 }
 
                 is Opening.Failed -> {
-                    AppLog.warn(TAG, "Connexion impossible" + detail("$host:$port"), outcome.error)
+                    AppLog.warn(TAG, "Connection failed" + detail("$host:$port"), outcome.error)
                     _connection.value = if (quiet) {
                         ConnectionUi(ConnectionState.DISCONNECTED, host, port)
                     } else {
@@ -217,7 +217,7 @@ class AdbClient(
                         }
                     },
                     onFailure = { error ->
-                        AppLog.warn(TAG, "Installation interrompue" + detail(apk.name), error)
+                        AppLog.warn(TAG, "Installation interrupted" + detail(apk.name), error)
                         closeSession()
                         val loss = Outcome.Broken(
                             reason = if (error is TimedOut) {
@@ -269,7 +269,7 @@ class AdbClient(
                         if (error is UploadCancelled) {
                             ShellResult.unavailable(REASON_CANCELLED)
                         } else {
-                            AppLog.warn(TAG, "Envoi interrompu" + detail(path), error)
+                            AppLog.warn(TAG, "Upload interrupted" + detail(path), error)
                             closeSession()
                             val loss = Outcome.Broken(
                                 reason = if (error is ProlongedSilence) {
@@ -322,7 +322,7 @@ class AdbClient(
                         is ReceiveCancelled -> ShellResult.unavailable(REASON_COPY_CANCELLED)
                         is LocalWriteFailed -> ShellResult(code = 1, output = error.message.orEmpty())
                         else -> {
-                            AppLog.warn(TAG, "Copie interrompue" + detail(path), error)
+                            AppLog.warn(TAG, "Copy interrupted" + detail(path), error)
                             closeSession()
                             val loss = Outcome.Broken(
                                 reason = if (error is ProlongedSilence) {
@@ -369,7 +369,7 @@ class AdbClient(
             }.fold(
                 onSuccess = { DirectResponse(code = code, output = textOf(incoming)) },
                 onFailure = { error ->
-                    AppLog.warn(TAG, "Commande libre interrompue" + detail(command), error)
+                    AppLog.warn(TAG, "Free command interrupted" + detail(command), error)
                     closeSession()
                     if (error is TimedOut) {
                         DirectResponse(null, textOf(incoming), Interruption.TIMEOUT, "délai dépassé")
@@ -411,7 +411,7 @@ class AdbClient(
             }.fold(
                 onSuccess = { BinaryOutput(code, output.toByteArray(), textOf(errors)) },
                 onFailure = { error ->
-                    AppLog.warn(TAG, "Lecture binaire interrompue" + detail(command), error)
+                    AppLog.warn(TAG, "Binary read interrupted" + detail(command), error)
                     closeSession()
                     if (error is TimedOut) {
                         BinaryOutput(null, ByteArray(0), reason = REASON_TIMEOUT)
@@ -477,7 +477,7 @@ class AdbClient(
                 val timedOut = error is TimedOut
                 AppLog.warn(
                     TAG,
-                    (if (timedOut) "Délai dépassé" else "Commande interrompue") + detail(command),
+                    (if (timedOut) "Timed out" else "Command interrupted") + detail(command),
                     error,
                 )
                 closeSession()
@@ -505,7 +505,7 @@ class AdbClient(
         val now = System.currentTimeMillis()
         if (now - lastRetryFailure < REST_AFTER_FAILURE_MS) return false
 
-        AppLog.info(TAG, "Session rompue, reprise" + detail("$host:$port"))
+        AppLog.info(TAG, "Session lost, reconnecting" + detail("$host:$port"))
         _connection.value = _connection.value.copy(state = ConnectionState.CONNECTION)
         return when (val outcome = open(host, port, RETRY_DELAY_MS)) {
             is Opening.Succeeded -> {

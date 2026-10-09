@@ -54,7 +54,7 @@ class TvReleaseChoiceTest {
         val elsewhere = response(release("android-v1.1.0", listOf("TVSlim-TV-1.1.0.apk")) { "https://example.com/$it" })
         val detour = response(
             release("android-v1.1.0", listOf("TVSlim-TV-1.1.0.apk")) {
-                "https://github.com/jolabs40/TVSlim/releases/download/../../autre/$it"
+                "https://github.com/jolabs40/TVSlim/releases/download/../../other/$it"
             },
         )
         val cleartext = response(release("android-v1.1.0", listOf("TVSlim-TV-1.1.0.apk")) { "http://github.com/jolabs40/TVSlim/releases/download/x/$it" })
@@ -67,7 +67,7 @@ class TvReleaseChoiceTest {
     fun `an unreadable or empty response yields nothing`() {
         assertNull(TvReleaseChoice.choose("{\"message\":\"API rate limit exceeded\"}"))
         assertNull(TvReleaseChoice.choose("[]"))
-        assertNull(TvReleaseChoice.choose("pas du JSON"))
+        assertNull(TvReleaseChoice.choose("not JSON"))
     }
 
     @Test

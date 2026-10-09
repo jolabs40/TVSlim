@@ -75,7 +75,7 @@ class DiskTarget(private val root: File) : LocalTarget {
     }
 
     companion object {
-        const val TEMPORARY_SUFFIX = ".tvslim-partiel"
+        const val TEMPORARY_SUFFIX = ".tvslim-partial"
 
         private const val BUFFER_SIZE = 256 * 1024
 

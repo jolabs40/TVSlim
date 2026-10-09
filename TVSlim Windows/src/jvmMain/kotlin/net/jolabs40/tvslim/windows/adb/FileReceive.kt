@@ -7,7 +7,7 @@ import java.io.IOException
 import java.util.concurrent.atomic.AtomicLong
 
 /** Thrown by the sink when the user cancels; dadb aborts the transfer and closes its stream. */
-internal class ReceiveCancelled : IOException("copie annulée")
+internal class ReceiveCancelled : IOException("copy cancelled")
 
 /** The local disk refused the write (full, removed, read-only); the connection itself is fine. */
 internal class LocalWriteFailed(cause: IOException) : IOException(cause.message ?: cause.javaClass.simpleName, cause)

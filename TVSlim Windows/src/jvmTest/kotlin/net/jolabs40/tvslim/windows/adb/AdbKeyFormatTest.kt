@@ -24,7 +24,7 @@ class AdbKeyFormatTest {
         AdbKeyPair.generate(privateKey, publicKey)
 
         val der = derFromPem(privateKey.readText())
-        assertTrue("Le DER ne doit pas être vide", der.isNotEmpty())
+        assertTrue("The DER must not be empty", der.isNotEmpty())
 
         val key = privateKeyFromDer(der)
         assertEquals("RSA", key.algorithm)

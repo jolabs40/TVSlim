@@ -23,16 +23,16 @@ class LogosTest {
 
         val withoutLogo = ids.filterNot { it in LOGOS_LAUNCHERS }
 
-        assertTrue("Launchers sans logo : $withoutLogo", withoutLogo.isEmpty())
-        assertTrue("Le catalogue doit nommer plusieurs launchers", ids.size > 1)
+        assertTrue("Launchers without a logo: $withoutLogo", withoutLogo.isEmpty())
+        assertTrue("The catalogue must name several launchers", ids.size > 1)
     }
 
     @Test
     fun `every manufacturer flagged with a logo has one, and only those`() {
         val withoutLogo = Manufacturer.entries.filter { it.hasLogo && it !in MANUFACTURER_LOGOS }
 
-        assertTrue("Fabricants sans logo : $withoutLogo", withoutLogo.isEmpty())
-        assertTrue("Logo embarqué pour une marque annoncée sans logo", MANUFACTURER_LOGOS.keys.all { it.hasLogo })
+        assertTrue("Manufacturers without a logo: $withoutLogo", withoutLogo.isEmpty())
+        assertTrue("Logo bundled for a brand declared without one", MANUFACTURER_LOGOS.keys.all { it.hasLogo })
     }
 
     @Test

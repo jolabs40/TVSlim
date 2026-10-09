@@ -84,7 +84,7 @@ class WindowsPreferences(private val file: File) : SupportStore {
         return runCatching {
             json.decodeFromString(PreferencesData.serializer(), file.readText(Charsets.UTF_8))
         }.getOrElse { error ->
-            AppLog.warn(TAG, "Préférences illisibles, valeurs par défaut", error)
+            AppLog.warn(TAG, "Preferences unreadable, using defaults", error)
             PreferencesData()
         }
     }
@@ -100,7 +100,7 @@ class WindowsPreferences(private val file: File) : SupportStore {
                 StandardCopyOption.REPLACE_EXISTING,
                 StandardCopyOption.ATOMIC_MOVE,
             )
-        }.onFailure { AppLog.warn(TAG, "Préférences non enregistrées", it) }
+        }.onFailure { AppLog.warn(TAG, "Preferences not saved", it) }
     }
 
     private companion object {

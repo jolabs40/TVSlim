@@ -23,7 +23,7 @@ class DriftTest {
 
     private fun entry(packageName: String, order: Int = 100, home: Boolean = false) = PackageEntry(
         packageName = packageName,
-        name = "Nom de $packageName",
+        name = "Name of $packageName",
         description = "",
         category = "test",
         order = order,
@@ -37,7 +37,7 @@ class DriftTest {
             entry(SETUPWRAITH, order = 1, home = true),
             entry(LAUNCHERX, order = 2, home = true),
         ),
-        protectedPackages = listOf(ProtectedPackage(PROTECTED, "Boucle de redémarrage.")),
+        protectedPackages = listOf(ProtectedPackage(PROTECTED, "Boot loop.")),
         launchers = listOf(
             RecommendedLauncher(packageName = STARTLIGHT, name = "Startlight Launcher", description = "", id = "startlight"),
         ),

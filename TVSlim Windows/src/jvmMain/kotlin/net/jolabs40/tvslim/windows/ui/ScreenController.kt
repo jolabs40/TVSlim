@@ -246,7 +246,7 @@ class ScreenController(
             runCatching {
                 val folder = File(videosFolder(), SUBFOLDER).apply { mkdirs() }
                 val file = File(folder, ScreenCapture.fileName(info, startedAt, "mp4"))
-                val partial = File(folder, file.name + ".partiel")
+                val partial = File(folder, file.name + ".partial")
                 var percentStep = -1
                 val result = partial.outputStream().buffered().use { stream ->
                     recording.download(stream, size, onReceived = { received ->
@@ -270,7 +270,7 @@ class ScreenController(
             recording.clean()
             if (!_state.value.closing) _state.update { it.copy(video = file) }
         }.onFailure { error ->
-            AppLog.warn(TAG, "Vidéo non copiée", error)
+            AppLog.warn(TAG, "Video not copied", error)
             // The video stays on the TV; the next recording replaces it.
             show(text(Res.string.record_copy_failed, UiMessage.Raw(error.message.orEmpty()), TvRecording.VIDEO))
         }
@@ -314,7 +314,7 @@ class ScreenController(
                 _state.update { it.copy(scrcpy = ScrcpyPhase.Inactive, offeredDownload = null) }
                 start(exe, title)
             }.onFailure { error ->
-                AppLog.warn(TAG, "scrcpy non téléchargé", error)
+                AppLog.warn(TAG, "scrcpy not downloaded", error)
                 _state.update { it.copy(scrcpy = ScrcpyPhase.Inactive, offeredDownload = null) }
                 show(
                     if (error is UnexpectedFingerprint) {
@@ -332,7 +332,7 @@ class ScreenController(
         val launched = withContext(Dispatchers.IO) {
             runCatching { ScrcpySession.start(exe, ScrcpyArguments.mirror(targetTv.host, targetTv.port, title)) }
         }.getOrElse { error ->
-            AppLog.warn(TAG, "scrcpy non lancé", error)
+            AppLog.warn(TAG, "scrcpy not started", error)
             return show(text(Res.string.scrcpy_failed, UiMessage.Raw(error.message.orEmpty())))
         }
         session = launched
@@ -381,7 +381,7 @@ class ScreenController(
     private fun show(message: UiMessage) = _state.update { it.copy(message = message) }
 
     private companion object {
-        const val TAG = "Ecran"
+        const val TAG = "Screen"
         const val SUBFOLDER = "TV Slim"
         const val WATCH_POLL_MS = 2_000L
     }

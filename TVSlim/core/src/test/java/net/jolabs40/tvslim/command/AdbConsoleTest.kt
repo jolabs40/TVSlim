@@ -52,8 +52,8 @@ class AdbConsoleTest {
         )
         // Quotes around only part of the command stay, for the TV shell to handle.
         assertEquals(
-            ready("settings put global nom 'a b'"),
-            AdbConsole.read("adb shell settings put global nom 'a b'"),
+            ready("settings put global name 'a b'"),
+            AdbConsole.read("adb shell settings put global name 'a b'"),
         )
     }
 
@@ -89,14 +89,14 @@ class AdbConsoleTest {
 
     @Test
     fun `a command cut off keeps the output written so far and is not replayed`() = runTest {
-        val tv = FakeTv { DirectResponse(null, "début\n", Interruption.TIMEOUT, "délai dépassé") }
+        val tv = FakeTv { DirectResponse(null, "partial\n", Interruption.TIMEOUT, "timed out") }
         val logbook = journal()
 
         val exchange = AdbConsole(tv) { logbook }.send("logcat")
 
         assertEquals(1, tv.commands.size)
         assertFalse(exchange.succeeded)
-        assertEquals("début\n", exchange.output)
+        assertEquals("partial\n", exchange.output)
         with(logbook.actions.value.single()) {
             assertFalse(succeeded)
             assertEquals("Coupée par le délai maximal.", message)

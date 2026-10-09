@@ -21,7 +21,7 @@ import java.util.HexFormat;
  * the installer.
  *
  * The signed message binds the version to the file hash: "TVSlim-Windows\n&lt;version&gt;\n&lt;sha256&gt;".
- * The app verifies exactly the same message (src/jvmMain/.../maj/VerificationSignature.kt), and a test
+ * The app verifies exactly the same message (src/jvmMain/.../update/SignatureVerification.kt), and a test
  * checks that both agree.
  *
  * No dependencies: runs as is with JDK 17 or later.
@@ -30,19 +30,19 @@ public class SignUpdate {
 
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
-            System.err.println("usage : java SignerMiseAJour.java <installateur.msi> <version>");
+            System.err.println("usage: java SignUpdate.java <installer.msi> <version>");
             System.exit(2);
         }
         String key = System.getenv("TVSLIM_CLE_SIGNATURE");
         if (key == null || key.isBlank()) {
-            System.err.println("TVSLIM_CLE_SIGNATURE est absente de l'environnement.");
+            System.err.println("TVSLIM_CLE_SIGNATURE is not set in the environment.");
             System.exit(2);
         }
 
         Path installer = Path.of(arguments[0]);
         String version = arguments[1];
         if (!version.matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,5}")) {
-            System.err.println("Version invalide : " + version);
+            System.err.println("Invalid version: " + version);
             System.exit(2);
         }
 

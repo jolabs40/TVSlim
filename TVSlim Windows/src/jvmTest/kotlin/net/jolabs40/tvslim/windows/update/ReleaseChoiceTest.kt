@@ -95,16 +95,16 @@ class ReleaseChoiceTest {
         val hijacked = release(
             tag,
             files = listOf(
-                PublishedFile("TVSlim-Windows-1.2.0.msi", "https://exemple.invalide/TVSlim-Windows-1.2.0.msi"),
+                PublishedFile("TVSlim-Windows-1.2.0.msi", "https://example.invalid/TVSlim-Windows-1.2.0.msi"),
                 file("TVSlim-Windows-1.2.0.msi.sig", tag),
             ),
         )
 
         assertNull(ReleaseChoice.choose(listOf(hijacked), Version(1, 0, 0), repository))
-        assertFalse(ReleaseChoice.isRepositoryUrl("https://github.com/autre/TVSlim/releases/download/x/a.msi", repository))
+        assertFalse(ReleaseChoice.isRepositoryUrl("https://github.com/other/TVSlim/releases/download/x/a.msi", repository))
         assertFalse(
             ReleaseChoice.isRepositoryUrl(
-                "https://github.com/jolabs40/TVSlim/releases/download/../../autre/depot/a.msi",
+                "https://github.com/jolabs40/TVSlim/releases/download/../../other/repo/a.msi",
                 repository,
             ),
         )
@@ -118,7 +118,7 @@ class ReleaseChoiceTest {
             [{"url":"https://api.github.com/repos/jolabs40/TVSlim/releases/1","tag_name":"windows-v1.0.1",
               "name":"TV Slim 1.0.1","draft":false,"prerelease":false,
               "html_url":"https://github.com/jolabs40/TVSlim/releases/tag/windows-v1.0.1",
-              "body":"Correctifs","author":{"login":"jolabs40"},
+              "body":"Fixes","author":{"login":"jolabs40"},
               "assets":[
                 {"name":"TVSlim-Windows-1.0.1.msi","size":84000000,"content_type":"application/x-msi",
                  "browser_download_url":"https://github.com/jolabs40/TVSlim/releases/download/windows-v1.0.1/TVSlim-Windows-1.0.1.msi"},
@@ -132,7 +132,7 @@ class ReleaseChoiceTest {
         val update = ReleaseChoice.choose(releases, Version(1, 0, 0), repository)
 
         assertEquals(Version(1, 0, 1), update?.version)
-        assertEquals("Correctifs", update?.notes)
+        assertEquals("Fixes", update?.notes)
         assertNull(update?.portable)
         assertEquals("https://github.com/jolabs40/TVSlim/releases/tag/windows-v1.0.1", update?.page)
     }

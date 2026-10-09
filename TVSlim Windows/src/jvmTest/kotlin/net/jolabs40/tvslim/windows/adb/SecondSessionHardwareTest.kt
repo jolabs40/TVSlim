@@ -15,7 +15,7 @@ import org.junit.Test
  * The preload's second session on a real TV: `dumpsys meminfo` runs on it while the main session keeps answering;
  * closing it interrupts a running command, and it does not reopen by itself. Read-only:
  *
- *     ./gradlew jvmTest --tests "*SecondeSessionMaterielTest*" '-Pmateriel=192.168.2.135' --rerun
+ *     ./gradlew jvmTest --tests "*SecondSessionHardwareTest*" '-Phardware=192.168.2.135' --rerun
  */
 class SecondSessionHardwareTest {
 
@@ -23,12 +23,12 @@ class SecondSessionHardwareTest {
 
     @Test
     fun `the second session reads while the main one answers, and stays closed once closed`() = runBlocking<Unit> {
-        assumeTrue("-Pmateriel=<adresse> pour essayer sur un vrai téléviseur", host != null)
+        assumeTrue("-Phardware=<address> to try on a real TV", host != null)
         val client = AdbClient(AdbKeyStore(Locations.windows().keys))
-        assertTrue("Connexion à $host : ${client.connection.value}", client.connect(host!!))
+        assertTrue("Connection to $host: ${client.connection.value}", client.connect(host!!))
         try {
             val second = client.openSecond()
-            assertNotNull("La seconde session doit s'ouvrir sans nouvelle autorisation", second)
+            assertNotNull("The second session must open without a new authorization", second)
             second!!
 
             // A heavy read on the second session, round trips on the main one meanwhile.
@@ -43,23 +43,23 @@ class SecondSessionHardwareTest {
             }
             val meminfo = heavy.await()
             println(
-                "dumpsys meminfo : ${System.currentTimeMillis() - start} ms, ${meminfo.output.length} caractères ; " +
-                    "principale : ${latencies.size} réponses, au plus ${latencies.maxOrNull()} ms",
+                "dumpsys meminfo: ${System.currentTimeMillis() - start} ms, ${meminfo.output.length} characters; " +
+                    "main: ${latencies.size} answers, at most ${latencies.maxOrNull()} ms",
             )
             assertEquals(0, meminfo.code)
             assertTrue(latencies.size >= 3)
-            assertTrue("La principale ne doit pas attendre la seconde : $latencies", latencies.max() < 1_500)
+            assertTrue("The main session must not wait for the second: $latencies", latencies.max() < 1_500)
 
             // Closed during a command: the command returns at once and the session does not reopen.
-            val longRunning = async(Dispatchers.IO) { second.execute("sleep 20; echo fin") }
+            val longRunning = async(Dispatchers.IO) { second.execute("sleep 20; echo end") }
             delay(500)
             val closing = System.currentTimeMillis()
             second.disconnect()
             val cut = longRunning.await()
-            println("Coupée en ${System.currentTimeMillis() - closing} ms : $cut")
+            println("Cut after ${System.currentTimeMillis() - closing} ms: $cut")
             assertTrue(cut.toString(), cut.code != 0)
             assertTrue(System.currentTimeMillis() - closing < 3_000)
-            assertTrue("Fermée, elle ne se rouvre pas", second.execute("echo encore").code != 0)
+            assertTrue("Once closed, it does not reopen", second.execute("echo again").code != 0)
 
             assertEquals("ok", client.execute("echo ok").output)
         } finally {

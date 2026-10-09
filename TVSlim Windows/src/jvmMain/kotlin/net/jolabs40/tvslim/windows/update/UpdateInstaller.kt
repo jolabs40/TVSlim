@@ -46,7 +46,7 @@ class UpdateInstaller(
     private val publicKeyBase64: String,
 ) {
 
-    class InvalidSignature : IOException("signature invalide")
+    class InvalidSignature : IOException("invalid signature")
 
     /**
      * Downloads the installer and its signature, then verifies it. A file with a bad signature is deleted at once
@@ -80,16 +80,16 @@ class UpdateInstaller(
         if (launchRelay(processesToWaitFor(), msi, executable)) return
         // Fallback: Explorer opens the installer outside the job. The install then shows its normal UI and
         // TV Slim is not restarted automatically.
-        AppLog.warn(TAG, "Relais WMI indisponible : installation confiée à l'Explorateur")
+        AppLog.warn(TAG, "WMI relay unavailable, handing the install to Explorer")
         runCatching { ProcessBuilder("explorer.exe", msi.absolutePath).start() }
-            .onFailure { AppLog.warn(TAG, "Explorateur indisponible", it) }
+            .onFailure { AppLog.warn(TAG, "Explorer unavailable", it) }
     }
 
     companion object {
         /** A TV Slim installer is under 100 MB; anything much larger is wrong. */
         const val MAXIMUM_SIZE = 400L * 1024 * 1024
 
-        private const val TAG = "MiseAJour"
+        private const val TAG = "Update"
         private const val LAUNCH_TIMEOUT_S = 30L
 
         /**
@@ -115,10 +115,10 @@ class UpdateInstaller(
             val finished = launch.waitFor(LAUNCH_TIMEOUT_S, TimeUnit.SECONDS)
             if (!finished) launch.destroyForcibly()
             val accepted = finished && launch.exitValue() == 0
-            if (!accepted) AppLog.warn(TAG, "WMI a refusé le relais (voir ${journal.name})")
+            if (!accepted) AppLog.warn(TAG, "WMI refused the relay (see ${journal.name})")
             accepted
         }.getOrElse { error ->
-            AppLog.warn(TAG, "Relais impossible à lancer", error)
+            AppLog.warn(TAG, "Relay could not be started", error)
             false
         }
 

@@ -36,9 +36,9 @@ class ActivationGardienReceiver : BroadcastReceiver() {
             try {
                 preferences.setGuardianEnabled(true)
                 // First snapshot right away, or the first system update would go unnoticed.
-                runCatching { drift.check() }.onFailure { Log.w(TAG, "Première photo manquée", it) }
+                runCatching { drift.check() }.onFailure { Log.w(TAG, "First snapshot failed", it) }
                 pendingResult.resultCode = GUARDIAN_ENABLED
-                Log.i(TAG, "Gardien activé à distance")
+                Log.i(TAG, "Boot guard enabled remotely")
             } finally {
                 pendingResult.finish()
             }
@@ -49,6 +49,6 @@ class ActivationGardienReceiver : BroadcastReceiver() {
         /** Must match `TvApp.ACTION_GUARDIAN` and `GUARDIAN_ENABLED` in the core. */
         const val ACTION = "net.jolabs40.tvslim.action.ACTIVER_GARDIEN"
         const val GUARDIAN_ENABLED = 1
-        private const val TAG = "TVSlim/Gardien"
+        private const val TAG = "TVSlim/Guard"
     }
 }

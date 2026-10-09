@@ -117,7 +117,7 @@ class AdbClient @Inject constructor(
                 }
 
                 is Opening.Failed -> {
-                    Log.w(TAG, "Connexion impossible" + detail("$host:$port"), outcome.error)
+                    Log.w(TAG, "Connection failed" + detail("$host:$port"), outcome.error)
                     _connection.value = if (quiet) {
                         ConnectionUi(ConnectionState.DISCONNECTED, host, port)
                     } else {
@@ -184,7 +184,7 @@ class AdbClient @Inject constructor(
             if (end - request > SLOW_THRESHOLD_MS) {
                 Log.w(
                     TAG,
-                    "Commande lente : ${end - request} ms, dont ${acquiredAt - request} ms d'attente du verrou, " +
+                    "Slow command: ${end - request} ms, including ${acquiredAt - request} ms waiting for the lock, " +
                         "code ${result.code}" + detail(command.take(80)),
                 )
             }
@@ -238,7 +238,7 @@ class AdbClient @Inject constructor(
                         }
                     },
                     onFailure = { error ->
-                        Log.w(TAG, "Installation interrompue" + detail(apk.name), error)
+                        Log.w(TAG, "Install interrupted" + detail(apk.name), error)
                         closeSession()
                         val loss = loss(error, timedOut = error is TimedOut)
                         reportLoss(loss)
@@ -283,7 +283,7 @@ class AdbClient @Inject constructor(
                         if (error is UploadCancelled) {
                             ShellResult.unavailable(context.getString(R.string.adb_send_cancelled))
                         } else {
-                            Log.w(TAG, "Envoi interrompu" + detail(path), error)
+                            Log.w(TAG, "Upload interrupted" + detail(path), error)
                             closeSession()
                             val loss = loss(error, timedOut = error is ProlongedSilence)
                             reportLoss(loss)
@@ -322,7 +322,7 @@ class AdbClient @Inject constructor(
             }.fold(
                 onSuccess = { DirectResponse(code = code, output = textOf(incoming)) },
                 onFailure = { error ->
-                    Log.w(TAG, "Commande libre interrompue" + detail(command), error)
+                    Log.w(TAG, "Free-form command interrupted" + detail(command), error)
                     closeSession()
                     if (error is TimedOut) {
                         DirectResponse(null, textOf(incoming), Interruption.TIMEOUT, timeoutReason())
@@ -361,7 +361,7 @@ class AdbClient @Inject constructor(
             }.fold(
                 onSuccess = { BinaryOutput(code, output.toByteArray(), textOf(errors)) },
                 onFailure = { error ->
-                    Log.w(TAG, "Lecture binaire interrompue" + detail(command), error)
+                    Log.w(TAG, "Binary read interrupted" + detail(command), error)
                     closeSession()
                     if (error is TimedOut) {
                         BinaryOutput(null, ByteArray(0), reason = timeoutReason())
@@ -424,7 +424,7 @@ class AdbClient @Inject constructor(
             },
             onFailure = { error ->
                 val timedOut = error is TimedOut
-                Log.w(TAG, (if (timedOut) "Délai dépassé" else "Commande interrompue") + detail(command), error)
+                Log.w(TAG, (if (timedOut) "Timed out" else "Command interrupted") + detail(command), error)
                 closeSession()
                 loss(error, timedOut)
             },
@@ -443,7 +443,7 @@ class AdbClient @Inject constructor(
         val now = System.currentTimeMillis()
         if (now - lastRetryFailure < REST_AFTER_FAILURE_MS) return false
 
-        Log.i(TAG, "Session rompue, reprise" + detail("$host:$port"))
+        Log.i(TAG, "Session dropped, reconnecting" + detail("$host:$port"))
         _connection.value = _connection.value.copy(state = ConnectionState.CONNECTION)
         return when (val outcome = open(host, port, RETRY_DELAY_MS)) {
             is Opening.Succeeded -> {
@@ -454,7 +454,7 @@ class AdbClient @Inject constructor(
             }
 
             is Opening.Failed -> {
-                Log.w(TAG, "Reprise impossible" + detail("$host:$port"), outcome.error)
+                Log.w(TAG, "Reconnect failed" + detail("$host:$port"), outcome.error)
                 lastRetryFailure = now
                 false
             }

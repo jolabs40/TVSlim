@@ -33,13 +33,13 @@ class ApkSignatureTest {
     @Test
     fun `a truncated or foreign file has no digest and does not throw`() {
         val complete = File(fixtures, "tv-cle-a.apk").readBytes()
-        val truncated = File.createTempFile("tronque", ".apk").apply {
+        val truncated = File.createTempFile("truncated", ".apk").apply {
             deleteOnExit()
             writeBytes(complete.copyOf(complete.size / 2))
         }
-        val text = File.createTempFile("texte", ".apk").apply {
+        val text = File.createTempFile("text", ".apk").apply {
             deleteOnExit()
-            writeText("Ce n'est pas un APK.")
+            writeText("This is not an APK.")
         }
         assertNull(ApkSignature.certificateFingerprint(truncated))
         assertNull(ApkSignature.certificateFingerprint(text))
@@ -53,12 +53,12 @@ class ApkSignatureTest {
     @Test
     fun `the local TV app release carries the expected digest`() {
         val release = File("../app-tv/build/outputs/apk/release/app-tv-release.apk")
-        assumeTrue("Pas de release signée en local", release.exists())
+        assumeTrue("No signed release built locally", release.exists())
         val expected = File("../gradle.properties").readLines()
             .first { it.startsWith("certificateFingerprint=") }.substringAfter('=').trim()
         val loaded = ApkSignature.certificateFingerprint(release)
         // A release built without the signing key is unsigned: nothing to compare.
-        assumeTrue("Release non signée", loaded != null)
+        assumeTrue("Release not signed", loaded != null)
         assertEquals(expected, loaded)
     }
 

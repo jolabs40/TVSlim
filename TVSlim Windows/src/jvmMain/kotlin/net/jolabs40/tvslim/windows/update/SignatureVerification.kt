@@ -43,7 +43,7 @@ object SignatureVerification {
         signatureBase64: String,
         publicKeyBase64: String,
     ): Boolean = runCatching {
-        require(publicKeyBase64.isNotBlank()) { "aucune clé publique embarquée" }
+        require(publicKeyBase64.isNotBlank()) { "no embedded public key" }
         val key = KeyFactory.getInstance("Ed25519")
             .generatePublic(X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyBase64.trim())))
         Signature.getInstance("Ed25519").run {

@@ -49,7 +49,7 @@ class DeviceApplicationsTest {
                 command.contains(" details ") -> ShellResult(
                     0,
                     "TVSLIM_AIDE 1\n" + command.substringAfter(" details ").split(' ').drop(1).joinToString("\n") { packageName ->
-                        if (packageName == "net.jolabs40.tvslim") "E\t$packageName\tNameNotFoundException" else "D\t$packageName\tNom de $packageName\t$iconBase64"
+                        if (packageName == "net.jolabs40.tvslim") "E\t$packageName\tNameNotFoundException" else "D\t$packageName\tName of $packageName\t$iconBase64"
                     },
                 )
                 command.startsWith("pm list packages -3 ") ->
@@ -94,7 +94,7 @@ class DeviceApplicationsTest {
         assertTrue(device.sent!!.contentEquals(byteArrayOf(1, 2, 3)))
         assertEquals(listOf(0 to 3, 3 to 3), steps)
         val youtube = result.applications.single { it.packageName == "com.google.android.youtube.tv" }
-        assertEquals("Nom de com.google.android.youtube.tv", youtube.name)
+        assertEquals("Name of com.google.android.youtube.tv", youtube.name)
         assertTrue(youtube.icon!!.contentEquals(icon))
         assertTrue(youtube.system)
         // A package the helper failed to read keeps its package name and has no icon.
@@ -188,7 +188,7 @@ class DeviceApplicationsTest {
     @Test
     fun `the bundled helper is in the core assets`() {
         val helper = File("src/main/assets/${ApplicationsReader.RESOURCE_PATH}")
-        assertTrue("${helper.absolutePath} : lancer ./gradlew :aide:copierDansLeNoyau", helper.isFile)
+        assertTrue("${helper.absolutePath}: run ./gradlew :aide:copierDansLeNoyau", helper.isFile)
         // An APK is a zip archive holding classes.dex.
         val bytes = helper.readBytes()
         assertEquals('P'.code.toByte(), bytes[0])

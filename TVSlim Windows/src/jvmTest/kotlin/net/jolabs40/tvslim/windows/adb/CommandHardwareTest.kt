@@ -13,7 +13,7 @@ import org.junit.Test
  * Free-form command on a real TV: one succeeds, one fails, one never ends and is cut by the timeout with its
  * output kept, then the session reopens by itself. Read-only. Opt-in, since the cut command takes 30 s:
  *
- *     ./gradlew jvmTest --tests "*CommandeMaterielTest*" '-Pmateriel=192.168.2.135' --rerun
+ *     ./gradlew jvmTest --tests "*CommandHardwareTest*" '-Phardware=192.168.2.135' --rerun
  */
 class CommandHardwareTest {
 
@@ -21,31 +21,31 @@ class CommandHardwareTest {
 
     @Test
     fun `one command succeeds, one fails, one is cut off, and the next one still runs`() = runBlocking<Unit> {
-        assumeTrue("-Pmateriel=<adresse> pour essayer sur un vrai téléviseur", host != null)
+        assumeTrue("-Phardware=<address> to try on a real TV", host != null)
         val client = AdbClient(AdbKeyStore(Locations.windows().keys))
         val connected = client.connect(host!!)
-        assertTrue("Connexion à $host : ${client.connection.value}", connected)
+        assertTrue("Connection to $host: ${client.connection.value}", connected)
         try {
             val console = AdbConsole(client) { null }
 
             val model = console.send("getprop ro.product.model")
-            println("Modèle : $model")
+            println("Model: $model")
             assertEquals(0, model.code)
             assertTrue(model.output.isNotBlank())
 
-            val failure = console.send("ls /nexistepas")
-            println("Échec : $failure")
+            val failure = console.send("ls /doesnotexist")
+            println("Failure: $failure")
             assertTrue(failure.toString(), failure.code != null && failure.code != 0)
 
             val start = System.currentTimeMillis()
-            val cut = console.send("echo debut; sleep 60; echo fin")
-            println("Coupée en ${System.currentTimeMillis() - start} ms : $cut")
+            val cut = console.send("echo start; sleep 60; echo end")
+            println("Cut after ${System.currentTimeMillis() - start} ms: $cut")
             assertEquals(Interruption.TIMEOUT, cut.interruption)
-            assertTrue(cut.output, cut.output.contains("debut"))
+            assertTrue(cut.output, cut.output.contains("start"))
 
-            val after = console.send("echo apres")
-            println("Après : $after")
-            assertEquals("apres", after.output)
+            val after = console.send("echo after")
+            println("After: $after")
+            assertEquals("after", after.output)
         } finally {
             client.disconnect()
         }

@@ -31,7 +31,7 @@ class GithubClientTest {
         server.createContext("/repos/jolabs40/TVSlim/releases") {
             respond(it, 200, """[{"tag_name":"windows-v1.0.1","assets":[]}]""".toByteArray())
         }
-        server.createContext("/fichier") { respond(it, 200, ByteArray(300_000) { i -> (i % 251).toByte() }) }
+        server.createContext("/file") { respond(it, 200, ByteArray(300_000) { i -> (i % 251).toByte() }) }
         server.createContext("/absent") { respond(it, 404, ByteArray(0)) }
         server.start()
     }
@@ -56,7 +56,7 @@ class GithubClientTest {
         val target = File(folder.root, "a.msi")
         var last = 0f
 
-        client().download("$base/fichier", target, maxSize = 1_000_000) { last = it }
+        client().download("$base/file", target, maxSize = 1_000_000) { last = it }
 
         assertEquals(300_000L, target.length())
         assertEquals(1f, last)
@@ -67,7 +67,7 @@ class GithubClientTest {
     fun `a file larger than expected is dropped without leaving anything`() = runTest {
         val target = File(folder.root, "a.msi")
 
-        val error = runCatching { client().download("$base/fichier", target, maxSize = 1_000) {} }
+        val error = runCatching { client().download("$base/file", target, maxSize = 1_000) {} }
 
         assertTrue(error.exceptionOrNull() is IOException)
         assertFalse(target.exists())

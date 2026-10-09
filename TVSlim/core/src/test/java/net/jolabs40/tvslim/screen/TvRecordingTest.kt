@@ -120,10 +120,10 @@ class TvRecordingTest {
 
     @Test
     fun `a lost connection is reported as such`() = runTest {
-        val tv = FakeTv(ShellResult.unavailable("Aucun téléviseur connecté."))
+        val tv = FakeTv(ShellResult.unavailable("No TV connected."))
 
         assertEquals(
-            RecordingStart.Rejected(RecordingCause.CONNECTION, "Aucun téléviseur connecté."),
+            RecordingStart.Rejected(RecordingCause.CONNECTION, "No TV connected."),
             TvRecording(tv, tv).start(),
         )
     }

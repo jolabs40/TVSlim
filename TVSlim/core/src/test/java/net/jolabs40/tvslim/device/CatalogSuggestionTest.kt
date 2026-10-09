@@ -35,8 +35,8 @@ class CatalogSuggestionTest {
         )
         // Unreadable device: the form still opens, with no empty field in the URL.
         assertEquals(
-            "https://github.com/autre/depot/issues/new?template=nouvel-appareil.yml&title=Catalogue%3A%20%3F",
-            CatalogSuggestion.link(DeviceInfo.EMPTY, repository = "autre/depot"),
+            "https://github.com/other/repo/issues/new?template=nouvel-appareil.yml&title=Catalogue%3A%20%3F",
+            CatalogSuggestion.link(DeviceInfo.EMPTY, repository = "other/repo"),
         )
     }
 
@@ -45,7 +45,7 @@ class CatalogSuggestionTest {
         // Both builds run core tests from TVSlim/core, so the repository root is two levels up.
         val model = File("../../.github/ISSUE_TEMPLATE/${CatalogSuggestion.ISSUE_TEMPLATE}")
 
-        assertTrue("Modèle d'issue introuvable : ${model.absolutePath}", model.isFile)
+        assertTrue("Issue template not found: ${model.absolutePath}", model.isFile)
         assertTrue(model.readText().contains("id: device"))
     }
 }

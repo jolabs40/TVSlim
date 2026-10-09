@@ -60,7 +60,7 @@ class ApkInstallationTest {
         assertEquals(InstallationKind.NEW, chosen.kind)
         assertEquals(2048L, chosen.size)
         assertEquals(1, tv.commands.size)
-        assertTrue("Examiner n'envoie rien", tv.uploads.isEmpty())
+        assertTrue("Examining sends nothing", tv.uploads.isEmpty())
     }
 
     @Test
@@ -101,7 +101,7 @@ class ApkInstallationTest {
         val tv = FakeTv()
 
         val review = ApkInstallation(tv, tv, journal())
-            .examine(file, "piege.apk", manifest.copy(packageName = "x; reboot"))
+            .examine(file, "trap.apk", manifest.copy(packageName = "x; reboot"))
 
         assertEquals(ApkReview.Rejected(ApkRejection.INVALID_PACKAGE), review)
         assertTrue(tv.commands.isEmpty())
@@ -109,7 +109,7 @@ class ApkInstallationTest {
 
     @Test
     fun `an unreachable tv is reported as such`() = runTest {
-        val tv = FakeTv(reading = { ShellResult.unavailable("Aucun téléviseur connecté.") })
+        val tv = FakeTv(reading = { ShellResult.unavailable("No TV connected.") })
 
         val review = ApkInstallation(tv, tv, journal()).examine(file, "HippieTV.apk", manifest)
 
@@ -142,7 +142,7 @@ class ApkInstallationTest {
         assertEquals("Installation de HippieTV.apk (2.4.0)", action.label)
         assertEquals("", action.undoCommand)
         assertTrue(action.succeeded)
-        assertFalse("Aucun uninstall, jamais", tv.commands.any { it.contains("uninstall") })
+        assertFalse("Never uninstall", tv.commands.any { it.contains("uninstall") })
     }
 
     @Test
@@ -181,6 +181,6 @@ class ApkInstallationTest {
         ).forEach { (output, cause) ->
             assertEquals(output, cause, ApkInstallation.failureCause(ShellResult(1, output)))
         }
-        assertEquals(FailureCause.CONNECTION, ApkInstallation.failureCause(ShellResult.unavailable("délai dépassé")))
+        assertEquals(FailureCause.CONNECTION, ApkInstallation.failureCause(ShellResult.unavailable("timed out")))
     }
 }

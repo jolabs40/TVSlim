@@ -22,8 +22,8 @@ class ScrcpyTest {
     @Test
     fun `the mirror leaves audio on the TV`() {
         assertEquals(
-            listOf("--tcpip=192.168.2.135:5555", "--window-title=TV Slim - Miroir - TCL", "--no-audio"),
-            ScrcpyArguments.mirror("192.168.2.135", 5555, "TV Slim - Miroir - TCL"),
+            listOf("--tcpip=192.168.2.135:5555", "--window-title=TV Slim - Mirror - TCL", "--no-audio"),
+            ScrcpyArguments.mirror("192.168.2.135", 5555, "TV Slim - Mirror - TCL"),
         )
     }
 
@@ -41,19 +41,19 @@ class ScrcpyTest {
         val root = Files.createTempDirectory("tvslim-scrcpy").toFile()
         try {
             val downloaded = File(root, "local/scrcpy").apply { mkdirs() }
-            val path = File(root, "outils").apply { mkdirs() }
+            val path = File(root, "tools").apply { mkdirs() }
             val winget = File(root, "appdata/Microsoft/WinGet/Packages/Genymobile.scrcpy_x/scrcpy-win64-v3.3").apply { mkdirs() }
-            File(path, "scrcpy.exe").writeText("ancien")
+            File(path, "scrcpy.exe").writeText("old")
             File(winget, "scrcpy.exe").writeText("winget")
             val environment = mapOf("PATH" to "C:\\absent;\"${path.path}\"", "LOCALAPPDATA" to File(root, "appdata").path)
-            val versions = mapOf("ancien" to (1 to 24), "winget" to (3 to 3), "epingle" to (4 to 1))
+            val versions = mapOf("old" to (1 to 24), "winget" to (3 to 3), "pinned" to (4 to 1))
             val locator = ScrcpyLocator(downloaded, environment::get) { versions[it.readText()] }
 
             // The PATH executable is too old, so winget's is picked.
             assertEquals(File(winget, "scrcpy.exe"), locator.find())
 
             // Once the pinned version is downloaded, it wins.
-            File(downloaded, "${PinnedScrcpy.FOLDER}/scrcpy.exe").apply { parentFile.mkdirs() }.writeText("epingle")
+            File(downloaded, "${PinnedScrcpy.FOLDER}/scrcpy.exe").apply { parentFile.mkdirs() }.writeText("pinned")
             assertEquals(File(downloaded, "${PinnedScrcpy.FOLDER}/scrcpy.exe"), locator.find())
         } finally {
             root.deleteRecursively()
@@ -66,7 +66,7 @@ class ScrcpyTest {
         try {
             val installation = ScrcpyInstallation(GithubClient("Genymobile/scrcpy", "test"), root)
             val archive = zip(
-                File(root, "bonne.zip"),
+                File(root, "good.zip"),
                 "${PinnedScrcpy.FOLDER}/scrcpy.exe" to "exe",
                 "${PinnedScrcpy.FOLDER}/adb.exe" to "adb",
             )
@@ -77,9 +77,9 @@ class ScrcpyTest {
             assertEquals("adb", File(root, "${PinnedScrcpy.FOLDER}/adb.exe").readText())
             assertFalse(File(root, "${PinnedScrcpy.FOLDER}.extraction").exists())
 
-            val malicious = zip(File(root, "piegee.zip"), "../evade.txt" to "x")
+            val malicious = zip(File(root, "malicious.zip"), "../escaped.txt" to "x")
             assertThrows(IOException::class.java) { installation.extract(malicious) }
-            assertFalse(File(root.parentFile, "evade.txt").exists())
+            assertFalse(File(root.parentFile, "escaped.txt").exists())
         } finally {
             root.deleteRecursively()
         }

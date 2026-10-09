@@ -25,7 +25,7 @@ class TvConfigurationTest {
 
     private fun entry(packageName: String, order: Int = 100, home: Boolean = false) = PackageEntry(
         packageName = packageName,
-        name = "Nom de $packageName",
+        name = "Name of $packageName",
         description = "",
         category = "test",
         order = order,
@@ -40,7 +40,7 @@ class TvConfigurationTest {
             entry(SETUPWRAITH, order = 1, home = true),
             entry(LAUNCHERX, order = 2, home = true),
         ),
-        protectedPackages = listOf(ProtectedPackage("com.android.location.fused", "Boucle de redémarrage.")),
+        protectedPackages = listOf(ProtectedPackage("com.android.location.fused", "Boot loop.")),
         launchers = listOf(
             RecommendedLauncher(
                 packageName = STARTLIGHT,
@@ -53,7 +53,7 @@ class TvConfigurationTest {
         knownLaunchers = listOf(KnownLauncher("projectivy", "Projectivy Launcher", listOf(PROJECTIVY))),
     )
 
-    private fun launcher(packageName: String) = InstalledLauncher(packageName, packageName, "$packageName/.Accueil")
+    private fun launcher(packageName: String) = InstalledLauncher(packageName, packageName, "$packageName/.Home")
 
     /** The reference TCL: debug Startlight as home app, Google TV disabled. */
     private val tcl = DeviceInfo(
@@ -61,7 +61,7 @@ class TvConfigurationTest {
         model = "Smart TV Pro",
         androidVersion = "14",
         currentHome = STARTLIGHT_DEBUG,
-        homeComponent = "$STARTLIGHT_DEBUG/.Accueil",
+        homeComponent = "$STARTLIGHT_DEBUG/.Home",
         thirdPartyLaunchers = listOf(launcher(PROJECTIVY), launcher(STARTLIGHT_DEBUG)),
         factoryHomes = listOf(FactoryHome(LAUNCHERX, "$LAUNCHERX/.home.HomeActivity", active = false)),
     )
@@ -96,7 +96,7 @@ class TvConfigurationTest {
         assertEquals(listOf("com.tcl.pub"), configuration.disabled)
         assertEquals(listOf("com.tcl.demo"), configuration.active)
         assertEquals(STARTLIGHT_DEBUG, configuration.home?.packageName)
-        assertEquals("$STARTLIGHT_DEBUG/.Accueil", configuration.home?.component)
+        assertEquals("$STARTLIGHT_DEBUG/.Home", configuration.home?.component)
         assertEquals("Startlight Launcher", configuration.home?.name)
         assertEquals("TCL Smart TV Pro", configuration.device.name)
         assertEquals(1_789_300_000_000, configuration.savedAt)
@@ -120,13 +120,13 @@ class TvConfigurationTest {
     fun `a file that is not a TV Slim configuration is rejected`() {
         listOf(
             "",
-            "pas du JSON",
+            "not JSON",
             "{}",
             """{"a": 1}""",
-            """{"application": "Autre chose", "format": 1, "sauvegardeLe": 0}""",
+            """{"application": "Something else", "format": 1, "sauvegardeLe": 0}""",
             """{"application": "TV Slim", "format": 99, "sauvegardeLe": 0}""",
         ).forEach { text ->
-            assertNull("Accepté à tort : $text", ConfigurationFile.read(text))
+            assertNull("Wrongly accepted: $text", ConfigurationFile.read(text))
         }
     }
 
@@ -152,7 +152,7 @@ class TvConfigurationTest {
     fun `the plan keeps only the differences, in both directions`() {
         val plan = backup(
             disabled = listOf("com.tcl.pub", "com.tcl.demo"),
-            active = listOf("com.tcl.absent", "com.retire.du.catalogue", SETUPWRAITH),
+            active = listOf("com.tcl.absent", "com.removed.from.catalog", SETUPWRAITH),
         ).buildPlan(
             catalog = catalog,
             states = mapOf(
@@ -166,7 +166,7 @@ class TvConfigurationTest {
 
         assertEquals(listOf("com.tcl.pub"), plan.toDisable.map { it.packageName })
         assertEquals(listOf(SETUPWRAITH), plan.toEnable.map { it.packageName })
-        assertEquals(listOf("com.tcl.absent", "com.retire.du.catalogue"), plan.ignores)
+        assertEquals(listOf("com.tcl.absent", "com.removed.from.catalog"), plan.ignores)
         assertEquals(2, plan.actionCount)
     }
 
@@ -186,14 +186,14 @@ class TvConfigurationTest {
         val plan = backup(home = SavedHome(PROJECTIVY, name = "Projectivy Launcher"))
             .buildPlan(catalog, emptyMap(), tcl)
 
-        assertEquals(HomeChange(PROJECTIVY, "Projectivy Launcher", "$PROJECTIVY/.Accueil"), plan.home)
+        assertEquals(HomeChange(PROJECTIVY, "Projectivy Launcher", "$PROJECTIVY/.Home"), plan.home)
         assertTrue(plan.home!!.possible)
     }
 
     @Test
     fun `another build of the same launcher will do`() {
         // Saved on a TV with the release build; this one only has the debug build.
-        val elsewhere = tcl.copy(currentHome = PROJECTIVY, homeComponent = "$PROJECTIVY/.Accueil")
+        val elsewhere = tcl.copy(currentHome = PROJECTIVY, homeComponent = "$PROJECTIVY/.Home")
 
         val plan = backup(home = SavedHome(STARTLIGHT, name = "Startlight Launcher"))
             .buildPlan(catalog, emptyMap(), elsewhere)

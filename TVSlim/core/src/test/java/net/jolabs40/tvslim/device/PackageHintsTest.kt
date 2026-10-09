@@ -114,9 +114,9 @@ class PackageHintsTest {
 
         val markers = listOf(PackageHintsReading.FILES_MARKER, PackageHintsReading.FACTORY_MARKER, PackageHintsReading.ICONS_MARKER) +
             SensitiveDeclaration.entries.map(PackageHintsReading::marker)
-        assertEquals("Deux sections du même nom fusionneraient", markers.size, markers.toSet().size)
-        markers.forEach { assertTrue("La commande doit annoncer $it", command.contains("echo $it;") || command.endsWith("echo $it")) }
-        assertFalse("Rien qu'une lecture", command.contains(" disable") || command.contains("uninstall"))
+        assertEquals("Two sections with the same name would merge", markers.size, markers.toSet().size)
+        markers.forEach { assertTrue("The command must announce $it", command.contains("echo $it;") || command.endsWith("echo $it")) }
+        assertFalse("Read only", command.contains(" disable") || command.contains("uninstall"))
     }
 
     @Test

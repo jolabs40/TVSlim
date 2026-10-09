@@ -77,12 +77,12 @@ class ScrcpyLocator(
             val output = process.inputStream.bufferedReader().use { it.readText() }
             if (!process.waitFor(5, TimeUnit.SECONDS)) process.destroyForcibly()
             readVersionLine(output)
-        }.onFailure { AppLog.warn("Scrcpy", "Version illisible", it) }.getOrNull()
+        }.onFailure { AppLog.warn("Scrcpy", "Version unreadable", it) }.getOrNull()
     }
 }
 
 /** The downloaded archive does not match the published hash; it is deleted and nothing is installed. */
-class UnexpectedFingerprint : IOException("empreinte SHA-256 inattendue")
+class UnexpectedFingerprint : IOException("unexpected SHA-256 fingerprint")
 
 /**
  * Downloads scrcpy from Genymobile's GitHub release, checks the hash and unzips into `%LOCALAPPDATA%\TVSlim\scrcpy`.

@@ -13,4 +13,4 @@ val appVersion = providers.gradleProperty("appVersion").get()
 val (major, minor, patch) = Regex("""(\d{1,3})\.(\d{1,2})\.(\d{1,2})""").matchEntire(appVersion)?.destructured
     ?: error("invalid appVersion: $appVersion (expected X.Y.Z, Y and Z below 100)")
 extra["appVersion"] = appVersion
-extra["codeDeVersion"] = major.toInt() * 10_000 + minor.toInt() * 100 + patch.toInt()
+extra["appVersionCode"] = major.toInt() * 10_000 + minor.toInt() * 100 + patch.toInt()

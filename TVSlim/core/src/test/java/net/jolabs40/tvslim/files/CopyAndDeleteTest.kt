@@ -42,14 +42,14 @@ class CopyAndDeleteTest {
         override suspend fun send(
             source: InputStream, size: Long, path: String, date: Long,
             cancelled: () -> Boolean, onSent: (sent: Long) -> Unit,
-        ) = error("rien ne s'envoie")
+        ) = error("nothing is uploaded here")
 
         override suspend fun receive(
             path: String, destination: OutputStream, size: Long,
             cancelled: () -> Boolean, onReceived: (received: Long) -> Unit,
         ): ShellResult {
             onReceive(path)
-            if (cancelled()) return ShellResult.unavailable("annulé")
+            if (cancelled()) return ShellResult.unavailable("cancelled")
             if (path == cutAt) return ShellResult.unavailable("Connection reset")
             if (path in rejectedPaths) return ShellResult(1, "open failed: Permission denied")
             val content = contents[path] ?: return ShellResult(1, "open failed: No such file or directory")
@@ -74,12 +74,12 @@ class CopyAndDeleteTest {
         override fun describe(path: String) = if (path.isEmpty()) "C:\\Copies" else "C:\\Copies\\" + path.replace('/', '\\')
         override fun exists(path: String) = path in existing
         override fun createFolder(path: String) {
-            if (path in rejectedPaths) throw IOException("Accès refusé")
+            if (path in rejectedPaths) throw IOException("Access denied")
             folders += path
         }
 
         override fun write(path: String): LocalWrite {
-            if (path in rejectedPaths) throw IOException("Nom de fichier incorrect")
+            if (path in rejectedPaths) throw IOException("Invalid file name")
             opened++
             return object : LocalWrite {
                 override val stream = ByteArrayOutputStream()
@@ -103,10 +103,10 @@ class CopyAndDeleteTest {
             D|0|1790000000|.
             D|0|1790000000|./Séries/Saison 1
             D|0|1790000000|./Séries
-            D|0|1790000000|./vide
-            F|12|1790000001|./bande|annonce.mp4
+            D|0|1790000000|./empty
+            F|12|1790000001|./movie|trailer.mp4
             F|3|1790000002|./Séries/Saison 1/e01.mkv
-            find: ./perdu: Permission denied
+            find: ./lost: Permission denied
         """.trimIndent(),
     )
 
@@ -114,10 +114,10 @@ class CopyAndDeleteTest {
     fun `the listing puts parent folders first and leaves out the folder itself`() {
         val inventory = FolderInventory.inventory(moviesInventory.output)
 
-        assertEquals(listOf("Séries", "vide", "Séries/Saison 1"), inventory.folders)
+        assertEquals(listOf("Séries", "empty", "Séries/Saison 1"), inventory.folders)
         assertEquals(
             listOf(
-                InventoryFile("bande|annonce.mp4", 12, 1_790_000_001_000L),
+                InventoryFile("movie|trailer.mp4", 12, 1_790_000_001_000L),
                 InventoryFile("Séries/Saison 1/e01.mkv", 3, 1_790_000_002_000L),
             ),
             inventory.files,
@@ -128,7 +128,7 @@ class CopyAndDeleteTest {
     @Test
     fun `commands quote their paths, and only a folder gets the storage guard`() {
         assertEquals("rm -f '/sdcard/l'\\''été.mkv'", FolderInventory.deletionCommand("/sdcard/l'été.mkv", DeletionKind.FILE))
-        assertEquals("rm -f '/data/local/tmp/lien'", FolderInventory.deletionCommand("/data/local/tmp/lien", DeletionKind.LINK))
+        assertEquals("rm -f '/data/local/tmp/link'", FolderInventory.deletionCommand("/data/local/tmp/link", DeletionKind.LINK))
 
         val folder = FolderInventory.deletionCommand("/sdcard/Films", DeletionKind.FOLDER)
         assertTrue(folder.startsWith("c=\$(readlink -f '/sdcard/Films');"))
@@ -146,7 +146,7 @@ class CopyAndDeleteTest {
         val browser = FileBrowser(tv, tv, tv)
         val entry = RemoteEntry("film.mkv", EntryKind.FILE, 5, 1_000L)
 
-        val plan = (browser.prepareDownload("/sdcard/Movies/", entry, disk, "copie.mkv") as DownloadReview.Ready).plan
+        val plan = (browser.prepareDownload("/sdcard/Movies/", entry, disk, "copy.mkv") as DownloadReview.Ready).plan
         assertTrue(tv.commands.isEmpty())
         assertEquals("C:\\Copies", plan.destination)
 
@@ -154,7 +154,7 @@ class CopyAndDeleteTest {
 
         assertTrue(result.complete)
         assertEquals(TransferDirection.DOWNLOAD, result.direction)
-        assertEquals(mapOf("copie.mkv" to ("image" to 1_000L)), disk.files)
+        assertEquals(mapOf("copy.mkv" to ("image" to 1_000L)), disk.files)
         assertTrue(disk.folders.isEmpty())
     }
 
@@ -162,7 +162,7 @@ class CopyAndDeleteTest {
     fun `a folder is listed in full, then arrives with its empty folders`() = runTest {
         val tv = FakeTv(
             contents = mapOf(
-                "/sdcard/Films/bande|annonce.mp4" to "bande-annonce",
+                "/sdcard/Films/movie|trailer.mp4" to "trailer",
                 "/sdcard/Films/Séries/Saison 1/e01.mkv" to "e01",
             ),
             inventories = mapOf("/sdcard/Films" to moviesInventory),
@@ -174,9 +174,9 @@ class CopyAndDeleteTest {
 
         assertTrue(plan.alreadyExists)
         assertEquals("C:\\Copies\\Films", plan.destination)
-        assertEquals(listOf("Films", "Films/Séries", "Films/vide", "Films/Séries/Saison 1"), plan.folders)
+        assertEquals(listOf("Films", "Films/Séries", "Films/empty", "Films/Séries/Saison 1"), plan.folders)
         assertEquals(
-            listOf("/sdcard/Films/bande|annonce.mp4", "/sdcard/Films/Séries/Saison 1/e01.mkv"),
+            listOf("/sdcard/Films/movie|trailer.mp4", "/sdcard/Films/Séries/Saison 1/e01.mkv"),
             plan.files.map { it.remote },
         )
 
@@ -184,7 +184,7 @@ class CopyAndDeleteTest {
 
         assertTrue(result.complete)
         assertEquals(plan.folders, disk.folders)
-        assertEquals(listOf("Films/bande|annonce.mp4", "Films/Séries/Saison 1/e01.mkv"), disk.files.keys.toList())
+        assertEquals(listOf("Films/movie|trailer.mp4", "Films/Séries/Saison 1/e01.mkv"), disk.files.keys.toList())
         assertEquals("C:\\Copies\\Films", result.destination)
     }
 
@@ -220,11 +220,11 @@ class CopyAndDeleteTest {
 
         assertEquals(2, result.sentCount)
         assertEquals(
-            listOf(UploadFailure("b", "open failed: Permission denied"), UploadFailure("c", "Nom de fichier incorrect")),
+            listOf(UploadFailure("b", "open failed: Permission denied"), UploadFailure("c", "Invalid file name")),
             result.failures,
         )
         assertEquals(listOf("a", "d"), disk.files.keys.toList())
-        assertEquals("Chaque écriture ouverte est refermée", disk.opened, disk.closed)
+        assertEquals("Every opened write is closed", disk.opened, disk.closed)
     }
 
     @Test
@@ -261,7 +261,7 @@ class CopyAndDeleteTest {
 
         val result = FileBrowser(tv, tv, tv).download(plan)
 
-        assertEquals(listOf(UploadFailure("Films", "Accès refusé")), result.failures)
+        assertEquals(listOf(UploadFailure("Films", "Access denied")), result.failures)
         assertTrue(tv.receivedBytes.isEmpty())
     }
 
@@ -275,7 +275,7 @@ class CopyAndDeleteTest {
             DeletionReview.Ready(DeletionPlan("/sdcard/Films", DeletionKind.FOLDER, files = 2, folders = 3, size = 15)),
             folder,
         )
-        assertTrue("La lecture monte la garde", tv.commands.single().startsWith("c=\$(readlink -f '/sdcard/Films');"))
+        assertTrue("The listing runs the guard", tv.commands.single().startsWith("c=\$(readlink -f '/sdcard/Films');"))
 
         val link = RemoteEntry("sdcard", EntryKind.FOLDER, 21, 0L, link = true)
         assertEquals(
@@ -287,7 +287,7 @@ class CopyAndDeleteTest {
             DeletionReview.Ready(DeletionPlan("/sdcard/a.mkv", DeletionKind.FILE, files = 1, size = 42)),
             browser.prepareDeletion("/sdcard", file),
         )
-        assertEquals("Ni le lien ni le fichier ne demandent de lecture", 1, tv.commands.size)
+        assertEquals("Neither the link nor the file needs a listing", 1, tv.commands.size)
     }
 
     @Test
@@ -316,7 +316,7 @@ class CopyAndDeleteTest {
     @Test
     fun `the explorer copies a file at once and a folder after confirmation`() = runTest {
         val tv = FakeTv(
-            contents = mapOf("/sdcard/a.mkv" to "a", "/sdcard/Films/bande|annonce.mp4" to "b", "/sdcard/Films/Séries/Saison 1/e01.mkv" to "e"),
+            contents = mapOf("/sdcard/a.mkv" to "a", "/sdcard/Films/movie|trailer.mp4" to "b", "/sdcard/Films/Séries/Saison 1/e01.mkv" to "e"),
             inventories = mapOf("/sdcard" to ShellResult(0, ""), "/sdcard/Films" to moviesInventory),
         )
         val signals = mutableListOf<FilesSignal>()
@@ -332,7 +332,7 @@ class CopyAndDeleteTest {
         advanceUntilIdle()
         assertNotNull(explorer.state.value.pendingDownload)
         assertTrue(explorer.state.value.busy)
-        assertEquals("Rien ne se copie avant la confirmation", 1, disk.files.size)
+        assertEquals("Nothing is copied before confirmation", 1, disk.files.size)
 
         explorer.confirmDownload()
         advanceUntilIdle()
@@ -360,7 +360,7 @@ class CopyAndDeleteTest {
         advanceUntilIdle()
         assertTrue(tv.commands.last { !it.startsWith("[ -d") }.endsWith("rm -rf '/sdcard/Films'"))
         assertEquals(FilesSignal.Deletion(EntryDeletion(DeletionOutcome.DELETED, "Films")), signals.last())
-        assertTrue("Le dossier est relu", tv.commands.last().startsWith("[ -d '/sdcard' ]"))
+        assertTrue("The folder is read again", tv.commands.last().startsWith("[ -d '/sdcard' ]"))
         assertFalse(explorer.state.value.busy)
     }
 

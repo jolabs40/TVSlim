@@ -52,7 +52,7 @@ class RemotePathTest {
         assertFalse(RemotePath.isValidName("."))
         assertFalse(RemotePath.isValidName(".."))
         assertFalse(RemotePath.isValidName("a/b"))
-        assertFalse(RemotePath.isValidName("ligne\nsuivante"))
+        assertFalse(RemotePath.isValidName("line\nbreak"))
         assertFalse(RemotePath.isValidName("é".repeat(128)))
         assertTrue(RemotePath.isValidName("é".repeat(127)))
     }

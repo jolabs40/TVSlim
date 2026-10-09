@@ -14,7 +14,7 @@ class MeasurementsRepositoryTest {
     @get:Rule
     val folder = TemporaryFolder()
 
-    private fun file() = File(folder.newFolder(), "mesures.json")
+    private fun file() = File(folder.newFolder(), "measurements.json")
 
     private fun measurement(
         timestamp: Long,

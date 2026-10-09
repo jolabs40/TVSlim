@@ -32,11 +32,11 @@ class FileBrowserTest {
         override suspend fun execute(command: String): ShellResult {
             commands += command
             if (command.startsWith("mkdir -p")) return mkdirResponse
-            if (command.startsWith("ls /storage")) return ShellResult(0, "emulated\nself\nCLE-USB")
+            if (command.startsWith("ls /storage")) return ShellResult(0, "emulated\nself\nUSB-STICK")
             val path = Regex("""^\[ -d '([^']*)' ]""").find(command)?.groupValues?.get(1)
             if (path != null) return folders[path]?.let { ShellResult(0, it) } ?: ShellResult(2, "")
             if (command.contains("mkdir '")) return ShellResult(0, "")
-            return ShellResult(127, "inconnue")
+            return ShellResult(127, "unknown")
         }
 
         override suspend fun send(
@@ -49,7 +49,7 @@ class FileBrowserTest {
         ): ShellResult {
             val content = source.use { String(it.readBytes()) }
             this.onSent(path)
-            if (cancelled()) return ShellResult.unavailable("annulé")
+            if (cancelled()) return ShellResult.unavailable("cancelled")
             if (path == cutAt) return ShellResult.unavailable("Connection reset")
             if (path in rejectedPaths) return ShellResult(1, "couldn't create file: Permission denied")
             onSent(size)
@@ -67,7 +67,7 @@ class FileBrowserTest {
     private class Unreadable(override val path: String) : LocalFile {
         override val size = 10L
         override val date = 0L
-        override fun open(): InputStream = throw IOException("Accès refusé")
+        override fun open(): InputStream = throw IOException("Access denied")
     }
 
     private fun plan(batch: LocalBatch, destination: String = "/sdcard/Movies") = UploadPlan(destination, batch, emptyList())
@@ -76,22 +76,22 @@ class FileBrowserTest {
     fun `an uploaded folder creates its folders, empty ones included, before its files`() = runTest {
         val tv = FakeTv()
         val batch = LocalBatch(
-            files = listOf(FileItem("Vacances/2024/plage.jpg"), FileItem("Vacances/notes.txt")),
-            folders = listOf("Vacances", "Vacances/2024", "Vacances/vide"),
+            files = listOf(FileItem("Holidays/2024/beach.jpg"), FileItem("Holidays/notes.txt")),
+            folders = listOf("Holidays", "Holidays/2024", "Holidays/empty"),
         )
 
         val result = FileBrowser(tv, tv).upload(plan(batch))
 
         assertTrue(result.complete)
         assertEquals(
-            "mkdir -p '/sdcard/Movies/Vacances' '/sdcard/Movies/Vacances/2024' '/sdcard/Movies/Vacances/vide'",
+            "mkdir -p '/sdcard/Movies/Holidays' '/sdcard/Movies/Holidays/2024' '/sdcard/Movies/Holidays/empty'",
             tv.commands.single(),
         )
         assertEquals(
-            listOf("/sdcard/Movies/Vacances/2024/plage.jpg", "/sdcard/Movies/Vacances/notes.txt"),
+            listOf("/sdcard/Movies/Holidays/2024/beach.jpg", "/sdcard/Movies/Holidays/notes.txt"),
             tv.uploads.map { it.first },
         )
-        assertEquals("Vacances/notes.txt", tv.uploads[1].second)
+        assertEquals("Holidays/notes.txt", tv.uploads[1].second)
     }
 
     @Test
@@ -106,7 +106,7 @@ class FileBrowserTest {
         assertEquals(
             listOf(
                 UploadFailure("b.mkv", "couldn't create file: Permission denied"),
-                UploadFailure("c.mkv", "Accès refusé"),
+                UploadFailure("c.mkv", "Access denied"),
             ),
             result.failures,
         )
@@ -174,19 +174,19 @@ class FileBrowserTest {
 
     @Test
     fun `the check lists what already exists and refuses a file in place of a folder`() = runTest {
-        val alreadyExists = "E|45f8|4096|1|Vacances\nE|81b0|5|1|film.mkv"
+        val alreadyExists = "E|45f8|4096|1|Holidays\nE|81b0|5|1|film.mkv"
         val tv = FakeTv(folders = mapOf("/sdcard/Movies" to alreadyExists))
         val browser = FileBrowser(tv, tv)
 
         val ready = browser.examine(
-            LocalBatch(listOf(FileItem("Vacances/a.jpg"), FileItem("film.mkv"), FileItem("neuf.mkv"))),
+            LocalBatch(listOf(FileItem("Holidays/a.jpg"), FileItem("film.mkv"), FileItem("new.mkv"))),
             "/sdcard/Movies/",
         )
-        assertEquals(listOf("Vacances", "film.mkv"), (ready as UploadReview.Ready).plan.existing)
+        assertEquals(listOf("Holidays", "film.mkv"), (ready as UploadReview.Ready).plan.existing)
         assertEquals("/sdcard/Movies", ready.plan.destination)
 
-        val rejected = browser.examine(LocalBatch(listOf(FileItem("Vacances"))), "/sdcard/Movies")
-        assertEquals(UploadReview.Rejected(UploadRejection.KIND_MISMATCH, listOf("Vacances")), rejected)
+        val rejected = browser.examine(LocalBatch(listOf(FileItem("Holidays"))), "/sdcard/Movies")
+        assertEquals(UploadReview.Rejected(UploadRejection.KIND_MISMATCH, listOf("Holidays")), rejected)
     }
 
     @Test
@@ -212,19 +212,19 @@ class FileBrowserTest {
             val commands = mutableListOf<String>()
             override suspend fun execute(command: String): ShellResult {
                 commands += command
-                return if (command.contains("Pris")) ShellResult(4, "") else ShellResult(0, "")
+                return if (command.contains("Taken")) ShellResult(4, "") else ShellResult(0, "")
             }
 
             override suspend fun send(
                 source: InputStream, size: Long, path: String, date: Long,
                 cancelled: () -> Boolean, onSent: (sent: Long) -> Unit,
-            ) = error("rien ne s'envoie")
+            ) = error("nothing is uploaded here")
         }
         val browser = FileBrowser(tv, tv)
 
         assertEquals(FolderCreation(CreationOutcome.CREATED, "Séries"), browser.createFolder("/sdcard/", " Séries "))
         assertEquals("[ -e '/sdcard/Séries' ] && exit 4; mkdir '/sdcard/Séries'", tv.commands.single())
-        assertEquals(CreationOutcome.EXISTS, browser.createFolder("/sdcard", "Pris").outcome)
+        assertEquals(CreationOutcome.EXISTS, browser.createFolder("/sdcard", "Taken").outcome)
         assertEquals(CreationOutcome.INVALID_NAME, browser.createFolder("/sdcard", "a/b").outcome)
         assertEquals(2, tv.commands.size)
     }
@@ -238,13 +238,13 @@ class FileBrowserTest {
         explorer.start()
         advanceUntilIdle()
         assertEquals(listOf("Movies"), explorer.state.value.entries.map { it.name })
-        assertEquals("/storage/CLE-USB", explorer.state.value.shortcuts.first { it.kind == ShortcutKind.VOLUME }.path)
+        assertEquals("/storage/USB-STICK", explorer.state.value.shortcuts.first { it.kind == ShortcutKind.VOLUME }.path)
 
         explorer.open("/sdcard/Movies")
         explorer.examine { LocalBatch(listOf(FileItem("film.mkv"))) }
         advanceUntilIdle()
         assertNotNull(explorer.state.value.confirmation)
-        assertTrue("Rien ne part avant la confirmation", tv.uploads.isEmpty())
+        assertTrue("Nothing is sent before confirmation", tv.uploads.isEmpty())
 
         explorer.confirm()
         advanceUntilIdle()

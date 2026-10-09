@@ -19,7 +19,7 @@ class DeviceApplicationsTest {
     private val catalog = Catalog(
         categories = listOf(Category("streaming", "Streaming"), Category(DEVICE_CATEGORY, "Applications")),
         entries = listOf(PackageEntry("com.google.android.youtube.tv", "YouTube", "", "streaming")),
-        protectedPackages = listOf(ProtectedPackage("com.android.settings", "Réglages")),
+        protectedPackages = listOf(ProtectedPackage("com.android.settings", "Settings")),
     )
 
     private val pixel = DeviceInfo(

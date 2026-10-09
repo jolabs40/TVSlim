@@ -68,7 +68,7 @@ class AdbKeyStoreTest {
 
         assertNotNull(first)
         assertArrayEquals(
-            "Une clé qui change à chaque lancement obligerait à réautoriser chaque téléviseur.",
+            "A key that changes on every launch would force re-authorizing every TV.",
             first,
             inVault("publique"),
         )
@@ -80,7 +80,7 @@ class AdbKeyStoreTest {
 
         assertFalse(File(oldFolder, "adbkey").exists())
         assertFalse(File(context.cacheDir, "cles-temporaires/adbkey").exists())
-        assertNotNull("La clé doit bien être au coffre.", inVault("privee"))
+        assertNotNull("The key must be in the vault.", inVault("privee"))
     }
 
     @Test
@@ -96,12 +96,12 @@ class AdbKeyStoreTest {
         keyStore().pair()
 
         assertArrayEquals(
-            "La clé déjà autorisée sur les téléviseurs doit être conservée telle quelle.",
+            "The key already authorized on the TVs must be kept as is.",
             expected,
             inVault("publique"),
         )
         assertArrayEquals(expectedDer, inVault("privee"))
-        assertFalse("La clé en clair doit disparaître une fois au coffre.", privateKey.exists())
+        assertFalse("The plaintext key must be gone once it is in the vault.", privateKey.exists())
         assertFalse(publicKey.exists())
     }
 

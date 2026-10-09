@@ -60,9 +60,9 @@ class FolderReadTest {
 
     @Test
     fun `a name keeps its spaces and vertical bars`() {
-        val entry = FolderReader.entries("E|81b0|10|1|Film | partie 2 .mkv").single()
+        val entry = FolderReader.entries("E|81b0|10|1|Movie | part 2 .mkv").single()
 
-        assertEquals("Film | partie 2 .mkv", entry.name)
+        assertEquals("Movie | part 2 .mkv", entry.name)
     }
 
     @Test
@@ -72,7 +72,7 @@ class FolderReadTest {
             E|21b6|0|1|null
             E|41ed|4096|1|.
             E|41ed|4096|1|..
-            E|zz|1|1|illisible
+            E|zz|1|1|unreadable
         """.trimIndent()
 
         assertEquals(listOf("null" to EntryKind.OTHER), FolderReader.entries(output).map { it.name to it.kind })
@@ -83,10 +83,10 @@ class FolderReadTest {
         assertEquals(FolderRead.NotFound("/x"), FolderReader.read("/x", ShellResult(2, "")))
         assertEquals(FolderRead.Rejected("/data"), FolderReader.read("/data", ShellResult(3, "")))
         assertEquals(
-            FolderRead.Failed("/sdcard", "Aucun téléviseur connecté."),
-            FolderReader.read("/sdcard", ShellResult.unavailable("Aucun téléviseur connecté.")),
+            FolderRead.Failed("/sdcard", "No TV connected."),
+            FolderReader.read("/sdcard", ShellResult.unavailable("No TV connected.")),
         )
-        assertEquals(FolderRead.Read("/vide", emptyList()), FolderReader.read("/vide", ShellResult(0, "")))
+        assertEquals(FolderRead.Read("/empty", emptyList()), FolderReader.read("/empty", ShellResult(0, "")))
     }
 
     @Test

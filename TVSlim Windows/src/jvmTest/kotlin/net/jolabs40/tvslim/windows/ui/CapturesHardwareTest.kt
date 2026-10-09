@@ -45,7 +45,7 @@ import javax.swing.SwingUtilities
  * Renders the window off screen with data from a real TV: real ADB connection, snapshot, memory, network
  * discovery. Opt-in:
  *
- *     ./gradlew jvmTest --tests "*CapturesMaterielTest*" -Pmateriel=192.168.2.135 --rerun
+ *     ./gradlew jvmTest --tests "*CapturesHardwareTest*" -Phardware=192.168.2.135 --rerun
  *
  * Uses the app's ADB key (`%APPDATA%\TVSlim\keys`), so an authorization accepted on the TV during the test also
  * holds for the app. Journal, measurements and preferences live in a temporary folder. No write command is sent.
@@ -73,13 +73,13 @@ class CapturesHardwareTest {
 
     @Test
     fun `the four tabs with a real TV`() {
-        assumeTrue("-Pmateriel=<adresse> pour capturer sur un vrai téléviseur", host != null)
+        assumeTrue("-Phardware=<address> to capture on a real TV", host != null)
         val address = host!!
         output.mkdirs()
         Locale.setDefault(Locale.FRANCE)
 
         val tempDir = Files.createTempDirectory("tvslim-captures").toFile()
-        val locations = Locations(File(tempDir, "donnees"), File(tempDir, "local"))
+        val locations = Locations(File(tempDir, "data"), File(tempDir, "local"))
         val client = AdbClient(AdbKeyStore(Locations.windows().keys))
         val preferences = WindowsPreferences(locations.preferences)
         val github = GithubClient(repository = "jolabs40/TVSlim", appVersion = "captures")
@@ -174,7 +174,7 @@ class CapturesHardwareTest {
             }
             state.connected && state.lines.isNotEmpty()
         }
-        assertTrue("Connexion impossible : ${controller.state.value.connection}", connected)
+        assertTrue("Connection failed: ${controller.state.value.connection}", connected)
 
         takeCapture("02-televiseur", AppTab.TV)
 
@@ -195,13 +195,13 @@ class CapturesHardwareTest {
             state.memoryReadAttempted
         }
         val after = controller.state.value
-        readings += "memoire: ${System.currentTimeMillis() - start} ms, chargementVu=$loadingSeen, " +
-            "tentee=${after.memoryReadAttempted}, totalKo=${after.memory.totalKb}, " +
-            "processus=${after.memory.processes.size}, connecte=${after.connected}"
+        readings += "memory: ${System.currentTimeMillis() - start} ms, loadingSeen=$loadingSeen, " +
+            "attempted=${after.memoryReadAttempted}, totalKb=${after.memory.totalKb}, " +
+            "processes=${after.memory.processes.size}, connected=${after.connected}"
         if (!after.memoryReadAttempted) {
             controller.refreshMemory()
             val loaded = waitFor(40_000) { controller.state.value.memoryReadAttempted }
-            readings += "lecture explicite: aboutie=$loaded, totalKo=${controller.state.value.memory.totalKb}"
+            readings += "explicit read: done=$loaded, totalKb=${controller.state.value.memory.totalKb}"
             takeCapture("05b-memoire-explicite", AppTab.MEMORY)
         }
         takeCapture("06-journal", AppTab.JOURNAL)
@@ -211,16 +211,16 @@ class CapturesHardwareTest {
         takeCapture("09-fichiers", AppTab.FILES, waitMs = 20_000) {
             controller.files.explorer.state.value.reading is FolderRead.Read
         }
-        readings += "fichiers: ${controller.files.explorer.state.value.reading?.javaClass?.simpleName}, " +
-            "entrees=${controller.files.explorer.state.value.entries.size}, " +
-            "raccourcis=${controller.files.explorer.state.value.shortcuts.map { it.path }}"
+        readings += "files: ${controller.files.explorer.state.value.reading?.javaClass?.simpleName}, " +
+            "entries=${controller.files.explorer.state.value.entries.size}, " +
+            "shortcuts=${controller.files.explorer.state.value.shortcuts.map { it.path }}"
 
         // Applications tab: the helper is copied to /data/local/tmp, run, then deleted; names and icons are read.
         // The test's cache is empty, so everything is read (about 30 s on a phone).
         controller.applications.load()
         takeCapture("10-applications", AppTab.APPLICATIONS, waitMs = 120_000) { controller.applications.state.value.loaded }
         readings += "applications: ${controller.applications.state.value.applications.size}, " +
-            "avec icone=${controller.applications.state.value.applications.count { it.loaded }}"
+            "with icon=${controller.applications.state.value.applications.count { it.loaded }}"
 
         // A saved configuration, read back against the TV it describes, must have nothing to reapply.
         // Computed in memory; no command is sent to the TV.
@@ -229,19 +229,19 @@ class CapturesHardwareTest {
         val backup = justRead.catalog.configurationOf(justRead.info, readStates)
         val plan = ConfigurationFile.read(ConfigurationFile.write(backup))
             ?.buildPlan(justRead.catalog, readStates, justRead.info)
-        readings += "configuration: desactives=${backup.disabled.size}, actifs=${backup.active.size}, " +
-            "accueil=${backup.home?.packageName}, actions=${plan?.actionCount}, accueilAChanger=${plan?.home}"
-        readings += "accueilsUsine=${justRead.info.factoryHomes}"
-        assertTrue("Une configuration relue doit correspondre au téléviseur : $plan", plan != null && plan.nothingToDo)
-        assertTrue("L'accueil en place ne doit pas être à rétablir : ${plan?.home}", plan?.home == null)
+        readings += "configuration: disabled=${backup.disabled.size}, active=${backup.active.size}, " +
+            "home=${backup.home?.packageName}, actions=${plan?.actionCount}, homeToChange=${plan?.home}"
+        readings += "factoryHomes=${justRead.info.factoryHomes}"
+        assertTrue("A configuration read back must match the TV: $plan", plan != null && plan.nothingToDo)
+        assertTrue("The current home screen must not need restoring: ${plan?.home}", plan?.home == null)
 
         // Storage, read the way the tab does.
         controller.refreshStorage()
         val storageRead = waitFor(40_000) { controller.state.value.storageReadAttempted }
         val storage = controller.state.value.storage
-        readings += "stockage: lu=$storageRead, totalKo=${storage.totalKb}, libreKo=${storage.freeKb}, " +
+        readings += "storage: read=$storageRead, totalKb=${storage.totalKb}, freeKb=${storage.freeKb}, " +
             "applications=${storage.applications.size}"
-        assertTrue("Le stockage du téléviseur doit se lire", storage.populated)
+        assertTrue("The TV's storage must be readable", storage.populated)
 
         // Unknown-package inventory, read and written as the export button does, next to the screenshots. No
         // window is open at this point, so the completion message stays and reports the outcome.
@@ -250,16 +250,16 @@ class CapturesHardwareTest {
         val finalMessages = setOf(Res.string.msg_unknown_exported, Res.string.msg_unknown_export_failed)
         val finished = waitFor(60_000) { (controller.state.value.message as? UiMessage.Localized)?.resource in finalMessages }
         val report = inventory.takeIf { it.isFile }?.readText().orEmpty()
-        readings += "inconnus: ${justRead.unknowns.size}, termine=$finished, message=${controller.state.value.message}"
+        readings += "unknowns: ${justRead.unknowns.size}, finished=$finished, message=${controller.state.value.message}"
         readings += report.lineSequence()
             .filter { it.startsWith("- Lu sur") || it.startsWith("- Avec les droits") || it.startsWith("- Firmware") || it.startsWith("- Déjà au") }
             .joinToString(" / ")
-        assertTrue("L'inventaire doit s'écrire : ${controller.state.value.message}", report.isNotEmpty())
+        assertTrue("The inventory must be written: ${controller.state.value.message}", report.isNotEmpty())
         assertTrue(
-            "Les quatre lectures doivent aboutir : ${report.take(800)}",
+            "All four reads must succeed: ${report.take(800)}",
             report.contains("- Lu sur l'appareil : indices ADB, mémoire vive, stockage, firmware\n"),
         )
-        assertTrue("Le catalogue connaît des paquets de la TCL : ${report.take(800)}", report.contains("## Déjà au catalogue ("))
+        assertTrue("The catalogue knows some of the TCL's packages: ${report.take(800)}", report.contains("## Déjà au catalogue ("))
 
         // Brings the unknown-packages section to the top by searching for the first family name.
         justRead.unknowns.firstOrNull()?.let { first ->
@@ -275,8 +275,8 @@ class CapturesHardwareTest {
         File(output, "resume.txt").writeText(
             buildString {
                 val state = controller.state.value
-                appendLine("hote=$address")
-                appendLine("detectes=${state.detected.joinToString { "${it.label}@${it.host}:${it.port}" }}")
+                appendLine("host=$address")
+                appendLine("detected=${state.detected.joinToString { "${it.label}@${it.host}:${it.port}" }}")
                 readings.forEach { appendLine(it) }
             },
         )

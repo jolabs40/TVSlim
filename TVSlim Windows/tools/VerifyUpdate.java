@@ -24,14 +24,14 @@ import java.util.Properties;
  * The release workflow runs it right after signing: a private key that does not match the embedded key
  * would produce a release that every install refuses.
  *
- * The message format is the one in SignerMiseAJour.java and VerificationSignature.kt; a test checks that
+ * The message format is the one in SignUpdate.java and SignatureVerification.kt; a test checks that
  * all three agree. No dependencies: JDK 17 or later.
  */
 public class VerifyUpdate {
 
     public static void main(String[] arguments) throws Exception {
         if (arguments.length < 2 || arguments.length > 3) {
-            System.err.println("usage : java VerifierMiseAJour.java <installateur.msi> <version> [gradle.properties]");
+            System.err.println("usage: java VerifyUpdate.java <installer.msi> <version> [gradle.properties]");
             System.exit(2);
         }
         Path installer = Path.of(arguments[0]);
@@ -44,7 +44,7 @@ public class VerifyUpdate {
         }
         String key = fetched.getProperty("updatesPublicKey", "").trim();
         if (key.isEmpty()) {
-            System.err.println("updatesPublicKey est absente de " + properties);
+            System.err.println("updatesPublicKey is missing from " + properties);
             System.exit(2);
         }
 
@@ -73,7 +73,7 @@ public class VerifyUpdate {
             valid = false;
         }
 
-        System.out.println((valid ? "Signature valide" : "SIGNATURE INVALIDE") + " : "
+        System.out.println((valid ? "Valid signature" : "INVALID SIGNATURE") + ": "
                 + installer.getFileName() + "  sha256=" + fingerprint);
         System.exit(valid ? 0 : 1);
     }

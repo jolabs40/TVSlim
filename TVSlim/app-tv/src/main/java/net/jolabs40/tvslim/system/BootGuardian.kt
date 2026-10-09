@@ -44,16 +44,16 @@ class BootGuardian @Inject constructor(
         // StartLight, or StartLight relaunched); the work runs once.
         val bootCount = Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, -1)
         if (bootCount >= 0 && !preferences.claimBoot(bootCount)) {
-            Log.i(TAG, "Allumage $bootCount déjà traité ($trigger)")
+            Log.i(TAG, "Boot $bootCount already handled ($trigger)")
             return
         }
-        Log.i(TAG, "Gardien de l'allumage $bootCount, par $trigger")
+        Log.i(TAG, "Guarding boot $bootCount, triggered by $trigger")
 
         runCatching { drift.check() }
-            .onSuccess { finding -> finding?.let { Log.i(TAG, "Dérive après mise à jour : $it") } }
-            .onFailure { Log.w(TAG, "Dérive non vérifiée", it) }
+            .onSuccess { finding -> finding?.let { Log.i(TAG, "Drift after update: $it") } }
+            .onFailure { Log.w(TAG, "Drift not checked", it) }
         if (!settings.canWriteDirectly()) {
-            Log.w(TAG, "WRITE_SECURE_SETTINGS absente : réglages non réappliqués.")
+            Log.w(TAG, "WRITE_SECURE_SETTINGS missing: settings not reapplied")
             return
         }
         catalog.catalog().settings
@@ -61,9 +61,9 @@ class BootGuardian @Inject constructor(
             .forEach { setting ->
                 val error = settings.write(setting, setting.optimizedValue)
                 if (error == null) {
-                    Log.i(TAG, "${setting.key} remis à ${setting.optimizedValue}")
+                    Log.i(TAG, "${setting.key} reset to ${setting.optimizedValue}")
                 } else {
-                    Log.w(TAG, "${setting.key} : $error")
+                    Log.w(TAG, "${setting.key}: $error")
                 }
             }
     }
@@ -71,6 +71,6 @@ class BootGuardian @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private companion object {
-        const val TAG = "TVSlim/Demarrage"
+        const val TAG = "TVSlim/Boot"
     }
 }

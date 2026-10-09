@@ -50,7 +50,7 @@ internal object BinaryManifest {
     /** Returns all start elements of the document, in order. Throws on a malformed file. */
     fun elements(bytes: ByteArray): List<BinaryElement> {
         val reader = LittleEndianBytes(bytes)
-        require(reader.u16(0) == TYPE_XML) { "pas un XML binaire" }
+        require(reader.u16(0) == TYPE_XML) { "not a binary XML" }
 
         var strings = emptyList<String>()
         var ids = IntArray(0)
@@ -61,7 +61,7 @@ internal object BinaryManifest {
             val header = reader.u16(position + 2)
             val size = reader.i32(position + 4)
             // A zero size would loop forever; an oversized one would read out of bounds.
-            require(size >= HEADER_SIZE && position.toLong() + size <= bytes.size) { "morceau malformé" }
+            require(size >= HEADER_SIZE && position.toLong() + size <= bytes.size) { "malformed chunk" }
             when (type) {
                 TYPE_STRING_POOL -> strings = readStrings(reader, position, header, size)
                 TYPE_RESOURCE_IDS -> ids = IntArray((size - header) / 4) { reader.i32(position + header + it * 4) }
@@ -74,7 +74,7 @@ internal object BinaryManifest {
 
     private fun readStrings(reader: LittleEndianBytes, position: Int, header: Int, size: Int): List<String> {
         val count = reader.i32(position + 8)
-        require(count >= 0 && header + count.toLong() * 4 <= size) { "table des chaînes malformée" }
+        require(count >= 0 && header + count.toLong() * 4 <= size) { "malformed string pool" }
         val utf8 = reader.i32(position + 16) and UTF8_FLAG != 0
         val start = position + reader.i32(position + 20)
         return List(count) { index ->

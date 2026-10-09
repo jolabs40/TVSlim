@@ -44,7 +44,7 @@ class AdbKeyStore(
         }.getOrElse { error ->
             // An unreadable key (profile restored on another machine, corrupt file) is set aside, not deleted.
             // A new one replaces it and each TV will ask for authorization again.
-            AppLog.warn(TAG, "Clé ADB illisible, une nouvelle va la remplacer", error)
+            AppLog.warn(TAG, "ADB key unreadable, a new one will replace it", error)
             val suffix = ".illisible-${System.currentTimeMillis()}"
             privateKeyFile.renameTo(File(folder, PRIVATE_KEY_FILE + suffix))
             publicKeyFile.renameTo(File(folder, PUBLIC_KEY_FILE + suffix))
@@ -89,7 +89,7 @@ class AdbKeyStore(
     }
 
     private companion object {
-        const val TAG = "Cles"
+        const val TAG = "Keys"
         const val PRIVATE_KEY_FILE = "adbkey.dpapi"
         const val PUBLIC_KEY_FILE = "adbkey.pub"
     }

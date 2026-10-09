@@ -23,7 +23,7 @@ class SelectionTest {
     )
 
     private fun profile(vararg categories: String) =
-        Profile(id = "doux", name = "Doux", description = "", categories = categories.toList())
+        Profile(id = "gentle", name = "Gentle", description = "", categories = categories.toList())
 
     @Test
     fun `toggling checks then unchecks an active package`() {
@@ -38,11 +38,11 @@ class SelectionTest {
     @Test
     fun `an already disabled or missing package cannot be checked`() {
         val start = state(
-            "com.deja.eteint" to PackageState.DISABLED,
-            "com.pas.installe" to PackageState.ABSENT,
+            "com.already.off" to PackageState.DISABLED,
+            "com.not.installed" to PackageState.ABSENT,
         )
 
-        val after = start.withToggled("com.deja.eteint").withToggled("com.pas.installe")
+        val after = start.withToggled("com.already.off").withToggled("com.not.installed")
 
         assertTrue(after.selection.isEmpty())
     }
@@ -106,14 +106,14 @@ class SelectionTest {
     @Test
     fun `the list shows neither missing packages nor filtered-out ones`() {
         val start = state(
-            "com.actif" to PackageState.ACTIVE,
-            "com.eteint" to PackageState.DISABLED,
-            "com.absent" to PackageState.ABSENT,
+            "com.active" to PackageState.ACTIVE,
+            "com.off" to PackageState.DISABLED,
+            "com.missing" to PackageState.ABSENT,
         )
 
-        assertEquals(listOf("com.actif", "com.eteint"), start.shown.map { it.entry.packageName })
+        assertEquals(listOf("com.active", "com.off"), start.shown.map { it.entry.packageName })
         assertEquals(
-            listOf("com.eteint"),
+            listOf("com.off"),
             start.copy(filter = PackageFilter.DISABLED).shown.map { it.entry.packageName },
         )
         assertEquals(1, start.activeCount)

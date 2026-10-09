@@ -23,7 +23,7 @@ class TrampolineActivity : ComponentActivity() {
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
-        guardian.start(intent?.getStringExtra(EXTRA_TRIGGER) ?: "activité")
+        guardian.start(intent?.getStringExtra(EXTRA_TRIGGER) ?: "activity")
         finish()
     }
 

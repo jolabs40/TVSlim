@@ -65,10 +65,10 @@ class ScreenCaptureTest {
     @Test
     fun `an error code and a lost connection are told apart`() = runTest {
         val rejected = ScreenCapture(FakeTv(BinaryOutput(1, ByteArray(0), errors = "Permission denial\n"))).takeCapture()
-        val cut = ScreenCapture(FakeTv(BinaryOutput(null, ByteArray(0), reason = "délai dépassé"))).takeCapture()
+        val cut = ScreenCapture(FakeTv(BinaryOutput(null, ByteArray(0), reason = "timed out"))).takeCapture()
 
         assertEquals(CaptureResult.Failed(CaptureCause.REJECTED, "Permission denial"), rejected)
-        assertEquals(CaptureResult.Failed(CaptureCause.CONNECTION, "délai dépassé"), cut)
+        assertEquals(CaptureResult.Failed(CaptureCause.CONNECTION, "timed out"), cut)
     }
 
     @Test

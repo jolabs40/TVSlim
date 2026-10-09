@@ -104,7 +104,7 @@ class TvDiscovery(
                     TYPES.forEach { type -> dns.addServiceListener(type, listener) }
                 }
             }.onFailure {
-                AppLog.warn(TAG, "mDNS indisponible" + detail(adapter.name), it)
+                AppLog.warn(TAG, "mDNS unavailable" + detail(adapter.name), it)
             }.getOrNull()
         }
 
@@ -125,7 +125,7 @@ class TvDiscovery(
     }.flowOn(Dispatchers.IO)
 
     private companion object {
-        const val TAG = "Decouverte"
+        const val TAG = "Discovery"
 
         /** Classic network debugging, as on TVs listening on port 5555. */
         const val TYPE_ADB = "_adb._tcp.local."

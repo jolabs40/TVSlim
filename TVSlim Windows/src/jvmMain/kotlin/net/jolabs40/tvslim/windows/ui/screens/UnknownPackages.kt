@@ -49,11 +49,11 @@ fun LazyListScope.unknownsSection(
     /** Null when no maker package is missing from the catalogue: nothing worth submitting. */
     onSuggest: (() -> Unit)?,
 ) {
-    item(key = "inconnus-entete") {
+    item(key = "unknowns-header") {
         UnknownsHeader(shown = shown.size, total = total, onExport = onExport, onSuggest = onSuggest)
     }
     shown.groupBy { it.family }.forEach { (family, members) ->
-        item(key = "inconnus-famille-$family") {
+        item(key = "unknowns-family-$family") {
             Text(
                 text = "$family (${members.size})",
                 modifier = Modifier.padding(start = CHECKBOX_COLUMN, top = 10.dp, bottom = 2.dp),
@@ -61,7 +61,7 @@ fun LazyListScope.unknownsSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        items(members, key = { "inconnu-${it.packageName}" }) { unknown -> UnknownPackageRow(unknown) }
+        items(members, key = { "unknown-${it.packageName}" }) { unknown -> UnknownPackageRow(unknown) }
     }
 }
 

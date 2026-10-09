@@ -33,7 +33,7 @@ class TvAddressTest {
             "8.8.8.8",
             "172.15.0.1",
             "172.32.0.1",
-            "exemple.invalide",
+            "example.invalid",
             "192.168.2",
             "192.168.2.135.7",
             "999.1.1.1",
@@ -56,7 +56,7 @@ class TvAddressTest {
 
     @Test
     fun `a link to an outside host yields nothing`() {
-        assertNull(readPairingCode("tvslim://connect?host=exemple.invalide&port=5555"))
+        assertNull(readPairingCode("tvslim://connect?host=example.invalid&port=5555"))
         assertNull(readPairingCode("tvslim://connect?host=8.8.8.8"))
         assertNull(readPairingCode("tvslim://connect"))
     }
@@ -87,7 +87,7 @@ class TvAddressTest {
 
     @Test
     fun `a typed address is not filtered, so a hostname still works`() {
-        assertEquals(TvAddress("tv-salon.local", 5555), parseInput("tv-salon.local", "5555"))
+        assertEquals(TvAddress("tv-livingroom.local", 5555), parseInput("tv-livingroom.local", "5555"))
     }
 
     @Test
