@@ -18,24 +18,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import net.jolabs40.tvslim.journal.ActionJournal
-import net.jolabs40.tvslim.journal.TypeAction
+import net.jolabs40.tvslim.journal.JournalAction
+import net.jolabs40.tvslim.journal.ActionType
 import net.jolabs40.tvslim.remote.R
-import net.jolabs40.tvslim.remote.ui.EtatRemote
+import net.jolabs40.tvslim.remote.ui.RemoteState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
 fun JournalScreen(
-    etat: EtatRemote,
-    onToutRestaurer: () -> Unit,
-    onExporter: () -> Unit,
-    onAnnulerAction: (ActionJournal) -> Unit,
+    state: RemoteState,
+    onRestoreAll: () -> Unit,
+    onExport: () -> Unit,
+    onUndoAction: (JournalAction) -> Unit,
 ) {
     // Remembered: a SimpleDateFormat is costly to build, and the reversed list would be copied on every recomposition.
     val format = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()) }
-    val recentes = remember(etat.journal) { etat.journal.asReversed() }
+    val recent = remember(state.journal) { state.journal.asReversed() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -54,17 +54,17 @@ fun JournalScreen(
             modifier = Modifier.padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Button(onClick = onToutRestaurer, enabled = etat.connecte) {
+            Button(onClick = onRestoreAll, enabled = state.connected) {
                 Text(stringResource(R.string.journal_restore_all))
             }
-            OutlinedButton(onClick = onExporter) {
+            OutlinedButton(onClick = onExport) {
                 Text(stringResource(R.string.journal_export))
             }
         }
 
         HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
 
-        if (etat.journal.isEmpty()) {
+        if (state.journal.isEmpty()) {
             Text(
                 text = stringResource(R.string.journal_empty),
                 modifier = Modifier.padding(16.dp),
@@ -75,14 +75,14 @@ fun JournalScreen(
         }
 
         LazyColumn {
-            items(recentes) { action ->
-                VueAction(
+            items(recent) { action ->
+                ActionView(
                     action = action,
-                    horodatage = format.format(Date(action.horodatage)),
-                    onAnnuler = { onAnnulerAction(action) },
-                    annulable = etat.connecte &&
-                        action.reussi &&
-                        action.type == TypeAction.DESACTIVATION,
+                    timestamp = format.format(Date(action.timestamp)),
+                    onCancel = { onUndoAction(action) },
+                    undoable = state.connected &&
+                        action.succeeded &&
+                        action.type == ActionType.DISABLING,
                 )
                 HorizontalDivider()
             }
@@ -91,11 +91,11 @@ fun JournalScreen(
 }
 
 @Composable
-private fun VueAction(
-    action: ActionJournal,
-    horodatage: String,
-    annulable: Boolean,
-    onAnnuler: () -> Unit,
+private fun ActionView(
+    action: JournalAction,
+    timestamp: String,
+    undoable: Boolean,
+    onCancel: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Row(
@@ -103,20 +103,20 @@ private fun VueAction(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             // Home changes are labeled in the UI language; the label stored in the log is only for export.
-            val libelle = if (action.type == TypeAction.ACCUEIL) stringResource(R.string.journal_home) else action.libelle
+            val label = if (action.type == ActionType.HOME) stringResource(R.string.journal_home) else action.label
             Text(
-                text = "$libelle — ${action.cible}",
+                text = "$label — ${action.target}",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = if (action.reussi) {
+                text = if (action.succeeded) {
                     stringResource(R.string.journal_success)
                 } else {
                     stringResource(R.string.journal_failure, action.message.ifBlank { stringResource(R.string.engine_unexplained) })
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = if (action.reussi) {
+                color = if (action.succeeded) {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.error
@@ -125,13 +125,13 @@ private fun VueAction(
         }
         // An install has no undo command, so only the timestamp remains.
         Text(
-            text = listOf(horodatage, action.commandeAnnulation).filter { it.isNotBlank() }.joinToString(" · "),
+            text = listOf(timestamp, action.undoCommand).filter { it.isNotBlank() }.joinToString(" · "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         // Each entry carries its own undo command, so it can be replayed alone.
-        if (annulable) {
-            TextButton(onClick = onAnnuler, modifier = Modifier.padding(top = 4.dp)) {
+        if (undoable) {
+            TextButton(onClick = onCancel, modifier = Modifier.padding(top = 4.dp)) {
                 Text(stringResource(R.string.journal_undo_one))
             }
         }

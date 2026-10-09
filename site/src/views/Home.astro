@@ -3,13 +3,13 @@ import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import DownloadButtons from '../components/DownloadButtons.astro';
 import Risk from '../components/Risk.astro';
-import { catalogue, nomMarque } from '../data/catalogue';
+import { catalogue, brandName } from '../data/catalogue';
 import { path, url, REPO, KOFI, OG_IMAGE, SITE, STARTLIGHT, type Lang } from '../site';
 import { ORG_ID } from '../site';
-import ecranTv from '../../../docs/captures/tv-slim-windows-television.png';
-import trouve from '../../../docs/captures/tv-slim-find-tv-on-network.png';
-import paquets from '../../../docs/captures/tv-slim-packages.png';
-import applis from '../../../docs/captures/tv-slim-apps.png';
+import televisionShot from '../../../docs/captures/tv-slim-windows-television.png';
+import findTvShot from '../../../docs/captures/tv-slim-find-tv-on-network.png';
+import packagesShot from '../../../docs/captures/tv-slim-packages.png';
+import appsShot from '../../../docs/captures/tv-slim-apps.png';
 
 interface Props {
   lang: Lang;
@@ -17,11 +17,11 @@ interface Props {
 const { lang } = Astro.props;
 const fr = lang === 'fr';
 const cat = catalogue(lang);
-const marques = new Set([...cat.entrees.map((e) => e.marque), ...cat.proteges.map((p) => p.marque)]);
-const exemples = ['com.tcl.waterfall.overseas', 'com.google.android.apps.tv.launcherx', 'com.sony.dtv.promos']
-  .map((id) => cat.entrees.find((e) => e.paquet === id))
+const brands = new Set([...cat.entries.map((e) => e.brand), ...cat.protectedPackages.map((p) => p.brand)]);
+const samples = ['com.tcl.waterfall.overseas', 'com.google.android.apps.tv.launcherx', 'com.sony.dtv.promos']
+  .map((id) => cat.entries.find((e) => e.packageName === id))
   .filter((e) => e !== undefined);
-const garde = cat.proteges.find((p) => p.paquet === 'com.tcl.suspension');
+const protectedSample = cat.protectedPackages.find((p) => p.packageName === 'com.tcl.suspension');
 
 const t = fr
   ? {
@@ -44,9 +44,9 @@ const t = fr
       ],
       shotsH2: 'Ce que vous verrez',
       shots: [
-        [trouve, 'Il trouve le téléviseur sur le réseau', 'TV Slim trouve un TCL Smart TV Pro et un NVIDIA Shield sur le réseau local'],
-        [paquets, 'Les paquets désactivés, expliqués', 'L’onglet Paquets : recommandations TCL, Channel+, Privacy Sandbox et télémétrie Google désactivés, chacun avec un bouton Réactiver'],
-        [applis, 'Chaque application, avec son vrai nom', 'L’onglet Applications : Prime Video désactivé, Projectivy, SmartTube et Spotify installés, avec Ouvrir, Forcer l’arrêt et Désinstaller'],
+        [findTvShot, 'Il trouve le téléviseur sur le réseau', 'TV Slim trouve un TCL Smart TV Pro et un NVIDIA Shield sur le réseau local'],
+        [packagesShot, 'Les paquets désactivés, expliqués', 'L’onglet Paquets : recommandations TCL, Channel+, Privacy Sandbox et télémétrie Google désactivés, chacun avec un bouton Réactiver'],
+        [appsShot, 'Chaque application, avec son vrai nom', 'L’onglet Applications : Prime Video désactivé, Projectivy, SmartTube et Spotify installés, avec Ouvrir, Forcer l’arrêt et Désinstaller'],
       ],
       stepsEyebrow: 'Démarrer',
       stepsH2: 'Trois étapes, une seule fois',
@@ -58,7 +58,7 @@ const t = fr
       stepsLink: 'Lire le guide pas à pas',
       catEyebrow: 'Encyclopédie des paquets',
       catH2: 'Savoir ce qu’on coupe avant de le couper',
-      catLede: `${cat.entrees.length} paquets décrits, avec leur niveau de risque et leurs effets de bord, et ${cat.proteges.length} paquets auxquels il ne faut jamais toucher. ${marques.size} familles : les fabricants, Google, Android et les éditeurs tiers.`,
+      catLede: `${cat.entries.length} paquets décrits, avec leur niveau de risque et leurs effets de bord, et ${cat.protectedPackages.length} paquets auxquels il ne faut jamais toucher. ${brands.size} familles : les fabricants, Google, Android et les éditeurs tiers.`,
       catLink: 'Parcourir les paquets',
       compatEyebrow: 'Compatibilité',
       compatH2: 'Tout Android TV ou Google TV qui accepte le débogage réseau',
@@ -98,9 +98,9 @@ const t = fr
       ],
       shotsH2: 'What you will see',
       shots: [
-        [trouve, 'Finds the TV on your network', 'TV Slim finds a TCL Smart TV Pro and an NVIDIA Shield on the local network'],
-        [paquets, 'Disabled packages, explained', 'The Packages tab: TCL recommendations, Channel+, Privacy Sandbox and Google telemetry disabled, each one with a Re-enable button'],
-        [applis, 'Every app, with its real name', 'The Apps tab: Prime Video disabled, Projectivy, SmartTube and Spotify installed, with Open, Force stop and Uninstall'],
+        [findTvShot, 'Finds the TV on your network', 'TV Slim finds a TCL Smart TV Pro and an NVIDIA Shield on the local network'],
+        [packagesShot, 'Disabled packages, explained', 'The Packages tab: TCL recommendations, Channel+, Privacy Sandbox and Google telemetry disabled, each one with a Re-enable button'],
+        [appsShot, 'Every app, with its real name', 'The Apps tab: Prime Video disabled, Projectivy, SmartTube and Spotify installed, with Open, Force stop and Uninstall'],
       ],
       stepsEyebrow: 'Get started',
       stepsH2: 'Three steps, once',
@@ -112,7 +112,7 @@ const t = fr
       stepsLink: 'Read the step-by-step guide',
       catEyebrow: 'Package encyclopedia',
       catH2: 'Know what you switch off before you switch it off',
-      catLede: `${cat.entrees.length} packages described, with their risk level and side effects, and ${cat.proteges.length} packages you must never touch. ${marques.size} families: the makers, Google, Android and third-party apps.`,
+      catLede: `${cat.entries.length} packages described, with their risk level and side effects, and ${cat.protectedPackages.length} packages you must never touch. ${brands.size} families: the makers, Google, Android and third-party apps.`,
       catLink: 'Browse the packages',
       compatEyebrow: 'Compatibility',
       compatH2: 'Any Android TV or Google TV that offers network debugging',
@@ -169,7 +169,7 @@ const schema = [
     screenshot: OG_IMAGE,
     sameAs: [REPO],
     description: t.lede,
-    featureList: t.why.map(([titre]) => titre),
+    featureList: t.why.map(([title]) => title),
     publisher: { '@id': ORG_ID },
   },
   {
@@ -189,7 +189,7 @@ const schema = [
         <ul class="trust">{t.trust.map((x) => <li>{x}</li>)}</ul>
       </div>
       <figure class="shot">
-        <Image src={ecranTv} alt={t.heroAlt} widths={[640, 960, 1600]} sizes="(min-width: 960px) 620px, 100vw" loading="eager" />
+        <Image src={televisionShot} alt={t.heroAlt} widths={[640, 960, 1600]} sizes="(min-width: 960px) 620px, 100vw" loading="eager" />
       </figure>
     </div>
   </section>
@@ -201,10 +201,10 @@ const schema = [
         <h2>{t.whyH2}</h2>
       </div>
       <div class="why">
-        {t.why.map(([titre, texte]) => (
+        {t.why.map(([title, text]) => (
           <div class="point">
-            <h3>{titre}</h3>
-            <p class="muted">{texte}</p>
+            <h3>{title}</h3>
+            <p class="muted">{text}</p>
           </div>
         ))}
       </div>
@@ -215,10 +215,10 @@ const schema = [
     <div class="wrap">
       <div class="head"><h2>{t.shotsH2}</h2></div>
       <div class="shots">
-        {t.shots.map(([image, legende, alt]) => (
+        {t.shots.map(([image, caption, alt]) => (
           <figure class="card shot-card">
             <Image src={image as ImageMetadata} alt={alt as string} widths={[480, 800]} sizes="(min-width: 960px) 360px, 100vw" />
-            <figcaption>{legende as string}</figcaption>
+            <figcaption>{caption as string}</figcaption>
           </figure>
         ))}
       </div>
@@ -232,10 +232,10 @@ const schema = [
         <h2>{t.stepsH2}</h2>
       </div>
       <ol class="steps">
-        {t.steps.map(([titre, texte]) => (
+        {t.steps.map(([title, text]) => (
           <li class="card">
-            <h3>{titre}</h3>
-            <p class="muted">{texte}</p>
+            <h3>{title}</h3>
+            <p class="muted">{text}</p>
           </li>
         ))}
       </ol>
@@ -252,21 +252,21 @@ const schema = [
         <p><a class="btn btn-ghost" href={path(lang, '/packages/')}>{t.catLink}</a></p>
       </div>
       <ul class="samples">
-        {exemples.map((e) => (
+        {samples.map((e) => (
           <li>
-            <a href={path(lang, `/packages/${e.paquet}/`)}>
-              <span class="n">{e.nom}</span>
-              <span class="pkg">{e.paquet}</span>
-              <span class="b"><Risk lang={lang} risque={e.risque} nonEprouve={!e.eprouve} /></span>
+            <a href={path(lang, `/packages/${e.packageName}/`)}>
+              <span class="n">{e.name}</span>
+              <span class="pkg">{e.packageName}</span>
+              <span class="b"><Risk lang={lang} level={e.risk} untested={!e.tested} /></span>
             </a>
           </li>
         ))}
-        {garde && (
+        {protectedSample && (
           <li>
-            <a href={path(lang, `/packages/${garde.paquet}/`)}>
-              <span class="n">{garde.raison}</span>
-              <span class="pkg">{garde.paquet} · {nomMarque(garde.marque, lang)}</span>
-              <span class="b"><Risk lang={lang} protege /></span>
+            <a href={path(lang, `/packages/${protectedSample.packageName}/`)}>
+              <span class="n">{protectedSample.reason}</span>
+              <span class="pkg">{protectedSample.packageName} · {brandName(protectedSample.brand, lang)}</span>
+              <span class="b"><Risk lang={lang} isProtected /></span>
             </a>
           </li>
         )}
@@ -281,10 +281,10 @@ const schema = [
         <h2>{t.compatH2}</h2>
       </div>
       <div class="grid">
-        {t.compat.map(([titre, texte]) => (
+        {t.compat.map(([title, text]) => (
           <div class="card stack" style="gap:8px">
-            <h3>{titre}</h3>
-            <p class="muted">{texte}</p>
+            <h3>{title}</h3>
+            <p class="muted">{text}</p>
           </div>
         ))}
       </div>

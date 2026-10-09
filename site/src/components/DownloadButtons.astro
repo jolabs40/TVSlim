@@ -1,7 +1,7 @@
 ---
 // Download buttons: the Windows installer from the latest release, and the Android section.
 // Icons are Material Icons (Apache 2.0), no brand logos.
-import { publications, fichier } from '../data/releases';
+import { latestReleases, findFile } from '../data/releases';
 import { path, RELEASES, type Lang } from '../site';
 
 interface Props {
@@ -9,8 +9,8 @@ interface Props {
 }
 const { lang } = Astro.props;
 const fr = lang === 'fr';
-const { windows, android } = await publications();
-const msi = fichier(windows, (n) => n.endsWith('.msi'));
+const { windows, android } = await latestReleases();
+const msi = findFile(windows, (n) => n.endsWith('.msi'));
 ---
 <div class="actions">
   <a class="btn btn-primary" href={msi?.url ?? `${RELEASES}/latest`}>

@@ -18,7 +18,7 @@ export const STARTLIGHT = 'https://startlightlauncher.com';
 export const OG_IMAGE = `${SITE}/og.png`;
 /** Publisher @id, shared with startlightlauncher.com so both sites refer to the same organization. */
 export const ORG_ID = 'https://jolabs40.net/#org';
-/** Signing certificate fingerprint of both APKs, `empreinteCertificat` in TVSlim/gradle.properties. */
+/** Signing certificate fingerprint of both APKs, `certificateFingerprint` in TVSlim/gradle.properties. */
 export const CERT_SHA256 =
   '42:96:BD:A0:51:8F:1A:59:1D:66:91:4E:6B:AB:7B:2F:0D:00:30:BE:6D:6C:79:8E:F3:AE:D5:D2:79:CF:96:F8';
 

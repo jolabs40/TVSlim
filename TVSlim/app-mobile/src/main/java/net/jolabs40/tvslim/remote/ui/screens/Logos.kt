@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import net.jolabs40.tvslim.device.Fabricant
+import net.jolabs40.tvslim.device.Manufacturer
 import net.jolabs40.tvslim.remote.R
 
 /**
@@ -51,42 +51,42 @@ val LOGOS_LAUNCHERS: Map<String, Int> = mapOf(
  * Ten TV brands and five box brands (Xiaomi is both). Thomson, Nokia and Skyworth are recognized without a logo and
  * spelled out on their plate.
  */
-val LOGOS_FABRICANTS: Map<Fabricant, Int> = mapOf(
-    Fabricant.TCL to R.drawable.marque_tcl,
-    Fabricant.HISENSE to R.drawable.marque_hisense,
-    Fabricant.PHILIPS to R.drawable.marque_philips,
-    Fabricant.SONY to R.drawable.marque_sony,
-    Fabricant.XIAOMI to R.drawable.marque_xiaomi,
-    Fabricant.SHARP to R.drawable.marque_sharp,
-    Fabricant.GRUNDIG to R.drawable.marque_grundig,
-    Fabricant.TOSHIBA to R.drawable.marque_toshiba,
-    Fabricant.HAIER to R.drawable.marque_haier,
-    Fabricant.PANASONIC to R.drawable.marque_panasonic,
-    Fabricant.NVIDIA to R.drawable.marque_nvidia,
-    Fabricant.GOOGLE to R.drawable.marque_google,
-    Fabricant.AMAZON to R.drawable.marque_amazon,
-    Fabricant.FREEBOX to R.drawable.marque_freebox,
+val MANUFACTURER_LOGOS: Map<Manufacturer, Int> = mapOf(
+    Manufacturer.TCL to R.drawable.brand_tcl,
+    Manufacturer.HISENSE to R.drawable.brand_hisense,
+    Manufacturer.PHILIPS to R.drawable.brand_philips,
+    Manufacturer.SONY to R.drawable.brand_sony,
+    Manufacturer.XIAOMI to R.drawable.brand_xiaomi,
+    Manufacturer.SHARP to R.drawable.brand_sharp,
+    Manufacturer.GRUNDIG to R.drawable.brand_grundig,
+    Manufacturer.TOSHIBA to R.drawable.brand_toshiba,
+    Manufacturer.HAIER to R.drawable.brand_haier,
+    Manufacturer.PANASONIC to R.drawable.brand_panasonic,
+    Manufacturer.NVIDIA to R.drawable.brand_nvidia,
+    Manufacturer.GOOGLE to R.drawable.brand_google,
+    Manufacturer.AMAZON to R.drawable.brand_amazon,
+    Manufacturer.FREEBOX to R.drawable.brand_freebox,
 )
 
 @Composable
-fun LogoLauncher(id: String?, taille: Dp = 40.dp, modifier: Modifier = Modifier) {
-    val forme = RoundedCornerShape(taille * 0.22f)
+fun LogoLauncher(id: String?, size: Dp = 40.dp, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(size * 0.22f)
     val logo = id?.let { LOGOS_LAUNCHERS[it] }
     if (logo != null) {
         Image(
             painter = painterResource(logo),
             contentDescription = null,
-            modifier = modifier.size(taille).clip(forme),
+            modifier = modifier.size(size).clip(shape),
         )
     } else {
         Box(
-            modifier = modifier.size(taille).background(MaterialTheme.colorScheme.surfaceVariant, forme),
+            modifier = modifier.size(size).background(MaterialTheme.colorScheme.surfaceVariant, shape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Filled.Home,
                 contentDescription = null,
-                modifier = Modifier.size(taille * 0.55f),
+                modifier = Modifier.size(size * 0.55f),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -98,32 +98,32 @@ fun LogoLauncher(id: String?, taille: Dp = 40.dp, modifier: Modifier = Modifier)
  * without a logo is spelled out.
  */
 @Composable
-fun PlaqueMarque(fabricant: Fabricant, hauteur: Dp = 32.dp, modifier: Modifier = Modifier) {
-    val logo = LOGOS_FABRICANTS[fabricant]
+fun BrandPlate(manufacturer: Manufacturer, height: Dp = 32.dp, modifier: Modifier = Modifier) {
+    val logo = MANUFACTURER_LOGOS[manufacturer]
     Surface(
         color = Color.White,
-        shape = RoundedCornerShape(hauteur * 0.25f),
-        modifier = modifier.height(hauteur),
+        shape = RoundedCornerShape(height * 0.25f),
+        modifier = modifier.height(height),
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = hauteur * 0.35f, vertical = hauteur * 0.2f),
+            modifier = Modifier.padding(horizontal = height * 0.35f, vertical = height * 0.2f),
             contentAlignment = Alignment.Center,
         ) {
             if (logo != null) {
-                val peintre = painterResource(logo)
-                val taille = peintre.intrinsicSize
-                val proportion = if (taille.isSpecified && taille.height > 0f) taille.width / taille.height else 3f
+                val painter = painterResource(logo)
+                val size = painter.intrinsicSize
+                val proportion = if (size.isSpecified && size.height > 0f) size.width / size.height else 3f
                 Image(
-                    painter = peintre,
-                    contentDescription = fabricant.nom,
-                    modifier = Modifier.height(hauteur * 0.6f).aspectRatio(proportion),
+                    painter = painter,
+                    contentDescription = manufacturer.displayName,
+                    modifier = Modifier.height(height * 0.6f).aspectRatio(proportion),
                 )
             } else {
                 Text(
-                    text = fabricant.nom,
+                    text = manufacturer.displayName,
                     color = Color(0xFF1B1F23),
                     fontWeight = FontWeight.Bold,
-                    fontSize = (hauteur.value * 0.42f).sp,
+                    fontSize = (height.value * 0.42f).sp,
                     maxLines = 1,
                 )
             }

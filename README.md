@@ -241,7 +241,7 @@ Anyone can run the same check on a download, with JDK 17 or later, from a copy o
 and with the `.msi.sig` file next to the installer:
 
 ```sh
-java "TVSlim Windows/outils/VerifierMiseAJour.java" TVSlim-Windows-x.y.z.msi x.y.z "TVSlim Windows/gradle.properties"
+java "TVSlim Windows/tools/VerifyUpdate.java" TVSlim-Windows-x.y.z.msi x.y.z "TVSlim Windows/gradle.properties"
 ```
 
 ## Privacy
@@ -307,7 +307,7 @@ cd "TVSlim Windows"
 
 Push an annotated tag `windows-vX.Y.Z`: the workflow tests, builds, signs and publishes. The
 signing key comes from the `TVSLIM_CLE_SIGNATURE` secret. A fork must generate its own key pair
-(`java outils/GenererCleSignature.java`) and replace `clePubliqueMisesAJour` in `gradle.properties`
+(`java tools/GenerateSigningKey.java`) and replace `updatesPublicKey` in `gradle.properties`
 before its first release.
 
 ## Licence

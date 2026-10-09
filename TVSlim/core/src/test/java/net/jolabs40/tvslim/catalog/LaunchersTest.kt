@@ -15,71 +15,71 @@ import java.io.File
  */
 class LaunchersTest {
 
-    private val startlight = LauncherRecommande(
-        paquet = "net.jolabs40.startlight",
-        nom = "Startlight Launcher",
+    private val startlight = RecommendedLauncher(
+        packageName = "net.jolabs40.startlight",
+        name = "Startlight Launcher",
         description = "",
         id = "startlight",
-        variantes = listOf("net.jolabs40.startlight.debug"),
+        variants = listOf("net.jolabs40.startlight.debug"),
     )
 
-    private val catalogue = Catalogue(
+    private val catalog = Catalog(
         launchers = listOf(startlight),
-        launchersConnus = listOf(
-            LauncherConnu(id = "projectivy", nom = "Projectivy Launcher", paquets = listOf("com.spocky.projengmenu")),
+        knownLaunchers = listOf(
+            KnownLauncher(id = "projectivy", name = "Projectivy Launcher", packages = listOf("com.spocky.projengmenu")),
         ),
     )
 
     @Test
     fun `the recommended launcher is offered until one of its builds is installed`() {
-        assertEquals(listOf(startlight), catalogue.launchersAProposer(emptyList()))
-        assertEquals(listOf(startlight), catalogue.launchersAProposer(listOf("com.spocky.projengmenu")))
+        assertEquals(listOf(startlight), catalog.launchersToOffer(emptyList()))
+        assertEquals(listOf(startlight), catalog.launchersToOffer(listOf("com.spocky.projengmenu")))
 
-        assertTrue(catalogue.launchersAProposer(listOf("net.jolabs40.startlight")).isEmpty())
-        assertTrue(catalogue.launchersAProposer(listOf("net.jolabs40.startlight.debug")).isEmpty())
+        assertTrue(catalog.launchersToOffer(listOf("net.jolabs40.startlight")).isEmpty())
+        assertTrue(catalog.launchersToOffer(listOf("net.jolabs40.startlight.debug")).isEmpty())
     }
 
     @Test
     fun `the recommended launcher comes first, its release build before its debug build`() {
-        val installes = listOf("com.spocky.projengmenu", "net.jolabs40.startlight.debug", "ca.dstudio.atvlauncher.pro", "net.jolabs40.startlight")
+        val installed = listOf("com.spocky.projengmenu", "net.jolabs40.startlight.debug", "ca.dstudio.atvlauncher.pro", "net.jolabs40.startlight")
 
         assertEquals(
             listOf("net.jolabs40.startlight", "net.jolabs40.startlight.debug", "com.spocky.projengmenu", "ca.dstudio.atvlauncher.pro"),
-            catalogue.recommandesDAbord(installes) { it },
+            catalog.recommendedFirst(installed) { it },
         )
-        assertEquals(listOf("b", "a"), Catalogue().recommandesDAbord(listOf("b", "a")) { it })
+        assertEquals(listOf("b", "a"), Catalog().recommendedFirst(listOf("b", "a")) { it })
     }
 
     @Test
     fun `the recommended launcher website is shown without its scheme`() {
-        assertEquals("startlightlauncher.com", startlight.copy(site = "https://startlightlauncher.com/").siteAffiche)
-        val embarque = File("src/main/assets/catalogue.json").readText()
-        val lu = Json { ignoreUnknownKeys = true }.decodeFromString(Catalogue.serializer(), embarque)
-        assertEquals("https://startlightlauncher.com", lu.launcherRecommande("net.jolabs40.startlight")?.site)
+        assertEquals("startlightlauncher.com", startlight.copy(site = "https://startlightlauncher.com/").displayedSite)
+        val bundled = File("src/main/assets/catalogue.json").readText()
+        val justRead = Json { ignoreUnknownKeys = true }.decodeFromString(Catalog.serializer(), bundled)
+        assertEquals("https://startlightlauncher.com", justRead.recommendedLauncher("net.jolabs40.startlight")?.site)
     }
 
     @Test
     fun `an installed launcher gets its name and its logo id`() {
-        assertEquals("Startlight Launcher", catalogue.nomLauncher("net.jolabs40.startlight.debug"))
-        assertEquals("startlight", catalogue.idLauncher("net.jolabs40.startlight.debug"))
-        assertEquals("Projectivy Launcher", catalogue.nomLauncher("com.spocky.projengmenu"))
-        assertEquals("projectivy", catalogue.idLauncher("com.spocky.projengmenu"))
+        assertEquals("Startlight Launcher", catalog.launcherName("net.jolabs40.startlight.debug"))
+        assertEquals("startlight", catalog.launcherId("net.jolabs40.startlight.debug"))
+        assertEquals("Projectivy Launcher", catalog.launcherName("com.spocky.projengmenu"))
+        assertEquals("projectivy", catalog.launcherId("com.spocky.projengmenu"))
 
-        assertNull(catalogue.nomLauncher("com.inconnu.launcher"))
-        assertNull(catalogue.idLauncher("com.inconnu.launcher"))
+        assertNull(catalog.launcherName("com.inconnu.launcher"))
+        assertNull(catalog.launcherId("com.inconnu.launcher"))
     }
 
     @Test
     fun `the shipped catalog never gives one package two logos`() {
-        val livre = Json { ignoreUnknownKeys = true; isLenient = true }
-            .decodeFromString(Catalogue.serializer(), File("src/main/assets/catalogue.json").readText())
+        val shipped = Json { ignoreUnknownKeys = true; isLenient = true }
+            .decodeFromString(Catalog.serializer(), File("src/main/assets/catalogue.json").readText())
 
-        val ids = livre.launchers.map { it.id } + livre.launchersConnus.map { it.id }
+        val ids = shipped.launchers.map { it.id } + shipped.knownLaunchers.map { it.id }
         assertTrue("Un launcher sans identifiant n'aurait pas de logo : $ids", ids.none { it.isBlank() })
         assertEquals("Identifiants en double : $ids", ids.size, ids.toSet().size)
 
-        val paquets = livre.launchers.flatMap { listOf(it.paquet) + it.variantes } +
-            livre.launchersConnus.flatMap { it.paquets }
-        assertEquals("Paquet cité deux fois : $paquets", paquets.size, paquets.toSet().size)
+        val packages = shipped.launchers.flatMap { listOf(it.packageName) + it.variants } +
+            shipped.knownLaunchers.flatMap { it.packages }
+        assertEquals("Paquet cité deux fois : $packages", packages.size, packages.toSet().size)
     }
 }

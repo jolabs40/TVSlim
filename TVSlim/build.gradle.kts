@@ -6,11 +6,11 @@ plugins {
     alias(libs.plugins.hilt.android) apply false
 }
 
-// Version shared by both apps: versionApp in gradle.properties, or -PversionApp= that CI takes from the
+// Version shared by both apps: appVersion in gradle.properties, or -PappVersion= that CI takes from the
 // android-vX.Y.Z tag. versionCode is X*10000 + Y*100 + Z, which grows with the version as long as Y and Z
 // stay under 100; Android refuses an update whose versionCode goes down.
-val versionApp = providers.gradleProperty("versionApp").get()
-val (majeur, mineur, correctif) = Regex("""(\d{1,3})\.(\d{1,2})\.(\d{1,2})""").matchEntire(versionApp)?.destructured
-    ?: error("versionApp invalide : $versionApp (attendu X.Y.Z, Y et Z sous 100)")
-extra["versionApp"] = versionApp
-extra["codeDeVersion"] = majeur.toInt() * 10_000 + mineur.toInt() * 100 + correctif.toInt()
+val appVersion = providers.gradleProperty("appVersion").get()
+val (major, minor, patch) = Regex("""(\d{1,3})\.(\d{1,2})\.(\d{1,2})""").matchEntire(appVersion)?.destructured
+    ?: error("invalid appVersion: $appVersion (expected X.Y.Z, Y and Z below 100)")
+extra["appVersion"] = appVersion
+extra["codeDeVersion"] = major.toInt() * 10_000 + minor.toInt() * 100 + patch.toInt()

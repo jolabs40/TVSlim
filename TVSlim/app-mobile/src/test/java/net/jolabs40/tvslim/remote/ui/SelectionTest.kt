@@ -1,8 +1,8 @@
 package net.jolabs40.tvslim.remote.ui
 
-import net.jolabs40.tvslim.catalog.EntreePaquet
-import net.jolabs40.tvslim.catalog.Profil
-import net.jolabs40.tvslim.device.EtatPaquet
+import net.jolabs40.tvslim.catalog.PackageEntry
+import net.jolabs40.tvslim.catalog.Profile
+import net.jolabs40.tvslim.device.PackageState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -14,95 +14,95 @@ import org.junit.Test
  */
 class SelectionTest {
 
-    private fun entree(paquet: String, categorie: String = "bloatware_tcl") = EntreePaquet(
-        paquet = paquet,
-        nom = paquet,
+    private fun entry(packageName: String, category: String = "bloatware_tcl") = PackageEntry(
+        packageName = packageName,
+        name = packageName,
         description = "",
-        categorie = categorie,
+        category = category,
     )
 
-    private fun etat(vararg lignes: Pair<String, EtatPaquet>) = EtatRemote(
-        lignes = lignes.map { (paquet, etat) -> LignePaquet(entree(paquet), etat) },
+    private fun state(vararg lines: Pair<String, PackageState>) = RemoteState(
+        lines = lines.map { (packageName, state) -> PackageRow(entry(packageName), state) },
     )
 
-    private fun profil(vararg categories: String) =
-        Profil(id = "doux", nom = "Doux", description = "", categories = categories.toList())
+    private fun profile(vararg categories: String) =
+        Profile(id = "doux", name = "Doux", description = "", categories = categories.toList())
 
     @Test
     fun `toggling checks then unchecks an active package`() {
-        val depart = etat("com.tcl.pub" to EtatPaquet.ACTIF)
+        val start = state("com.tcl.pub" to PackageState.ACTIVE)
 
-        val coche = depart.avecBascule("com.tcl.pub")
-        assertTrue(coche.lignes.single().selectionne)
+        val checked = start.withToggled("com.tcl.pub")
+        assertTrue(checked.lines.single().selected)
 
-        assertFalse(coche.avecBascule("com.tcl.pub").lignes.single().selectionne)
+        assertFalse(checked.withToggled("com.tcl.pub").lines.single().selected)
     }
 
     @Test
     fun `an already disabled or missing package cannot be checked`() {
-        val depart = etat(
-            "com.deja.eteint" to EtatPaquet.DESACTIVE,
-            "com.pas.installe" to EtatPaquet.ABSENT,
+        val start = state(
+            "com.deja.eteint" to PackageState.DISABLED,
+            "com.pas.installe" to PackageState.ABSENT,
         )
 
-        val apres = depart.avecBascule("com.deja.eteint").avecBascule("com.pas.installe")
+        val after = start.withToggled("com.deja.eteint").withToggled("com.pas.installe")
 
-        assertTrue(apres.selection.isEmpty())
+        assertTrue(after.selection.isEmpty())
     }
 
     @Test
     fun `a profile only checks its category, and only active packages`() {
-        val depart = EtatRemote(
-            lignes = listOf(
-                LignePaquet(entree("com.a", "bloatware_tcl"), EtatPaquet.ACTIF),
-                LignePaquet(entree("com.b", "expert"), EtatPaquet.ACTIF),
-                LignePaquet(entree("com.c", "bloatware_tcl"), EtatPaquet.DESACTIVE),
+        val start = RemoteState(
+            lines = listOf(
+                PackageRow(entry("com.a", "bloatware_tcl"), PackageState.ACTIVE),
+                PackageRow(entry("com.b", "expert"), PackageState.ACTIVE),
+                PackageRow(entry("com.c", "bloatware_tcl"), PackageState.DISABLED),
             ),
         )
 
-        val apres = depart.avecProfil(profil("bloatware_tcl"))
+        val after = start.withProfile(profile("bloatware_tcl"))
 
-        assertEquals(listOf("com.a"), apres.selection.map { it.entree.paquet })
+        assertEquals(listOf("com.a"), after.selection.map { it.entry.packageName })
     }
 
     @Test
     fun `a profile adds to the current selection instead of replacing it`() {
-        val depart = EtatRemote(
-            lignes = listOf(
-                LignePaquet(entree("com.a", "expert"), EtatPaquet.ACTIF, selectionne = true),
-                LignePaquet(entree("com.b", "bloatware_tcl"), EtatPaquet.ACTIF),
+        val start = RemoteState(
+            lines = listOf(
+                PackageRow(entry("com.a", "expert"), PackageState.ACTIVE, selected = true),
+                PackageRow(entry("com.b", "bloatware_tcl"), PackageState.ACTIVE),
             ),
         )
 
-        val apres = depart.avecProfil(profil("bloatware_tcl"))
+        val after = start.withProfile(profile("bloatware_tcl"))
 
-        assertEquals(listOf("com.a", "com.b"), apres.selection.map { it.entree.paquet })
+        assertEquals(listOf("com.a", "com.b"), after.selection.map { it.entry.packageName })
     }
 
     @Test
     fun `a profile never checks an untested entry, which can still be checked by hand`() {
-        val depart = EtatRemote(
-            lignes = listOf(
-                LignePaquet(entree("com.a"), EtatPaquet.ACTIF),
-                LignePaquet(entree("org.droidtv.welcome").copy(eprouve = false), EtatPaquet.ACTIF),
+        val start = RemoteState(
+            lines = listOf(
+                PackageRow(entry("com.a"), PackageState.ACTIVE),
+                PackageRow(entry("org.droidtv.welcome").copy(tested = false), PackageState.ACTIVE),
             ),
         )
 
-        val apres = depart.avecProfil(profil("bloatware_tcl"))
+        val after = start.withProfile(profile("bloatware_tcl"))
 
-        assertEquals(listOf("com.a"), apres.selection.map { it.entree.paquet })
+        assertEquals(listOf("com.a"), after.selection.map { it.entry.packageName })
         assertEquals(
             listOf("com.a", "org.droidtv.welcome"),
-            apres.avecBascule("org.droidtv.welcome").selection.map { it.entree.paquet },
+            after.withToggled("org.droidtv.welcome").selection.map { it.entry.packageName },
         )
     }
 
     @Test
     fun `unchecking all leaves nothing selected`() {
-        val depart = etat("com.a" to EtatPaquet.ACTIF, "com.b" to EtatPaquet.ACTIF)
-            .avecBascule("com.a")
-            .avecBascule("com.b")
+        val start = state("com.a" to PackageState.ACTIVE, "com.b" to PackageState.ACTIVE)
+            .withToggled("com.a")
+            .withToggled("com.b")
 
-        assertTrue(depart.sansSelection().selection.isEmpty())
+        assertTrue(start.withoutSelection().selection.isEmpty())
     }
 }

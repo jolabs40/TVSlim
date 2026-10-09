@@ -33,15 +33,15 @@ concurrency:
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
-  construire:
-    name: Tests, installateur et version portable
+  build:
+    name: Tests, installer and portable build
     runs-on: windows-latest
     defaults:
       run:
         shell: pwsh
         working-directory: 'TVSlim Windows'
     outputs:
-      version: ${{ steps.version.outputs.valeur }}
+      version: ${{ steps.version.outputs.value }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -62,35 +62,35 @@ jobs:
           if ($env:REF -like 'refs/tags/windows-v*') {
             $version = $env:REF.Substring('refs/tags/windows-v'.Length)
           } else {
-            $ligne = Get-Content gradle.properties | Where-Object { $_ -match '^versionApp=' }
-            $version = $ligne -replace '^versionApp=', ''
+            $line = Get-Content gradle.properties | Where-Object { $_ -match '^appVersion=' }
+            $version = $line -replace '^appVersion=', ''
           }
           # MSI requires three numbers, the first under 256.
-          if ($version -notmatch '^\d{1,3}\.\d{1,3}\.\d{1,5}$') { throw "Version invalide : $version" }
-          "valeur=$version" >> $env:GITHUB_OUTPUT
+          if ($version -notmatch '^\d{1,3}\.\d{1,3}\.\d{1,5}$') { throw "Invalid version: $version" }
+          "value=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Tests (le noyau partagé avec Android compris)
-        run: ./gradlew.bat jvmTest "-PversionApp=${{ steps.version.outputs.valeur }}"
+      - name: Tests (including the core shared with Android)
+        run: ./gradlew.bat jvmTest "-PappVersion=${{ steps.version.outputs.value }}"
 
-      - name: Installateur MSI et image portable
-        run: ./gradlew.bat packageMsi createDistributable "-PversionApp=${{ steps.version.outputs.valeur }}"
+      - name: MSI installer and portable image
+        run: ./gradlew.bat packageMsi createDistributable "-PappVersion=${{ steps.version.outputs.value }}"
 
-      - name: Rassembler les fichiers à publier
+      - name: Collect the files to publish
         env:
-          VERSION: ${{ steps.version.outputs.valeur }}
+          VERSION: ${{ steps.version.outputs.value }}
         run: |
-          $sortie = New-Item -ItemType Directory -Force publication
+          $outDir = New-Item -ItemType Directory -Force publication
           $msi = Get-ChildItem build/compose/binaries/main/msi -Filter *.msi | Select-Object -First 1
-          Copy-Item -LiteralPath $msi.FullName (Join-Path $sortie "TVSlim-Windows-$env:VERSION.msi")
+          Copy-Item -LiteralPath $msi.FullName (Join-Path $outDir "TVSlim-Windows-$env:VERSION.msi")
 
           # Marker file: the portable build never tries to install itself.
           $image = Get-ChildItem build/compose/binaries/main/app -Directory | Select-Object -First 1
           New-Item -ItemType File -Force (Join-Path $image.FullName 'app/portable') | Out-Null
-          Compress-Archive -LiteralPath $image.FullName -DestinationPath (Join-Path $sortie "TVSlim-Windows-$env:VERSION-portable.zip")
+          Compress-Archive -LiteralPath $image.FullName -DestinationPath (Join-Path $outDir "TVSlim-Windows-$env:VERSION-portable.zip")
 
-          Get-ChildItem $sortie -File |
+          Get-ChildItem $outDir -File |
             ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } |
-            Set-Content (Join-Path $sortie 'SHA256SUMS.txt') -Encoding ascii
+            Set-Content (Join-Path $outDir 'SHA256SUMS.txt') -Encoding ascii
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -98,9 +98,9 @@ jobs:
           path: 'TVSlim Windows/publication/'
           if-no-files-found: error
 
-  publier:
-    name: Signature et publication
-    needs: construire
+  publish:
+    name: Sign and publish
+    needs: build
     if: startsWith(github.ref, 'refs/tags/windows-v')
     runs-on: ubuntu-latest
     permissions:
@@ -120,38 +120,38 @@ jobs:
           name: tvslim-windows
           path: publication
 
-      - name: Signer l'installateur
+      - name: Sign the installer
         env:
           TVSLIM_CLE_SIGNATURE: ${{ secrets.TVSLIM_CLE_SIGNATURE }}
-          VERSION: ${{ needs.construire.outputs.version }}
-        run: java "TVSlim Windows/outils/SignerMiseAJour.java" "publication/TVSlim-Windows-$VERSION.msi" "$VERSION"
+          VERSION: ${{ needs.build.outputs.version }}
+        run: java "TVSlim Windows/tools/SignUpdate.java" "publication/TVSlim-Windows-$VERSION.msi" "$VERSION"
 
       # A private key that does not match the embedded public key would produce a release every
       # install refuses, so verify it the way they do before publishing.
-      - name: Vérifier la signature contre la clé embarquée
+      - name: Verify the signature against the embedded key
         env:
-          VERSION: ${{ needs.construire.outputs.version }}
-        run: java "TVSlim Windows/outils/VerifierMiseAJour.java" "publication/TVSlim-Windows-$VERSION.msi" "$VERSION" "TVSlim Windows/gradle.properties"
+          VERSION: ${{ needs.build.outputs.version }}
+        run: java "TVSlim Windows/tools/VerifyUpdate.java" "publication/TVSlim-Windows-$VERSION.msi" "$VERSION" "TVSlim Windows/gradle.properties"
 
       # actions/checkout fetches the tag by its commit SHA, so it arrives lightweight, without its
       # message, and `gh release create --notes-from-tag` reads nothing when --repo is given. Read the
       # notes from the tag object through the API instead.
-      - name: Notes de version, depuis le message du tag
+      - name: Release notes, from the tag message
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          objet=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha')
-          if [ "${objet%% *}" != "tag" ]; then
-            echo "::error::$TAG doit être un tag annoté : son message sert de notes de version."
+          object=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha')
+          if [ "${object%% *}" != "tag" ]; then
+            echo "::error::$TAG must be an annotated tag: its message is used as the release notes."
             exit 1
           fi
-          gh api "repos/$GITHUB_REPOSITORY/git/tags/${objet#* }" --jq .message > notes.md
+          gh api "repos/$GITHUB_REPOSITORY/git/tags/${object#* }" --jq .message > notes.md
 
-      - name: Publier sur GitHub
+      - name: Publish on GitHub
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.construire.outputs.version }}
+          VERSION: ${{ needs.build.outputs.version }}
           TAG: ${{ github.ref_name }}
         run: |
           gh release create "$TAG" publication/* \

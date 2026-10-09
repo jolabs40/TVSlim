@@ -1,7 +1,7 @@
 ---
 import Logo from './Logo.astro';
-import MarqueGithub from './MarqueGithub.astro';
-import SymboleKofi from './SymboleKofi.astro';
+import GithubMark from './GithubMark.astro';
+import KofiSymbol from './KofiSymbol.astro';
 import { path, ui, REPO, KOFI, STARTLIGHT, CONTACT, type Lang } from '../site';
 
 interface Props {
@@ -23,7 +23,7 @@ const t = ui[lang];
       <li><a href={path(lang, '/privacy/')}>{t.footer.privacy}</a></li>
     </ul>
     <ul class="ailleurs">
-      <li><a href={REPO} rel="noopener"><span class="ico"><MarqueGithub taille={20} /></span>GitHub</a></li>
+      <li><a href={REPO} rel="noopener"><span class="ico"><GithubMark size={20} /></span>GitHub</a></li>
       <li>
         <a href={`${REPO}/blob/main/LICENSE`} rel="noopener">
           <span class="ico">
@@ -32,7 +32,7 @@ const t = ui[lang];
           </span>{t.footer.license}
         </a>
       </li>
-      <li><a href={KOFI} rel="noopener"><span class="ico"><SymboleKofi taille={20} /></span>{t.footer.support}</a></li>
+      <li><a href={KOFI} rel="noopener"><span class="ico"><KofiSymbol size={20} /></span>{t.footer.support}</a></li>
       <li>
         <a href={`mailto:${CONTACT}`}>
           <span class="ico">

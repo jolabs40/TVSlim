@@ -11,58 +11,58 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import net.jolabs40.tvslim.catalog.Catalogue
-import net.jolabs40.tvslim.catalog.CatalogueRepository
-import net.jolabs40.tvslim.catalog.EntreePaquet
-import net.jolabs40.tvslim.catalog.ReglageSysteme
-import net.jolabs40.tvslim.device.AppareilRepository
-import net.jolabs40.tvslim.device.EtatPaquet
-import net.jolabs40.tvslim.device.InfosAppareil
-import net.jolabs40.tvslim.reseau.InfosReseau
-import net.jolabs40.tvslim.reseau.PointDeContact
-import net.jolabs40.tvslim.system.GardienDerive
+import net.jolabs40.tvslim.catalog.Catalog
+import net.jolabs40.tvslim.catalog.CatalogRepository
+import net.jolabs40.tvslim.catalog.PackageEntry
+import net.jolabs40.tvslim.catalog.SystemSetting
+import net.jolabs40.tvslim.device.DeviceRepository
+import net.jolabs40.tvslim.device.PackageState
+import net.jolabs40.tvslim.device.DeviceInfo
+import net.jolabs40.tvslim.network.LocalNetworkInfo
+import net.jolabs40.tvslim.network.ContactPoint
+import net.jolabs40.tvslim.system.DriftGuardian
 import net.jolabs40.tvslim.system.PreferencesRepository
-import net.jolabs40.tvslim.system.ReglagesSysteme
-import net.jolabs40.tvslim.system.accueilsUsine
-import net.jolabs40.tvslim.system.nomDuLauncher
+import net.jolabs40.tvslim.system.SystemSettings
+import net.jolabs40.tvslim.system.factoryHomes
+import net.jolabs40.tvslim.system.launcherNameOrPackage
 import javax.inject.Inject
 
 /** A catalogue entry and its state on this TV. Read-only. */
-data class LignePaquetTv(
-    val entree: EntreePaquet,
-    val etat: EtatPaquet,
+data class TvPackageRow(
+    val entry: PackageEntry,
+    val state: PackageState,
 )
 
-data class LigneReglage(
-    val reglage: ReglageSysteme,
-    val valeurActuelle: String?,
+data class SettingRow(
+    val setting: SystemSetting,
+    val currentValue: String?,
 ) {
-    val optimise: Boolean get() = valeurActuelle == reglage.valeurOptimisee
+    val optimized: Boolean get() = currentValue == setting.optimizedValue
 }
 
 /** Drift for display, with catalogue names instead of package names. */
-data class DeriveAffichee(
-    val rallumes: List<String>,
-    val accueilPerdu: String?,
+data class DisplayedDrift(
+    val reenabled: List<String>,
+    val lostHome: String?,
 )
 
-data class EtatUi(
-    val chargement: Boolean = true,
-    val ecritureDirecte: Boolean = false,
-    val gardienActif: Boolean = false,
-    val infos: InfosAppareil = InfosAppareil.VIDE,
-    val contact: PointDeContact = PointDeContact(),
-    val reglages: List<LigneReglage> = emptyList(),
-    val paquets: List<LignePaquetTv> = emptyList(),
-    /** What the last system update undid and is not fixed yet (see `GardienDerive`). */
-    val derive: DeriveAffichee? = null,
+data class UiState(
+    val loading: Boolean = true,
+    val directWrite: Boolean = false,
+    val guardianActive: Boolean = false,
+    val info: DeviceInfo = DeviceInfo.EMPTY,
+    val contact: ContactPoint = ContactPoint(),
+    val settings: List<SettingRow> = emptyList(),
+    val packages: List<TvPackageRow> = emptyList(),
+    /** What the last system update undid and is not fixed yet (see `DriftGuardian`). */
+    val drift: DisplayedDrift? = null,
     val message: String? = null,
 ) {
     /** Catalogue entries actually installed on this TV. */
-    val paquetsPresents: List<LignePaquetTv>
-        get() = paquets.filter { it.etat != EtatPaquet.ABSENT }
+    val presentPackages: List<TvPackageRow>
+        get() = packages.filter { it.state != PackageState.ABSENT }
 
-    val paquetsDesactives: Int get() = paquets.count { it.etat == EtatPaquet.DESACTIVE }
+    val disabledPackages: Int get() = packages.count { it.state == PackageState.DISABLED }
 }
 
 /**
@@ -71,52 +71,52 @@ data class EtatUi(
  */
 @HiltViewModel
 class TvSlimViewModel @Inject constructor(
-    private val catalogueRepo: CatalogueRepository,
-    private val appareil: AppareilRepository,
-    private val reglagesSysteme: ReglagesSysteme,
-    private val infosReseau: InfosReseau,
+    private val catalogRepo: CatalogRepository,
+    private val device: DeviceRepository,
+    private val systemSettings: SystemSettings,
+    private val networkInfo: LocalNetworkInfo,
     private val preferences: PreferencesRepository,
-    private val gardienDerive: GardienDerive,
+    private val driftGuardian: DriftGuardian,
 ) : ViewModel() {
 
-    private val _etat = MutableStateFlow(EtatUi())
-    val etat: StateFlow<EtatUi> = _etat.asStateFlow()
+    private val _state = MutableStateFlow(UiState())
+    val state: StateFlow<UiState> = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
-            preferences.gardienActif.collect { actif ->
-                _etat.update { it.copy(gardienActif = actif) }
+            preferences.guardianActive.collect { active ->
+                _state.update { it.copy(guardianActive = active) }
             }
         }
-        rafraichir()
+        refresh()
     }
 
-    fun rafraichir() {
+    fun refresh() {
         viewModelScope.launch {
-            _etat.update { it.copy(chargement = true) }
-            val catalogue = catalogueRepo.catalogue()
-            val paquetsDAccueil = catalogue.entrees
-                .filter { it.requiertLauncherTiers }
-                .map { it.paquet }
+            _state.update { it.copy(loading = true) }
+            val catalog = catalogRepo.catalog()
+            val homePackages = catalog.entries
+                .filter { it.requiresThirdPartyLauncher }
+                .map { it.packageName }
                 .toSet()
-            val infos = appareil.infos(paquetsDAccueil)
-            val reglages = withContext(Dispatchers.IO) {
-                catalogue.reglages.map { LigneReglage(it, reglagesSysteme.lire(it)) }
+            val info = device.info(homePackages)
+            val settings = withContext(Dispatchers.IO) {
+                catalog.settings.map { SettingRow(it, systemSettings.read(it)) }
             }
-            val paquets = withContext(Dispatchers.IO) {
-                catalogue.entrees.map { LignePaquetTv(it, appareil.etat(it.paquet)) }
+            val packages = withContext(Dispatchers.IO) {
+                catalog.entries.map { TvPackageRow(it, device.state(it.packageName)) }
             }
-            val contact = withContext(Dispatchers.IO) { infosReseau.pointDeContact() }
-            val derive = deriveRestante(catalogue, paquets, infos.accueilActuel)
-            _etat.update {
+            val contact = withContext(Dispatchers.IO) { networkInfo.contactPoint() }
+            val drift = remainingDrift(catalog, packages, info.currentHome)
+            _state.update {
                 it.copy(
-                    chargement = false,
-                    infos = infos,
+                    loading = false,
+                    info = info,
                     contact = contact,
-                    reglages = reglages,
-                    paquets = paquets,
-                    derive = derive,
-                    ecritureDirecte = reglagesSysteme.ecritureDirectePossible(),
+                    settings = settings,
+                    packages = packages,
+                    drift = drift,
+                    directWrite = systemSettings.canWriteDirectly(),
                 )
             }
         }
@@ -126,43 +126,43 @@ class TvSlimViewModel @Inject constructor(
      * What is left of the last drift after rereading the TV. Anything the phone or PC fixed since is
      * dropped, and a fully fixed report is cleared.
      */
-    private suspend fun deriveRestante(
-        catalogue: Catalogue,
-        paquets: List<LignePaquetTv>,
-        accueil: String,
-    ): DeriveAffichee? {
-        val stockee = preferences.derive.first() ?: return null
-        val actifs = paquets.filter { it.etat == EtatPaquet.ACTIF }.map { it.entree.paquet }.toSet()
-        val restante = stockee.restant(actifs, accueil, catalogue.accueilsUsine())
-        if (restante != stockee) preferences.retenirDerive(restante)
-        if (restante.vide) return null
-        val noms = paquets.associate { it.entree.paquet to it.entree.nom }
-        return DeriveAffichee(
-            rallumes = restante.rallumes.map { noms[it] ?: it },
-            accueilPerdu = restante.accueilPerdu?.let(catalogue::nomDuLauncher),
+    private suspend fun remainingDrift(
+        catalog: Catalog,
+        packages: List<TvPackageRow>,
+        home: String,
+    ): DisplayedDrift? {
+        val stored = preferences.drift.first() ?: return null
+        val active = packages.filter { it.state == PackageState.ACTIVE }.map { it.entry.packageName }.toSet()
+        val remaining = stored.remaining(active, home, catalog.factoryHomes())
+        if (remaining != stored) preferences.rememberDrift(remaining)
+        if (remaining.empty) return null
+        val names = packages.associate { it.entry.packageName to it.entry.name }
+        return DisplayedDrift(
+            reenabled = remaining.reenabled.map { names[it] ?: it },
+            lostHome = remaining.lostHome?.let(catalog::launcherNameOrPackage),
         )
     }
 
-    fun basculerReglage(ligne: LigneReglage) {
+    fun toggleSetting(line: SettingRow) {
         viewModelScope.launch {
-            val cible = if (ligne.optimise) {
-                ligne.reglage.valeurDefaut
+            val target = if (line.optimized) {
+                line.setting.defaultValue
             } else {
-                ligne.reglage.valeurOptimisee
+                line.setting.optimizedValue
             }
-            val erreur = withContext(Dispatchers.IO) { reglagesSysteme.ecrire(ligne.reglage, cible) }
-            afficher(erreur ?: "${ligne.reglage.nom} : $cible")
-            rafraichir()
+            val error = withContext(Dispatchers.IO) { systemSettings.write(line.setting, target) }
+            show(error ?: "${line.setting.name} : $target")
+            refresh()
         }
     }
 
-    fun definirGardien(actif: Boolean) {
+    fun setGuardianEnabled(active: Boolean) {
         viewModelScope.launch {
-            preferences.definirGardien(actif)
+            preferences.setGuardianEnabled(active)
             // First snapshot right away, or the first system update would go unnoticed.
-            if (actif) withContext(Dispatchers.IO) { runCatching { gardienDerive.verifier() } }
-            if (actif && !reglagesSysteme.ecritureDirectePossible()) {
-                afficher(
+            if (active) withContext(Dispatchers.IO) { runCatching { driftGuardian.check() } }
+            if (active && !systemSettings.canWriteDirectly()) {
+                show(
                     "Gardien activé, mais inopérant tant que l'autorisation d'écriture " +
                         "des réglages n'a pas été accordée par ADB.",
                 )
@@ -170,7 +170,7 @@ class TvSlimViewModel @Inject constructor(
         }
     }
 
-    fun effacerMessage() = _etat.update { it.copy(message = null) }
+    fun clearMessage() = _state.update { it.copy(message = null) }
 
-    private fun afficher(texte: String) = _etat.update { it.copy(message = texte) }
+    private fun show(text: String) = _state.update { it.copy(message = text) }
 }

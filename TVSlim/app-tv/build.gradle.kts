@@ -16,7 +16,7 @@ android {
         targetSdk = 36
         // Same version for both apps: see the root build.gradle.kts.
         versionCode = rootProject.extra["codeDeVersion"] as Int
-        versionName = rootProject.extra["versionApp"] as String
+        versionName = rootProject.extra["appVersion"] as String
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -28,12 +28,12 @@ android {
         // Without a password no config is created, so AGP outputs a -release-unsigned.apk instead
         // of failing obscurely at signing time.
         val keystorePath = project.findProperty("KEYSTORE_FILE") as? String
-        val motDePasse = System.getenv("KEYSTORE_PASSWORD")
+        val password = System.getenv("KEYSTORE_PASSWORD")
             ?: project.findProperty("KEYSTORE_PASSWORD") as? String
-        if (keystorePath != null && file(keystorePath).exists() && !motDePasse.isNullOrBlank()) {
+        if (keystorePath != null && file(keystorePath).exists() && !password.isNullOrBlank()) {
             create("release") {
                 storeFile = file(keystorePath)
-                storePassword = motDePasse
+                storePassword = password
                 keyAlias = project.findProperty("KEY_ALIAS") as? String ?: ""
                 // v1 is useless above API 24 and minSdk is 26. v3 carries the certificate
                 // lineage: without it, a compromised key can only be replaced by having
@@ -43,7 +43,7 @@ android {
                 enableV3Signing = true
                 // With PKCS12 the key shares the store password.
                 keyPassword = System.getenv("KEY_PASSWORD")
-                    ?: project.findProperty("KEY_PASSWORD") as? String ?: motDePasse
+                    ?: project.findProperty("KEY_PASSWORD") as? String ?: password
             }
         }
     }

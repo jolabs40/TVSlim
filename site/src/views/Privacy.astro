@@ -13,7 +13,7 @@ const t = fr
       description: 'Ce que TV Slim et tvslim.app savent de vous : rien. Pas de compte, pas de télémétrie, pas de cookie.',
       h1: 'Confidentialité',
       lede: 'Pas de compte, pas de télémétrie, pas de cookie. Voici, précisément, à qui parlent l’application et ce site.',
-      blocs: [
+      sections: [
         ['TV Slim pour Windows', 'TV Slim parle à votre téléviseur sur votre réseau local, et à GitHub pour chercher les mises à jour — et, la première fois que vous ouvrez le miroir sans scrcpy installé, pour le télécharger depuis sa publication GitHub, après votre accord et en vérifiant son empreinte. Joint à un téléviseur ou à une box, il demande aussi à GitHub, une fois par lancement, la dernière application TV Slim du téléviseur, et la télécharge si vous le demandez. À rien d’autre. La clé ADB qui permet à cet ordinateur de parler à vos téléviseurs est gardée chiffrée par Windows (DPAPI) dans %APPDATA%\\TVSlim, à côté des journaux.'],
         ['TV Slim Remote, sur le téléphone', 'Il parle à votre téléviseur, et à GitHub pour cette seule application du téléviseur — une fois par lancement, joint à un téléviseur ou à une box, et pour la télécharger si vous le demandez ; sa clé ADB est chiffrée par le magasin de clés d’Android. Le scanner de QR codes est celui de Google, fourni par les services Google Play.'],
         ['Le soutien', 'L’application ne contacte jamais Ko-fi elle-même : le bouton ouvre votre navigateur.'],
@@ -26,7 +26,7 @@ const t = fr
       description: 'What TV Slim and tvslim.app know about you: nothing. No account, no telemetry, no cookies.',
       h1: 'Privacy',
       lede: 'No account, no telemetry, no cookies. Here is exactly who the app and this site talk to.',
-      blocs: [
+      sections: [
         ['TV Slim for Windows', 'TV Slim talks to your television over your local network, and to GitHub to look for updates — and, the first time you open the mirror without scrcpy installed, to download it from its GitHub release, once you have agreed and after checking its fingerprint. Connected to a television or a box, it also asks GitHub, once per launch, for the latest TV Slim app for the television, and downloads it if you ask. Nothing else. The ADB key that lets this computer talk to your TVs is stored encrypted by Windows (DPAPI) in %APPDATA%\\TVSlim, next to the logs.'],
         ['TV Slim Remote, on the phone', 'It talks to your television, and to GitHub only for that TV app — once per launch, connected to a television or a box, and to download it if you ask; its ADB key is encrypted by the Android keystore. The QR code scanner is Google’s, from Google Play services.'],
         ['Support', 'The app never contacts Ko-fi itself: the button opens your browser.'],
@@ -40,10 +40,10 @@ const t = fr
     <div class="wrap stack" style="max-width:820px;gap:26px">
       <h1>{t.h1}</h1>
       <p class="lede">{t.lede}</p>
-      {t.blocs.map(([titre, texte]) => (
+      {t.sections.map(([title, text]) => (
         <div class="stack" style="gap:8px">
-          <h2 style="font-size:24px">{titre}</h2>
-          <p>{texte}</p>
+          <h2 style="font-size:24px">{title}</h2>
+          <p>{text}</p>
         </div>
       ))}
       <p>

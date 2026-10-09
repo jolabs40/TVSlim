@@ -1,6 +1,6 @@
 ---
 import Logo from './Logo.astro';
-import SymboleKofi from './SymboleKofi.astro';
+import KofiSymbol from './KofiSymbol.astro';
 import { path, ui, REPO, KOFI, type Lang } from '../site';
 
 interface Props {
@@ -11,8 +11,8 @@ interface Props {
 }
 const { lang, page, current } = Astro.props;
 const t = ui[lang];
-const autre: Lang = lang === 'en' ? 'fr' : 'en';
-const liens = [
+const otherLang: Lang = lang === 'en' ? 'fr' : 'en';
+const links = [
   { id: 'download', href: path(lang, '/download/'), label: t.nav.download },
   { id: 'guide', href: path(lang, '/guide/'), label: t.nav.guide },
   { id: 'packages', href: path(lang, '/packages/'), label: t.nav.packages },
@@ -25,13 +25,13 @@ const liens = [
       <span class="word"><span class="tv">TV</span> Slim</span>
     </a>
     <nav aria-label={lang === 'fr' ? 'Navigation principale' : 'Main navigation'}>
-      {liens.map((l) => (
+      {links.map((l) => (
         <a href={l.href} aria-current={current === l.id ? 'page' : undefined}>{l.label}</a>
       ))}
       <a href={REPO} rel="noopener">{t.nav.github}</a>
-      <a class="lang" href={path(autre, page)} hreflang={autre} lang={autre}>{t.switchTo}</a>
+      <a class="lang" href={path(otherLang, page)} hreflang={otherLang} lang={otherLang}>{t.switchTo}</a>
       <!-- Cup only, as in the apps' top bar; the label is for screen readers and the tooltip. -->
-      <a class="kofi" href={KOFI} rel="noopener" aria-label={t.nav.kofi} title={t.nav.kofi}><SymboleKofi taille={26} /></a>
+      <a class="kofi" href={KOFI} rel="noopener" aria-label={t.nav.kofi} title={t.nav.kofi}><KofiSymbol size={26} /></a>
     </nav>
   </div>
 </header>

@@ -259,7 +259,7 @@ Chacun peut refaire cette vérification sur un fichier téléchargé, avec un JD
 depuis une copie de ce dépôt et avec le fichier `.msi.sig` à côté de l'installateur :
 
 ```sh
-java "TVSlim Windows/outils/VerifierMiseAJour.java" TVSlim-Windows-x.y.z.msi x.y.z "TVSlim Windows/gradle.properties"
+java "TVSlim Windows/tools/VerifyUpdate.java" TVSlim-Windows-x.y.z.msi x.y.z "TVSlim Windows/gradle.properties"
 ```
 
 ## Confidentialité
@@ -328,7 +328,7 @@ cd "TVSlim Windows"
 
 Poussez un tag annoté `windows-vX.Y.Z` : la chaîne teste, fabrique, signe et publie. La clé de
 signature vient du secret `TVSLIM_CLE_SIGNATURE`. Un fork doit générer sa propre paire de clés
-(`java outils/GenererCleSignature.java`) et remplacer `clePubliqueMisesAJour` dans
+(`java tools/GenerateSigningKey.java`) et remplacer `updatesPublicKey` dans
 `gradle.properties` avant sa première publication.
 
 ## Licence

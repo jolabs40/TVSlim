@@ -1,15 +1,15 @@
 ---
 import { ui, type Lang } from '../site';
-import type { Risque } from '../data/catalogue';
+import type { RiskLevel } from '../data/catalogue';
 
 interface Props {
   lang: Lang;
-  risque?: Risque;
-  protege?: boolean;
-  nonEprouve?: boolean;
+  level?: RiskLevel;
+  isProtected?: boolean;
+  untested?: boolean;
 }
-const { lang, risque, protege = false, nonEprouve = false } = Astro.props;
+const { lang, level, isProtected = false, untested = false } = Astro.props;
 const t = ui[lang];
 ---
-{protege ? <span class="badge r-protege">{t.protected}</span> : risque && <span class={`badge r-${risque}`}>{t.risk[risque]}</span>}
-{nonEprouve && <span class="badge r-nonteste">{t.untested}</span>}
+{isProtected ? <span class="badge r-protege">{t.protected}</span> : level && <span class={`badge r-${level}`}>{t.risk[level]}</span>}
+{untested && <span class="badge r-nonteste">{t.untested}</span>}

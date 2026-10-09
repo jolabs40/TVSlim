@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
  * both light and dark themes.
  */
 
-private val schemaClair = lightColorScheme(
+private val lightScheme = lightColorScheme(
     primary = Color(0xFF2E7D5B),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFB3EFD0),
@@ -41,7 +41,7 @@ private val schemaClair = lightColorScheme(
     surfaceContainerHighest = Color(0xFFDFE4DF),
 )
 
-private val schemaSombre = darkColorScheme(
+private val darkScheme = darkColorScheme(
     primary = Color(0xFF7FD1AE),
     onPrimary = Color(0xFF003824),
     primaryContainer = Color(0xFF005236),
@@ -70,17 +70,17 @@ private val schemaSombre = darkColorScheme(
 )
 
 /** Risk dot colors, outside the Material palette so they read at a glance. */
-object CouleursRisque {
-    val aucun = Color(0xFF2E9E6B)
-    val faible = Color(0xFF9AA83A)
-    val moyen = Color(0xFFCC8A2E)
-    val eleve = Color(0xFFD1443F)
+object RiskColors {
+    val none = Color(0xFF2E9E6B)
+    val low = Color(0xFF9AA83A)
+    val medium = Color(0xFFCC8A2E)
+    val high = Color(0xFFD1443F)
 }
 
 @Composable
 fun TvSlimTheme(
-    sombre: Boolean = isSystemInDarkTheme(),
-    contenu: @Composable () -> Unit,
+    dark: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
 ) {
-    MaterialTheme(colorScheme = if (sombre) schemaSombre else schemaClair, content = contenu)
+    MaterialTheme(colorScheme = if (dark) darkScheme else lightScheme, content = content)
 }

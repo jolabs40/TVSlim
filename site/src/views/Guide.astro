@@ -17,35 +17,35 @@ const t = fr
       lede: 'Une seule fois par téléviseur, sans root : on active les options pour les développeurs, puis le débogage réseau. TV Slim parle ensuite au téléviseur par ADB, le pont de débogage que tout Android TV porte d’origine.',
       steps: [
         {
-          titre: 'Faire apparaître les options pour les développeurs',
-          texte: 'Ouvrez Paramètres → À propos, et appuyez sept fois sur OK sur le numéro de build. Un message confirme que vous êtes développeur.',
-          chemins: [
+          title: 'Faire apparaître les options pour les développeurs',
+          text: 'Ouvrez Paramètres → À propos, et appuyez sept fois sur OK sur le numéro de build. Un message confirme que vous êtes développeur.',
+          menuPaths: [
             ['Google TV', 'Paramètres → Système → À propos → Build de l’OS Android TV'],
             ['Android TV', 'Paramètres → Préférences de l’appareil → À propos → Build'],
           ],
         },
         {
-          titre: 'Activer le débogage réseau',
-          texte: 'Dans les options pour les développeurs, activez le débogage réseau. Selon le téléviseur, il s’appelle Débogage réseau, Débogage ADB ou Débogage USB.',
-          chemins: [
+          title: 'Activer le débogage réseau',
+          text: 'Dans les options pour les développeurs, activez le débogage réseau. Selon le téléviseur, il s’appelle Débogage réseau, Débogage ADB ou Débogage USB.',
+          menuPaths: [
             ['Google TV', 'Paramètres → Système → Options pour les développeurs'],
             ['Android TV', 'Paramètres → Préférences de l’appareil → Options pour les développeurs'],
           ],
         },
         {
-          titre: 'Lancer TV Slim sur le même réseau',
-          texte: 'Sur un PC ou un téléphone branché au même réseau que le téléviseur. TV Slim le trouve tout seul en quelques secondes ; sinon, saisissez son adresse IP, indiquée dans Paramètres → Réseau. Sur le téléphone, vous pouvez aussi scanner le QR code de l’application TV.',
+          title: 'Lancer TV Slim sur le même réseau',
+          text: 'Sur un PC ou un téléphone branché au même réseau que le téléviseur. TV Slim le trouve tout seul en quelques secondes ; sinon, saisissez son adresse IP, indiquée dans Paramètres → Réseau. Sur le téléphone, vous pouvez aussi scanner le QR code de l’application TV.',
         },
         {
-          titre: 'Autoriser la connexion',
-          texte: 'À la première connexion, le téléviseur demande d’autoriser le débogage depuis cet ordinateur (ou ce téléphone). Cochez Toujours autoriser et acceptez à la télécommande : il ne le redemandera plus, même après un redémarrage.',
+          title: 'Autoriser la connexion',
+          text: 'À la première connexion, le téléviseur demande d’autoriser le débogage depuis cet ordinateur (ou ce téléphone). Cochez Toujours autoriser et acceptez à la télécommande : il ne le redemandera plus, même après un redémarrage.',
         },
         {
-          titre: 'Alléger le téléviseur',
-          texte: 'Ouvrez Paquets, choisissez un profil et cliquez sur Appliquer. La confirmation liste les effets de bord avant que rien ne parte, et chaque changement s’inscrit au journal avec la commande qui l’annule.',
+          title: 'Alléger le téléviseur',
+          text: 'Ouvrez Paquets, choisissez un profil et cliquez sur Appliquer. La confirmation liste les effets de bord avant que rien ne parte, et chaque changement s’inscrit au journal avec la commande qui l’annule.',
         },
       ],
-      cheminsLabel: 'Le chemin, le plus souvent',
+      menuPathsLabel: 'Le chemin, le plus souvent',
       helpH2: 'Si ça coince',
       help: [
         ['Le téléviseur n’apparaît pas', 'Vérifiez que le PC ou le téléphone est sur le même réseau que le téléviseur, et pas sur un réseau invité : beaucoup de box isolent les appareils d’un réseau invité. Saisissez sinon l’adresse IP du téléviseur à la main.'],
@@ -65,35 +65,35 @@ const t = fr
       lede: 'Once per television, without root: turn on the developer options, then network debugging. TV Slim then talks to the TV over ADB, the debugging bridge every Android TV ships with.',
       steps: [
         {
-          titre: 'Make the developer options appear',
-          texte: 'Open Settings → About, and press OK seven times on the build number. A message confirms you are now a developer.',
-          chemins: [
+          title: 'Make the developer options appear',
+          text: 'Open Settings → About, and press OK seven times on the build number. A message confirms you are now a developer.',
+          menuPaths: [
             ['Google TV', 'Settings → System → About → Android TV OS build'],
             ['Android TV', 'Settings → Device Preferences → About → Build'],
           ],
         },
         {
-          titre: 'Turn on network debugging',
-          texte: 'In the developer options, turn on network debugging. Depending on the TV, it is called Network debugging, ADB debugging or USB debugging.',
-          chemins: [
+          title: 'Turn on network debugging',
+          text: 'In the developer options, turn on network debugging. Depending on the TV, it is called Network debugging, ADB debugging or USB debugging.',
+          menuPaths: [
             ['Google TV', 'Settings → System → Developer options'],
             ['Android TV', 'Settings → Device Preferences → Developer options'],
           ],
         },
         {
-          titre: 'Start TV Slim on the same network',
-          texte: 'On a PC or a phone connected to the same network as the TV. TV Slim finds it by itself within a few seconds; otherwise, type its IP address, shown in Settings → Network. On the phone, you can also scan the QR code of the TV app.',
+          title: 'Start TV Slim on the same network',
+          text: 'On a PC or a phone connected to the same network as the TV. TV Slim finds it by itself within a few seconds; otherwise, type its IP address, shown in Settings → Network. On the phone, you can also scan the QR code of the TV app.',
         },
         {
-          titre: 'Allow the connection',
-          texte: 'On the first connection, the TV asks to allow debugging from this computer (or this phone). Tick Always allow and accept with the remote: it will not ask again, even after a reboot.',
+          title: 'Allow the connection',
+          text: 'On the first connection, the TV asks to allow debugging from this computer (or this phone). Tick Always allow and accept with the remote: it will not ask again, even after a reboot.',
         },
         {
-          titre: 'Slim the TV down',
-          texte: 'Open Packages, pick a profile and click Apply. The confirmation lists the side effects before anything is sent, and every change goes to the log with the command that undoes it.',
+          title: 'Slim the TV down',
+          text: 'Open Packages, pick a profile and click Apply. The confirmation lists the side effects before anything is sent, and every change goes to the log with the command that undoes it.',
         },
       ],
-      cheminsLabel: 'The path, most of the time',
+      menuPathsLabel: 'The path, most of the time',
       helpH2: 'If something gets stuck',
       help: [
         ['The TV does not show up', 'Check that the PC or phone is on the same network as the TV, not on a guest network: many routers isolate the devices of a guest network. Otherwise, type the TV’s IP address by hand.'],
@@ -115,7 +115,7 @@ const schema = [
     inLanguage: lang,
     url: url(lang, '/guide/'),
     tool: [{ '@type': 'HowToTool', name: 'TV Slim' }],
-    step: t.steps.map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.titre, text: s.texte })),
+    step: t.steps.map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.title, text: s.text })),
     publisher: { '@id': ORG_ID },
   },
 ];
@@ -130,14 +130,14 @@ const schema = [
       <ol class="steps">
         {t.steps.map((s) => (
           <li>
-            <h2>{s.titre}</h2>
-            <p>{s.texte}</p>
-            {'chemins' in s && s.chemins && (
+            <h2>{s.title}</h2>
+            <p>{s.text}</p>
+            {'menuPaths' in s && s.menuPaths && (
               <div class="paths">
-                <p class="eyebrow">{t.cheminsLabel}</p>
+                <p class="eyebrow">{t.menuPathsLabel}</p>
                 <dl>
-                  {s.chemins.map(([systeme, chemin]) => (
-                    <div><dt>{systeme}</dt><dd>{chemin}</dd></div>
+                  {s.menuPaths.map(([platform, menuPath]) => (
+                    <div><dt>{platform}</dt><dd>{menuPath}</dd></div>
                   ))}
                 </dl>
               </div>

@@ -18,34 +18,34 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.tv.material3.MaterialTheme
-import net.jolabs40.tvslim.ui.screens.AccueilScreen
-import net.jolabs40.tvslim.ui.screens.ConnexionTvScreen
-import net.jolabs40.tvslim.ui.screens.PaquetsScreen
-import net.jolabs40.tvslim.ui.screens.ReglagesScreen
+import net.jolabs40.tvslim.ui.screens.HomeScreen
+import net.jolabs40.tvslim.ui.screens.TvConnectionScreen
+import net.jolabs40.tvslim.ui.screens.PackagesScreen
+import net.jolabs40.tvslim.ui.screens.SettingsScreen
 
 object Routes {
-    const val ACCUEIL = "accueil"
-    const val REGLAGES = "reglages"
-    const val APPAIRAGE = "appairage"
-    const val PAQUETS = "paquets"
+    const val HOME = "accueil"
+    const val SETTINGS = "reglages"
+    const val PAIRING = "appairage"
+    const val PACKAGES = "paquets"
 }
 
 @Composable
 fun TvSlimApp() {
     // One activity-scoped ViewModel so all screens share the same reading of the TV.
-    val modele: TvSlimViewModel = hiltViewModel()
-    val etat by modele.etat.collectAsStateWithLifecycle()
+    val model: TvSlimViewModel = hiltViewModel()
+    val state by model.state.collectAsStateWithLifecycle()
     val navigation = rememberNavController()
 
     // The guard reports drift by notification, so the permission is requested when it is turned on, where
     // the reason is obvious. If denied, the report still shows on the home screen.
-    val demandeNotifications = rememberLauncherForActivityResult(
+    val notificationRequest = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { }
-    val activerGardien: (Boolean) -> Unit = { actif ->
-        modele.definirGardien(actif)
-        if (actif && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            demandeNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+    val enableGuardian: (Boolean) -> Unit = { active ->
+        model.setGuardianEnabled(active)
+        if (active && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationRequest.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
@@ -55,29 +55,29 @@ fun TvSlimApp() {
             .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 48.dp, vertical = 32.dp),
     ) {
-        NavHost(navController = navigation, startDestination = Routes.ACCUEIL) {
-            composable(Routes.ACCUEIL) {
-                AccueilScreen(
-                    etat = etat,
-                    onReglages = { navigation.navigate(Routes.REGLAGES) },
-                    onAppairage = { navigation.navigate(Routes.APPAIRAGE) },
-                    onPaquets = { navigation.navigate(Routes.PAQUETS) },
-                    onActualiser = modele::rafraichir,
-                    onFermerMessage = modele::effacerMessage,
+        NavHost(navController = navigation, startDestination = Routes.HOME) {
+            composable(Routes.HOME) {
+                HomeScreen(
+                    state = state,
+                    onSettings = { navigation.navigate(Routes.SETTINGS) },
+                    onPairing = { navigation.navigate(Routes.PAIRING) },
+                    onPackages = { navigation.navigate(Routes.PACKAGES) },
+                    onRefresh = model::refresh,
+                    onCloseMessage = model::clearMessage,
                 )
             }
-            composable(Routes.PAQUETS) {
-                PaquetsScreen(etat = etat)
+            composable(Routes.PACKAGES) {
+                PackagesScreen(state = state)
             }
-            composable(Routes.APPAIRAGE) {
-                ConnexionTvScreen(etat = etat, onActualiser = modele::rafraichir)
+            composable(Routes.PAIRING) {
+                TvConnectionScreen(state = state, onRefresh = model::refresh)
             }
-            composable(Routes.REGLAGES) {
-                ReglagesScreen(
-                    etat = etat,
-                    onBasculerReglage = modele::basculerReglage,
-                    onGardien = activerGardien,
-                    onFermerMessage = modele::effacerMessage,
+            composable(Routes.SETTINGS) {
+                SettingsScreen(
+                    state = state,
+                    onToggleSetting = model::toggleSetting,
+                    onGuardian = enableGuardian,
+                    onCloseMessage = model::clearMessage,
                 )
             }
         }

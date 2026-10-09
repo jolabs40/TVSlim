@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
-import SymboleKofi from '../components/SymboleKofi.astro';
-import { publications, fichier, mo } from '../data/releases';
+import KofiSymbol from '../components/KofiSymbol.astro';
+import { latestReleases, findFile, formatSize } from '../data/releases';
 import { path, RELEASES, ANDROID_RELEASES, CERT_SHA256, REPO, KOFI, type Lang } from '../site';
 
 interface Props {
@@ -9,13 +9,13 @@ interface Props {
 }
 const { lang } = Astro.props;
 const fr = lang === 'fr';
-const { windows, android } = await publications();
-const msi = fichier(windows, (n) => n.endsWith('.msi'));
-const portable = fichier(windows, (n) => n.endsWith('-portable.zip'));
-const sommesWin = fichier(windows, (n) => n === 'SHA256SUMS.txt');
-const remote = fichier(android, (n) => n.startsWith('TVSlim-Remote-') && n.endsWith('.apk'));
-const tv = fichier(android, (n) => n.startsWith('TVSlim-TV-') && n.endsWith('.apk'));
-const sommesAnd = fichier(android, (n) => n === 'SHA256SUMS.txt');
+const { windows, android } = await latestReleases();
+const msi = findFile(windows, (n) => n.endsWith('.msi'));
+const portable = findFile(windows, (n) => n.endsWith('-portable.zip'));
+const windowsChecksums = findFile(windows, (n) => n === 'SHA256SUMS.txt');
+const remote = findFile(android, (n) => n.startsWith('TVSlim-Remote-') && n.endsWith('.apk'));
+const tv = findFile(android, (n) => n.startsWith('TVSlim-TV-') && n.endsWith('.apk'));
+const androidChecksums = findFile(android, (n) => n === 'SHA256SUMS.txt');
 const date = (d?: string) => (d ? new Date(d).toLocaleDateString(fr ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
 
 const t = fr
@@ -25,7 +25,7 @@ const t = fr
       h1: 'Télécharger TV Slim',
       lede: 'Deux façons de piloter le téléviseur : depuis un PC Windows, ou depuis un téléphone Android. Les deux font le même débloat, avec le même catalogue et les mêmes garde-fous.',
       version: 'Version',
-      du: 'du',
+      dated: 'du',
       winH2: 'Pour Windows',
       winReq: 'Windows 10 ou 11, 64 bits. Java est inclus : il n’y a rien d’autre à installer.',
       msiT: 'Installateur (recommandé)',
@@ -34,7 +34,7 @@ const t = fr
       zipD: 'S’utilise sans installation : décompressez, puis ouvrez TV Slim.exe.',
       smartT: '« Windows a protégé votre ordinateur » ?',
       smartP: 'TV Slim est un logiciel libre et gratuit, dont l’installateur n’est pas signé par un certificat payant : SmartScreen peut vous avertir la première fois. Cliquez sur Informations complémentaires, puis sur Exécuter quand même. SHA256SUMS.txt, publié à côté, permet de vérifier que le fichier est authentique.',
-      majP: 'Au démarrage, TV Slim demande à GitHub s’il existe une nouvelle version — désactivable dans À propos. Rien ne se télécharge avant un clic sur Installer, et chaque installateur est signé par une clé Ed25519 que TV Slim vérifie avant de l’exécuter.',
+      updatesP: 'Au démarrage, TV Slim demande à GitHub s’il existe une nouvelle version — désactivable dans À propos. Rien ne se télécharge avant un clic sur Installer, et chaque installateur est signé par une clé Ed25519 que TV Slim vérifie avant de l’exécuter.',
       andH2: 'Pour Android',
       andReq: 'Android 8 ou plus récent. TV Slim pour Android est publié sur GitHub, pas sur le Play Store.',
       remoteT: 'TV Slim Remote, l’application du téléphone',
@@ -57,7 +57,7 @@ const t = fr
       h1: 'Download TV Slim',
       lede: 'Two ways to drive the television: from a Windows PC, or from an Android phone. Both do the same debloat, with the same catalogue and the same safeguards.',
       version: 'Version',
-      du: 'of',
+      dated: 'of',
       winH2: 'For Windows',
       winReq: 'Windows 10 or 11, 64-bit. Java is bundled: there is nothing else to install.',
       msiT: 'Installer (recommended)',
@@ -66,7 +66,7 @@ const t = fr
       zipD: 'Runs without installing: unzip, then open TV Slim.exe.',
       smartT: '“Windows protected your PC”?',
       smartP: 'TV Slim is free, open-source software, and its installer is not signed with a paid certificate, so SmartScreen may warn you the first time. Click More info, then Run anyway. SHA256SUMS.txt, published alongside, lets you check the file is genuine.',
-      majP: 'TV Slim asks GitHub for a new version when it starts — this can be switched off in About. Nothing is downloaded until you click Install, and every installer is signed with an Ed25519 key that TV Slim checks before running it.',
+      updatesP: 'TV Slim asks GitHub for a new version when it starts — this can be switched off in About. Nothing is downloaded until you click Install, and every installer is signed with an Ed25519 key that TV Slim checks before running it.',
       andH2: 'For Android',
       andReq: 'Android 8 or later. TV Slim for Android is published on GitHub, not on the Play Store.',
       remoteT: 'TV Slim Remote, the phone app',
@@ -95,40 +95,40 @@ const t = fr
       <div class="dl">
         <article class="card stack" id="windows">
           <h2>{t.winH2}</h2>
-          {windows && <p class="ver">{t.version} {windows.version} · {t.du} {date(windows.date)}</p>}
+          {windows && <p class="ver">{t.version} {windows.version} · {t.dated} {date(windows.date)}</p>}
           <p class="muted">{t.winReq}</p>
           <ul class="files">
             <li>
               <a class="btn btn-primary" href={msi?.url ?? `${RELEASES}/latest`}>{t.msiT}</a>
-              <p class="muted">{t.msiD}{msi && <span class="pkg"> {msi.nom} · {mo(msi.taille, lang)}</span>}</p>
+              <p class="muted">{t.msiD}{msi && <span class="pkg"> {msi.name} · {formatSize(msi.size, lang)}</span>}</p>
             </li>
             <li>
               <a class="btn btn-ghost" href={portable?.url ?? `${RELEASES}/latest`}>{t.zipT}</a>
-              <p class="muted">{t.zipD}{portable && <span class="pkg"> {portable.nom} · {mo(portable.taille, lang)}</span>}</p>
+              <p class="muted">{t.zipD}{portable && <span class="pkg"> {portable.name} · {formatSize(portable.size, lang)}</span>}</p>
             </li>
           </ul>
           <div class="note">
             <p><strong>{t.smartT}</strong> {t.smartP}</p>
           </div>
-          <p class="muted small">{t.majP}</p>
+          <p class="muted small">{t.updatesP}</p>
           <p class="links">
-            {sommesWin && <a href={sommesWin.url}>{t.sums}</a>}
+            {windowsChecksums && <a href={windowsChecksums.url}>{t.sums}</a>}
             <a href={windows?.url ?? `${RELEASES}/latest`}>{windows ? windows.tag : t.fallback}</a>
           </p>
         </article>
 
         <article class="card stack" id="android">
           <h2>{t.andH2}</h2>
-          {android && <p class="ver">{t.version} {android.version} · {t.du} {date(android.date)}</p>}
+          {android && <p class="ver">{t.version} {android.version} · {t.dated} {date(android.date)}</p>}
           <p class="muted">{t.andReq}</p>
           <ul class="files">
             <li>
               <a class="btn btn-primary" href={remote?.url ?? ANDROID_RELEASES}>{t.remoteT}</a>
-              <p class="muted">{t.remoteD}{remote && <span class="pkg"> {remote.nom} · {mo(remote.taille, lang)}</span>}</p>
+              <p class="muted">{t.remoteD}{remote && <span class="pkg"> {remote.name} · {formatSize(remote.size, lang)}</span>}</p>
             </li>
             <li>
               <a class="btn btn-ghost" href={tv?.url ?? ANDROID_RELEASES}>{t.tvT}</a>
-              <p class="muted">{t.tvD}{tv && <span class="pkg"> {tv.nom} · {mo(tv.taille, lang)}</span>}</p>
+              <p class="muted">{t.tvD}{tv && <span class="pkg"> {tv.name} · {formatSize(tv.size, lang)}</span>}</p>
             </li>
           </ul>
           <div class="note info">
@@ -137,7 +137,7 @@ const t = fr
             <p class="muted small">{t.certNote}</p>
           </div>
           <p class="links">
-            {sommesAnd && <a href={sommesAnd.url}>{t.sums}</a>}
+            {androidChecksums && <a href={androidChecksums.url}>{t.sums}</a>}
             <a href={android?.url ?? ANDROID_RELEASES}>{android ? android.tag : t.fallback}</a>
           </p>
         </article>
@@ -145,12 +145,12 @@ const t = fr
 
       <!-- A donation with nothing in return: it unlocks nothing. -->
       <aside class="card soutien">
-        <SymboleKofi taille={48} />
+        <KofiSymbol size={48} />
         <div class="texte">
           <p><strong>{t.kofiT}</strong></p>
           <p class="muted">{t.kofiP}</p>
         </div>
-        <a class="btn btn-ghost" href={KOFI} rel="noopener"><SymboleKofi taille={22} /> {t.kofiB}</a>
+        <a class="btn btn-ghost" href={KOFI} rel="noopener"><KofiSymbol size={22} /> {t.kofiB}</a>
       </aside>
 
       <p class="foot">

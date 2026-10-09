@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -16,35 +17,35 @@ import java.util.Date
 import java.util.Locale
 
 @Serializable
-enum class TypeAction { DESACTIVATION, REACTIVATION, REGLAGE, ACCUEIL, PERMISSION, APP_OP, INSTALLATION, COMMANDE, DESINSTALLATION }
+enum class ActionType { @SerialName("DESACTIVATION") DISABLING, @SerialName("REACTIVATION") ENABLING, @SerialName("REGLAGE") SETTING, @SerialName("ACCUEIL") HOME, PERMISSION, APP_OP, INSTALLATION, @SerialName("COMMANDE") COMMAND, @SerialName("DESINSTALLATION") UNINSTALLATION }
 
 @Serializable
-data class ActionJournal(
-    val horodatage: Long,
-    val type: TypeAction,
-    val cible: String,
-    val libelle: String,
-    val commandeAnnulation: String,
-    val reussi: Boolean,
+data class JournalAction(
+    @SerialName("horodatage") val timestamp: Long,
+    val type: ActionType,
+    @SerialName("cible") val target: String,
+    @SerialName("libelle") val label: String,
+    @SerialName("commandeAnnulation") val undoCommand: String,
+    @SerialName("reussi") val succeeded: Boolean,
     val message: String = "",
 )
 
 /** Packages these actions leave disabled, in reverse order of application. */
-fun List<ActionJournal>.paquetsDesactives(): List<String> {
-    val etat = LinkedHashMap<String, Boolean>()
-    filter { it.reussi }.forEach { action ->
+fun List<JournalAction>.disabledPackages(): List<String> {
+    val state = LinkedHashMap<String, Boolean>()
+    filter { it.succeeded }.forEach { action ->
         when (action.type) {
-            TypeAction.DESACTIVATION -> etat[action.cible] = true
-            TypeAction.REACTIVATION -> etat.remove(action.cible)
+            ActionType.DISABLING -> state[action.target] = true
+            ActionType.ENABLING -> state.remove(action.target)
             else -> Unit
         }
     }
-    return etat.keys.toList().reversed()
+    return state.keys.toList().reversed()
 }
 
 /** Component of the last home screen these actions set, if any. */
-fun List<ActionJournal>.dernierAccueil(): String? =
-    lastOrNull { it.reussi && it.type == TypeAction.ACCUEIL }?.cible
+fun List<JournalAction>.lastHome(): String? =
+    lastOrNull { it.succeeded && it.type == ActionType.HOME }?.target
 
 /**
  * Action journal, which is what makes the debloat reversible: each action is recorded with the exact
@@ -53,20 +54,20 @@ fun List<ActionJournal>.dernierAccueil(): String? =
  * One journal per TV: the companion keeps one for the TCL and another for the Shield.
  */
 class JournalRepository(
-    private val fichier: File,
+    private val file: File,
 ) {
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
-    private val serialiseur = ListSerializer(ActionJournal.serializer())
-    private val verrou = Mutex()
+    private val serializer = ListSerializer(JournalAction.serializer())
+    private val lock = Mutex()
 
-    private val _actions = MutableStateFlow<List<ActionJournal>>(emptyList())
-    val actions: StateFlow<List<ActionJournal>> = _actions.asStateFlow()
+    private val _actions = MutableStateFlow<List<JournalAction>>(emptyList())
+    val actions: StateFlow<List<JournalAction>> = _actions.asStateFlow()
 
-    suspend fun charger() = withContext(Dispatchers.IO) {
-        verrou.withLock {
-            _actions.value = if (fichier.exists()) {
-                runCatching { json.decodeFromString(serialiseur, fichier.readText()) }
+    suspend fun load() = withContext(Dispatchers.IO) {
+        lock.withLock {
+            _actions.value = if (file.exists()) {
+                runCatching { json.decodeFromString(serializer, file.readText()) }
                     .getOrDefault(emptyList())
             } else {
                 emptyList()
@@ -74,27 +75,27 @@ class JournalRepository(
         }
     }
 
-    suspend fun ajouter(action: ActionJournal) = ajouter(listOf(action))
+    suspend fun add(action: JournalAction) = add(listOf(action))
 
-    suspend fun ajouter(nouvelles: List<ActionJournal>) = withContext(Dispatchers.IO) {
-        if (nouvelles.isEmpty()) return@withContext
-        verrou.withLock {
-            val fusion = _actions.value + nouvelles
-            _actions.value = fusion
-            ecrire(fusion)
+    suspend fun add(fresh: List<JournalAction>) = withContext(Dispatchers.IO) {
+        if (fresh.isEmpty()) return@withContext
+        lock.withLock {
+            val merged = _actions.value + fresh
+            _actions.value = merged
+            write(merged)
         }
     }
 
     /** Packages currently disabled according to the journal, in reverse order of application. */
-    fun paquetsADesactivationActive(): List<String> = _actions.value.paquetsDesactives()
+    fun activelyDisabledPackages(): List<String> = _actions.value.disabledPackages()
 
     /** Undo commands for changed settings; the most recent one per setting wins. */
-    fun annulationsDesReglages(): Map<String, String> {
-        val restauration = LinkedHashMap<String, String>()
-        _actions.value.filter { it.reussi && it.type == TypeAction.REGLAGE }.forEach { action ->
-            restauration[action.cible] = action.commandeAnnulation
+    fun settingUndos(): Map<String, String> {
+        val restoreCommands = LinkedHashMap<String, String>()
+        _actions.value.filter { it.succeeded && it.type == ActionType.SETTING }.forEach { action ->
+            restoreCommands[action.target] = action.undoCommand
         }
-        return restauration
+        return restoreCommands
     }
 
     /**
@@ -102,59 +103,59 @@ class JournalRepository(
      * App-ops are included: a permission paired with an app-op is only fully restored by resetting
      * both.
      */
-    fun annulationsDesPermissions(): Map<String, String> {
-        val concernees = setOf(TypeAction.PERMISSION, TypeAction.APP_OP)
-        val restauration = LinkedHashMap<String, String>()
-        _actions.value.filter { it.reussi && it.type in concernees }.forEach { action ->
-            restauration[action.cible] = action.commandeAnnulation
+    fun permissionUndos(): Map<String, String> {
+        val relevant = setOf(ActionType.PERMISSION, ActionType.APP_OP)
+        val restoreCommands = LinkedHashMap<String, String>()
+        _actions.value.filter { it.succeeded && it.type in relevant }.forEach { action ->
+            restoreCommands[action.target] = action.undoCommand
         }
-        return restauration
+        return restoreCommands
     }
 
-    suspend fun vider() = withContext(Dispatchers.IO) {
-        verrou.withLock {
+    suspend fun clear() = withContext(Dispatchers.IO) {
+        lock.withLock {
             _actions.value = emptyList()
-            ecrire(emptyList())
+            write(emptyList())
         }
     }
 
-    /** Writes a readable Markdown report to [cible] and returns its path. */
-    suspend fun exporterMarkdown(cible: File, entete: String): String = withContext(Dispatchers.IO) {
+    /** Writes a readable Markdown report to [target] and returns its path. */
+    suspend fun exportMarkdown(target: File, header: String): String = withContext(Dispatchers.IO) {
         val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.FRANCE)
-        val texte = buildString {
+        val text = buildString {
             appendLine("# TV Slim — journal d'intervention")
             appendLine()
-            appendLine(entete)
+            appendLine(header)
             appendLine()
             appendLine("| Horodatage | Action | Cible | Résultat | Annulation |")
             appendLine("|---|---|---|---|---|")
             _actions.value.forEach { action ->
-                val resultat = if (action.reussi) "OK" else "ÉCHEC : ${action.message}"
+                val result = if (action.succeeded) "OK" else "ÉCHEC : ${action.message}"
                 // An installation has no undo command: it would be a `pm uninstall`.
-                val annulation = action.commandeAnnulation.takeIf { it.isNotBlank() }?.let { "`$it`" } ?: "—"
+                val cancellation = action.undoCommand.takeIf { it.isNotBlank() }?.let { "`$it`" } ?: "—"
                 appendLine(
-                    "| ${format.format(Date(action.horodatage))} | ${action.type} | " +
-                        "`${action.cible}` | $resultat | $annulation |",
+                    "| ${format.format(Date(action.timestamp))} | ${action.type} | " +
+                        "`${action.target}` | $result | $cancellation |",
                 )
             }
             appendLine()
             appendLine("## Tout annuler depuis un ordinateur")
             appendLine()
             appendLine("```bash")
-            paquetsADesactivationActive().forEach { appendLine("adb shell pm enable $it") }
-            annulationsDesReglages().values.forEach { appendLine("adb shell $it") }
-            annulationsDesPermissions().values.forEach { appendLine("adb shell $it") }
+            activelyDisabledPackages().forEach { appendLine("adb shell pm enable $it") }
+            settingUndos().values.forEach { appendLine("adb shell $it") }
+            permissionUndos().values.forEach { appendLine("adb shell $it") }
             appendLine("```")
         }
-        cible.parentFile?.mkdirs()
-        cible.writeText(texte)
-        cible.absolutePath
+        target.parentFile?.mkdirs()
+        target.writeText(text)
+        target.absolutePath
     }
 
-    private fun ecrire(actions: List<ActionJournal>) {
+    private fun write(actions: List<JournalAction>) {
         runCatching {
-            fichier.parentFile?.mkdirs()
-            fichier.writeText(json.encodeToString(serialiseur, actions))
+            file.parentFile?.mkdirs()
+            file.writeText(json.encodeToString(serializer, actions))
         }
     }
 }

@@ -50,7 +50,7 @@ developers and, for open-source projects, stay under the licence of their projec
 | `launcher_emotn.png` | Emotn UI | `com.oversea.aslauncher` | its former Google Play listing, the same design as the icon of the official APK |
 | `launcher_arc.png` | Arc Launcher | `com.omeda.arc` | its official GitHub repository (`assets/icon.png`) |
 
-## Television and TV box makers — `marque_*.png`
+## Television and TV box makers — `brand_*.png`
 
 Wordmarks from Wikimedia Commons, rasterised to PNG, 96 px high on a transparent background, with no
 other change. Commons file names are given without their `File:` prefix and `.svg` extension; Commons
@@ -58,20 +58,20 @@ flags every one of them as a trademark.
 
 | File | Brand | Commons file | Copyright status on Commons |
 |---|---|---|---|
-| `marque_tcl.png` | TCL | Logo of the TCL Corporation | PD-textlogo |
-| `marque_hisense.png` | Hisense | Hisense | PD-textlogo |
-| `marque_philips.png` | Philips | Philips logo new | PD-textlogo |
-| `marque_sony.png` | Sony | Sony logo | PD-textlogo |
-| `marque_xiaomi.png` | Xiaomi | Xiaomi logo (2021-) | PD-shape, PD-textlogo |
-| `marque_sharp.png` | Sharp | Logo of the Sharp Corporation | PD-textlogo |
-| `marque_grundig.png` | Grundig | Grundig Logo 2019 | PD-textlogo |
-| `marque_toshiba.png` | Toshiba | Toshiba logo | PD-textlogo |
-| `marque_haier.png` | Haier | Haier logo | PD-textlogo |
-| `marque_panasonic.png` | Panasonic | Panasonic logo (Blue) | PD-textlogo |
-| `marque_nvidia.png` | NVIDIA | NVIDIA logo | Apache License 2.0 |
-| `marque_google.png` | Google | Google 2015 logo | PD-textlogo |
-| `marque_amazon.png` | Amazon | Amazon 2024 | PD-textlogo |
-| `marque_freebox.png` | Freebox | Freebox (logo) | PD-textlogo |
+| `brand_tcl.png` | TCL | Logo of the TCL Corporation | PD-textlogo |
+| `brand_hisense.png` | Hisense | Hisense | PD-textlogo |
+| `brand_philips.png` | Philips | Philips logo new | PD-textlogo |
+| `brand_sony.png` | Sony | Sony logo | PD-textlogo |
+| `brand_xiaomi.png` | Xiaomi | Xiaomi logo (2021-) | PD-shape, PD-textlogo |
+| `brand_sharp.png` | Sharp | Logo of the Sharp Corporation | PD-textlogo |
+| `brand_grundig.png` | Grundig | Grundig Logo 2019 | PD-textlogo |
+| `brand_toshiba.png` | Toshiba | Toshiba logo | PD-textlogo |
+| `brand_haier.png` | Haier | Haier logo | PD-textlogo |
+| `brand_panasonic.png` | Panasonic | Panasonic logo (Blue) | PD-textlogo |
+| `brand_nvidia.png` | NVIDIA | NVIDIA logo | Apache License 2.0 |
+| `brand_google.png` | Google | Google 2015 logo | PD-textlogo |
+| `brand_amazon.png` | Amazon | Amazon 2024 | PD-textlogo |
+| `brand_freebox.png` | Freebox | Freebox (logo) | PD-textlogo |
 
 PD-textlogo and PD-shape mean that Wikimedia Commons considers the logo too simple to be protected by
 copyright. It remains a trademark, used here only to name the maker of your device.

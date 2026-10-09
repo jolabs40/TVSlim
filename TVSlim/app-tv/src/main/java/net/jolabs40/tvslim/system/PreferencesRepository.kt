@@ -13,86 +13,86 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import net.jolabs40.tvslim.device.DeriveDemarrage
-import net.jolabs40.tvslim.device.PhotoDemarrage
+import net.jolabs40.tvslim.device.BootDrift
+import net.jolabs40.tvslim.device.BootSnapshot
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.magasin: DataStore<Preferences> by preferencesDataStore(name = "tvslim")
+private val Context.store: DataStore<Preferences> by preferencesDataStore(name = "tvslim")
 
 /** App preferences. Nothing sensitive is stored here. */
 @Singleton
 class PreferencesRepository @Inject constructor(
-    @ApplicationContext private val contexte: Context,
+    @ApplicationContext private val context: Context,
 ) {
 
     /** Boot guard switch: reapplies settings the TV resets on every reboot (`low_power_standby_enabled`). */
-    val gardienActif: Flow<Boolean> = contexte.magasin.data.map { it[CLE_GARDIEN] ?: false }
+    val guardianActive: Flow<Boolean> = context.store.data.map { it[KEY_GUARDIAN] ?: false }
 
-    suspend fun gardienActifMaintenant(): Boolean = gardienActif.first()
+    suspend fun guardianActiveNow(): Boolean = guardianActive.first()
 
-    suspend fun definirGardien(actif: Boolean) {
-        contexte.magasin.edit { it[CLE_GARDIEN] = actif }
+    suspend fun setGuardianEnabled(active: Boolean) {
+        context.store.edit { it[KEY_GUARDIAN] = active }
     }
 
-    /** Snapshot of the last boot ([PhotoDemarrage]), null before the first one. */
-    suspend fun photo(): PhotoDemarrage? = contexte.magasin.data.first().let { donnees ->
-        val empreinte = donnees[CLE_EMPREINTE] ?: return@let null
-        PhotoDemarrage(
-            empreinte = empreinte,
-            desactives = donnees[CLE_DESACTIVES].orEmpty(),
-            accueil = donnees[CLE_ACCUEIL].orEmpty(),
+    /** Snapshot of the last boot ([BootSnapshot]), null before the first one. */
+    suspend fun photo(): BootSnapshot? = context.store.data.first().let { data ->
+        val fingerprint = data[KEY_FINGERPRINT] ?: return@let null
+        BootSnapshot(
+            fingerprint = fingerprint,
+            disabled = data[KEY_DISABLED].orEmpty(),
+            home = data[KEY_HOME].orEmpty(),
         )
     }
 
-    suspend fun retenirPhoto(photo: PhotoDemarrage) {
-        contexte.magasin.edit {
-            it[CLE_EMPREINTE] = photo.empreinte
-            it[CLE_DESACTIVES] = photo.desactives
-            it[CLE_ACCUEIL] = photo.accueil
+    suspend fun rememberSnapshot(photo: BootSnapshot) {
+        context.store.edit {
+            it[KEY_FINGERPRINT] = photo.fingerprint
+            it[KEY_DISABLED] = photo.disabled
+            it[KEY_HOME] = photo.home
         }
     }
 
     /**
-     * Claims boot [numero] (`Settings.Global.BOOT_COUNT`). Returns true for the first caller only, so the
+     * Claims boot [number] (`Settings.Global.BOOT_COUNT`). Returns true for the first caller only, so the
      * guard runs once per boot whichever path triggers it.
      */
-    suspend fun prendreAllumage(numero: Int): Boolean {
-        var libre = false
-        contexte.magasin.edit {
-            libre = it[CLE_ALLUMAGE] != numero
-            it[CLE_ALLUMAGE] = numero
+    suspend fun claimBoot(number: Int): Boolean {
+        var free = false
+        context.store.edit {
+            free = it[KEY_BOOT] != number
+            it[KEY_BOOT] = number
         }
-        return libre
+        return free
     }
 
     /** What the last system update undid, until it is fixed. */
-    val derive: Flow<DeriveDemarrage?> = contexte.magasin.data.map { donnees ->
-        DeriveDemarrage(
-            rallumes = donnees[CLE_RALLUMES].orEmpty().sorted(),
-            accueilPerdu = donnees[CLE_ACCUEIL_PERDU],
-        ).takeUnless { it.vide }
+    val drift: Flow<BootDrift?> = context.store.data.map { data ->
+        BootDrift(
+            reenabled = data[KEY_REENABLED].orEmpty().sorted(),
+            lostHome = data[KEY_HOME_LOST],
+        ).takeUnless { it.empty }
     }
 
-    suspend fun retenirDerive(derive: DeriveDemarrage?) {
-        contexte.magasin.edit {
-            if (derive == null || derive.vide) {
-                it.remove(CLE_RALLUMES)
-                it.remove(CLE_ACCUEIL_PERDU)
+    suspend fun rememberDrift(drift: BootDrift?) {
+        context.store.edit {
+            if (drift == null || drift.empty) {
+                it.remove(KEY_REENABLED)
+                it.remove(KEY_HOME_LOST)
             } else {
-                it[CLE_RALLUMES] = derive.rallumes.toSet()
-                derive.accueilPerdu?.let { perdu -> it[CLE_ACCUEIL_PERDU] = perdu } ?: it.remove(CLE_ACCUEIL_PERDU)
+                it[KEY_REENABLED] = drift.reenabled.toSet()
+                drift.lostHome?.let { lost -> it[KEY_HOME_LOST] = lost } ?: it.remove(KEY_HOME_LOST)
             }
         }
     }
 
     private companion object {
-        val CLE_GARDIEN = booleanPreferencesKey("gardien_demarrage")
-        val CLE_ALLUMAGE = intPreferencesKey("allumage_traite")
-        val CLE_EMPREINTE = stringPreferencesKey("photo_empreinte")
-        val CLE_DESACTIVES = stringSetPreferencesKey("photo_desactives")
-        val CLE_ACCUEIL = stringPreferencesKey("photo_accueil")
-        val CLE_RALLUMES = stringSetPreferencesKey("derive_rallumes")
-        val CLE_ACCUEIL_PERDU = stringPreferencesKey("derive_accueil_perdu")
+        val KEY_GUARDIAN = booleanPreferencesKey("gardien_demarrage")
+        val KEY_BOOT = intPreferencesKey("allumage_traite")
+        val KEY_FINGERPRINT = stringPreferencesKey("photo_empreinte")
+        val KEY_DISABLED = stringSetPreferencesKey("photo_desactives")
+        val KEY_HOME = stringPreferencesKey("photo_accueil")
+        val KEY_REENABLED = stringSetPreferencesKey("derive_rallumes")
+        val KEY_HOME_LOST = stringPreferencesKey("derive_accueil_perdu")
     }
 }

@@ -38,31 +38,31 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import net.jolabs40.tvslim.applications.ApplicationAppareil
-import net.jolabs40.tvslim.catalog.EntreePaquet
+import net.jolabs40.tvslim.applications.DeviceApplication
+import net.jolabs40.tvslim.catalog.PackageEntry
 import net.jolabs40.tvslim.remote.R
-import net.jolabs40.tvslim.remote.ui.ConfirmationApplication
-import net.jolabs40.tvslim.remote.ui.EtatApplications
+import net.jolabs40.tvslim.remote.ui.ApplyConfirmation
+import net.jolabs40.tvslim.remote.ui.ApplicationsState
 
-class ActionsApplicationsUi(
-    val onCharger: () -> Unit,
-    val onRecherche: (String) -> Unit,
-    val onChoisir: (ApplicationAppareil?) -> Unit,
-    val onOuvrir: (ApplicationAppareil) -> Unit,
-    val onArreter: (ApplicationAppareil) -> Unit,
-    val onDesactiver: (ApplicationAppareil) -> Unit,
-    val onReactiver: (ApplicationAppareil) -> Unit,
-    val onDesinstaller: (ApplicationAppareil) -> Unit,
-    val onConfirmer: () -> Unit,
-    val onAnnuler: () -> Unit,
+class ApplicationsUiActions(
+    val onLoad: () -> Unit,
+    val onSearchChange: (String) -> Unit,
+    val onChoose: (DeviceApplication?) -> Unit,
+    val onOpen: (DeviceApplication) -> Unit,
+    val onStop: (DeviceApplication) -> Unit,
+    val onDisable: (DeviceApplication) -> Unit,
+    val onEnable: (DeviceApplication) -> Unit,
+    val onUninstall: (DeviceApplication) -> Unit,
+    val onConfirm: () -> Unit,
+    val onCancel: () -> Unit,
     /** The catalogue entry that allows disabling the app, or `null` if it cannot be disabled from here. */
-    val desactivable: (ApplicationAppareil) -> EntreePaquet?,
+    val disableable: (DeviceApplication) -> PackageEntry?,
 )
 
 /** Tapping an app opens its actions. The list loads on first display; names and icons fill in as they arrive. */
 @Composable
-fun ApplicationsScreen(connecte: Boolean, etat: EtatApplications, actions: ActionsApplicationsUi) {
-    if (!connecte) {
+fun ApplicationsScreen(connected: Boolean, state: ApplicationsState, actions: ApplicationsUiActions) {
+    if (!connected) {
         Box(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
             Text(
                 text = stringResource(R.string.apps_not_connected),
@@ -72,10 +72,10 @@ fun ApplicationsScreen(connecte: Boolean, etat: EtatApplications, actions: Actio
         }
         return
     }
-    LaunchedEffect(Unit) { if (!etat.lue && !etat.chargement) actions.onCharger() }
+    LaunchedEffect(Unit) { if (!state.loaded && !state.loading) actions.onLoad() }
 
-    etat.choisie?.let { ActionsDialogue(it, actions.desactivable(it) != null, etat.occupee != null, actions) }
-    etat.confirmation?.let { ConfirmationDialogue(it, actions) }
+    state.chosen?.let { ActionsDialog(it, actions.disableable(it) != null, state.busy != null, actions) }
+    state.confirmation?.let { ConfirmationDialog(it, actions) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -83,32 +83,32 @@ fun ApplicationsScreen(connecte: Boolean, etat: EtatApplications, actions: Actio
             verticalAlignment = Alignment.CenterVertically,
         ) {
             OutlinedTextField(
-                value = etat.recherche,
-                onValueChange = actions.onRecherche,
+                value = state.search,
+                onValueChange = actions.onSearchChange,
                 label = { Text(stringResource(R.string.apps_search)) },
                 singleLine = true,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = actions.onCharger, enabled = !etat.chargement) {
+            IconButton(onClick = actions.onLoad, enabled = !state.loading) {
                 Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.action_refresh))
             }
         }
         Column(modifier = Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = stringResource(R.string.apps_count, etat.applications.size, etat.nombreDesactivees),
+                text = stringResource(R.string.apps_count, state.applications.size, state.disabledCount),
                 style = MaterialTheme.typography.bodySmall,
             )
-            if (etat.chargement) {
-                val avancee = etat.avancee
-                if (avancee == null) {
+            if (state.loading) {
+                val progress = state.progress
+                if (progress == null) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     Text(stringResource(R.string.apps_reading_list), style = MaterialTheme.typography.bodySmall)
                 } else {
                     LinearProgressIndicator(
-                        progress = { avancee.first.toFloat() / avancee.second.coerceAtLeast(1) },
+                        progress = { progress.first.toFloat() / progress.second.coerceAtLeast(1) },
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Text(stringResource(R.string.apps_reading, avancee.first, avancee.second), style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.apps_reading, progress.first, progress.second), style = MaterialTheme.typography.bodySmall)
                 }
             }
             Text(
@@ -119,32 +119,32 @@ fun ApplicationsScreen(connecte: Boolean, etat: EtatApplications, actions: Actio
         }
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(etat.affichees, key = { it.paquet }) { application ->
+            items(state.shown, key = { it.packageName }) { application ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { actions.onChoisir(application) }
+                        .clickable { actions.onChoose(application) }
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconeApplication(application, 40)
+                    ApplicationIcon(application, 40)
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = application.nom,
+                            text = application.name,
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            text = application.paquet,
+                            text = application.packageName,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Etiquettes(application)
+                        Badges(application)
                     }
                 }
                 HorizontalDivider()
@@ -154,10 +154,10 @@ fun ApplicationsScreen(connecte: Boolean, etat: EtatApplications, actions: Actio
 }
 
 @Composable
-private fun Etiquettes(application: ApplicationAppareil) {
+private fun Badges(application: DeviceApplication) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = stringResource(if (application.systeme) R.string.apps_system else R.string.apps_installed),
+            text = stringResource(if (application.system) R.string.apps_system else R.string.apps_installed),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -173,105 +173,105 @@ private fun Etiquettes(application: ApplicationAppareil) {
 
 /** The icon read from the device, or the Android robot until it arrives. Also used by the permissions app picker. */
 @Composable
-internal fun IconeApplication(application: ApplicationAppareil, taille: Int) {
-    val image: ImageBitmap? = remember(application.paquet, application.icone) {
-        application.icone?.let { octets -> BitmapFactory.decodeByteArray(octets, 0, octets.size)?.asImageBitmap() }
+internal fun ApplicationIcon(application: DeviceApplication, size: Int) {
+    val image: ImageBitmap? = remember(application.packageName, application.icon) {
+        application.icon?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }
     }
-    Box(modifier = Modifier.size(taille.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.size(size.dp), contentAlignment = Alignment.Center) {
         if (image != null) {
-            Image(bitmap = image, contentDescription = null, modifier = Modifier.size(taille.dp))
+            Image(bitmap = image, contentDescription = null, modifier = Modifier.size(size.dp))
         } else {
             Icon(
                 imageVector = Icons.Filled.Android,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size((taille * 0.7).dp),
+                modifier = Modifier.size((size * 0.7).dp),
             )
         }
     }
 }
 
 @Composable
-private fun ActionsDialogue(
-    application: ApplicationAppareil,
-    desactivable: Boolean,
-    occupee: Boolean,
-    actions: ActionsApplicationsUi,
+private fun ActionsDialog(
+    application: DeviceApplication,
+    disableable: Boolean,
+    busy: Boolean,
+    actions: ApplicationsUiActions,
 ) {
     AlertDialog(
-        onDismissRequest = { actions.onChoisir(null) },
-        icon = { IconeApplication(application, 48) },
-        title = { Text(application.nom) },
+        onDismissRequest = { actions.onChoose(null) },
+        icon = { ApplicationIcon(application, 48) },
+        title = { Text(application.name) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(application.paquet, style = MaterialTheme.typography.bodySmall)
-                Etiquettes(application)
-                val libre = !occupee
+                Text(application.packageName, style = MaterialTheme.typography.bodySmall)
+                Badges(application)
+                val free = !busy
                 TextButton(
-                    onClick = { actions.onOuvrir(application) },
-                    enabled = libre && application.active && application.lancement != null,
+                    onClick = { actions.onOpen(application) },
+                    enabled = free && application.active && application.launch != null,
                 ) { Text(stringResource(R.string.apps_open)) }
-                TextButton(onClick = { actions.onArreter(application) }, enabled = libre && application.active) {
+                TextButton(onClick = { actions.onStop(application) }, enabled = free && application.active) {
                     Text(stringResource(R.string.apps_stop))
                 }
                 when {
-                    !application.active -> TextButton(onClick = { actions.onReactiver(application) }, enabled = libre) {
+                    !application.active -> TextButton(onClick = { actions.onEnable(application) }, enabled = free) {
                         Text(stringResource(R.string.apps_enable))
                     }
 
-                    desactivable -> TextButton(onClick = { actions.onDesactiver(application) }, enabled = libre) {
+                    disableable -> TextButton(onClick = { actions.onDisable(application) }, enabled = free) {
                         Text(stringResource(R.string.apps_disable))
                     }
                 }
-                if (!application.systeme) {
-                    TextButton(onClick = { actions.onDesinstaller(application) }, enabled = libre) {
+                if (!application.system) {
+                    TextButton(onClick = { actions.onUninstall(application) }, enabled = free) {
                         Text(stringResource(R.string.apps_uninstall), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { actions.onChoisir(null) }) { Text(stringResource(R.string.capture_close)) } },
+        confirmButton = { TextButton(onClick = { actions.onChoose(null) }) { Text(stringResource(R.string.capture_close)) } },
     )
 }
 
 @Composable
-private fun ConfirmationDialogue(demande: ConfirmationApplication, actions: ActionsApplicationsUi) {
-    val application = demande.application
-    val desinstallation = demande is ConfirmationApplication.Desinstallation
+private fun ConfirmationDialog(request: ApplyConfirmation, actions: ApplicationsUiActions) {
+    val application = request.application
+    val isUninstall = request is ApplyConfirmation.Uninstallation
     AlertDialog(
-        onDismissRequest = actions.onAnnuler,
-        icon = { IconeApplication(application, 48) },
+        onDismissRequest = actions.onCancel,
+        icon = { ApplicationIcon(application, 48) },
         title = {
             Text(
                 stringResource(
-                    if (desinstallation) R.string.apps_confirm_uninstall_title else R.string.apps_confirm_disable_title,
-                    application.nom,
+                    if (isUninstall) R.string.apps_confirm_uninstall_title else R.string.apps_confirm_disable_title,
+                    application.name,
                 ),
             )
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(application.paquet, style = MaterialTheme.typography.bodySmall)
+                Text(application.packageName, style = MaterialTheme.typography.bodySmall)
                 Text(
                     stringResource(
-                        if (desinstallation) R.string.apps_confirm_uninstall_body else R.string.apps_confirm_disable_body,
+                        if (isUninstall) R.string.apps_confirm_uninstall_body else R.string.apps_confirm_disable_body,
                     ),
                 )
-                (demande as? ConfirmationApplication.Desactivation)?.entree?.effetDeBord?.let { effet ->
-                    Text(stringResource(R.string.apps_side_effect, effet), color = MaterialTheme.colorScheme.error)
+                (request as? ApplyConfirmation.Disabling)?.entry?.sideEffect?.let { effect ->
+                    Text(stringResource(R.string.apps_side_effect, effect), color = MaterialTheme.colorScheme.error)
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = actions.onConfirmer,
-                colors = if (desinstallation) {
+                onClick = actions.onConfirm,
+                colors = if (isUninstall) {
                     ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 } else {
                     ButtonDefaults.buttonColors()
                 },
-            ) { Text(stringResource(if (desinstallation) R.string.apps_uninstall else R.string.apps_disable)) }
+            ) { Text(stringResource(if (isUninstall) R.string.apps_uninstall else R.string.apps_disable)) }
         },
-        dismissButton = { TextButton(onClick = actions.onAnnuler) { Text(stringResource(R.string.confirm_cancel)) } },
+        dismissButton = { TextButton(onClick = actions.onCancel) { Text(stringResource(R.string.confirm_cancel)) } },
     )
 }

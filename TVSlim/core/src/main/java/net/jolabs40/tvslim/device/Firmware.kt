@@ -6,42 +6,42 @@ package net.jolabs40.tvslim.device
  */
 data class Firmware(
     /** `ro.build.fingerprint`: brand, product, device, Android version and build; enough to spot duplicates. */
-    val empreinte: String = "",
+    val fingerprint: String = "",
     /** `ro.product.name`: the product, which often includes the region (`G08_4K_GB` on the TCL). */
-    val produit: String = "",
+    val product: String = "",
     /** `ro.product.locale`: the factory language, not the one the user picked. */
-    val langueUsine: String = "",
+    val factoryLanguage: String = "",
 ) {
-    val renseigne: Boolean get() = empreinte.isNotEmpty() || produit.isNotEmpty() || langueUsine.isNotEmpty()
+    val populated: Boolean get() = fingerprint.isNotEmpty() || product.isNotEmpty() || factoryLanguage.isNotEmpty()
 }
 
 /**
  * Reads the [Firmware] in one command, for the unknown-packages inventory: preinstalled packages vary by region
  * and by firmware version.
  */
-object LectureFirmware {
+object FirmwareReading {
 
-    const val MARQUEUR_EMPREINTE = "@@TVSLIM_EMPREINTE"
-    const val MARQUEUR_PRODUIT = "@@TVSLIM_PRODUIT"
-    const val MARQUEUR_LANGUE = "@@TVSLIM_LANGUE"
+    const val FINGERPRINT_MARKER = "@@TVSLIM_FINGERPRINT"
+    const val PRODUCT_MARKER = "@@TVSLIM_PRODUCT"
+    const val LANGUAGE_MARKER = "@@TVSLIM_LANGUAGE"
 
     /** One section per property, so an empty value leaves an empty section without shifting the others. */
-    val COMMANDE: String = listOf(
-        "echo $MARQUEUR_EMPREINTE",
+    val COMMAND: String = listOf(
+        "echo $FINGERPRINT_MARKER",
         "getprop ro.build.fingerprint",
-        "echo $MARQUEUR_PRODUIT",
+        "echo $PRODUCT_MARKER",
         "getprop ro.product.name",
-        "echo $MARQUEUR_LANGUE",
+        "echo $LANGUAGE_MARKER",
         "getprop ro.product.locale",
     ).joinToString("; ")
 
-    fun interpreter(sortie: String): Firmware {
-        val sections = LecteurDistant.decouper(sortie)
-        fun valeur(marqueur: String) = sections[marqueur].orEmpty().firstOrNull().orEmpty()
+    fun parse(output: String): Firmware {
+        val sections = RemoteReader.splitSections(output)
+        fun rawValue(marker: String) = sections[marker].orEmpty().firstOrNull().orEmpty()
         return Firmware(
-            empreinte = valeur(MARQUEUR_EMPREINTE),
-            produit = valeur(MARQUEUR_PRODUIT),
-            langueUsine = valeur(MARQUEUR_LANGUE),
+            fingerprint = rawValue(FINGERPRINT_MARKER),
+            product = rawValue(PRODUCT_MARKER),
+            factoryLanguage = rawValue(LANGUAGE_MARKER),
         )
     }
 }

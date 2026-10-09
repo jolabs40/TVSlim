@@ -8,7 +8,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.darkColorScheme
 
 /** Dark palette: anything brighter dazzles in a dark room. */
-private val schemaSombre = darkColorScheme(
+private val darkScheme = darkColorScheme(
     primary = Color(0xFF7FD1AE),
     onPrimary = Color(0xFF05281B),
     secondary = Color(0xFF8AB4F8),
@@ -24,21 +24,21 @@ private val schemaSombre = darkColorScheme(
 )
 
 /** Risk dot colors, outside the Material palette so they read at a glance. */
-object CouleursRisque {
-    val aucun = Color(0xFF7FD1AE)
-    val faible = Color(0xFFD8E07F)
-    val moyen = Color(0xFFE0B57F)
-    val eleve = Color(0xFFF2837F)
+object RiskColors {
+    val none = Color(0xFF7FD1AE)
+    val low = Color(0xFFD8E07F)
+    val medium = Color(0xFFE0B57F)
+    val high = Color(0xFFF2837F)
 }
 
 @Composable
-fun TvSlimTheme(contenu: @Composable () -> Unit) {
+fun TvSlimTheme(content: @Composable () -> Unit) {
     // Outside a Surface, `Text` uses the default `LocalContentColor`, which is dark, so titles would be
     // black on black. Surfaces provide their own further down and are unaffected.
-    MaterialTheme(colorScheme = schemaSombre) {
+    MaterialTheme(colorScheme = darkScheme) {
         CompositionLocalProvider(
-            LocalContentColor provides schemaSombre.onBackground,
-            content = contenu,
+            LocalContentColor provides darkScheme.onBackground,
+            content = content,
         )
     }
 }

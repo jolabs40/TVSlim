@@ -1,0 +1,156 @@
+package net.jolabs40.tvslim.windows.ui.screens
+
+import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import net.jolabs40.tvslim.journal.JournalAction
+import net.jolabs40.tvslim.journal.ActionType
+import net.jolabs40.tvslim.windows.resources.Res
+import net.jolabs40.tvslim.windows.resources.engine_unexplained
+import net.jolabs40.tvslim.windows.resources.journal_empty
+import net.jolabs40.tvslim.windows.resources.journal_export
+import net.jolabs40.tvslim.windows.resources.journal_failure
+import net.jolabs40.tvslim.windows.resources.journal_home
+import net.jolabs40.tvslim.windows.resources.journal_not_connected
+import net.jolabs40.tvslim.windows.resources.journal_restore_all
+import net.jolabs40.tvslim.windows.resources.journal_subtitle
+import net.jolabs40.tvslim.windows.resources.journal_success
+import net.jolabs40.tvslim.windows.resources.journal_title
+import net.jolabs40.tvslim.windows.resources.journal_undo_one
+import net.jolabs40.tvslim.windows.ui.AppState
+import net.jolabs40.tvslim.windows.ui.components.EmptyScreen
+import net.jolabs40.tvslim.windows.ui.components.SecondaryText
+import org.jetbrains.compose.resources.stringResource
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/** Action types the controller can undo line by line. */
+private val UNDOABLE = setOf(ActionType.DISABLING, ActionType.PERMISSION, ActionType.APP_OP)
+
+/**
+ * Journal of the connected TV: each action with the exact command that undoes it. This is what makes the
+ * debloat reversible, all at once or one line at a time.
+ */
+@Composable
+fun JournalScreen(
+    state: AppState,
+    onRestoreAll: () -> Unit,
+    onExport: () -> Unit,
+    onUndoAction: (JournalAction) -> Unit,
+) {
+    if (!state.connected) {
+        EmptyScreen(stringResource(Res.string.journal_not_connected))
+        return
+    }
+
+    val format = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
+    val recent = remember(state.journal) { state.journal.asReversed() }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = stringResource(Res.string.journal_title), style = MaterialTheme.typography.titleLarge)
+                SecondaryText(stringResource(Res.string.journal_subtitle))
+            }
+            OutlinedButton(onClick = onExport, enabled = state.journal.isNotEmpty()) {
+                Text(stringResource(Res.string.journal_export))
+            }
+            Button(onClick = onRestoreAll) {
+                Text(stringResource(Res.string.journal_restore_all))
+            }
+        }
+
+        HorizontalDivider()
+
+        if (state.journal.isEmpty()) {
+            SecondaryText(stringResource(Res.string.journal_empty), modifier = Modifier.padding(20.dp))
+            return@Column
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            val list = rememberLazyListState()
+            LazyColumn(state = list, modifier = Modifier.fillMaxSize()) {
+                items(recent) { action ->
+                    ActionView(
+                        action = action,
+                        timestamp = format.format(Date(action.timestamp)),
+                        undoable = action.succeeded && action.type in UNDOABLE,
+                        onCancel = { onUndoAction(action) },
+                    )
+                    HorizontalDivider()
+                }
+            }
+            VerticalScrollbar(
+                adapter = rememberScrollbarAdapter(list),
+                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionView(
+    action: JournalAction,
+    timestamp: String,
+    undoable: Boolean,
+    onCancel: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // Home entries use the UI language; the label stored in the journal is only for export.
+            val label = if (action.type == ActionType.HOME) stringResource(Res.string.journal_home) else action.label
+            Text(text = "$label — ${action.target}", style = MaterialTheme.typography.bodyMedium)
+            // The undo command is selectable so it can be replayed from a terminal. Installs have none.
+            SelectionContainer {
+                SecondaryText(
+                    listOf(timestamp, action.undoCommand).filter { it.isNotBlank() }.joinToString(" · "),
+                    small = true,
+                )
+            }
+        }
+        Text(
+            text = if (action.succeeded) {
+                stringResource(Res.string.journal_success)
+            } else {
+                stringResource(Res.string.journal_failure, action.message.ifBlank { stringResource(Res.string.engine_unexplained) })
+            },
+            modifier = Modifier.padding(horizontal = 12.dp).widthIn(max = 320.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (action.succeeded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+        )
+        if (undoable) {
+            TextButton(onClick = onCancel) { Text(stringResource(Res.string.journal_undo_one)) }
+        }
+    }
+}

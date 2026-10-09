@@ -1,9 +1,9 @@
 ---
 import Package from '../../views/Package.astro';
-import { tousLesPaquets } from '../../data/catalogue';
+import { allPackageIds } from '../../data/catalogue';
 
 export function getStaticPaths() {
-  return tousLesPaquets().map((id) => ({ params: { id } }));
+  return allPackageIds().map((id) => ({ params: { id } }));
 }
 const { id } = Astro.params;
 ---

@@ -1,0 +1,10 @@
+---
+// Ko-fi symbol, the file from Ko-fi's brand assets, untinted and unmodified (NOTICE-LOGOS.md).
+// The cup is 96 x 77, wider than tall.
+interface Props {
+  /** Displayed width in pixels. */
+  size?: number;
+}
+const { size = 24 } = Astro.props;
+---
+<img src="/logos/kofi-symbol.png" width={size} height={Math.round((size * 77) / 96)} alt="" decoding="async" />

@@ -27,26 +27,26 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.remote.R
-import net.jolabs40.tvslim.remote.ui.CaptureTelephone
+import net.jolabs40.tvslim.remote.ui.PhoneCapture
 
 @Composable
-fun BoutonCapture(enCours: Boolean, onCapturer: () -> Unit) {
-    if (enCours) {
+fun CaptureButton(inProgress: Boolean, onCapture: () -> Unit) {
+    if (inProgress) {
         Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
         }
     } else {
-        IconButton(onClick = onCapturer) {
+        IconButton(onClick = onCapture) {
             Icon(Icons.Filled.PhotoCamera, contentDescription = stringResource(R.string.screen_capture))
         }
     }
 }
 
 @Composable
-fun ApercuCaptureDialogue(capture: CaptureTelephone, onPartager: () -> Unit, onFermer: () -> Unit) {
+fun CapturePreviewDialog(capture: PhoneCapture, onShare: () -> Unit, onClose: () -> Unit) {
     val image = remember(capture) { BitmapFactory.decodeByteArray(capture.png, 0, capture.png.size)?.asImageBitmap() }
     AlertDialog(
-        onDismissRequest = onFermer,
+        onDismissRequest = onClose,
         title = { Text(stringResource(R.string.capture_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -58,7 +58,7 @@ fun ApercuCaptureDialogue(capture: CaptureTelephone, onPartager: () -> Unit, onF
                         contentScale = ContentScale.Fit,
                     )
                 }
-                Text(stringResource(R.string.capture_saved, capture.emplacement), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.capture_saved, capture.location), style = MaterialTheme.typography.bodySmall)
                 Text(
                     text = stringResource(R.string.capture_drm),
                     style = MaterialTheme.typography.bodySmall,
@@ -66,7 +66,7 @@ fun ApercuCaptureDialogue(capture: CaptureTelephone, onPartager: () -> Unit, onF
                 )
             }
         },
-        confirmButton = { Button(onClick = onPartager) { Text(stringResource(R.string.capture_share)) } },
-        dismissButton = { TextButton(onClick = onFermer) { Text(stringResource(R.string.capture_close)) } },
+        confirmButton = { Button(onClick = onShare) { Text(stringResource(R.string.capture_share)) } },
+        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.capture_close)) } },
     )
 }

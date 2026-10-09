@@ -28,46 +28,46 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
  */
 @Composable
 fun QrCode(
-    contenu: String,
+    content: String,
     modifier: Modifier = Modifier,
-    taille: Dp = 200.dp,
+    size: Dp = 200.dp,
 ) {
-    val image = remember(contenu) { encoder(contenu) } ?: return
+    val image = remember(content) { encoder(content) } ?: return
 
     Image(
         bitmap = image.asImageBitmap(),
-        contentDescription = contenu,
+        contentDescription = content,
         modifier = modifier
             .background(Color.White, RoundedCornerShape(8.dp))
             .padding(8.dp)
-            .size(taille),
+            .size(size),
         contentScale = ContentScale.Fit,
         // Otherwise interpolation blurs the modules and breaks scanning.
         filterQuality = FilterQuality.None,
     )
 }
 
-private fun encoder(contenu: String): Bitmap? = runCatching {
-    val cote = COTE_PIXELS
-    val matrice = QRCodeWriter().encode(
-        contenu,
+private fun encoder(content: String): Bitmap? = runCatching {
+    val side = SIDE_PIXELS
+    val matrix = QRCodeWriter().encode(
+        content,
         BarcodeFormat.QR_CODE,
-        cote,
-        cote,
+        side,
+        side,
         mapOf(
             EncodeHintType.MARGIN to 1,
             EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M,
             EncodeHintType.CHARACTER_SET to "UTF-8",
         ),
     )
-    val pixels = IntArray(cote * cote) { indice ->
-        if (matrice.get(indice % cote, indice / cote)) NOIR else BLANC
+    val pixels = IntArray(side * side) { pixelIndex ->
+        if (matrix.get(pixelIndex % side, pixelIndex / side)) BLACK else WHITE
     }
-    Bitmap.createBitmap(cote, cote, Bitmap.Config.ARGB_8888).apply {
-        setPixels(pixels, 0, cote, 0, 0, cote, cote)
+    Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888).apply {
+        setPixels(pixels, 0, side, 0, 0, side, side)
     }
 }.getOrNull()
 
-private const val COTE_PIXELS = 360
-private const val NOIR = 0xFF000000.toInt()
-private const val BLANC = 0xFFFFFFFF.toInt()
+private const val SIDE_PIXELS = 360
+private const val BLACK = 0xFF000000.toInt()
+private const val WHITE = 0xFFFFFFFF.toInt()
