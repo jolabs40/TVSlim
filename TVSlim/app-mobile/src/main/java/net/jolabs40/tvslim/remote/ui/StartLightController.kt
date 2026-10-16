@@ -47,7 +47,8 @@ data class StartLightUi(
  * StartLight's own buttons, through the content provider it opens to the shell user (`<package>.remote`).
  *
  * A command is not idempotent (a doubled "next background" draws two images): it goes out once through the helper,
- * never through the replaying main session. The state is read again when the link is ready and after each command.
+ * never through the replaying main session. The state is read when the link is ready, after each command, and every
+ * two seconds while the remote is shown: its shortcuts follow the TV, also when it is driven with its own remote.
  */
 class StartLightController(
     private val remote: RemoteControlController,
@@ -59,8 +60,8 @@ class StartLightController(
     private val _state = MutableStateFlow(StartLightUi())
     val state: StateFlow<StartLightUi> = _state.asStateFlow()
 
-    /** The loop reading the state again while StartLight cannot take commands. */
-    private var waitingForReady: Job? = null
+    /** The loop reading the state again while the link is up. */
+    private var following: Job? = null
 
     init {
         scope.launch {
@@ -104,10 +105,10 @@ class StartLightController(
     }
 
     private suspend fun read() {
-        if (readOnce()) readUntilAvailable()
+        if (readOnce()) follow()
     }
 
-    /** Reads the state; returns whether StartLight cannot take commands yet, so that reading again is worth it. */
+    /** Reads the state; returns whether reading again is worth it: not without the link, nor without the door. */
     private suspend fun readOnce(): Boolean {
         val home = _state.value.home ?: return false
         val outcome = remote.call(home.authority, StartLightRemote.STATE)
@@ -123,21 +124,15 @@ class StartLightController(
                 else -> it
             }
         }
-        return if (read != null) waiting(read) else absence == StartLightAbsence.NOT_STARTED
+        return outcome !is CallOutcome.NotSent && absence != StartLightAbsence.NO_DOOR
     }
 
-    /** Starting, under a welcome screen, or behind another app: its buttons would not act yet. */
-    private fun waiting(state: StartLightState) = !state.ready || !state.foreground
-
-    /**
-     * Reads again until StartLight takes commands, or starts, so the section follows the TV without a command.
-     * Stops when the link is gone: the call is then refused and nothing is read.
-     */
-    private fun readUntilAvailable() {
-        if (waitingForReady?.isActive == true) return
-        waitingForReady = scope.launch {
+    /** Stops when the link is gone, the remote closed: the call is then refused and nothing is read. */
+    private fun follow() {
+        if (following?.isActive == true) return
+        following = scope.launch {
             while (true) {
-                delay(WAITING_POLL_MS)
+                delay(POLL_MS)
                 if (remote.state.value.phase != RemotePhase.READY) return@launch
                 if (!readOnce()) return@launch
             }
@@ -157,6 +152,6 @@ class StartLightController(
         /** Time for the home to come forward before its state is read again. */
         const val HOME_SETTLE_MS = 700L
 
-        const val WAITING_POLL_MS = 2_000L
+        const val POLL_MS = 2_000L
     }
 }

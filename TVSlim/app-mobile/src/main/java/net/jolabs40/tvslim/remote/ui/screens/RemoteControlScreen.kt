@@ -104,6 +104,7 @@ import net.jolabs40.tvslim.remote.ui.ApplicationsState
 import net.jolabs40.tvslim.remote.ui.HardwareKeyHost
 import net.jolabs40.tvslim.remote.ui.RemoteControlUi
 import net.jolabs40.tvslim.remote.ui.RemotePhase
+import net.jolabs40.tvslim.remote.ui.ShortcutsUi
 import net.jolabs40.tvslim.remote.ui.StartLightUi
 
 /** What the remote control screen asks for. A press returns whether it went out, which decides the vibration. */
@@ -137,6 +138,8 @@ fun RemoteControlScreen(
     actions: RemoteControlActions,
     startLight: StartLightUi,
     startLightActions: StartLightActions,
+    shortcuts: ShortcutsUi,
+    shortcutActions: ShortcutActions,
 ) {
     val haptic = LocalHapticFeedback.current
     val view = LocalView.current
@@ -159,6 +162,21 @@ fun RemoteControlScreen(
         return
     }
 
+    // Choosing the shortcuts too: a page inside this screen, for the same reason.
+    var shortcutsOpen by rememberSaveable { mutableStateOf(false) }
+    if (shortcutsOpen && shortcuts.host != null) {
+        BackHandler { shortcutsOpen = false }
+        ShortcutsPage(
+            shortcuts = shortcuts.shortcuts,
+            startLight = startLight,
+            applications = applications,
+            onLoadApps = actions.onLoadApps,
+            onToggle = shortcutActions.onToggle,
+            onClose = { shortcutsOpen = false },
+        )
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -170,6 +188,18 @@ fun RemoteControlScreen(
         // Between the header and the keys, scrolling on its own so the keys never leave the thumb's reach.
         Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
             Problem(state, actions)
+            // Above the banner, which comes once StartLight is found: the shortcuts do not move under the thumb.
+            if (shortcuts.host != null) {
+                ShortcutsGrid(
+                    shortcuts = shortcuts.shortcuts,
+                    ready = ready,
+                    startLight = startLight,
+                    actions = shortcutActions,
+                    onOpenApp = actions.onOpenApp,
+                    onStartLight = startLightActions.onCommand,
+                    onAdd = { shortcutsOpen = true },
+                )
+            }
             if (startLightShown) StartLightBanner(startLight, onOpen = { startLightOpen = true })
         }
         Column(

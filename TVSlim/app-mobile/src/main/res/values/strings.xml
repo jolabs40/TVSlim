@@ -573,6 +573,16 @@
     <string name="startlight_not_delivered">The command did not reach the television; it was not sent again.</string>
     <string name="startlight_no_answer">No answer from the television: the command may have run.</string>
     <string name="startlight_failed">StartLight did not answer: %1$s</string>
+    <string name="remote_shortcuts_title">Shortcuts</string>
+    <string name="remote_shortcuts_hint">Touch to add or remove. On the remote, a long press moves or removes a shortcut.</string>
+    <string name="remote_shortcuts_add">Add</string>
+    <string name="remote_shortcuts_add_first">Add shortcuts: TV apps, StartLight buttons</string>
+    <string name="remote_shortcuts_apps">Apps</string>
+    <string name="remote_shortcuts_back">Back to the remote</string>
+    <string name="remote_shortcuts_edit">Move or remove</string>
+    <string name="remote_shortcuts_move_left">Move left</string>
+    <string name="remote_shortcuts_move_right">Move right</string>
+    <string name="remote_shortcuts_remove">Remove</string>
     <string name="shortcut_remote_short">Remote</string>
     <string name="shortcut_remote_long">Television remote</string>
 </resources>

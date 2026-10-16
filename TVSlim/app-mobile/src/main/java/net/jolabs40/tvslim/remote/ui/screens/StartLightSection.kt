@@ -43,6 +43,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -50,9 +55,11 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import net.jolabs40.tvslim.control.CallFailure
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.StartLightNotice
@@ -75,6 +82,16 @@ class StartLightActions(
  */
 @Composable
 internal fun StartLightBanner(ui: StartLightUi, onOpen: () -> Unit) {
+    // The answer to a shortcut pressed on the remote, which does not open the page: in place of the status for a
+    // while, so the banner keeps its height above the keys.
+    val notice = shownNotice(ui)
+    var noticeShown by remember(notice) { mutableStateOf(notice != null) }
+    LaunchedEffect(notice) {
+        if (notice != null) {
+            delay(BANNER_NOTICE_MS)
+            noticeShown = false
+        }
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -91,14 +108,19 @@ internal fun StartLightBanner(ui: StartLightUi, onOpen: () -> Unit) {
             LogoLauncher(StartLightHome.LAUNCHER_ID, size = 36.dp)
             Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.startlight_name), style = MaterialTheme.typography.titleSmall)
-                Text(
-                    text = stringResource(status(ui)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                if (notice != null && noticeShown) {
+                    NoticeText(notice, MaterialTheme.typography.bodySmall, maxLines = 2)
+                } else {
+                    Text(
+                        text = stringResource(status(ui)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
+            if (ui.busy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
             Text(
                 text = stringResource(R.string.startlight_open),
                 style = MaterialTheme.typography.labelLarge,
@@ -158,22 +180,7 @@ internal fun StartLightPage(ui: StartLightUi, actions: StartLightActions, onClos
             }
         }
 
-        // What the status line already says is not repeated.
-        ui.notice?.takeUnless {
-            it is StartLightNotice.Refused &&
-                (behind && it.refusal == StartLightRefusal.NOT_FOREGROUND || asking && it.refusal == StartLightRefusal.PERMISSION_REQUEST)
-        }?.let { notice ->
-            Text(
-                text = noticeText(notice),
-                style = MaterialTheme.typography.bodyMedium,
-                // The TV answered as its own button would (a code to type, the Pro screen): not a failure.
-                color = if (notice is StartLightNotice.Refused && notice.refusal in INFORMATIVE) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
-            )
-        }
+        shownNotice(ui)?.let { NoticeText(it, MaterialTheme.typography.bodyMedium) }
 
         when {
             ui.absence == StartLightAbsence.NO_DOOR -> Hint(stringResource(R.string.startlight_no_door))
@@ -287,7 +294,7 @@ private fun ActionTile(action: StartLightAction, locked: Boolean, enabled: Boole
 }
 
 @Composable
-private fun SectionTitle(text: String) {
+internal fun SectionTitle(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall,
@@ -323,12 +330,40 @@ private fun BringHomeButton(ui: StartLightUi, actions: StartLightActions) {
     }
 }
 
+/** The last command's answer, unless the status line already says it. */
+private fun shownNotice(ui: StartLightUi): StartLightNotice? {
+    val behind = ui.state?.behindAnotherApp == true
+    val asking = ui.state?.permissionRequest == true
+    return ui.notice?.takeUnless {
+        it is StartLightNotice.Refused &&
+            (behind && it.refusal == StartLightRefusal.NOT_FOREGROUND || asking && it.refusal == StartLightRefusal.PERMISSION_REQUEST)
+    }
+}
+
+@Composable
+private fun NoticeText(notice: StartLightNotice, style: TextStyle, maxLines: Int = Int.MAX_VALUE) {
+    Text(
+        text = noticeText(notice),
+        style = style,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        // The TV answered as its own button would (a code to type, the Pro screen): not a failure.
+        color = if (notice is StartLightNotice.Refused && notice.refusal in INFORMATIVE) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.error
+        },
+    )
+}
+
 @Composable
 private fun Hint(text: String) {
     Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 private const val COLUMNS = 3
+
+private const val BANNER_NOTICE_MS = 8_000L
 
 private val INFORMATIVE = setOf(
     StartLightRefusal.PARENTAL_CODE,
@@ -375,7 +410,7 @@ internal fun actionLabel(action: StartLightAction): Int = when (action) {
     StartLightAction.CONNECTORS -> R.string.startlight_action_connectors
 }
 
-private fun actionIcon(action: StartLightAction): ImageVector = when (action) {
+internal fun actionIcon(action: StartLightAction): ImageVector = when (action) {
     StartLightAction.SETTINGS -> Icons.Filled.Settings
     StartLightAction.NOTIFICATIONS -> Icons.Filled.Notifications
     StartLightAction.NETWORK -> Icons.Filled.Wifi

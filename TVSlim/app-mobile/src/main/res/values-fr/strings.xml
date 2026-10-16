@@ -570,6 +570,16 @@
     <string name="startlight_not_delivered">La commande n\'a pas atteint le téléviseur ; elle n\'a pas été renvoyée.</string>
     <string name="startlight_no_answer">Pas de réponse du téléviseur : la commande a pu partir.</string>
     <string name="startlight_failed">StartLight n\'a pas répondu : %1$s</string>
+    <string name="remote_shortcuts_title">Raccourcis</string>
+    <string name="remote_shortcuts_hint">Touchez pour ajouter ou retirer. Sur la télécommande, un appui long déplace ou retire un raccourci.</string>
+    <string name="remote_shortcuts_add">Ajouter</string>
+    <string name="remote_shortcuts_add_first">Ajouter des raccourcis : applications du téléviseur, boutons de StartLight</string>
+    <string name="remote_shortcuts_apps">Applications</string>
+    <string name="remote_shortcuts_back">Revenir à la télécommande</string>
+    <string name="remote_shortcuts_edit">Déplacer ou retirer</string>
+    <string name="remote_shortcuts_move_left">Déplacer à gauche</string>
+    <string name="remote_shortcuts_move_right">Déplacer à droite</string>
+    <string name="remote_shortcuts_remove">Retirer</string>
     <string name="shortcut_remote_short">Télécommande</string>
     <string name="shortcut_remote_long">Télécommande du téléviseur</string>
 </resources>

@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -136,6 +137,9 @@ class RemoteViewModel @Inject constructor(
     val startLight = StartLightController(remoteControl, viewModelScope) { packageName ->
         client.execute("pidof $packageName").let { it.succeeded && it.output.isNotBlank() }
     }
+
+    /** The shortcuts of the remote's main screen, kept per TV. */
+    val shortcuts = ShortcutsController(preferences, viewModelScope, client.connection.map { it.host })
 
     /** One log observer at a time, otherwise the previous TV's log would keep writing into the state. */
     private var journalTracking: Job? = null

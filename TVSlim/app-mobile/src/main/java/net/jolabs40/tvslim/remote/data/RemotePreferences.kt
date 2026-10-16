@@ -19,7 +19,7 @@ import javax.inject.Singleton
 
 private val Context.store: DataStore<Preferences> by preferencesDataStore(name = "tvslim-remote")
 
-/** Remembers the last TV address, known device names and the support banner state. */
+/** Remembers the last TV address, known device names, the remote's shortcuts and the support banner state. */
 @Singleton
 class RemotePreferences @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -52,6 +52,15 @@ class RemotePreferences @Inject constructor(
         }
     }
 
+    /** The remote's shortcuts for the TV at this address. */
+    suspend fun shortcuts(host: String): List<RemoteShortcut> =
+        RemoteShortcuts.decode(context.store.data.first()[stringPreferencesKey(SHORTCUTS_PREFIX + host)])
+
+    suspend fun saveShortcuts(host: String, shortcuts: List<RemoteShortcut>) {
+        val key = stringPreferencesKey(SHORTCUTS_PREFIX + host)
+        context.store.edit { if (shortcuts.isEmpty()) it.remove(key) else it[key] = RemoteShortcuts.encode(shortcuts) }
+    }
+
     override suspend fun readSupport(): SupportMemory = context.store.data.first().let {
         SupportMemory(donationDeclared = it[KEY_DONATION] ?: false, lastInvitation = it[KEY_INVITATION] ?: 0L)
     }
@@ -65,6 +74,7 @@ class RemotePreferences @Inject constructor(
 
     private companion object {
         const val NAME_PREFIX = "nom_"
+        const val SHORTCUTS_PREFIX = "shortcuts_"
         val KEY_HOST = stringPreferencesKey("dernier_hote")
         val KEY_PORT = intPreferencesKey("dernier_port")
         val KEY_DONATION = booleanPreferencesKey("soutien_don_declare")
