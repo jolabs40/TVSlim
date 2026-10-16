@@ -549,6 +549,7 @@
     <string name="startlight_screen_starting">Starting up</string>
     <string name="startlight_not_ready">StartLight is starting up, or shows a welcome screen: its buttons will follow.</string>
     <string name="startlight_not_foreground">Another app is in front of StartLight.</string>
+    <string name="startlight_permission_request">StartLight is asking for a permission on the television: answer it there.</string>
     <string name="startlight_bring_home">Back to the home screen</string>
     <string name="startlight_leave_rest">Leave the rest screen</string>
     <string name="startlight_pages">Pages and dashboards</string>
@@ -562,6 +563,7 @@
     <string name="startlight_refused_parental">The parental code is asked on the television: type it with the remote, the action then goes on.</string>
     <string name="startlight_refused_pro">A StartLight Pro feature: its screen opened on the television.</string>
     <string name="startlight_refused_no_effect">Nothing to do: nothing is playing.</string>
+    <string name="startlight_refused_permission">Answer StartLight\'s permission request on the television first.</string>
     <string name="startlight_refused_other">StartLight refused the command (%1$s).</string>
     <string name="startlight_not_delivered">The command did not reach the television; it was not sent again.</string>
     <string name="startlight_no_answer">No answer from the television: the command may have run.</string>

@@ -546,6 +546,7 @@
     <string name="startlight_screen_starting">Démarrage</string>
     <string name="startlight_not_ready">StartLight démarre, ou montre un écran de bienvenue : ses boutons vont suivre.</string>
     <string name="startlight_not_foreground">Une autre application est devant StartLight.</string>
+    <string name="startlight_permission_request">StartLight demande une autorisation sur le téléviseur : répondez-y là-bas.</string>
     <string name="startlight_bring_home">Revenir à l\'accueil</string>
     <string name="startlight_leave_rest">Quitter le repos</string>
     <string name="startlight_pages">Pages et tableaux de bord</string>
@@ -559,6 +560,7 @@
     <string name="startlight_refused_parental">Le code parental est demandé sur le téléviseur : tapez-le avec la télécommande, l\'action reprend ensuite.</string>
     <string name="startlight_refused_pro">Fonction de StartLight Pro : son écran s\'est ouvert sur le téléviseur.</string>
     <string name="startlight_refused_no_effect">Rien à faire : aucune lecture en cours.</string>
+    <string name="startlight_refused_permission">Répondez d\'abord à la demande d\'autorisation de StartLight, sur le téléviseur.</string>
     <string name="startlight_refused_other">StartLight a refusé la commande (%1$s).</string>
     <string name="startlight_not_delivered">La commande n\'a pas atteint le téléviseur ; elle n\'a pas été renvoyée.</string>
     <string name="startlight_no_answer">Pas de réponse du téléviseur : la commande a pu partir.</string>

@@ -32,7 +32,15 @@ data class StartLightState(
     @SerialName("joue") val playing: Boolean = false,
     val pages: List<StartLightPage> = emptyList(),
     @SerialName("tableaux") val dashboards: List<StartLightDashboard> = emptyList(),
+    /**
+     * A permission request of StartLight is on screen, over it. HOME would close it unanswered (and leave other apps'
+     * rows empty): the person answers on the TV.
+     */
+    @SerialName("demande_autorisation") val permissionRequest: Boolean = false,
 ) {
+    /** Another app is in front: HOME brings StartLight back. Not its own permission request, which HOME would close. */
+    val behindAnotherApp: Boolean get() = ready && !foreground && !permissionRequest
+
     /** The actions StartLight announces, in the order of [StartLightAction]; the player only while something plays. */
     val actions: List<StartLightAction>
         get() = StartLightAction.entries.filter { action ->
@@ -117,6 +125,9 @@ enum class StartLightRefusal(val wire: String) {
 
     /** The StartLight Pro screen opened instead. */
     PRO_REQUIRED("pro_requis"),
+
+    /** A permission request of StartLight is on screen: answered on the TV, never closed with HOME. */
+    PERMISSION_REQUEST("demande_autorisation"),
 
     /** Nothing to do, such as the player with nothing playing. */
     NO_EFFECT("sans_effet"),

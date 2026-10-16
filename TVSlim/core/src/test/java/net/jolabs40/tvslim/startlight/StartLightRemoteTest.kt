@@ -93,6 +93,21 @@ class StartLightRemoteTest {
     }
 
     @Test
+    fun `StartLight's own permission request is not another app in front`() {
+        val state = StartLightRemote.state(answered(contractExample))!!
+        assertFalse(state.permissionRequest)
+        assertFalse(state.behindAnotherApp)
+        assertTrue(state.copy(foreground = false).behindAnotherApp)
+
+        val asking = StartLightRemote.state(
+            answered(contractExample.replace("\"premier_plan\": true,\n  \"pret\"", "\"premier_plan\": false, \"demande_autorisation\": true,\n  \"pret\"")),
+        )!!
+        assertTrue(asking.permissionRequest)
+        assertFalse(asking.foreground)
+        assertFalse("HOME would close the request", asking.behindAnotherApp)
+    }
+
+    @Test
     fun `no state without the door or with an unreadable answer`() {
         assertNull(StartLightRemote.state(CallOutcome.Failed("java.lang.IllegalStateException: no provider net.jolabs40.startlight.remote")))
         assertNull(StartLightRemote.state(CallOutcome.NotSent(CallFailure.TIMEOUT)))
@@ -112,6 +127,7 @@ class StartLightRemoteTest {
             "code_parental" to StartLightRefusal.PARENTAL_CODE,
             "pro_requis" to StartLightRefusal.PRO_REQUIRED,
             "sans_effet" to StartLightRefusal.NO_EFFECT,
+            "demande_autorisation" to StartLightRefusal.PERMISSION_REQUEST,
         )
         for ((wire, refusal) in reasons) {
             assertEquals(StartLightReply.Refused(refusal, wire), StartLightRemote.reply(answered("""{"ok":false,"motif":"$wire"}""")))

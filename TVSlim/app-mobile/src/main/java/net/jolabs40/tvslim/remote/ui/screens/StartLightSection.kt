@@ -86,7 +86,8 @@ internal fun StartLightSection(ui: StartLightUi, actions: StartLightActions) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            val behind = state != null && state.ready && !state.foreground
+            val behind = state?.behindAnotherApp == true
+            val asking = state?.permissionRequest == true
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 LogoLauncher(StartLightHome.LAUNCHER_ID, size = 36.dp)
                 Column(modifier = Modifier.weight(1f)) {
@@ -95,6 +96,7 @@ internal fun StartLightSection(ui: StartLightUi, actions: StartLightActions) {
                         text = stringResource(
                             when {
                                 state == null -> R.string.remote_startlight_home
+                                asking -> R.string.startlight_permission_request
                                 behind -> R.string.startlight_not_foreground
                                 else -> screenText(state)
                             },
@@ -114,8 +116,11 @@ internal fun StartLightSection(ui: StartLightUi, actions: StartLightActions) {
                 }
             }
 
-            // Right under the header, where it is always in sight; "not in front" is already said by the header.
-            ui.notice?.takeUnless { behind && it is StartLightNotice.Refused && it.refusal == StartLightRefusal.NOT_FOREGROUND }
+            // Right under the header, where it is always in sight; what the header already says is not repeated.
+            ui.notice?.takeUnless {
+                it is StartLightNotice.Refused &&
+                    (behind && it.refusal == StartLightRefusal.NOT_FOREGROUND || asking && it.refusal == StartLightRefusal.PERMISSION_REQUEST)
+            }
                 ?.let { notice ->
                     Text(
                         text = noticeText(notice),
@@ -133,14 +138,16 @@ internal fun StartLightSection(ui: StartLightUi, actions: StartLightActions) {
                 ui.withoutDoor -> Hint(stringResource(R.string.startlight_no_door))
                 state == null -> Unit
                 !state.ready -> Hint(stringResource(R.string.startlight_not_ready))
+                // Its own permission request: answered on the TV, the header says so; HOME would close it unanswered.
+                asking -> Unit
+                // Its buttons would all be refused until it is in front again.
+                behind -> FilledTonalButton(onClick = actions.onBringHome, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Filled.Home, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(8.dp))
+                    Text(stringResource(R.string.startlight_bring_home))
+                }
+
                 else -> {
-                    if (behind) {
-                        FilledTonalButton(onClick = actions.onBringHome, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                            Icon(Icons.Filled.Home, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.size(8.dp))
-                            Text(stringResource(R.string.startlight_bring_home))
-                        }
-                    }
                     if (state.offersLeaveRest) {
                         Button(
                             onClick = { send(StartLightCommand.LeaveRest) },
@@ -260,7 +267,12 @@ private fun SheetLine(text: String, icon: ImageVector?, onClick: () -> Unit) {
     HorizontalDivider()
 }
 
-private val INFORMATIVE = setOf(StartLightRefusal.PARENTAL_CODE, StartLightRefusal.PRO_REQUIRED, StartLightRefusal.NO_EFFECT)
+private val INFORMATIVE = setOf(
+    StartLightRefusal.PARENTAL_CODE,
+    StartLightRefusal.PRO_REQUIRED,
+    StartLightRefusal.NO_EFFECT,
+    StartLightRefusal.PERMISSION_REQUEST,
+)
 
 /** Names what the sheet holds: the menu's pages, the dashboards, or both. */
 private fun pagesLabel(state: StartLightState): Int = when {
@@ -319,6 +331,7 @@ internal fun noticeResource(notice: StartLightNotice): Int = when (notice) {
         StartLightRefusal.PARENTAL_CODE -> R.string.startlight_refused_parental
         StartLightRefusal.PRO_REQUIRED -> R.string.startlight_refused_pro
         StartLightRefusal.NO_EFFECT -> R.string.startlight_refused_no_effect
+        StartLightRefusal.PERMISSION_REQUEST -> R.string.startlight_refused_permission
         StartLightRefusal.OTHER -> R.string.startlight_refused_other
     }
 
