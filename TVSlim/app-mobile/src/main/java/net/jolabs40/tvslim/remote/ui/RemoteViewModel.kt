@@ -129,6 +129,9 @@ class RemoteViewModel @Inject constructor(
     /** TV screenshot, from the top bar. */
     val capture = CaptureController(context, client, viewModelScope, { _state.value.info }, { _state.value.connected }, ::show)
 
+    /** Remote control, from the top bar or the launcher shortcut; its link lives only while it is on screen. */
+    val remoteControl = RemoteControlController(context, client, viewModelScope)
+
     /** One log observer at a time, otherwise the previous TV's log would keep writing into the state. */
     private var journalTracking: Job? = null
 
@@ -246,9 +249,11 @@ class RemoteViewModel @Inject constructor(
         // During a reboot, the reboot watcher reconnects; avoid racing it.
         if (retry?.isActive == true || _state.value.rebooting) return
         retry = viewModelScope.launch {
-            val host = _state.value.enteredHost.ifBlank { preferences.lastHost() }
+            val entered = _state.value.enteredHost
+            val host = entered.ifBlank { preferences.lastHost() }
             if (host.isBlank()) return@launch
-            val port = _state.value.enteredPort.toIntOrNull() ?: preferences.lastPort()
+            // Before the preferences are loaded the port field still holds the default: take the port saved with the host.
+            val port = if (entered.isBlank()) preferences.lastPort() else _state.value.enteredPort.toIntOrNull() ?: preferences.lastPort()
             if (client.connect(host, port, quiet = true)) {
                 openJournal(host)
                 refresh()

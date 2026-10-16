@@ -3,6 +3,7 @@ package net.jolabs40.tvslim.remote.adb
 import android.content.Context
 import android.util.Log
 import dadb.AdbShellPacket
+import dadb.AdbShellStream
 import dadb.Dadb
 import dadb.InstallResult
 import dadb.SyncResult
@@ -137,8 +138,8 @@ class AdbClient @Inject constructor(
 
     /**
      * Opens a second session to the same TV for the long reads prefetched on connect (apps, `dumpsys meminfo`,
-     * storage), leaving the main session free for user actions. The key is already authorized, so the TV shows
-     * no prompt.
+     * storage), leaving the main session free for user actions; the remote control opens one too, so a slow read
+     * never delays a key. The key is already authorized, so the TV shows no prompt.
      *
      * It never reconnects by itself; a failed prefetch is redone on demand through the main session. The caller
      * closes it ([disconnect]), which also interrupts a read in progress. Returns null if no TV is connected or
@@ -155,6 +156,23 @@ class AdbClient @Inject constructor(
             if (!opened) second.disconnect()
         }
         return second.takeIf { opened }
+    }
+
+    /**
+     * Opens a shell stream that outlives the call: the remote control's helper, on a session of its own
+     * ([openSecond]). The stream is not held under the lock, which would block every other command for as long as it
+     * lives; dadb multiplexes streams over the connection. Never replayed. Returns null if the TV does not answer.
+     */
+    suspend fun openStream(command: String): AdbShellStream? = withContext(Dispatchers.IO) {
+        val active = lock.withLock {
+            if (session == null) resume()
+            session
+        } ?: return@withContext null
+        withWatchdog(active, COMMAND_TIMEOUT_MS) { active.openShell(command) }.getOrElse { error ->
+            Log.w(TAG, "Stream not opened" + detail(command), error)
+            closeSession()
+            null
+        }
     }
 
     fun disconnect() {

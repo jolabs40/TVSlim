@@ -31,6 +31,11 @@ android {
     }
 }
 
+dependencies {
+    // KeyHolder has no Android types, so its tests run on the JVM.
+    testImplementation(libs.junit)
+}
+
 // Both apps read the helper from the core module's assets, so the Windows build needs no Android SDK. After any
 // change to the helper:  ./gradlew :aide:copierDansLeNoyau
 tasks.register<Copy>("copierDansLeNoyau") {

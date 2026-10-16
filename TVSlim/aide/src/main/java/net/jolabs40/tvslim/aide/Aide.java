@@ -23,10 +23,11 @@ import java.util.Map;
  * Run by TV Slim with the ADB shell's permissions:
  *
  * <pre>CLASSPATH=/data/local/tmp/tvslim-aide.apk app_process / net.jolabs40.tvslim.aide.Aide liste
- * CLASSPATH=... app_process / net.jolabs40.tvslim.aide.Aide details 96 package1 package2...</pre>
+ * CLASSPATH=... app_process / net.jolabs40.tvslim.aide.Aide details 96 package1 package2...
+ * CLASSPATH=... app_process / net.jolabs40.tvslim.aide.Aide remote</pre>
  *
- * The first line gives the protocol version, which TV Slim checks. Each following line is one app, with
- * tab-separated fields:
+ * The first line gives the protocol version, which TV Slim checks. For {@code liste} and {@code details}, each
+ * following line is one app, with tab-separated fields:
  *
  * <ul>
  *   <li>{@code A package versionCode system enabled launch}: launcher apps and user-installed apps;
@@ -35,12 +36,13 @@ import java.util.Map;
  *   <li>{@code E package reason}: this package could not be read.</li>
  * </ul>
  *
- * Read-only: nothing is changed on the device.
+ * These two only read. {@code remote} is the remote control: it stays up, reads orders on its standard input and
+ * injects keys ({@link RemoteControl}).
  */
 public final class Aide {
 
     /** Bump on any format change: TV Slim refuses a helper with a different version. */
-    static final int VERSION = 1;
+    static final int VERSION = 2;
 
     private static final int DRAPEAUX = PackageManager.MATCH_DISABLED_COMPONENTS;
 
@@ -53,6 +55,11 @@ public final class Aide {
         if (args.length == 0) return;
 
         Looper.prepareMainLooper();
+        if ("remote".equals(args[0])) {
+            // No system context: injecting keys does not need one, and systemMain() slows the start.
+            RemoteControl.run(sortie);
+            return;
+        }
         PackageManager pm = contexteSysteme().getPackageManager();
         if ("liste".equals(args[0])) {
             liste(pm, sortie);

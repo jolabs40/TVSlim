@@ -27,7 +27,7 @@ class DeviceApplicationsTest {
     private val iconBase64 = Base64.getEncoder().encodeToString(icon)
 
     private val list = """
-        TVSLIM_AIDE 1
+        TVSLIM_AIDE ${ApplicationsReader.HELPER_VERSION}
         A	com.google.android.youtube.tv	1234	1	1	com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity
         A	com.spocky.projengmenu	95	0	1	com.spocky.projengmenu/com.spocky.projengmenu.ui.home.MainActivity
         A	net.jolabs40.tvslim	1	0	0	-
@@ -48,7 +48,7 @@ class DeviceApplicationsTest {
                 command.endsWith(" liste") -> ShellResult(0, listResponse)
                 command.contains(" details ") -> ShellResult(
                     0,
-                    "TVSLIM_AIDE 1\n" + command.substringAfter(" details ").split(' ').drop(1).joinToString("\n") { packageName ->
+                    "TVSLIM_AIDE ${ApplicationsReader.HELPER_VERSION}\n" + command.substringAfter(" details ").split(' ').drop(1).joinToString("\n") { packageName ->
                         if (packageName == "net.jolabs40.tvslim") "E\t$packageName\tNameNotFoundException" else "D\t$packageName\tName of $packageName\t$iconBase64"
                     },
                 )
@@ -122,7 +122,7 @@ class DeviceApplicationsTest {
 
     @Test
     fun `a helper reporting another version is rejected`() = runTest {
-        val device = FakeDevice(listResponse = "TVSLIM_AIDE 2\nA\tx\t1\t0\t1\t-")
+        val device = FakeDevice(listResponse = "TVSLIM_AIDE ${ApplicationsReader.HELPER_VERSION + 1}\nA\tx\t1\t0\t1\t-")
 
         val result = ApplicationsReader(device, device, ::helper, MemoryCacheApplications()).read()
 

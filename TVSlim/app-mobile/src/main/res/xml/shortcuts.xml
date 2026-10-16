@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long press on the app icon: straight to the remote control. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_remote"
+        android:shortcutId="remote"
+        android:shortcutLongLabel="@string/shortcut_remote_long"
+        android:shortcutShortLabel="@string/shortcut_remote_short">
+        <intent
+            android:action="net.jolabs40.tvslim.remote.OPEN_REMOTE"
+            android:targetClass="net.jolabs40.tvslim.remote.MainActivity"
+            android:targetPackage="net.jolabs40.tvslim.remote" />
+    </shortcut>
+</shortcuts>

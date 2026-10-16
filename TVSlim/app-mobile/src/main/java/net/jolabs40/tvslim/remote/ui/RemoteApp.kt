@@ -16,8 +16,10 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.SettingsRemote
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -66,8 +68,12 @@ import net.jolabs40.tvslim.remote.ui.screens.FilesScreen
 import net.jolabs40.tvslim.remote.ui.screens.JournalScreen
 import net.jolabs40.tvslim.remote.ui.screens.MemoryScreen
 import net.jolabs40.tvslim.remote.ui.screens.PackagesScreen
+import net.jolabs40.tvslim.remote.ui.screens.RemoteControlActions
+import net.jolabs40.tvslim.remote.ui.screens.RemoteControlScreen
 
 private data class AppTab(val route: String, val title: Int, val icon: ImageVector)
+
+private const val REMOTE_ROUTE = "remote"
 
 private val tabs = listOf(
     AppTab("connexion", R.string.tab_connection, Icons.Filled.Cast),
@@ -83,7 +89,7 @@ private val TYPES_APK = arrayOf("application/vnd.android.package-archive", "appl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RemoteApp() {
+fun RemoteApp(remoteRequests: Int = 0) {
     val model: RemoteViewModel = hiltViewModel()
     val state by model.state.collectAsStateWithLifecycle()
     val supportVisible by model.support.visible.collectAsStateWithLifecycle()
@@ -95,6 +101,13 @@ fun RemoteApp() {
     val navigation = rememberNavController()
     val backStackEntry by navigation.currentBackStackEntryAsState()
     val messages = remember { SnackbarHostState() }
+    // Full screen: no bars, no banner, nothing between the thumb and the keys.
+    val onRemote = backStackEntry?.destination?.route == REMOTE_ROUTE
+
+    // From the launcher shortcut.
+    LaunchedEffect(remoteRequests) {
+        if (remoteRequests > 0) navigation.navigate(REMOTE_ROUTE) { launchSingleTop = true }
+    }
 
     // An ADB session does not survive TV standby, nor always a long time in another app. On return,
     // silently retry the last TV; failure shows nothing.
@@ -140,7 +153,7 @@ fun RemoteApp() {
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            if (!onRemote) TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // Decorative: the name next to it says it all.
@@ -154,7 +167,12 @@ fun RemoteApp() {
                     }
                 },
                 actions = {
-                    if (state.connected) CaptureButton(inProgress = captureState.inProgress, onCapture = model.capture::takeCapture)
+                    if (state.connected) {
+                        IconButton(onClick = { navigation.navigate(REMOTE_ROUTE) { launchSingleTop = true } }) {
+                            Icon(Icons.Filled.SettingsRemote, contentDescription = stringResource(R.string.remote_open))
+                        }
+                        CaptureButton(inProgress = captureState.inProgress, onCapture = model.capture::takeCapture)
+                    }
                     SupportButton()
                     AboutButton(onOpen = { about = true })
                 },
@@ -162,7 +180,7 @@ fun RemoteApp() {
         },
         snackbarHost = { SnackbarHost(messages) },
         bottomBar = {
-            NavigationBar {
+            if (!onRemote) NavigationBar {
                 tabs.forEach { tab ->
                     val chosen = backStackEntry?.destination?.hierarchy
                         ?.any { it.route == tab.route } == true
@@ -185,7 +203,7 @@ fun RemoteApp() {
         Column(modifier = Modifier.padding(innerPadding)) {
             // Above every tab, since the action that triggered it may come from any of them.
             SupportBanner(
-                visible = supportVisible,
+                visible = supportVisible && !onRemote,
                 onSupport = model.support::dismiss,
                 onAlreadyDone = model.support::declareDonation,
                 onLater = model.support::dismiss,
@@ -337,6 +355,58 @@ fun RemoteApp() {
                             onUploadHere = model.files::uploadHere,
                             onAbandonUpload = model.files::abandonUpload,
                         ),
+                    )
+                }
+                composable(REMOTE_ROUTE) {
+                    val remoteState by model.remoteControl.state.collectAsStateWithLifecycle()
+                    val applicationsState by model.applications.state.collectAsStateWithLifecycle()
+                    val remote = model.remoteControl
+                    // The link lives while the screen is shown and the app started: closed before the battery saver
+                    // cuts the socket in the background, reopened on return.
+                    val entryOwner = LocalLifecycleOwner.current
+                    DisposableEffect(entryOwner) {
+                        val observer = LifecycleEventObserver { _, event ->
+                            when (event) {
+                                Lifecycle.Event.ON_START -> remote.show()
+                                Lifecycle.Event.ON_STOP -> remote.hide()
+                                else -> Unit
+                            }
+                        }
+                        entryOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            entryOwner.lifecycle.removeObserver(observer)
+                            remote.hide()
+                        }
+                    }
+                    RemoteControlScreen(
+                        tvName = state.info.displayName.ifBlank { state.connection.host },
+                        state = remoteState,
+                        applications = applicationsState,
+                        rejected = remote.rejected,
+                        actions = remember(remote) {
+                            RemoteControlActions(
+                                onPress = remote::press,
+                                onRelease = remote::release,
+                                onCancel = remote::cancel,
+                                onTap = remote::tap,
+                                onWake = remote::wake,
+                                onSleep = remote::sleep,
+                                onText = remote::text,
+                                onRetry = {
+                                    model.resumeConnection()
+                                    remote.retry()
+                                },
+                                onChooseTv = {
+                                    navigation.navigate("connexion") {
+                                        popUpTo(navigation.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                },
+                                onClose = { navigation.popBackStack() },
+                                onLoadApps = model.applications::load,
+                                onOpenApp = model.applications::open,
+                            )
+                        },
                     )
                 }
                 composable("journal") {
