@@ -111,6 +111,23 @@ sealed class StartLightCommand(val method: String, val argument: String?) {
     data object LeaveRest : StartLightCommand(StartLightState.LEAVE_REST, null)
 }
 
+/** Why the door does not answer while StartLight is the TV's home. */
+enum class StartLightAbsence {
+    /**
+     * Its process is not running, and this TV does not let the system start it for a call (TCL's TclAppBoot refuses
+     * it): HOME starts the home screen, and the door with it.
+     */
+    NOT_STARTED,
+
+    /** It runs, yet no door answers: a version from before the door. */
+    NO_DOOR,
+    ;
+
+    companion object {
+        fun of(running: Boolean): StartLightAbsence = if (running) NO_DOOR else NOT_STARTED
+    }
+}
+
 /** Why StartLight refused, from the contract's stable reasons. */
 enum class StartLightRefusal(val wire: String) {
     UNKNOWN("inconnu"),

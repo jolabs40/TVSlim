@@ -133,7 +133,9 @@ class RemoteViewModel @Inject constructor(
     val remoteControl = RemoteControlController(context, client, viewModelScope) { catalogRepo.catalog() }
 
     /** StartLight's own buttons in the remote, when it is the TV's home. */
-    val startLight = StartLightController(remoteControl, viewModelScope)
+    val startLight = StartLightController(remoteControl, viewModelScope) { packageName ->
+        client.execute("pidof $packageName").let { it.succeeded && it.output.isNotBlank() }
+    }
 
     /** One log observer at a time, otherwise the previous TV's log would keep writing into the state. */
     private var journalTracking: Job? = null

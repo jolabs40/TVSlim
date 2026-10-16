@@ -108,6 +108,12 @@ class StartLightRemoteTest {
     }
 
     @Test
+    fun `a door that does not answer means not started, or too old a StartLight`() {
+        assertEquals(StartLightAbsence.NOT_STARTED, StartLightAbsence.of(running = false))
+        assertEquals(StartLightAbsence.NO_DOOR, StartLightAbsence.of(running = true))
+    }
+
+    @Test
     fun `no state without the door or with an unreadable answer`() {
         assertNull(StartLightRemote.state(CallOutcome.Failed("java.lang.IllegalStateException: no provider net.jolabs40.startlight.remote")))
         assertNull(StartLightRemote.state(CallOutcome.NotSent(CallFailure.TIMEOUT)))

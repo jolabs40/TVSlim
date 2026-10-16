@@ -56,6 +56,7 @@ import net.jolabs40.tvslim.control.CallFailure
 import net.jolabs40.tvslim.remote.R
 import net.jolabs40.tvslim.remote.ui.StartLightNotice
 import net.jolabs40.tvslim.remote.ui.StartLightUi
+import net.jolabs40.tvslim.startlight.StartLightAbsence
 import net.jolabs40.tvslim.startlight.StartLightAction
 import net.jolabs40.tvslim.startlight.StartLightCommand
 import net.jolabs40.tvslim.startlight.StartLightHome
@@ -135,17 +136,17 @@ internal fun StartLightSection(ui: StartLightUi, actions: StartLightActions) {
                 }
 
             when {
-                ui.withoutDoor -> Hint(stringResource(R.string.startlight_no_door))
+                ui.absence == StartLightAbsence.NO_DOOR -> Hint(stringResource(R.string.startlight_no_door))
+                ui.absence == StartLightAbsence.NOT_STARTED -> {
+                    Hint(stringResource(R.string.startlight_not_started))
+                    BringHomeButton(ui, actions)
+                }
                 state == null -> Unit
                 !state.ready -> Hint(stringResource(R.string.startlight_not_ready))
                 // Its own permission request: answered on the TV, the header says so; HOME would close it unanswered.
                 asking -> Unit
                 // Its buttons would all be refused until it is in front again.
-                behind -> FilledTonalButton(onClick = actions.onBringHome, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Filled.Home, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(8.dp))
-                    Text(stringResource(R.string.startlight_bring_home))
-                }
+                behind -> BringHomeButton(ui, actions)
 
                 else -> {
                     if (state.offersLeaveRest) {
@@ -202,6 +203,16 @@ internal fun StartLightSection(ui: StartLightUi, actions: StartLightActions) {
             pages = false
             send(command)
         }, onDismiss = { pages = false })
+    }
+}
+
+/** HOME brings StartLight in front, and starts it where the TV will not start it for a call. */
+@Composable
+private fun BringHomeButton(ui: StartLightUi, actions: StartLightActions) {
+    FilledTonalButton(onClick = actions.onBringHome, enabled = !ui.busy, modifier = Modifier.fillMaxWidth()) {
+        Icon(Icons.Filled.Home, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.size(8.dp))
+        Text(stringResource(R.string.startlight_bring_home))
     }
 }
 

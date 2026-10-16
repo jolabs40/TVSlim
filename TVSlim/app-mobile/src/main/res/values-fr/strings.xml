@@ -552,6 +552,7 @@
     <string name="startlight_pages">Pages et tableaux de bord</string>
     <string name="startlight_pages_title">Pages du menu</string>
     <string name="startlight_dashboards_title">Tableaux de bord</string>
+    <string name="startlight_not_started">StartLight n\'est pas lancé sur le téléviseur : l\'accueil le démarre.</string>
     <string name="startlight_no_door">Cette version de StartLight ne se pilote pas encore depuis le téléphone : mettez-la à jour.</string>
     <string name="startlight_refused_unknown">StartLight ne connaît pas cette commande : mettez-le à jour.</string>
     <string name="startlight_refused_not_ready">StartLight n\'est pas encore prêt : réessayez dans un instant.</string>

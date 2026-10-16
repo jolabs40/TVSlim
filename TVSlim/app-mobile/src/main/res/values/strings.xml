@@ -555,6 +555,7 @@
     <string name="startlight_pages">Pages and dashboards</string>
     <string name="startlight_pages_title">Menu pages</string>
     <string name="startlight_dashboards_title">Dashboards</string>
+    <string name="startlight_not_started">StartLight is not running on the television: the home screen starts it.</string>
     <string name="startlight_no_door">This version of StartLight cannot be driven from the phone yet: update it.</string>
     <string name="startlight_refused_unknown">StartLight does not know this command: update it.</string>
     <string name="startlight_refused_not_ready">StartLight is not ready yet: try again in a moment.</string>

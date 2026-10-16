@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import net.jolabs40.tvslim.control.CallFailure
 import net.jolabs40.tvslim.control.CallOutcome
 import net.jolabs40.tvslim.control.RemoteKey
+import net.jolabs40.tvslim.startlight.StartLightAbsence
 import net.jolabs40.tvslim.startlight.StartLightCommand
 import net.jolabs40.tvslim.startlight.StartLightHome
 import net.jolabs40.tvslim.startlight.StartLightRefusal
@@ -35,8 +36,8 @@ data class StartLightUi(
     val home: StartLightHome? = null,
     /** Last state read; its buttons are the only ones shown. */
     val state: StartLightState? = null,
-    /** The state could not be read from this StartLight: a version without the door. */
-    val withoutDoor: Boolean = false,
+    /** The door does not answer: StartLight not started (HOME starts it), or a version without the door. */
+    val absence: StartLightAbsence? = null,
     /** A command is on its way: one at a time, as StartLight takes them. */
     val busy: Boolean = false,
     val notice: StartLightNotice? = null,
@@ -51,6 +52,8 @@ data class StartLightUi(
 class StartLightController(
     private val remote: RemoteControlController,
     private val scope: CoroutineScope,
+    /** Whether a package's process runs on the TV: a read on the main session. */
+    private val running: suspend (packageName: String) -> Boolean,
 ) {
 
     private val _state = MutableStateFlow(StartLightUi())
@@ -101,32 +104,33 @@ class StartLightController(
     }
 
     private suspend fun read() {
-        val state = readOnce()
-        if (state != null && waiting(state)) readUntilAvailable()
+        if (readOnce()) readUntilAvailable()
     }
 
-    private suspend fun readOnce(): StartLightState? {
-        val home = _state.value.home ?: return null
+    /** Reads the state; returns whether StartLight cannot take commands yet, so that reading again is worth it. */
+    private suspend fun readOnce(): Boolean {
+        val home = _state.value.home ?: return false
         val outcome = remote.call(home.authority, StartLightRemote.STATE)
         val read = StartLightRemote.state(outcome)
-        if (read == null) Log.w(TAG, "State not read: $outcome")
+        // Reached the TV but no door answered. A lost call keeps the last state.
+        val absence = if (read == null && outcome is CallOutcome.Failed) StartLightAbsence.of(running(home.packageName)) else null
+        if (read == null) Log.w(TAG, "State not read: $outcome" + (absence?.let { ", $it" } ?: ""))
         _state.update {
             when {
                 it.home != home -> it
-                read != null -> it.copy(state = read, withoutDoor = false)
-                // Reached the TV but no door answered: an older StartLight. A lost call keeps the last state.
-                outcome is CallOutcome.Failed -> it.copy(state = null, withoutDoor = true)
+                read != null -> it.copy(state = read, absence = null)
+                absence != null -> it.copy(state = null, absence = absence)
                 else -> it
             }
         }
-        return read
+        return if (read != null) waiting(read) else absence == StartLightAbsence.NOT_STARTED
     }
 
     /** Starting, under a welcome screen, or behind another app: its buttons would not act yet. */
     private fun waiting(state: StartLightState) = !state.ready || !state.foreground
 
     /**
-     * Reads again until StartLight takes commands, so the section follows what happens on the TV without a command.
+     * Reads again until StartLight takes commands, or starts, so the section follows the TV without a command.
      * Stops when the link is gone: the call is then refused and nothing is read.
      */
     private fun readUntilAvailable() {
@@ -135,8 +139,7 @@ class StartLightController(
             while (true) {
                 delay(WAITING_POLL_MS)
                 if (remote.state.value.phase != RemotePhase.READY) return@launch
-                val state = readOnce() ?: return@launch
-                if (!waiting(state)) return@launch
+                if (!readOnce()) return@launch
             }
         }
     }
