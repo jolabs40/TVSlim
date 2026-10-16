@@ -28,12 +28,16 @@ import java.util.concurrent.TimeUnit;
  *   <li>{@code T id t code}: press and release;</li>
  *   <li>{@code X id t text}: text, UTF-8 in base64;</li>
  *   <li>{@code W id t}, {@code S id t}: wake up, go to sleep (only if the screen is on);</li>
+ *   <li>{@code A id t authority method arg extras}: call a content provider ({@link ProviderCalls}); {@code arg}
+ *   in base64, {@code extras} a JSON object in base64, both possibly empty;</li>
  *   <li>{@code Q}: release everything and stop.</li>
  * </ul>
  *
  * <p>Answers: {@code R sdk api repeatTimeout repeatDelay screen clipboard} once ready, {@code K id status} for each
  * order ({@code ok}, {@code late}, {@code refused}, {@code ignored}), {@code L code} for a key released by the
- * helper, {@code V screen} when the screen turns on or off, {@code E reason}, and {@code B reason} when stopping.
+ * helper, {@code V screen} when the screen turns on or off, {@code Y id status payload} when a call returns
+ * ({@code ok} and the provider's Bundle as JSON, or {@code error} and the exception, both in base64), {@code E reason},
+ * and {@code B reason} when stopping.
  *
  * <p>Orders are never retried by the phone, and an order that arrives late is dropped: a lost key is better than a
  * key pressed twice, or pressed seconds after the person gave up on it.
@@ -47,6 +51,7 @@ final class RemoteControl {
     private final PrintStream out;
     private final Injection injection;
     private final KeyHolder keys;
+    private final ProviderCalls calls = new ProviderCalls();
     private int screen;
 
     private RemoteControl(PrintStream out, Injection injection, long now) {
@@ -67,7 +72,10 @@ final class RemoteControl {
         }
         RemoteControl control = new RemoteControl(out, injection, now());
         // Also on SIGTERM. A SIGKILL cannot be caught; the phone then cancels the held keys through the next helper.
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> control.keys.releaseAll(now())));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            control.keys.releaseAll(now());
+            control.calls.close();
+        }));
 
         String reason;
         try {
@@ -78,6 +86,7 @@ final class RemoteControl {
             reason = "error";
         }
         control.keys.releaseAll(now());
+        control.calls.close();
         Log.i(Injection.TAG, "remote control stopped: " + reason);
         send(out, "B\t" + reason);
         System.exit(0);
@@ -157,18 +166,36 @@ final class RemoteControl {
                     // KEYCODE_SLEEP rather than POWER: POWER toggles, and on a sleeping screen it would wake it up.
                     answer(id, late ? KeyHolder.LATE : injection.screenOn() == 0 ? KeyHolder.IGNORED : keys.tap(KeyEvent.KEYCODE_SLEEP, now));
                     break;
+                case "A":
+                    if (late) {
+                        answer(id, KeyHolder.LATE);
+                        break;
+                    }
+                    String arg = fields.length > 5 && !fields[5].isEmpty() ? decode(fields[5]) : null;
+                    android.os.Bundle extras = fields.length > 6 && !fields[6].isEmpty() ? ProviderCalls.bundle(decode(fields[6])) : null;
+                    calls.submit(id, fields[3], fields[4], arg, extras, (callId, succeeded, payload) ->
+                            send(out, "Y\t" + callId + "\t" + (succeeded ? "ok" : "error") + "\t" + encode(payload)));
+                    answer(id, KeyHolder.OK);
+                    break;
                 case "X":
-                    String text = new String(Base64.decode(fields[3], Base64.DEFAULT), StandardCharsets.UTF_8);
-                    answer(id, injection.text(text) ? KeyHolder.OK : KeyHolder.REFUSED);
+                    answer(id, injection.text(decode(fields[3])) ? KeyHolder.OK : KeyHolder.REFUSED);
                     break;
                 default:
                     answer(id, KeyHolder.REFUSED);
             }
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | org.json.JSONException e) {
             send(out, "E\tunreadable: " + flat(line));
             answer(id, KeyHolder.REFUSED);
         }
         return true;
+    }
+
+    private static String decode(String base64) {
+        return new String(Base64.decode(base64, Base64.DEFAULT), StandardCharsets.UTF_8);
+    }
+
+    private static String encode(String text) {
+        return Base64.encodeToString(text.getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP);
     }
 
     private static int code(String[] fields) {

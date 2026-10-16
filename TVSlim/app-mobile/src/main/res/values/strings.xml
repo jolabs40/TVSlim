@@ -525,6 +525,47 @@
     <string name="remote_text_delete">Delete</string>
     <string name="remote_text_enter">Enter</string>
     <string name="remote_text_no_paste">This television refuses pasting: only unaccented letters, digits and common symbols will go through.</string>
+    <string name="startlight_name" translatable="false">StartLight</string>
+    <string name="remote_startlight_home">Home screen of this television</string>
+    <string name="startlight_pro" translatable="false">Pro</string>
+    <string name="startlight_action_settings">Settings</string>
+    <string name="startlight_action_notifications">Notifications</string>
+    <string name="startlight_action_network">Network</string>
+    <string name="startlight_action_next_wallpaper">Next background</string>
+    <string name="startlight_action_rest">Rest screen</string>
+    <string name="startlight_action_search">Search</string>
+    <string name="startlight_action_recents">Recent apps</string>
+    <string name="startlight_action_planning">Planning</string>
+    <string name="startlight_action_media">Player</string>
+    <string name="startlight_action_menu_layout">Change menu</string>
+    <string name="startlight_action_help">Help</string>
+    <string name="startlight_action_connectors">Connectors</string>
+    <string name="startlight_screen_home">On the home screen</string>
+    <string name="startlight_screen_rest">At rest</string>
+    <string name="startlight_screen_settings">Settings open</string>
+    <string name="startlight_screen_layer">A panel is open</string>
+    <string name="startlight_screen_parental">Parental code asked on the television</string>
+    <string name="startlight_screen_pro">StartLight Pro screen open</string>
+    <string name="startlight_screen_starting">Starting up</string>
+    <string name="startlight_not_ready">StartLight is starting up, or shows a welcome screen: its buttons will follow.</string>
+    <string name="startlight_not_foreground">Another app is in front of StartLight.</string>
+    <string name="startlight_bring_home">Back to the home screen</string>
+    <string name="startlight_leave_rest">Leave the rest screen</string>
+    <string name="startlight_pages">Pages and dashboards</string>
+    <string name="startlight_pages_title">Menu pages</string>
+    <string name="startlight_dashboards_title">Dashboards</string>
+    <string name="startlight_no_door">This version of StartLight cannot be driven from the phone yet: update it.</string>
+    <string name="startlight_refused_unknown">StartLight does not know this command: update it.</string>
+    <string name="startlight_refused_not_ready">StartLight is not ready yet: try again in a moment.</string>
+    <string name="startlight_refused_not_foreground">StartLight is not in front: go back to the home screen, then press again.</string>
+    <string name="startlight_refused_busy">Another command was running: nothing was done.</string>
+    <string name="startlight_refused_parental">The parental code is asked on the television: type it with the remote, the action then goes on.</string>
+    <string name="startlight_refused_pro">A StartLight Pro feature: its screen opened on the television.</string>
+    <string name="startlight_refused_no_effect">Nothing to do: nothing is playing.</string>
+    <string name="startlight_refused_other">StartLight refused the command (%1$s).</string>
+    <string name="startlight_not_delivered">The command did not reach the television; it was not sent again.</string>
+    <string name="startlight_no_answer">No answer from the television: the command may have run.</string>
+    <string name="startlight_failed">StartLight did not answer: %1$s</string>
     <string name="shortcut_remote_short">Remote</string>
     <string name="shortcut_remote_long">Television remote</string>
 </resources>

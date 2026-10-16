@@ -1,6 +1,7 @@
 package net.jolabs40.tvslim.control
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -218,6 +219,74 @@ class ControlSessionTest {
         helper.incoming.trySend("V\t0")
         runCurrent()
         assertEquals(false, session.state.value.screenOn)
+    }
+
+    private fun FakeHelper.answer(id: String, status: String, payload: String) {
+        incoming.trySend("Y\t$id\t$status\t" + java.util.Base64.getEncoder().encodeToString(payload.toByteArray()))
+    }
+
+    @Test
+    fun `a provider call returns what the TV answered`() = runTest {
+        val (helper, session) = readySession()
+        val outcome = async { session.call("net.jolabs40.startlight.remote", "etat") }
+        runCurrent()
+        val order = helper.orders("A").single().split('\t')
+        assertEquals("net.jolabs40.startlight.remote", order[3])
+        helper.answer(order[1], "ok", """{"json":"{}"}""")
+        runCurrent()
+        assertEquals(CallOutcome.Answered("""{"json":"{}"}"""), outcome.await())
+    }
+
+    @Test
+    fun `a call that failed on the TV says why, and is not sent again`() = runTest {
+        val (helper, session) = readySession()
+        val outcome = async { session.call("absent.remote", "etat") }
+        runCurrent()
+        helper.answer(helper.orders("A").single().split('\t')[1], "error", "no provider absent.remote")
+        advanceTimeBy(2_000)
+        assertEquals(CallOutcome.Failed("no provider absent.remote"), outcome.await())
+        assertEquals(1, helper.orders("A").size)
+    }
+
+    @Test
+    fun `a call the helper found late is reported late`() = runTest {
+        val (helper, session) = readySession(FakeHelper(backgroundScope, autoAck = false))
+        val outcome = async { session.call("net.jolabs40.startlight.remote", "fond_suivant") }
+        runCurrent()
+        helper.incoming.trySend("K\t" + helper.orders("A").single().split('\t')[1] + "\tlate")
+        runCurrent()
+        assertEquals(CallOutcome.NotSent(CallFailure.LATE), outcome.await())
+    }
+
+    @Test
+    fun `a call needs a ready link and identifiers`() = runTest {
+        val helper = FakeHelper(backgroundScope)
+        val session = session(helper)
+        assertEquals(CallOutcome.NotSent(CallFailure.NOT_READY), session.call("a.remote", "etat"))
+        helper.ready()
+        runCurrent()
+        assertEquals(CallOutcome.NotSent(CallFailure.NOT_READY), session.call("a.remote\tQ", "etat"))
+        assertEquals(CallOutcome.NotSent(CallFailure.NOT_READY), session.call("a.remote", "etat; reboot"))
+        assertTrue(helper.orders("A").isEmpty())
+    }
+
+    @Test
+    fun `a call pending when the link drops ends without a retry`() = runTest {
+        val (helper, session) = readySession()
+        val outcome = async { session.call("net.jolabs40.startlight.remote", "fond_suivant") }
+        runCurrent()
+        helper.incoming.trySend(null)
+        runCurrent()
+        assertEquals(CallOutcome.NotSent(CallFailure.ENDED), outcome.await())
+        assertEquals(1, helper.orders("A").size)
+    }
+
+    @Test
+    fun `a call without an answer times out, its fate unknown`() = runTest {
+        val (_, session) = readySession()
+        val outcome = async { session.call("net.jolabs40.startlight.remote", "etat") }
+        advanceTimeBy(ControlSession.CALL_TIMEOUT_MS + 100)
+        assertEquals(CallOutcome.NotSent(CallFailure.TIMEOUT), outcome.await())
     }
 
     @Test

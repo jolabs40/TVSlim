@@ -159,7 +159,7 @@ class ApplicationsReader(
         const val RESOURCE_PATH = "aide/tvslim-aide.apk"
         const val HELPER_PATH = "/data/local/tmp/tvslim-aide.apk"
         const val HELPER_CLASS = "net.jolabs40.tvslim.aide.Aide"
-        const val HELPER_VERSION = 2
+        const val HELPER_VERSION = 3
 
         /** 96 px: sharp at 48 dp on a 2x screen, about 4 KB per icon. */
         const val ICON_SIZE = 96

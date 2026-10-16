@@ -1,6 +1,7 @@
 package net.jolabs40.tvslim.control
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import net.jolabs40.tvslim.applications.ApplicationsReader
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 /** A line link to the helper; the phone's is a shell stream of a dedicated ADB session. */
@@ -46,6 +48,34 @@ enum class SessionEnd {
 
     /** The helper is not the expected version. */
     REJECTED,
+}
+
+/** Why a provider call did not go out, or its fate is unknown. It is never retried either way. */
+enum class CallFailure {
+    /** The link is not ready: refused here, nothing sent. */
+    NOT_READY,
+
+    /** Dropped for arriving late, here or on the TV. */
+    LATE,
+
+    /** The helper refused the order. */
+    REFUSED,
+
+    /** The session ended before the answer. */
+    ENDED,
+
+    /** No answer in time; the call may still have run. */
+    TIMEOUT,
+}
+
+sealed interface CallOutcome {
+    /** The provider's Bundle as JSON, `null` when it returned none. */
+    data class Answered(val json: String) : CallOutcome
+
+    /** The call reached the TV and failed there: no such provider, the app died, an exception. */
+    data class Failed(val reason: String) : CallOutcome
+
+    data class NotSent(val why: CallFailure) : CallOutcome
 }
 
 data class SessionState(
@@ -97,6 +127,9 @@ class ControlSession(
     /** Orders written and not yet answered, by id, with the time they were written. */
     private val inFlight = LinkedHashMap<Long, Long>()
     private val recentTrips = ArrayDeque<Long>()
+
+    /** Provider calls waiting for their answer, by id. */
+    private val calls = ConcurrentHashMap<Long, CompletableDeferred<CallOutcome>>()
     private var lastPing = 0L
     private var startedAt = 0L
 
@@ -146,6 +179,29 @@ class ControlSession(
         return if (ready()) enqueue(expires = false) { id, at -> ControlProtocol.text(id, at, text) } else refuse()
     }
 
+    /**
+     * Calls a content provider on the TV through the helper, as the shell user: a fraction of a millisecond on the
+     * TV, where `content call` would start a VM. The method may not be idempotent, so the call goes out once; if it is
+     * lost or late it is reported, never sent again.
+     */
+    suspend fun call(authority: String, method: String, arg: String? = null, extras: String? = null): CallOutcome {
+        if (!ready() || !ControlProtocol.IDENTIFIER.matches(authority) || !ControlProtocol.IDENTIFIER.matches(method)) {
+            return CallOutcome.NotSent(CallFailure.NOT_READY)
+        }
+        val answer = CompletableDeferred<CallOutcome>()
+        var callId = 0L
+        val queued = enqueue(expires = true, register = { id ->
+            callId = id
+            calls[id] = answer
+        }) { id, at -> ControlProtocol.call(id, at, authority, method, arg, extras) }
+        if (!queued) {
+            calls.remove(callId)
+            return CallOutcome.NotSent(CallFailure.ENDED)
+        }
+        return withTimeoutOrNull(CALL_TIMEOUT_MS) { answer.await() }
+            ?: CallOutcome.NotSent(CallFailure.TIMEOUT).also { calls.remove(callId) }
+    }
+
     /** Cancels what is held, asks the helper to stop, then closes the link. */
     suspend fun close() {
         if (_state.value.phase == SessionPhase.ENDED) return
@@ -166,9 +222,10 @@ class ControlSession(
         return false
     }
 
-    private fun enqueue(expires: Boolean, line: (id: Long, at: Long) -> String): Boolean {
+    private fun enqueue(expires: Boolean, register: (id: Long) -> Unit = {}, line: (id: Long, at: Long) -> String): Boolean {
         val id = ids.incrementAndGet()
         val now = clock()
+        register(id)
         return outgoing.trySend(Order(id, now, line(id, now), expires)).isSuccess
     }
 
@@ -178,6 +235,7 @@ class ControlSession(
             // Stuck behind a slow write: a press that old would surprise more than it helps.
             if (order.expires && now - order.createdAt > LOCAL_EXPIRY_MS) {
                 _rejected.tryEmit(AckStatus.LATE)
+                calls.remove(order.id)?.complete(CallOutcome.NotSent(CallFailure.LATE))
                 continue
             }
             try {
@@ -216,6 +274,9 @@ class ControlSession(
 
                 is HelperLine.Ack -> acknowledge(parsed)
                 is HelperLine.Released -> _state.update { it.copy(held = it.held - parsed.code) }
+                is HelperLine.CallResult -> calls.remove(parsed.id)?.complete(
+                    if (parsed.succeeded) CallOutcome.Answered(parsed.payload) else CallOutcome.Failed(parsed.payload),
+                )
                 is HelperLine.Screen -> _state.update { it.copy(screenOn = parsed.on) }
                 is HelperLine.Bye -> {
                     end(SessionEnd.STOPPED)
@@ -234,7 +295,11 @@ class ControlSession(
         recentTrips.addLast(trip)
         if (recentTrips.size > LATENCY_WINDOW) recentTrips.removeFirst()
         _state.update { it.copy(latencyMs = recentTrips.sorted()[recentTrips.size / 2]) }
-        if (ack.status == AckStatus.LATE || ack.status == AckStatus.REFUSED) _rejected.tryEmit(ack.status)
+        if (ack.status == AckStatus.LATE || ack.status == AckStatus.REFUSED) {
+            _rejected.tryEmit(ack.status)
+            val failure = if (ack.status == AckStatus.LATE) CallFailure.LATE else CallFailure.REFUSED
+            calls.remove(ack.id)?.complete(CallOutcome.NotSent(failure))
+        }
     }
 
     /** Pings (every second, or every [HELD_PING_MS] while a key is held) and the watch on unanswered orders. */
@@ -268,6 +333,7 @@ class ControlSession(
         _state.value = before.copy(phase = SessionPhase.ENDED, end = if (closing) SessionEnd.CLOSED else reason)
         outgoing.close()
         channel.close()
+        for (id in calls.keys.toList()) calls.remove(id)?.complete(CallOutcome.NotSent(CallFailure.ENDED))
         job.cancel()
     }
 
@@ -283,6 +349,9 @@ class ControlSession(
         const val START_TIMEOUT_MS = 10_000L
 
         const val LOCAL_EXPIRY_MS = 300L
+
+        /** An app started cold answers within a second or two; past this, the outcome is unknown. */
+        const val CALL_TIMEOUT_MS = 10_000L
         const val CLOSE_WAIT_MS = 1_000L
         const val LATENCY_WINDOW = 20
     }

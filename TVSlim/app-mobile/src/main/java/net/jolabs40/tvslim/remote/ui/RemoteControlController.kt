@@ -19,13 +19,18 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.jolabs40.tvslim.applications.ApplicationsReader
+import net.jolabs40.tvslim.catalog.Catalog
+import net.jolabs40.tvslim.control.CallFailure
+import net.jolabs40.tvslim.control.CallOutcome
 import net.jolabs40.tvslim.control.ControlSession
 import net.jolabs40.tvslim.control.RemoteKey
 import net.jolabs40.tvslim.control.SessionEnd
 import net.jolabs40.tvslim.control.SessionPhase
+import net.jolabs40.tvslim.device.RemoteReader
 import net.jolabs40.tvslim.remote.adb.AdbClient
 import net.jolabs40.tvslim.remote.adb.ConnectionState
 import net.jolabs40.tvslim.remote.adb.ControlLink
+import net.jolabs40.tvslim.startlight.StartLightHome
 
 enum class RemotePhase {
     /** No TV connected: the remote reuses the address and key of the main connection. */
@@ -50,6 +55,8 @@ data class RemoteControlUi(
     val wentToSleep: Boolean = false,
     /** Text the key map cannot type can be pasted. */
     val canPaste: Boolean = true,
+    /** StartLight is the TV's home: its own buttons can be offered. Read each time the remote opens. */
+    val startLight: StartLightHome? = null,
 )
 
 /**
@@ -63,6 +70,8 @@ class RemoteControlController(
     private val context: Context,
     private val client: AdbClient,
     private val scope: CoroutineScope,
+    /** Suspends until the catalogue is read: on a cold start from the shortcut, the screen may not have it yet. */
+    private val catalog: suspend () -> Catalog,
 ) {
 
     private val _state = MutableStateFlow(RemoteControlUi())
@@ -74,6 +83,7 @@ class RemoteControlController(
     val rejected: SharedFlow<Unit> = _rejected.asSharedFlow()
 
     private var loop: Job? = null
+    private var homeReading: Job? = null
 
     @Volatile
     private var session: ControlSession? = null
@@ -86,10 +96,13 @@ class RemoteControlController(
     fun show() {
         if (loop?.isActive == true) return
         loop = scope.launch { run() }
+        homeReading = scope.launch { readHome() }
     }
 
     /** The screen left, or the app went to the background. */
     fun hide() {
+        homeReading?.cancel()
+        homeReading = null
         val running = loop ?: return
         loop = null
         running.cancel()
@@ -122,6 +135,22 @@ class RemoteControlController(
 
     fun text(text: String): Boolean = accepted(session?.text(text))
 
+    /** A content provider call on the TV, made once: StartLight's commands are not idempotent. */
+    suspend fun call(authority: String, method: String, arg: String? = null, extras: String? = null): CallOutcome =
+        session?.call(authority, method, arg, extras) ?: CallOutcome.NotSent(CallFailure.NOT_READY)
+
+    /**
+     * Which launcher is the TV's home, read on the main session (a read, safe to replay). StartLight's buttons appear
+     * only when it is StartLight; another launcher, or no answer, hides them.
+     */
+    private suspend fun readHome() {
+        client.connection.first { it.state == ConnectionState.CONNECTED }
+        val home = RemoteReader(client).currentHome()
+        val startLight = StartLightHome.of(home, catalog())
+        Log.i(TAG, "Home: ${home.ifBlank { "unknown" }}" + if (startLight != null) ", StartLight" else "")
+        _state.update { it.copy(startLight = startLight) }
+    }
+
     private fun accepted(result: Boolean?): Boolean {
         if (result == null) _rejected.tryEmit(Unit)
         return result == true
@@ -131,9 +160,11 @@ class RemoteControlController(
         var failures = 0
         var dropped = false
         while (scope.isActive) {
-            if (client.connection.value.state == ConnectionState.DISCONNECTED) {
+            // The main connection may be opening (a cold start from the shortcut): its address is known once it ends.
+            val main = client.connection.first { it.state != ConnectionState.CONNECTION }
+            if (main.state == ConnectionState.DISCONNECTED) {
                 _state.update { RemoteControlUi(phase = RemotePhase.NO_TV) }
-                client.connection.first { it.state != ConnectionState.DISCONNECTED }
+                client.connection.first { it.state == ConnectionState.CONNECTED || it.state == ConnectionState.ERROR }
             }
             val reopening = dropped || failures > 0
             _state.update { it.copy(phase = if (reopening) RemotePhase.RECONNECTING else RemotePhase.CONNECTING, held = emptySet()) }

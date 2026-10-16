@@ -54,6 +54,30 @@ class ControlProtocolTest {
     }
 
     @Test
+    fun `a provider call carries its argument and extras in base64`() {
+        val line = ControlProtocol.call(9, 580, "net.jolabs40.startlight.remote", "etat", "page\t2", """{"id":"x"}""")
+        val fields = line.split('\t')
+        assertEquals(listOf("A", "9", "580", "net.jolabs40.startlight.remote", "etat"), fields.take(5))
+        assertEquals(7, fields.size)
+        assertEquals("page\t2", String(Base64.getDecoder().decode(fields[5]), Charsets.UTF_8))
+        assertEquals("""{"id":"x"}""", String(Base64.getDecoder().decode(fields[6]), Charsets.UTF_8))
+        assertEquals("A\t10\t590\tsettings\tGET_global\t\t", ControlProtocol.call(10, 590, "settings", "GET_global", null, null))
+    }
+
+    @Test
+    fun `a provider answer is read back`() {
+        val json = """{"value":"Salon é"}"""
+        val encoded = Base64.getEncoder().encodeToString(json.toByteArray(Charsets.UTF_8))
+        assertEquals(HelperLine.CallResult(9, true, json), ControlProtocol.parse("Y\t9\tok\t$encoded"))
+        val error = Base64.getEncoder().encodeToString("java.lang.IllegalStateException: no provider x".toByteArray())
+        assertEquals(
+            HelperLine.CallResult(10, false, "java.lang.IllegalStateException: no provider x"),
+            ControlProtocol.parse("Y\t10\terror\t$error"),
+        )
+        assertNull(ControlProtocol.parse("Y\tdix\tok\t"))
+    }
+
+    @Test
     fun `unexpected lines are ignored`() {
         assertNull(ControlProtocol.parse("WARNING: linker: something noisy"))
         assertNull(ControlProtocol.parse("K\tabc\tok"))

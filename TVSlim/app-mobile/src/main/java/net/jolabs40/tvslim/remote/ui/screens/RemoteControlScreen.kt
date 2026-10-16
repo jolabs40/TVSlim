@@ -22,10 +22,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Backspace
@@ -101,6 +103,7 @@ import net.jolabs40.tvslim.remote.ui.ApplicationsState
 import net.jolabs40.tvslim.remote.ui.HardwareKeyHost
 import net.jolabs40.tvslim.remote.ui.RemoteControlUi
 import net.jolabs40.tvslim.remote.ui.RemotePhase
+import net.jolabs40.tvslim.remote.ui.StartLightUi
 
 /** What the remote control screen asks for. A press returns whether it went out, which decides the vibration. */
 class RemoteControlActions(
@@ -131,6 +134,8 @@ fun RemoteControlScreen(
     applications: ApplicationsState,
     rejected: Flow<Unit>,
     actions: RemoteControlActions,
+    startLight: StartLightUi,
+    startLightActions: StartLightActions,
 ) {
     val haptic = LocalHapticFeedback.current
     val view = LocalView.current
@@ -152,8 +157,11 @@ fun RemoteControlScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Header(tvName, state, actions)
-        Problem(state, actions)
-        Spacer(Modifier.weight(1f))
+        // Between the header and the keys, scrolling on its own so the keys never leave the thumb's reach.
+        Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+            Problem(state, actions)
+            if (state.phase == RemotePhase.READY && startLight.home != null) StartLightSection(startLight, startLightActions)
+        }
         Column(
             modifier = Modifier.alpha(if (ready) 1f else 0.5f),
             horizontalAlignment = Alignment.CenterHorizontally,

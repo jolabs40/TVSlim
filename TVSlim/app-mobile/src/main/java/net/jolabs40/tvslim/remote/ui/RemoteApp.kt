@@ -70,6 +70,7 @@ import net.jolabs40.tvslim.remote.ui.screens.MemoryScreen
 import net.jolabs40.tvslim.remote.ui.screens.PackagesScreen
 import net.jolabs40.tvslim.remote.ui.screens.RemoteControlActions
 import net.jolabs40.tvslim.remote.ui.screens.RemoteControlScreen
+import net.jolabs40.tvslim.remote.ui.screens.StartLightActions
 
 private data class AppTab(val route: String, val title: Int, val icon: ImageVector)
 
@@ -359,6 +360,7 @@ fun RemoteApp(remoteRequests: Int = 0) {
                 }
                 composable(REMOTE_ROUTE) {
                     val remoteState by model.remoteControl.state.collectAsStateWithLifecycle()
+                    val startLightState by model.startLight.state.collectAsStateWithLifecycle()
                     val applicationsState by model.applications.state.collectAsStateWithLifecycle()
                     val remote = model.remoteControl
                     // The link lives while the screen is shown and the app started: closed before the battery saver
@@ -406,6 +408,10 @@ fun RemoteApp(remoteRequests: Int = 0) {
                                 onLoadApps = model.applications::load,
                                 onOpenApp = model.applications::open,
                             )
+                        },
+                        startLight = startLightState,
+                        startLightActions = remember(model.startLight) {
+                            StartLightActions(onCommand = model.startLight::send, onBringHome = model.startLight::bringHome)
                         },
                     )
                 }

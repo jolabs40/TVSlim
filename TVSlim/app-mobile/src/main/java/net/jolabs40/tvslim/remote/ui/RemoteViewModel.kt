@@ -130,7 +130,10 @@ class RemoteViewModel @Inject constructor(
     val capture = CaptureController(context, client, viewModelScope, { _state.value.info }, { _state.value.connected }, ::show)
 
     /** Remote control, from the top bar or the launcher shortcut; its link lives only while it is on screen. */
-    val remoteControl = RemoteControlController(context, client, viewModelScope)
+    val remoteControl = RemoteControlController(context, client, viewModelScope) { catalogRepo.catalog() }
+
+    /** StartLight's own buttons in the remote, when it is the TV's home. */
+    val startLight = StartLightController(remoteControl, viewModelScope)
 
     /** One log observer at a time, otherwise the previous TV's log would keep writing into the state. */
     private var journalTracking: Job? = null

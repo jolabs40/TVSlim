@@ -62,6 +62,9 @@ sealed interface HelperLine {
 
     data class Screen(val on: Boolean?) : HelperLine
 
+    /** What a content provider call returned: its Bundle as JSON, or the exception it raised on the TV. */
+    data class CallResult(val id: Long, val succeeded: Boolean, val payload: String) : HelperLine
+
     data class Error(val reason: String) : HelperLine
 
     data class Bye(val reason: String) : HelperLine
@@ -101,8 +104,19 @@ object ControlProtocol {
     fun sleep(id: Long, sentAt: Long) = line("S", id, sentAt)
 
     /** Base64, so tabs and line breaks typed on the phone cannot split the order. */
-    fun text(id: Long, sentAt: Long, text: String) =
-        line("X", id, sentAt, Base64.getEncoder().encodeToString(text.toByteArray(Charsets.UTF_8)))
+    fun text(id: Long, sentAt: Long, text: String) = line("X", id, sentAt, base64(text))
+
+    /**
+     * A content provider call, made by the helper as the shell user. [arg] and [extras] (a JSON object of strings,
+     * numbers and booleans) go in base64; the authority and the method must match [IDENTIFIER].
+     */
+    fun call(id: Long, sentAt: Long, authority: String, method: String, arg: String?, extras: String?) =
+        line("A", id, sentAt, authority, method, base64(arg.orEmpty()), base64(extras.orEmpty()))
+
+    /** What may stand unencoded in an order: nothing that could split it. */
+    val IDENTIFIER = Regex("""[A-Za-z0-9_.]+""")
+
+    private fun base64(text: String) = Base64.getEncoder().encodeToString(text.toByteArray(Charsets.UTF_8))
 
     private fun line(order: String, id: Long, sentAt: Long, vararg fields: Any) =
         (listOf(order, id, sentAt) + fields).joinToString("\t")
@@ -129,6 +143,12 @@ object ControlProtocol {
             }
 
             "L" -> fields.getOrNull(1)?.toIntOrNull()?.let { HelperLine.Released(it) }
+            "Y" -> {
+                val id = fields.getOrNull(1)?.toLongOrNull() ?: return null
+                val payload = runCatching { String(Base64.getDecoder().decode(fields.getOrNull(3).orEmpty()), Charsets.UTF_8) }
+                    .getOrNull() ?: return null
+                HelperLine.CallResult(id, fields.getOrNull(2) == "ok", payload)
+            }
             "V" -> HelperLine.Screen(screen(fields.getOrNull(1)))
             "E" -> HelperLine.Error(fields.drop(1).joinToString(" "))
             "B" -> HelperLine.Bye(fields.getOrNull(1).orEmpty())
