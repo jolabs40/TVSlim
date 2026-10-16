@@ -14,8 +14,9 @@ class StartLightTextsTest {
 
     @Test
     fun `each reason has its own sentence`() {
-        val sentences = StartLightRefusal.entries.map { noticeResource(StartLightNotice.Refused(it, it.wire)) }
-        assertEquals(StartLightRefusal.entries.size, sentences.toSet().size)
+        val notices = StartLightRefusal.entries.map { StartLightNotice.Refused(it, it.wire) } +
+            listOf(StartLightNotice.NotInFront, StartLightNotice.NotOffered, StartLightNotice.Failed("x"), StartLightNotice.NotDelivered(CallFailure.ENDED))
+        assertEquals(notices.size, notices.map(::noticeResource).toSet().size)
     }
 
     @Test

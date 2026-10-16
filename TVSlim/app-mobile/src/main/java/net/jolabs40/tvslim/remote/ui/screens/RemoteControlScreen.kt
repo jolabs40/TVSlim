@@ -196,7 +196,7 @@ fun RemoteControlScreen(
                     startLight = startLight,
                     actions = shortcutActions,
                     onOpenApp = actions.onOpenApp,
-                    onStartLight = startLightActions.onCommand,
+                    onStartLight = { shortcut -> startLightActions.onInFront(shortcut::startLightCommand) },
                     onAdd = { shortcutsOpen = true },
                 )
             }

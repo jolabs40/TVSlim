@@ -74,6 +74,8 @@ import net.jolabs40.tvslim.startlight.StartLightState
 class StartLightActions(
     val onCommand: (StartLightCommand) -> Unit,
     val onBringHome: () -> Unit,
+    /** A shortcut's command, chosen from the state once StartLight is in front: HOME first if another app is. */
+    val onInFront: ((StartLightState) -> StartLightCommand?) -> Unit,
 )
 
 /**
@@ -441,11 +443,13 @@ internal fun noticeResource(notice: StartLightNotice): Int = when (notice) {
 
     is StartLightNotice.NotDelivered -> if (notice.failure == CallFailure.TIMEOUT) R.string.startlight_no_answer else R.string.startlight_not_delivered
     is StartLightNotice.Failed -> R.string.startlight_failed
+    StartLightNotice.NotInFront -> R.string.startlight_not_in_front
+    StartLightNotice.NotOffered -> R.string.startlight_not_offered
 }
 
 @Composable
 private fun noticeText(notice: StartLightNotice): String = when (notice) {
     is StartLightNotice.Refused -> stringResource(noticeResource(notice), notice.reason)
     is StartLightNotice.Failed -> stringResource(noticeResource(notice), notice.detail)
-    is StartLightNotice.NotDelivered -> stringResource(noticeResource(notice))
+    is StartLightNotice.NotDelivered, StartLightNotice.NotInFront, StartLightNotice.NotOffered -> stringResource(noticeResource(notice))
 }

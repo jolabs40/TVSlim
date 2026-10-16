@@ -74,7 +74,7 @@ class RemoteShortcutsTest {
     }
 
     @Test
-    fun `a StartLight shortcut sends only what StartLight offers, in front and ready`() {
+    fun `a StartLight shortcut sends only what StartLight offers`() {
         assertEquals(StartLightAction.SETTINGS, (settings.startLightCommand(inFront) as StartLightCommand.Action).action)
         assertEquals("games", (games.startLightCommand(inFront) as StartLightCommand.OpenPage).page.id)
         assertEquals("maison", (house.startLightCommand(inFront) as StartLightCommand.OpenDashboard).dashboard.id)
@@ -90,9 +90,8 @@ class RemoteShortcutsTest {
     }
 
     @Test
-    fun `no StartLight command behind another app, while starting, or without a state`() {
-        assertNull(settings.startLightCommand(inFront.copy(foreground = false)))
-        assertNull(settings.startLightCommand(inFront.copy(ready = false)))
+    fun `what StartLight offers behind another app is still sent, after HOME`() {
+        assertEquals("games", (games.startLightCommand(inFront.copy(foreground = false)) as StartLightCommand.OpenPage).page.id)
         assertNull(settings.startLightCommand(null))
     }
 

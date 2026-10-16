@@ -66,17 +66,16 @@ sealed interface RemoteShortcut {
     }
 
     /**
-     * What a StartLight shortcut sends, if this StartLight offers it right now: its state lists it, and it is in front,
-     * ready, so the command would not be refused for that. Null for an app.
+     * What a StartLight shortcut sends, if this StartLight offers it: its state lists it. In front or not, which HOME
+     * settles before sending. Null for an app.
      */
-    fun startLightCommand(state: StartLightState?): StartLightCommand? {
-        if (state == null || !state.ready || !state.foreground) return null
-        return when (this) {
-            is Application -> null
-            is Action -> state.actions.firstOrNull { it.wire == action }?.let { StartLightCommand.Action(it) }
-            is Page -> state.offeredPages.firstOrNull { it.id == id }?.let { StartLightCommand.OpenPage(it) }
-            is Dashboard -> state.offeredDashboards.firstOrNull { it.id == id }?.let { StartLightCommand.OpenDashboard(it) }
-        }
+    fun startLightCommand(state: StartLightState?): StartLightCommand? = when {
+        state == null -> null
+        this is Application -> null
+        this is Action -> state.actions.firstOrNull { it.wire == action }?.let { StartLightCommand.Action(it) }
+        this is Page -> state.offeredPages.firstOrNull { it.id == id }?.let { StartLightCommand.OpenPage(it) }
+        this is Dashboard -> state.offeredDashboards.firstOrNull { it.id == id }?.let { StartLightCommand.OpenDashboard(it) }
+        else -> null
     }
 }
 

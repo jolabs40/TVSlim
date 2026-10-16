@@ -413,7 +413,11 @@ fun RemoteApp(remoteRequests: Int = 0) {
                         },
                         startLight = startLightState,
                         startLightActions = remember(model.startLight) {
-                            StartLightActions(onCommand = model.startLight::send, onBringHome = model.startLight::bringHome)
+                            StartLightActions(
+                                onCommand = model.startLight::send,
+                                onBringHome = model.startLight::bringHome,
+                                onInFront = model.startLight::sendInFront,
+                            )
                         },
                         shortcuts = shortcutsState,
                         shortcutActions = remember(model.shortcuts) {

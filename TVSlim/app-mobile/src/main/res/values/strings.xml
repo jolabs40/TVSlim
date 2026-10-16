@@ -573,6 +573,8 @@
     <string name="startlight_not_delivered">The command did not reach the television; it was not sent again.</string>
     <string name="startlight_no_answer">No answer from the television: the command may have run.</string>
     <string name="startlight_failed">StartLight did not answer: %1$s</string>
+    <string name="startlight_not_in_front">StartLight did not come back in front in time: nothing was sent.</string>
+    <string name="startlight_not_offered">StartLight no longer offers this button: nothing was sent.</string>
     <string name="remote_shortcuts_title">Shortcuts</string>
     <string name="remote_shortcuts_hint">Touch to add or remove. On the remote, a long press moves or removes a shortcut.</string>
     <string name="remote_shortcuts_add">Add</string>

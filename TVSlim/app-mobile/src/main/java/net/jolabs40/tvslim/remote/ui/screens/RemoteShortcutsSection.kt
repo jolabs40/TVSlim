@@ -66,7 +66,6 @@ import net.jolabs40.tvslim.remote.data.RemoteShortcuts
 import net.jolabs40.tvslim.remote.ui.ApplicationsState
 import net.jolabs40.tvslim.remote.ui.StartLightUi
 import net.jolabs40.tvslim.startlight.StartLightAction
-import net.jolabs40.tvslim.startlight.StartLightCommand
 import net.jolabs40.tvslim.startlight.StartLightHome
 import net.jolabs40.tvslim.startlight.StartLightState
 
@@ -87,7 +86,7 @@ internal fun ShortcutsGrid(
     startLight: StartLightUi,
     actions: ShortcutActions,
     onOpenApp: (DeviceApplication) -> Unit,
-    onStartLight: (StartLightCommand) -> Unit,
+    onStartLight: (RemoteShortcut) -> Unit,
     onAdd: () -> Unit,
 ) {
     if (shortcuts.isEmpty()) {
@@ -146,15 +145,14 @@ private fun ShortcutTile(
     startLight: StartLightUi,
     actions: ShortcutActions,
     onOpenApp: (DeviceApplication) -> Unit,
-    onStartLight: (StartLightCommand) -> Unit,
+    onStartLight: (RemoteShortcut) -> Unit,
     haptic: HapticFeedback,
     modifier: Modifier,
 ) {
-    val command = shortcut.startLightCommand(startLight.state)
     val enabled = ready && when (shortcut) {
         is RemoteShortcut.Application -> true
-        // StartLight's buttons act only while it is the home, in front, and not busy with another command.
-        else -> startLight.home != null && !startLight.busy && command != null
+        // Behind another app, HOME brings StartLight first. Not running, what it offers is known once HOME starts it.
+        else -> startLight.reachable && (startLight.state == null || shortcut.startLightCommand(startLight.state) != null)
     }
     var menu by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
@@ -177,7 +175,7 @@ private fun ShortcutTile(
                             haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                             when (shortcut) {
                                 is RemoteShortcut.Application -> onOpenApp(shortcut.application())
-                                else -> command?.let(onStartLight)
+                                else -> onStartLight(shortcut)
                             }
                         }
                     },

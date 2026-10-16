@@ -29,6 +29,12 @@ sealed interface StartLightNotice {
     data class NotDelivered(val failure: CallFailure) : StartLightNotice
 
     data class Failed(val detail: String) : StartLightNotice
+
+    /** HOME was pressed for a shortcut, but StartLight did not come in front, ready, in time: nothing was sent. */
+    data object NotInFront : StartLightNotice
+
+    /** Back in front, StartLight no longer offers what the shortcut sends (a page removed since): nothing was sent. */
+    data object NotOffered : StartLightNotice
 }
 
 data class StartLightUi(
@@ -41,7 +47,17 @@ data class StartLightUi(
     /** A command is on its way: one at a time, as StartLight takes them. */
     val busy: Boolean = false,
     val notice: StartLightNotice? = null,
-)
+) {
+    /**
+     * A shortcut to StartLight's buttons can act: it is in front and ready, or a HOME away, behind another app or not
+     * running (HOME starts it). Not over its own permission request, which HOME would close unanswered.
+     */
+    val reachable: Boolean
+        get() = home != null && !busy && when (state) {
+            null -> absence == StartLightAbsence.NOT_STARTED
+            else -> state.ready && (state.foreground || state.behindAnotherApp)
+        }
+}
 
 /**
  * StartLight's own buttons, through the content provider it opens to the shell user (`<package>.remote`).
@@ -83,12 +99,42 @@ class StartLightController(
         val home = _state.value.home ?: return
         if (_state.value.busy) return
         _state.update { it.copy(busy = true, notice = null) }
+        scope.launch { finish(notice(call(home, command))) }
+    }
+
+    /**
+     * A shortcut: what [pick] chooses from StartLight's state. Behind another app or not running, HOME comes first and
+     * leaves that app, unless StartLight takes that command from behind. Sent once at most: a refusal did nothing, a
+     * command that ran is never sent again.
+     */
+    fun sendInFront(pick: (StartLightState) -> StartLightCommand?) {
+        val ui = _state.value
+        val home = ui.home
+        if (home == null || !ui.reachable) return
+        _state.update { it.copy(busy = true, notice = null) }
         scope.launch {
-            val reply = StartLightRemote.reply(remote.call(home.authority, command.method, command.argument))
-            Log.i(TAG, "${command.method} ${command.argument.orEmpty()}: $reply")
-            _state.update { it.copy(busy = false, notice = notice(reply)) }
-            read()
+            val shown = ui.state
+            if (shown != null) {
+                val command = pick(shown) ?: return@launch finish(StartLightNotice.NotOffered)
+                if (shown.foreground || !needsForeground(shown, command)) {
+                    val reply = call(home, command)
+                    // The state was read up to two seconds ago: an app may have come in front since.
+                    if ((reply as? StartLightReply.Refused)?.refusal != StartLightRefusal.NOT_FOREGROUND) return@launch finish(notice(reply))
+                }
+            }
+            if (!remote.tap(RemoteKey.HOME)) return@launch finish(StartLightNotice.NotDelivered(CallFailure.NOT_READY))
+            val reached = awaitInFront() ?: return@launch finish(StartLightNotice.NotInFront)
+            // Its own request came up instead: the status line says to answer it on the TV.
+            if (!reached.foreground) return@launch finish(StartLightNotice.Refused(StartLightRefusal.PERMISSION_REQUEST, ""))
+            val command = pick(reached) ?: return@launch finish(StartLightNotice.NotOffered)
+            finish(notice(call(home, command)))
         }
+    }
+
+    /** As StartLight's state lists it (an action as `action:<name>`); one it does not list is taken as needing it in front. */
+    private fun needsForeground(state: StartLightState, command: StartLightCommand): Boolean {
+        val name = if (command is StartLightCommand.Action) "${command.method}:${command.action.wire}" else command.method
+        return state.commands.firstOrNull { it.name == name }?.needsForeground ?: true
     }
 
     /**
@@ -102,6 +148,31 @@ class StartLightController(
             delay(HOME_SETTLE_MS)
             read()
         }
+    }
+
+    private suspend fun call(home: StartLightHome, command: StartLightCommand): StartLightReply {
+        val reply = StartLightRemote.reply(remote.call(home.authority, command.method, command.argument))
+        Log.i(TAG, "${command.method} ${command.argument.orEmpty()}: $reply")
+        return reply
+    }
+
+    private suspend fun finish(notice: StartLightNotice?) {
+        _state.update { it.copy(busy = false, notice = notice) }
+        read()
+    }
+
+    /**
+     * Reads the state after HOME until StartLight is in front and ready, or shows its own permission request. Null when
+     * it does not come in time, or the link goes. A cold start takes a few seconds on a slow TV.
+     */
+    private suspend fun awaitInFront(): StartLightState? {
+        repeat(IN_FRONT_READS) {
+            delay(IN_FRONT_STEP_MS)
+            if (!readOnce()) return null
+            val state = _state.value.state
+            if (state != null && (state.ready && state.foreground || state.permissionRequest)) return state
+        }
+        return null
     }
 
     private suspend fun read() {
@@ -153,5 +224,9 @@ class StartLightController(
         const val HOME_SETTLE_MS = 700L
 
         const val POLL_MS = 2_000L
+
+        /** After HOME for a shortcut: a read every half second, for eight seconds at most. */
+        const val IN_FRONT_STEP_MS = 500L
+        const val IN_FRONT_READS = 16
     }
 }
