@@ -549,7 +549,11 @@
     <string name="startlight_permission_request">StartLight demande une autorisation sur le téléviseur : répondez-y là-bas.</string>
     <string name="startlight_bring_home">Revenir à l\'accueil</string>
     <string name="startlight_leave_rest">Quitter le repos</string>
-    <string name="startlight_pages">Pages et tableaux de bord</string>
+    <string name="startlight_open">Ouvrir</string>
+    <string name="startlight_back_to_remote">Revenir à la télécommande</string>
+    <string name="startlight_actions_title">Actions</string>
+    <string name="startlight_screen_not_started">Pas lancé</string>
+    <string name="startlight_screen_no_door">Ne se pilote pas depuis le téléphone</string>
     <string name="startlight_pages_title">Pages du menu</string>
     <string name="startlight_dashboards_title">Tableaux de bord</string>
     <string name="startlight_not_started">StartLight n\'est pas lancé sur le téléviseur : l\'accueil le démarre.</string>

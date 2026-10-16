@@ -552,7 +552,11 @@
     <string name="startlight_permission_request">StartLight is asking for a permission on the television: answer it there.</string>
     <string name="startlight_bring_home">Back to the home screen</string>
     <string name="startlight_leave_rest">Leave the rest screen</string>
-    <string name="startlight_pages">Pages and dashboards</string>
+    <string name="startlight_open">Open</string>
+    <string name="startlight_back_to_remote">Back to the remote</string>
+    <string name="startlight_actions_title">Actions</string>
+    <string name="startlight_screen_not_started">Not running</string>
+    <string name="startlight_screen_no_door">Cannot be driven from the phone</string>
     <string name="startlight_pages_title">Menu pages</string>
     <string name="startlight_dashboards_title">Dashboards</string>
     <string name="startlight_not_started">StartLight is not running on the television: the home screen starts it.</string>

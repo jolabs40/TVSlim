@@ -1,6 +1,7 @@
 package net.jolabs40.tvslim.remote.ui.screens
 
 import android.view.KeyEvent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -149,6 +150,15 @@ fun RemoteControlScreen(
     var sheet by rememberSaveable { mutableStateOf(RemoteSheet.NONE) }
     val ready = state.phase == RemotePhase.READY
 
+    // StartLight's buttons have a page of their own, inside this screen so the link to the TV stays open.
+    var startLightOpen by rememberSaveable { mutableStateOf(false) }
+    val startLightShown = ready && startLight.home != null
+    if (startLightOpen && startLightShown) {
+        BackHandler { startLightOpen = false }
+        StartLightPage(startLight, startLightActions, onClose = { startLightOpen = false })
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -160,7 +170,7 @@ fun RemoteControlScreen(
         // Between the header and the keys, scrolling on its own so the keys never leave the thumb's reach.
         Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
             Problem(state, actions)
-            if (state.phase == RemotePhase.READY && startLight.home != null) StartLightSection(startLight, startLightActions)
+            if (startLightShown) StartLightBanner(startLight, onOpen = { startLightOpen = true })
         }
         Column(
             modifier = Modifier.alpha(if (ready) 1f else 0.5f),

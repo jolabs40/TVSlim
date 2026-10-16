@@ -1,19 +1,24 @@
 package net.jolabs40.tvslim.remote.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.ViewQuilt
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Dashboard
@@ -27,30 +32,26 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.jolabs40.tvslim.control.CallFailure
 import net.jolabs40.tvslim.remote.R
@@ -69,141 +70,247 @@ class StartLightActions(
 )
 
 /**
- * StartLight's own buttons, when it is the TV's home. Only what its state announces is shown: a button that opens
- * nothing is worse than none. Every refusal is said in words.
+ * Above the remote's keys: StartLight, what it is showing, and the way to its own buttons. The keys keep their
+ * room; the buttons live on their own page.
  */
 @Composable
-internal fun StartLightSection(ui: StartLightUi, actions: StartLightActions) {
+internal fun StartLightBanner(ui: StartLightUi, onOpen: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(onClickLabel = stringResource(R.string.startlight_open), role = Role.Button, onClick = onOpen)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            LogoLauncher(StartLightHome.LAUNCHER_ID, size = 36.dp)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.startlight_name), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    text = stringResource(status(ui)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                text = stringResource(R.string.startlight_open),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+/**
+ * StartLight's own buttons, on a page of their own. Only what its state announces is shown: a button that opens
+ * nothing is worse than none. Every refusal is said in words, under the title where it stays in sight.
+ */
+@Composable
+internal fun StartLightPage(ui: StartLightUi, actions: StartLightActions, onClose: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     val send = { command: StartLightCommand ->
         haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
         actions.onCommand(command)
     }
-    var pages by rememberSaveable { mutableStateOf(false) }
     val state = ui.state
+    val behind = state?.behindAnotherApp == true
+    val asking = state?.permissionRequest == true
 
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            val behind = state?.behindAnotherApp == true
-            val asking = state?.permissionRequest == true
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                LogoLauncher(StartLightHome.LAUNCHER_ID, size = 36.dp)
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.startlight_name), style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        text = stringResource(
-                            when {
-                                state == null -> R.string.remote_startlight_home
-                                asking -> R.string.startlight_permission_request
-                                behind -> R.string.startlight_not_foreground
-                                else -> screenText(state)
-                            },
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (ui.busy) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                } else if (state?.pro == true) {
-                    Text(
-                        text = stringResource(R.string.startlight_pro),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
+        Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onClose) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.startlight_back_to_remote))
+            }
+            LogoLauncher(StartLightHome.LAUNCHER_ID, size = 32.dp)
+            Spacer(Modifier.size(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.startlight_name), style = MaterialTheme.typography.titleLarge)
+                Text(
+                    text = stringResource(status(ui)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (ui.busy) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else if (state?.pro == true) {
+                Text(
+                    text = stringResource(R.string.startlight_pro),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+
+        // What the status line already says is not repeated.
+        ui.notice?.takeUnless {
+            it is StartLightNotice.Refused &&
+                (behind && it.refusal == StartLightRefusal.NOT_FOREGROUND || asking && it.refusal == StartLightRefusal.PERMISSION_REQUEST)
+        }?.let { notice ->
+            Text(
+                text = noticeText(notice),
+                style = MaterialTheme.typography.bodyMedium,
+                // The TV answered as its own button would (a code to type, the Pro screen): not a failure.
+                color = if (notice is StartLightNotice.Refused && notice.refusal in INFORMATIVE) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+        }
+
+        when {
+            ui.absence == StartLightAbsence.NO_DOOR -> Hint(stringResource(R.string.startlight_no_door))
+            ui.absence == StartLightAbsence.NOT_STARTED -> {
+                Hint(stringResource(R.string.startlight_not_started))
+                BringHomeButton(ui, actions)
             }
 
-            // Right under the header, where it is always in sight; what the header already says is not repeated.
-            ui.notice?.takeUnless {
-                it is StartLightNotice.Refused &&
-                    (behind && it.refusal == StartLightRefusal.NOT_FOREGROUND || asking && it.refusal == StartLightRefusal.PERMISSION_REQUEST)
-            }
-                ?.let { notice ->
-                    Text(
-                        text = noticeText(notice),
-                        style = MaterialTheme.typography.bodySmall,
-                        // The TV answered as its own button would (a code to type, the Pro screen): not a failure.
-                        color = if (notice is StartLightNotice.Refused && notice.refusal in INFORMATIVE) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.error
-                        },
-                    )
-                }
+            state == null -> Unit
+            !state.ready -> Hint(stringResource(R.string.startlight_not_ready))
+            // Its own permission request: answered on the TV, the status line says so; HOME would close it unanswered.
+            asking -> Unit
+            // Its buttons would all be refused until it is in front again.
+            behind -> BringHomeButton(ui, actions)
+            else -> Buttons(state, ui.busy, send)
+        }
+    }
+}
 
-            when {
-                ui.absence == StartLightAbsence.NO_DOOR -> Hint(stringResource(R.string.startlight_no_door))
-                ui.absence == StartLightAbsence.NOT_STARTED -> {
-                    Hint(stringResource(R.string.startlight_not_started))
-                    BringHomeButton(ui, actions)
-                }
-                state == null -> Unit
-                !state.ready -> Hint(stringResource(R.string.startlight_not_ready))
-                // Its own permission request: answered on the TV, the header says so; HOME would close it unanswered.
-                asking -> Unit
-                // Its buttons would all be refused until it is in front again.
-                behind -> BringHomeButton(ui, actions)
+@Composable
+private fun Buttons(state: StartLightState, busy: Boolean, send: (StartLightCommand) -> Unit) {
+    if (state.offersLeaveRest) {
+        Button(
+            onClick = { send(StartLightCommand.LeaveRest) },
+            enabled = !busy,
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text(stringResource(R.string.startlight_leave_rest)) }
+    }
 
-                else -> {
-                    if (state.offersLeaveRest) {
-                        Button(
-                            onClick = { send(StartLightCommand.LeaveRest) },
-                            enabled = !ui.busy,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text(stringResource(R.string.startlight_leave_rest)) }
+    if (state.actions.isNotEmpty()) {
+        SectionTitle(stringResource(R.string.startlight_actions_title))
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            state.actions.chunked(COLUMNS).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { action ->
+                        ActionTile(
+                            action = action,
+                            locked = state.lockedByPro(action),
+                            enabled = !busy,
+                            onClick = { send(StartLightCommand.Action(action)) },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
-                    val withPages = state.offeredPages.isNotEmpty() || state.offeredDashboards.isNotEmpty()
-                    if (withPages || state.actions.isNotEmpty()) {
-                        // One row swiped sideways: twelve buttons on several lines would push the keys off the thumb.
-                        Row(
-                            modifier = Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            if (withPages) {
-                                AssistChip(
-                                    onClick = { pages = true },
-                                    enabled = !ui.busy,
-                                    label = { Text(stringResource(pagesLabel(state))) },
-                                    leadingIcon = {
-                                        Icon(Icons.Filled.Dashboard, contentDescription = null, modifier = Modifier.size(AssistChipDefaults.IconSize))
-                                    },
-                                )
-                            }
-                            state.actions.forEach { action ->
-                                AssistChip(
-                                    onClick = { send(StartLightCommand.Action(action)) },
-                                    enabled = !ui.busy,
-                                    label = {
-                                        Text(
-                                            if (state.lockedByPro(action)) {
-                                                stringResource(actionLabel(action)) + " · " + stringResource(R.string.startlight_pro)
-                                            } else {
-                                                stringResource(actionLabel(action))
-                                            },
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        Icon(actionIcon(action), contentDescription = null, modifier = Modifier.size(AssistChipDefaults.IconSize))
-                                    },
-                                )
-                            }
-                        }
-                    }
+                    repeat(COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
     }
 
-    if (pages && state != null) {
-        PagesSheet(state, onCommand = { command ->
-            pages = false
-            send(command)
-        }, onDismiss = { pages = false })
+    if (state.offeredPages.isNotEmpty()) {
+        SectionTitle(stringResource(R.string.startlight_pages_title))
+        Column {
+            state.offeredPages.forEach { page ->
+                Line(page.title.ifBlank { page.id }, if (page.home) Icons.Filled.Home else Icons.AutoMirrored.Filled.ViewQuilt, !busy) {
+                    send(StartLightCommand.OpenPage(page))
+                }
+            }
+        }
     }
+
+    if (state.offeredDashboards.isNotEmpty()) {
+        SectionTitle(stringResource(R.string.startlight_dashboards_title))
+        Column {
+            state.offeredDashboards.forEach { dashboard ->
+                Line(dashboard.title.ifBlank { dashboard.id }, Icons.Filled.Dashboard, !busy) {
+                    send(StartLightCommand.OpenDashboard(dashboard))
+                }
+            }
+        }
+    }
+}
+
+/** A large tile: the page is there to be read and pressed at a glance, one thumb on the phone. */
+@Composable
+private fun ActionTile(action: StartLightAction, locked: Boolean, enabled: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    Card(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.height(92.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(actionIcon(action), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = stringResource(actionLabel(action)),
+                    style = MaterialTheme.typography.labelMedium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (locked) {
+                Text(
+                    text = stringResource(R.string.startlight_pro),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+@Composable
+private fun Line(text: String, icon: ImageVector, enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Text(text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+    }
+    HorizontalDivider()
 }
 
 /** HOME brings StartLight in front, and starts it where the TV will not start it for a call. */
@@ -217,66 +324,11 @@ private fun BringHomeButton(ui: StartLightUi, actions: StartLightActions) {
 }
 
 @Composable
-private fun Hint(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier,
-    )
+private fun Hint(text: String) {
+    Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PagesSheet(state: StartLightState, onCommand: (StartLightCommand) -> Unit, onDismiss: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 24.dp),
-        ) {
-            if (state.offeredPages.isNotEmpty()) {
-                SheetTitle(stringResource(R.string.startlight_pages_title))
-                state.offeredPages.forEach { page ->
-                    SheetLine(page.title.ifBlank { page.id }, if (page.home) Icons.Filled.Home else null) {
-                        onCommand(StartLightCommand.OpenPage(page))
-                    }
-                }
-            }
-            if (state.offeredDashboards.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
-                SheetTitle(stringResource(R.string.startlight_dashboards_title))
-                state.offeredDashboards.forEach { dashboard ->
-                    SheetLine(dashboard.title.ifBlank { dashboard.id }, Icons.Filled.Dashboard) {
-                        onCommand(StartLightCommand.OpenDashboard(dashboard))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SheetTitle(text: String) {
-    Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp))
-}
-
-@Composable
-private fun SheetLine(text: String, icon: ImageVector?, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        if (icon != null) Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Text(text, style = MaterialTheme.typography.bodyLarge)
-    }
-    HorizontalDivider()
-}
+private const val COLUMNS = 3
 
 private val INFORMATIVE = setOf(
     StartLightRefusal.PARENTAL_CODE,
@@ -285,11 +337,17 @@ private val INFORMATIVE = setOf(
     StartLightRefusal.PERMISSION_REQUEST,
 )
 
-/** Names what the sheet holds: the menu's pages, the dashboards, or both. */
-private fun pagesLabel(state: StartLightState): Int = when {
-    state.offeredDashboards.isEmpty() -> R.string.startlight_pages_title
-    state.offeredPages.isEmpty() -> R.string.startlight_dashboards_title
-    else -> R.string.startlight_pages
+/** One line for the banner and the page's title: what StartLight shows, or why it cannot be driven. */
+private fun status(ui: StartLightUi): Int {
+    val state = ui.state
+    return when {
+        ui.absence == StartLightAbsence.NOT_STARTED -> R.string.startlight_screen_not_started
+        ui.absence == StartLightAbsence.NO_DOOR -> R.string.startlight_screen_no_door
+        state == null -> R.string.remote_startlight_home
+        state.permissionRequest -> R.string.startlight_permission_request
+        state.behindAnotherApp -> R.string.startlight_not_foreground
+        else -> screenText(state)
+    }
 }
 
 private fun screenText(state: StartLightState): Int = when (state.screen) {
