@@ -1,5 +1,6 @@
 package net.jolabs40.tvslim.windows.mcp
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -23,12 +24,10 @@ import net.jolabs40.tvslim.journal.ActionType
 import net.jolabs40.tvslim.journal.JournalAction
 import net.jolabs40.tvslim.journal.JournalRepository
 import net.jolabs40.tvslim.windows.AppInfo
-import net.jolabs40.tvslim.windows.adb.AdbClient
 import net.jolabs40.tvslim.windows.adb.ConnectionProblem
-import net.jolabs40.tvslim.windows.adb.ConnectionState
 import net.jolabs40.tvslim.windows.data.WindowsPreferences
+import net.jolabs40.tvslim.windows.network.DiscoveryResult
 import net.jolabs40.tvslim.windows.network.TvAddress
-import net.jolabs40.tvslim.windows.network.TvDiscovery
 import net.jolabs40.tvslim.windows.network.fileKey
 import net.jolabs40.tvslim.windows.network.readPairingCode
 import java.io.File
@@ -44,15 +43,14 @@ import java.time.format.DateTimeFormatter
  * are left out, so that reading leaves nothing on the TV.
  */
 class TvSlimTools(
-    private val client: AdbClient,
+    private val link: TvLink,
     private val catalogs: CatalogRepository,
     private val preferences: WindowsPreferences,
-    private val discovery: TvDiscovery,
+    private val discoveries: () -> Flow<DiscoveryResult>,
     private val journals: File,
 ) {
-    // One TV at a time: dadb runs one command per session, and concurrent calls would interleave connections.
+    // One TV at a time: concurrent calls would otherwise interleave connections to different TVs.
     private val session = Mutex()
-    private var connectedTo: TvAddress? = null
 
     val all: List<McpTool> = listOf(
         McpTool(
@@ -118,7 +116,7 @@ class TvSlimTools(
 
     private suspend fun findTvs(): String {
         val saved = preferences.read()
-        val found = withTimeoutOrNull(DISCOVERY_MS) { discovery.stream().first { it.firstRoundDone } }
+        val found = withTimeoutOrNull(DISCOVERY_MS) { discoveries().first { it.firstRoundDone } }
         return buildString {
             if (saved.lastHost.isNotBlank()) {
                 val name = saved.knownNames[saved.lastHost]?.let { " ($it)" }.orEmpty()
@@ -265,14 +263,11 @@ class TvSlimTools(
     }
 
     private suspend fun <T> onTv(address: TvAddress, block: suspend (RemoteReader) -> T): T = session.withLock {
-        val connected = connectedTo == address && client.connection.value.state == ConnectionState.CONNECTED
-        if (!connected) {
-            if (connectedTo != null) client.disconnect()
-            connectedTo = null
-            if (!client.connect(address.host, address.port)) throw ToolFailure(connectionFailure(address))
-            connectedTo = address
+        if (!link.isConnectedTo(address)) {
+            link.disconnect()
+            link.connect(address)?.let { throw ToolFailure(connectionFailure(address, it)) }
         }
-        block(RemoteReader(client))
+        block(RemoteReader(link.executor))
     }
 
     private suspend fun read(reader: RemoteReader): TvReading {
@@ -305,9 +300,9 @@ class TvSlimTools(
         return TvAddress(saved.lastHost, saved.lastPort)
     }
 
-    private fun connectionFailure(address: TvAddress): String {
+    private fun connectionFailure(address: TvAddress, problem: ConnectionProblem): String {
         val where = "${address.host}:${address.port}"
-        return when (client.connection.value.problem) {
+        return when (problem) {
             ConnectionProblem.UNAUTHORIZED, ConnectionProblem.TIMEOUT ->
                 "The TV at $where did not authorize this PC in time. An \"Allow USB debugging?\" prompt should be on its " +
                     "screen: the person accepts it with the remote, ticking \"Always allow from this computer\", then asks again."
@@ -316,7 +311,7 @@ class TvSlimTools(
             ConnectionProblem.REJECTED ->
                 "The TV at $where refused the connection. Network debugging may be off, or ADB may listen on another port. " +
                     "Wireless debugging with a pairing code (Android 11 and later) is not supported."
-            ConnectionProblem.OTHER, null -> "Could not connect to $where."
+            ConnectionProblem.OTHER -> "Could not connect to $where."
         }
     }
 

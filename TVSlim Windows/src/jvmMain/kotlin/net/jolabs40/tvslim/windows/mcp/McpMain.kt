@@ -33,10 +33,10 @@ fun runMcpServer(): Nothing {
 
     val client = AdbClient(AdbKeyStore(locations.keys))
     val tools = TvSlimTools(
-        client = client,
+        link = AdbTvLink(client),
         catalogs = CatalogRepository(language = { "en" }),
         preferences = WindowsPreferences(locations.preferences),
-        discovery = TvDiscovery(),
+        discoveries = TvDiscovery()::stream,
         journals = locations.journals,
     )
     val server = McpServer(
