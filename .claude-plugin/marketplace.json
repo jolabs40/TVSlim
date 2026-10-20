@@ -1,0 +1,14 @@
+{
+  "name": "jolabs40",
+  "description": "Claude Code plugins by jolabs40",
+  "owner": {
+    "name": "jolabs40"
+  },
+  "plugins": [
+    {
+      "name": "tvslim",
+      "source": "./plugins/tvslim",
+      "description": "Lets Claude read an Android TV or Google TV through TV Slim for Windows: packages, catalogue, journal, drift. Read-only."
+    }
+  ]
+}

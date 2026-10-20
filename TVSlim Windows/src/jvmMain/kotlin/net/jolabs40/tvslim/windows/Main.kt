@@ -23,6 +23,7 @@ import net.jolabs40.tvslim.screen.TvRecording
 import net.jolabs40.tvslim.windows.adb.AdbClient
 import net.jolabs40.tvslim.windows.adb.AdbKeyStore
 import net.jolabs40.tvslim.windows.data.WindowsPreferences
+import net.jolabs40.tvslim.windows.mcp.runMcpServer
 import net.jolabs40.tvslim.windows.screen.ScrcpyInstallation
 import net.jolabs40.tvslim.windows.screen.ScrcpyLocator
 import net.jolabs40.tvslim.windows.update.GithubClient
@@ -56,7 +57,9 @@ import kotlin.concurrent.thread
 private const val TAG = "App"
 
 /** Entry point. Objects are wired by hand: the shared core does not use Hilt and there are only a dozen of them. */
-fun main() {
+fun main(args: Array<String>) {
+    if ("--mcp" in args) runMcpServer()
+
     val locations = Locations.windows()
     AppLog.writeTo(locations.traces)
     AppLog.info(TAG, "Starting TV Slim ${AppInfo.VERSION}")

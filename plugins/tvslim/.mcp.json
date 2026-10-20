@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "tvslim": {
+      "command": "${LOCALAPPDATA}/TV Slim/TV Slim.exe",
+      "args": ["--mcp"]
+    }
+  }
+}

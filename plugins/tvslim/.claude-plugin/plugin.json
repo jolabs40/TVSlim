@@ -1,0 +1,14 @@
+{
+  "name": "tvslim",
+  "displayName": "TV Slim",
+  "version": "1.0.0",
+  "description": "Lets Claude read an Android TV or Google TV through TV Slim for Windows: what it runs, what the catalogue says about each package, what TV Slim changed and what a system update turned back on. Read-only: changes stay in the app.",
+  "author": {
+    "name": "jolabs40"
+  },
+  "homepage": "https://tvslim.app",
+  "repository": "https://github.com/jolabs40/TVSlim",
+  "license": "Apache-2.0",
+  "keywords": ["android-tv", "google-tv", "debloat", "adb"],
+  "privacyPolicyUrl": "https://tvslim.app/privacy/"
+}
