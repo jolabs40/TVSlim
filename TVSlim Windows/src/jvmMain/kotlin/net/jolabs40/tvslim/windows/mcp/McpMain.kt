@@ -12,6 +12,7 @@ import net.jolabs40.tvslim.windows.tools.AppLog
 import java.io.File
 import java.io.FileDescriptor
 import java.io.FileOutputStream
+import java.io.PrintStream
 import kotlin.system.exitProcess
 
 private const val TAG = "Mcp"
@@ -23,8 +24,10 @@ private const val TAG = "Mcp"
  * since the app may be running at the same time.
  */
 fun runMcpServer(): Nothing {
-    // Only protocol messages may reach stdout: whatever a library prints goes to stderr instead.
+    // Only protocol messages may reach stdout: whatever a library prints goes to stderr instead. Clients read
+    // stderr as UTF-8, where Windows would write it in the ANSI code page.
     val protocol = FileOutputStream(FileDescriptor.out)
+    System.setErr(PrintStream(FileOutputStream(FileDescriptor.err), true, Charsets.UTF_8))
     System.setOut(System.err)
 
     val locations = Locations.windows()
