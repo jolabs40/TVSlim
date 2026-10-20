@@ -50,6 +50,8 @@ enum class PackageOrigin {
             Manufacturer.XIAOMI to listOf("com.mitv.", "com.miui.", "com.duokan."),
             // Android Thomson TVs are made by TCL.
             Manufacturer.THOMSON to listOf("com.tcl."),
+            // The platform of the onn 4K box (product `wayne`).
+            Manufacturer.ONN to listOf("com.gretzky."),
         )
     }
 }

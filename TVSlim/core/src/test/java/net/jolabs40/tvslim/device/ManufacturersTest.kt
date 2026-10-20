@@ -3,6 +3,7 @@ package net.jolabs40.tvslim.device
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -33,6 +34,20 @@ class ManufacturersTest {
         assertNull(Manufacturer.identify(retailBrand = "Formuler", manufacturer = "Formuler"))
         assertNull(Manufacturer.identify(retailBrand = "", manufacturer = "SEI Robotics"))
         assertNull(Manufacturer.identify(retailBrand = "", manufacturer = ""))
+    }
+
+    @Test
+    fun `onn is recognized by its whole name only`() {
+        // Read from an onn 4K Streaming Device (issue 1): brand and manufacturer both `onn`.
+        assertEquals(Manufacturer.ONN, Manufacturer.identify(retailBrand = "onn", manufacturer = "onn"))
+        assertEquals(DeviceType.BOX, DeviceInfo(brand = "onn", model = "onn 4K Streaming Device").deviceType)
+        assertNull(Manufacturer.identify(retailBrand = "Bonnie", manufacturer = "Connex"))
+
+        assertTrue(Manufacturer.ONN.ownsPackage("com.onn.updatenotification"))
+        assertFalse(Manufacturer.ONN.ownsPackage("com.connex.launcher"))
+        assertFalse(Manufacturer.ONN.ownsPackage("com.onnx.runtime"))
+        assertEquals(PackageOrigin.MAKER, PackageOrigin.of("com.gretzky.hwinfo", Manufacturer.ONN))
+        assertEquals(PackageOrigin.OTHER, PackageOrigin.of("com.gretzky.hwinfo", Manufacturer.TCL))
     }
 
     @Test

@@ -29,6 +29,8 @@ enum class Manufacturer(
     /** Substrings of the brand or manufacturer, lowercase, without punctuation. */
     private val marks: List<String>,
     val hasLogo: Boolean = true,
+    /** A mark this short must be the whole name, or it would be found inside other brands ("Bonnie"). */
+    private val wholeName: Boolean = false,
 ) {
     TCL("TCL", DeviceType.TV, listOf("tcl")),
     HISENSE("Hisense", DeviceType.TV, listOf("hisense")),
@@ -50,6 +52,9 @@ enum class Manufacturer(
     GOOGLE("Google", DeviceType.BOX, listOf("google")),
     AMAZON("Amazon", DeviceType.BOX, listOf("amazon")),
     FREEBOX("Freebox", DeviceType.BOX, listOf("freebox")),
+
+    // Walmart's boxes: brand and manufacturer both read `onn`.
+    ONN("onn", DeviceType.BOX, listOf("onn"), hasLogo = false, wholeName = true),
     ;
 
     /**
@@ -57,7 +62,9 @@ enum class Manufacturer(
      * spot the manufacturer's packages among those the catalogue does not know.
      */
     fun ownsPackage(packageName: String): Boolean =
-        packageName.lowercase().split('.').any { segment -> marks.any { segment.startsWith(it) } }
+        packageName.lowercase().split('.').any { segment -> marks.any { segment.matches(it) } }
+
+    private fun String.matches(mark: String): Boolean = if (wholeName) this == mark else startsWith(mark)
 
     /** TV or box: Xiaomi makes both, and the model says which ("MIBOX4", "Mi TV Stick"). */
     fun typeFor(model: String): DeviceType {
@@ -78,7 +85,9 @@ enum class Manufacturer(
         private fun recognize(text: String): Manufacturer? {
             val normalized = normalize(text)
             if (normalized.isEmpty()) return null
-            return entries.firstOrNull { manufacturer -> manufacturer.marks.any { it in normalized } }
+            return entries.firstOrNull { manufacturer ->
+                manufacturer.marks.any { if (manufacturer.wholeName) normalized == it else it in normalized }
+            }
         }
 
         private fun normalize(text: String): String = text.lowercase().filter { it.isLetterOrDigit() }
