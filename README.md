@@ -185,6 +185,29 @@ pick a profile and click **Apply**.
 - The one exception is the **ADB command** card: what you type there bypasses these safeguards and
   cannot be undone from TV Slim. The card says so, and every command is recorded in the log.
 
+## Ask Claude about your TV
+
+On Windows, TV Slim also serves [Claude Code](https://claude.com/claude-code) as a tool: Claude reads
+your TV through it and answers in plain words. What is still running, what a package does, what a
+system update turned back on, what the catalogue does not know yet. It only reads: disabling,
+re-enabling and installing stay in TV Slim, behind its safeguards and its confirmations.
+
+```
+/plugin install tvslim --marketplace jolabs40/TVSlim
+```
+
+On Claude Code before 2.1.275, add the marketplace first: `/plugin marketplace add jolabs40/TVSlim`,
+then `/plugin install tvslim@jolabs40`. The plugin needs TV Slim for Windows 1.7.0 or later, installed
+with the MSI. With the portable version, add the server by hand, pointing at its own `TV Slim.exe`:
+
+```
+claude mcp add tvslim -- "C:\path\to\TV Slim\TV Slim.exe" --mcp
+```
+
+It brings seven read-only tools, and a skill that helps prepare a catalogue report for a device TV
+Slim does not know yet. Claude reaches the TV through TV Slim on your PC, with the same ADB key: a TV
+that already trusts TV Slim asks nothing more.
+
 ## FAQ
 
 ### How do I remove the ads from my Android TV or Google TV home screen?
@@ -253,6 +276,10 @@ box, it also asks GitHub, once per launch, for the latest TV Slim app for the te
 downloads it if you ask. Nothing else. No account, no
 telemetry. The ADB key that lets this computer talk to your TVs is stored encrypted by Windows
 (DPAPI) in `%APPDATA%\TVSlim`, next to the logs.
+
+With the Claude Code plugin, what its tools read (model, packages, the log of your changes) becomes
+part of your conversation with Claude, under Anthropic's terms, like anything else you show it. TV
+Slim itself still sends it nowhere.
 
 On the phone, TV Slim talks to your television, and to GitHub only for that TV app — once per
 launch, connected to a television or a box, and to download it if you ask; its ADB key is encrypted

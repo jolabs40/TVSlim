@@ -199,6 +199,30 @@ cliquez sur **Appliquer**.
 - Seule exception, la carte **Commande ADB** : ce qu'on y tape échappe à ces garde-fous et ne s'annule
   pas depuis TV Slim. La carte le dit, et chaque commande est consignée au journal.
 
+## Interroger Claude sur votre téléviseur
+
+Sous Windows, TV Slim sert aussi d'outil à [Claude Code](https://claude.com/claude-code) : Claude lit
+votre téléviseur à travers lui et répond en clair. Ce qui tourne encore, ce que fait un paquet, ce
+qu'une mise à jour système a rallumé, ce que le catalogue ne connaît pas encore. Il ne fait que lire :
+désactiver, réactiver et installer restent dans TV Slim, derrière ses garde-fous et ses confirmations.
+
+```
+/plugin install tvslim --marketplace jolabs40/TVSlim
+```
+
+Avec Claude Code avant la 2.1.275, ajoutez d'abord la marketplace : `/plugin marketplace add
+jolabs40/TVSlim`, puis `/plugin install tvslim@jolabs40`. Le plugin demande TV Slim pour Windows 1.7.0
+ou plus récent, installé par le MSI. Avec la version portable, ajoutez le serveur à la main, vers son
+propre `TV Slim.exe` :
+
+```
+claude mcp add tvslim -- "C:\chemin\vers\TV Slim\TV Slim.exe" --mcp
+```
+
+Il apporte sept outils en lecture seule, et une skill qui aide à préparer un signalement pour un
+appareil que TV Slim ne connaît pas encore. Claude joint le téléviseur par TV Slim sur votre PC, avec
+la même clé ADB : un téléviseur qui fait déjà confiance à TV Slim ne demande rien de plus.
+
 ## Questions fréquentes
 
 ### Comment enlever la publicité de l'accueil de mon Android TV ou Google TV ?
@@ -271,6 +295,10 @@ téléviseur ou à une box, il demande aussi à GitHub, une fois par lancement, 
 TV Slim du téléviseur, et la télécharge si vous le demandez. À rien d'autre. Pas
 de compte, pas de télémétrie. La clé ADB qui permet à cet ordinateur de parler à vos téléviseurs est
 gardée chiffrée par Windows (DPAPI) dans `%APPDATA%\TVSlim`, à côté des journaux.
+
+Avec le plugin pour Claude Code, ce que lisent ses outils (modèle, paquets, journal de vos
+modifications) entre dans votre conversation avec Claude, aux conditions d'Anthropic, comme tout ce
+que vous lui montrez. TV Slim lui-même ne l'envoie toujours nulle part.
 
 Sur le téléphone, TV Slim parle à votre téléviseur, et à GitHub pour cette seule application du
 téléviseur — une fois par lancement, joint à un téléviseur ou à une box, et pour la télécharger si

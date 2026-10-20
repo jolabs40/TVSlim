@@ -35,6 +35,7 @@ const t = fr
       smartT: '« Windows a protégé votre ordinateur » ?',
       smartP: 'TV Slim est un logiciel libre et gratuit, dont l’installateur n’est pas signé par un certificat payant : SmartScreen peut vous avertir la première fois. Cliquez sur Informations complémentaires, puis sur Exécuter quand même. SHA256SUMS.txt, publié à côté, permet de vérifier que le fichier est authentique.',
       updatesP: 'Au démarrage, TV Slim demande à GitHub s’il existe une nouvelle version — désactivable dans À propos. Rien ne se télécharge avant un clic sur Installer, et chaque installateur est signé par une clé Ed25519 que TV Slim vérifie avant de l’exécuter.',
+      claudeP: 'Avec Claude Code, Claude peut lire votre téléviseur à travers TV Slim, sans rien y changer :',
       andH2: 'Pour Android',
       andReq: 'Android 8 ou plus récent. TV Slim pour Android est publié sur GitHub, pas sur le Play Store.',
       remoteT: 'TV Slim Remote, l’application du téléphone',
@@ -67,6 +68,7 @@ const t = fr
       smartT: '“Windows protected your PC”?',
       smartP: 'TV Slim is free, open-source software, and its installer is not signed with a paid certificate, so SmartScreen may warn you the first time. Click More info, then Run anyway. SHA256SUMS.txt, published alongside, lets you check the file is genuine.',
       updatesP: 'TV Slim asks GitHub for a new version when it starts — this can be switched off in About. Nothing is downloaded until you click Install, and every installer is signed with an Ed25519 key that TV Slim checks before running it.',
+      claudeP: 'With Claude Code, Claude can read your television through TV Slim, without changing anything on it:',
       andH2: 'For Android',
       andReq: 'Android 8 or later. TV Slim for Android is published on GitHub, not on the Play Store.',
       remoteT: 'TV Slim Remote, the phone app',
@@ -111,6 +113,7 @@ const t = fr
             <p><strong>{t.smartT}</strong> {t.smartP}</p>
           </div>
           <p class="muted small">{t.updatesP}</p>
+          <p class="muted small">{t.claudeP} <code>/plugin install tvslim --marketplace jolabs40/TVSlim</code></p>
           <p class="links">
             {windowsChecksums && <a href={windowsChecksums.url}>{t.sums}</a>}
             <a href={windows?.url ?? `${RELEASES}/latest`}>{windows ? windows.tag : t.fallback}</a>
