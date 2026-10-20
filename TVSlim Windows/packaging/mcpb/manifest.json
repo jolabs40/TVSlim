@@ -1,0 +1,49 @@
+{
+  "manifest_version": "0.3",
+  "name": "tvslim",
+  "display_name": "TV Slim",
+  "version": "1.7.0",
+  "description": "Read your Android TV or Google TV through TV Slim for Windows: packages, catalogue, journal and drift. Read-only.",
+  "long_description": "TV Slim debloats Android TV and Google TV devices over ADB, reversibly. With this extension, Claude reads the television through TV Slim for Windows on this PC: what it runs, what TV Slim's catalogue says about each package and what disabling it breaks, what TV Slim changed, and what a system update turned back on. It changes nothing on the television: disabling, re-enabling and installing stay in the TV Slim app, behind its safeguards. Requires TV Slim for Windows 1.7.0 or later.",
+  "author": {
+    "name": "jolabs40",
+    "url": "https://github.com/jolabs40"
+  },
+  "homepage": "https://tvslim.app",
+  "documentation": "https://github.com/jolabs40/TVSlim#ask-claude-about-your-tv",
+  "support": "https://github.com/jolabs40/TVSlim/issues",
+  "icon": "icon.png",
+  "license": "Apache-2.0",
+  "keywords": ["android-tv", "google-tv", "debloat", "adb"],
+  "privacy_policies": ["https://tvslim.app/privacy/"],
+  "server": {
+    "type": "binary",
+    "entry_point": "${user_config.executable}",
+    "mcp_config": {
+      "command": "${user_config.executable}",
+      "args": ["--mcp"],
+      "env": {}
+    }
+  },
+  "user_config": {
+    "executable": {
+      "type": "file",
+      "title": "TV Slim.exe",
+      "description": "TV Slim for Windows, 1.7.0 or later. The installer puts it in AppData\\Local\\TV Slim; for the portable version, pick the TV Slim.exe it was unzipped with.",
+      "default": "${HOME}\\AppData\\Local\\TV Slim\\TV Slim.exe",
+      "required": true
+    }
+  },
+  "tools": [
+    { "name": "find_tvs", "description": "Lists the TVs TV Slim can reach on the local network." },
+    { "name": "get_tv_overview", "description": "Reads a TV: model, Android version, memory, home screen, catalogue packages and drift." },
+    { "name": "list_tv_packages", "description": "Lists the catalogue packages present on a TV, with state, risk and side effects." },
+    { "name": "get_unknown_packages_report", "description": "Inventory of the system packages the catalogue does not describe." },
+    { "name": "get_journal", "description": "What TV Slim did to a TV from this PC, newest first." },
+    { "name": "check_drift", "description": "Packages TV Slim disabled that are active again, and a home screen that fell back." },
+    { "name": "describe_package", "description": "What the catalogue says about one package, without reading any TV." }
+  ],
+  "compatibility": {
+    "platforms": ["win32"]
+  }
+}
