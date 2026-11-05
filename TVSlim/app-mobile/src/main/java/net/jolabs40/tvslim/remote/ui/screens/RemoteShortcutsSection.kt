@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,14 +24,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ViewQuilt
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.TouchApp
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -55,6 +55,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -76,68 +78,42 @@ class ShortcutActions(
 )
 
 /**
- * The person's own shortcuts above the keys: apps of the TV and StartLight's buttons. One that cannot act right now
- * is greyed rather than hidden, so the others never move under the thumb. A long press moves or removes it.
+ * The person's own shortcuts, as round icons between the pad and the keys below: apps of the TV and StartLight's
+ * buttons. One that cannot act right now is greyed rather than hidden, so the others never move under the thumb. A
+ * long press names it, moves it or removes it. More than the width holds scroll sideways.
  */
 @Composable
-internal fun ShortcutsGrid(
+internal fun ShortcutsRow(
     shortcuts: List<RemoteShortcut>,
     ready: Boolean,
     startLight: StartLightUi,
     actions: ShortcutActions,
     onOpenApp: (DeviceApplication) -> Unit,
     onStartLight: (RemoteShortcut) -> Unit,
-    onAdd: () -> Unit,
 ) {
-    if (shortcuts.isEmpty()) {
-        Card(
-            onClick = onAdd,
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(stringResource(R.string.remote_shortcuts_add_first), style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-        return
-    }
-
     val haptic = LocalHapticFeedback.current
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // The last cell adds one more.
-        (0..shortcuts.size).chunked(GRID_COLUMNS).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { index ->
-                    if (index == shortcuts.size) {
-                        AddTile(onAdd, Modifier.weight(1f))
-                    } else {
-                        ShortcutTile(
-                            shortcut = shortcuts[index],
-                            index = index,
-                            count = shortcuts.size,
-                            ready = ready,
-                            startLight = startLight,
-                            actions = actions,
-                            onOpenApp = onOpenApp,
-                            onStartLight = onStartLight,
-                            haptic = haptic,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-                repeat(GRID_COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
-            }
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+    ) {
+        itemsIndexed(shortcuts) { index, shortcut ->
+            ShortcutButton(
+                shortcut = shortcut,
+                index = index,
+                count = shortcuts.size,
+                ready = ready,
+                startLight = startLight,
+                actions = actions,
+                onOpenApp = onOpenApp,
+                onStartLight = onStartLight,
+                haptic = haptic,
+            )
         }
     }
 }
 
 @Composable
-private fun ShortcutTile(
+private fun ShortcutButton(
     shortcut: RemoteShortcut,
     index: Int,
     count: Int,
@@ -147,21 +123,23 @@ private fun ShortcutTile(
     onOpenApp: (DeviceApplication) -> Unit,
     onStartLight: (RemoteShortcut) -> Unit,
     haptic: HapticFeedback,
-    modifier: Modifier,
 ) {
     val enabled = ready && when (shortcut) {
         is RemoteShortcut.Application -> true
         // Behind another app, HOME brings StartLight first. Not running, what it offers is known once HOME starts it.
         else -> startLight.reachable && (startLight.state == null || shortcut.startLightCommand(startLight.state) != null)
     }
+    val label = shortcutLabel(shortcut, startLight.state)
     var menu by remember { mutableStateOf(false) }
-    Box(modifier = modifier) {
+    // A layer always there: alpha(1f) drops it, and the tile lost its background when it came back on. Without the
+    // link, the keys around already dim it.
+    Box(modifier = Modifier.graphicsLayer { alpha = if (enabled || !ready) 1f else 0.4f }) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(TILE_HEIGHT)
-                .clip(RoundedCornerShape(16.dp))
+                .size(SHORTCUT_SIZE)
+                .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .semantics { contentDescription = label }
                 .combinedClickable(
                     onLongClickLabel = stringResource(R.string.remote_shortcuts_edit),
                     onLongClick = {
@@ -179,31 +157,35 @@ private fun ShortcutTile(
                             }
                         }
                     },
-                )
-                // A layer always there: alpha(1f) drops it, and the tile lost its background when it came back on.
-                .graphicsLayer { alpha = if (enabled) 1f else 0.4f },
+                ),
+            contentAlignment = Alignment.Center,
         ) {
-            Column(
-                modifier = Modifier.align(Alignment.Center).padding(horizontal = 6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            ShortcutIcon(shortcut, startLight.state)
+        }
+        if (shortcut !is RemoteShortcut.Application) {
+            // Ringed in the page's colour, so it reads as a badge on the circle's edge.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(18.dp)
+                    .background(MaterialTheme.colorScheme.surface, CircleShape)
+                    .padding(2.dp),
             ) {
-                ShortcutIcon(shortcut, startLight.state)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = shortcutLabel(shortcut, startLight.state),
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (shortcut !is RemoteShortcut.Application) {
-                LogoLauncher(StartLightHome.LAUNCHER_ID, size = 14.dp, modifier = Modifier.align(Alignment.TopEnd).padding(6.dp))
+                LogoLauncher(StartLightHome.LAUNCHER_ID, size = 14.dp, modifier = Modifier.clip(CircleShape))
             }
         }
         // Earlier is to the left, except in a right-to-left language.
         val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            // The remote shows no name: the menu says which shortcut it is about.
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+            HorizontalDivider()
             if (index > 0) {
                 DropdownMenuItem(
                     text = { Text(stringResource(if (rtl) R.string.remote_shortcuts_move_right else R.string.remote_shortcuts_move_left)) },
@@ -237,35 +219,11 @@ private fun ShortcutTile(
 }
 
 @Composable
-private fun AddTile(onAdd: () -> Unit, modifier: Modifier) {
-    Card(
-        onClick = onAdd,
-        modifier = modifier.height(TILE_HEIGHT),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.remote_shortcuts_add),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
-        }
-    }
-}
-
-@Composable
 private fun ShortcutIcon(shortcut: RemoteShortcut, state: StartLightState?) {
     when (shortcut) {
         is RemoteShortcut.Application -> {
             val application = remember(shortcut) { shortcut.application() }
-            ApplicationIcon(application, 32)
+            Box(modifier = Modifier.clip(CircleShape)) { ApplicationIcon(application, APP_ICON_SIZE) }
         }
 
         else -> Icon(
@@ -331,7 +289,7 @@ internal fun ShortcutsPage(
     ) {
         Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.remote_shortcuts_back))
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.remote_settings_return))
             }
             Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                 Text(stringResource(R.string.remote_shortcuts_title), style = MaterialTheme.typography.titleLarge)
@@ -477,6 +435,9 @@ private fun ChoiceLine(text: String, icon: ImageVector, pinned: Boolean, onToggl
 
 private const val GRID_COLUMNS = 4
 
-/** Two rows and the StartLight banner fit above the keys of a 6-inch phone. */
-private val TILE_HEIGHT = 72.dp
+/** Smaller than the keys around them, which the thumb looks for without looking. */
+internal val SHORTCUT_SIZE = 52.dp
+
+/** A disc inside the button rather than a square in a circle, small enough that an icon drawn on transparency keeps its tips. */
+private const val APP_ICON_SIZE = 44
 private const val ACTION_COLUMNS = 3

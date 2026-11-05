@@ -111,6 +111,18 @@ fun RemoteApp(remoteRequests: Int = 0) {
         if (remoteRequests > 0) navigation.navigate(REMOTE_ROUTE) { launchSingleTop = true }
     }
 
+    // At launch, when the person chose it: the remote once the TV is connected. Only from the first tab, so a slow
+    // connection never pulls them out of a tab they opened meanwhile.
+    var launchChecked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (launchChecked) return@LaunchedEffect
+        val open = model.remoteOpensAtLaunch()
+        launchChecked = true
+        if (open && navigation.currentDestination?.route == "connexion") {
+            navigation.navigate(REMOTE_ROUTE) { launchSingleTop = true }
+        }
+    }
+
     // An ADB session does not survive TV standby, nor always a long time in another app. On return,
     // silently retry the last TV; failure shows nothing.
     val owner = LocalLifecycleOwner.current
@@ -364,6 +376,7 @@ fun RemoteApp(remoteRequests: Int = 0) {
                     val startLightState by model.startLight.state.collectAsStateWithLifecycle()
                     val shortcutsState by model.shortcuts.state.collectAsStateWithLifecycle()
                     val applicationsState by model.applications.state.collectAsStateWithLifecycle()
+                    val remoteAtLaunch by model.remoteAtLaunch.collectAsStateWithLifecycle()
                     val remote = model.remoteControl
                     // The link lives while the screen is shown and the app started: closed before the battery saver
                     // cuts the socket in the background, reopened on return.
@@ -396,6 +409,8 @@ fun RemoteApp(remoteRequests: Int = 0) {
                                 onWake = remote::wake,
                                 onSleep = remote::sleep,
                                 onText = remote::text,
+                                onPointer = remote::move,
+                                onPointerClick = remote::click,
                                 onRetry = {
                                     model.resumeConnection()
                                     remote.retry()
@@ -427,6 +442,8 @@ fun RemoteApp(remoteRequests: Int = 0) {
                                 onRemove = model.shortcuts::remove,
                             )
                         },
+                        openAtLaunch = remoteAtLaunch,
+                        onOpenAtLaunch = model::setRemoteAtLaunch,
                     )
                 }
                 composable("journal") {

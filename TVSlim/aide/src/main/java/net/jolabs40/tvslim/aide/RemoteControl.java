@@ -30,10 +30,11 @@ import java.util.concurrent.TimeUnit;
  *   <li>{@code W id t}, {@code S id t}: wake up, go to sleep (only if the screen is on);</li>
  *   <li>{@code A id t authority method arg extras}: call a content provider ({@link ProviderCalls}); {@code arg}
  *   in base64, {@code extras} a JSON object in base64, both possibly empty;</li>
+ *   <li>{@code M id t dx dy wheel}, {@code O id t}: move the pointer, click where it stands ({@link Pointer});</li>
  *   <li>{@code Q}: release everything and stop.</li>
  * </ul>
  *
- * <p>Answers: {@code R sdk api repeatTimeout repeatDelay screen clipboard} once ready, {@code K id status} for each
+ * <p>Answers: {@code R sdk api repeatTimeout repeatDelay screen clipboard pointer} once ready, {@code K id status} for each
  * order ({@code ok}, {@code late}, {@code refused}, {@code ignored}), {@code L code} for a key released by the
  * helper, {@code V screen} when the screen turns on or off, {@code Y id status payload} when a call returns
  * ({@code ok} and the provider's Bundle as JSON, or {@code error} and the exception, both in base64), {@code E reason},
@@ -52,6 +53,7 @@ final class RemoteControl {
     private final Injection injection;
     private final KeyHolder keys;
     private final ProviderCalls calls = new ProviderCalls();
+    private final Pointer pointer = new Pointer();
     private int screen;
 
     private RemoteControl(PrintStream out, Injection injection, long now) {
@@ -75,6 +77,7 @@ final class RemoteControl {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             control.keys.releaseAll(now());
             control.calls.close();
+            control.pointer.close();
         }));
 
         String reason;
@@ -87,6 +90,7 @@ final class RemoteControl {
         }
         control.keys.releaseAll(now());
         control.calls.close();
+        control.pointer.close();
         Log.i(Injection.TAG, "remote control stopped: " + reason);
         send(out, "B\t" + reason);
         System.exit(0);
@@ -95,7 +99,8 @@ final class RemoteControl {
     private String serve() throws InterruptedException {
         screen = injection.screenOn();
         send(out, "R\t" + Build.VERSION.SDK_INT + "\t" + injection.api() + "\t" + Injection.repeatTimeout() + "\t"
-                + Injection.repeatDelay() + "\t" + screen + "\t" + (injection.clipboardAvailable() ? 1 : 0));
+                + Injection.repeatDelay() + "\t" + screen + "\t" + (injection.clipboardAvailable() ? 1 : 0) + "\t"
+                + (Pointer.available() ? 1 : 0));
         deleteOwnApk();
 
         BlockingQueue<String> lines = new LinkedBlockingQueue<>();
@@ -179,6 +184,19 @@ final class RemoteControl {
                     break;
                 case "X":
                     answer(id, injection.text(decode(fields[3])) ? KeyHolder.OK : KeyHolder.REFUSED);
+                    break;
+                case "M":
+                    if (late) {
+                        answer(id, KeyHolder.LATE);
+                        break;
+                    }
+                    int dx = Integer.parseInt(fields[3]);
+                    int dy = Integer.parseInt(fields[4]);
+                    int wheel = Integer.parseInt(fields[5]);
+                    answer(id, pointer.move(dx, dy, wheel) ? KeyHolder.OK : KeyHolder.REFUSED);
+                    break;
+                case "O":
+                    answer(id, late ? KeyHolder.LATE : pointer.click() ? KeyHolder.OK : KeyHolder.REFUSED);
                     break;
                 default:
                     answer(id, KeyHolder.REFUSED);

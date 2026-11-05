@@ -179,6 +179,32 @@ class ControlSessionTest {
     }
 
     @Test
+    fun `the pointer moves only where the helper has one, and a refused move does not vibrate`() = runTest {
+        val (plain, without) = readySession()
+        assertFalse(without.move(5, 5))
+        runCurrent()
+        assertTrue(plain.orders("M").isEmpty())
+
+        val helper = FakeHelper(backgroundScope, autoAck = false)
+        val session = session(helper)
+        helper.incoming.trySend("TVSLIM_AIDE ${ApplicationsReader.HELPER_VERSION}")
+        helper.incoming.trySend("R\t36\tglobal\t400\t50\t1\t1\t1")
+        runCurrent()
+        val rejected = mutableListOf<AckStatus>()
+        backgroundScope.launch { session.rejected.collect { rejected += it } }
+        assertTrue(session.move(-3, 12))
+        assertTrue(session.click())
+        runCurrent()
+        val move = helper.orders("M").single().split('\t')
+        val click = helper.orders("O").single().split('\t')
+        assertEquals(listOf("-3", "12", "0"), move.drop(3))
+        helper.incoming.trySend("K\t${move[1]}\trefused")
+        helper.incoming.trySend("K\t${click[1]}\trefused")
+        runCurrent()
+        assertEquals("only the click", listOf(AckStatus.REFUSED), rejected)
+    }
+
+    @Test
     fun `another helper version is rejected`() = runTest {
         val helper = FakeHelper(backgroundScope)
         val session = session(helper)

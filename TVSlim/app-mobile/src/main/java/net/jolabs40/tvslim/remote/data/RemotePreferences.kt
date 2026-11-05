@@ -10,7 +10,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import net.jolabs40.tvslim.remote.adb.DEFAULT_ADB_PORT
 import net.jolabs40.tvslim.support.SupportStore
 import net.jolabs40.tvslim.support.SupportMemory
@@ -19,7 +21,10 @@ import javax.inject.Singleton
 
 private val Context.store: DataStore<Preferences> by preferencesDataStore(name = "tvslim-remote")
 
-/** Remembers the last TV address, known device names, the remote's shortcuts and the support banner state. */
+/**
+ * Remembers the last TV address, known device names, the remote's shortcuts and whether it opens at launch, and the
+ * support banner state.
+ */
 @Singleton
 class RemotePreferences @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -61,6 +66,13 @@ class RemotePreferences @Inject constructor(
         context.store.edit { if (shortcuts.isEmpty()) it.remove(key) else it[key] = RemoteShortcuts.encode(shortcuts) }
     }
 
+    /** The remote rather than the first tab at launch, once a TV is connected. */
+    val remoteAtLaunch: Flow<Boolean> = context.store.data.map { it[KEY_REMOTE_AT_LAUNCH] ?: false }
+
+    suspend fun setRemoteAtLaunch(on: Boolean) {
+        context.store.edit { it[KEY_REMOTE_AT_LAUNCH] = on }
+    }
+
     override suspend fun readSupport(): SupportMemory = context.store.data.first().let {
         SupportMemory(donationDeclared = it[KEY_DONATION] ?: false, lastInvitation = it[KEY_INVITATION] ?: 0L)
     }
@@ -79,5 +91,6 @@ class RemotePreferences @Inject constructor(
         val KEY_PORT = intPreferencesKey("dernier_port")
         val KEY_DONATION = booleanPreferencesKey("soutien_don_declare")
         val KEY_INVITATION = longPreferencesKey("soutien_derniere_invitation")
+        val KEY_REMOTE_AT_LAUNCH = booleanPreferencesKey("remote_at_launch")
     }
 }

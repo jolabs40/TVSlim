@@ -128,6 +128,9 @@ class ControlSession(
     private val inFlight = LinkedHashMap<Long, Long>()
     private val recentTrips = ArrayDeque<Long>()
 
+    /** Orders whose loss is not worth a vibration: a pointer move is followed by the next one. */
+    private val quiet = ConcurrentHashMap.newKeySet<Long>()
+
     /** Provider calls waiting for their answer, by id. */
     private val calls = ConcurrentHashMap<Long, CompletableDeferred<CallOutcome>>()
     private var lastPing = 0L
@@ -172,6 +175,17 @@ class ControlSession(
     fun wake(): Boolean = if (ready()) enqueue(expires = true) { id, at -> ControlProtocol.wake(id, at) } else refuse()
 
     fun sleep(): Boolean = if (ready()) enqueue(expires = true) { id, at -> ControlProtocol.sleep(id, at) } else refuse()
+
+    /** False when the TV has no pointer, or the link is not ready; never a vibration, the finger is already moving. */
+    fun move(dx: Int, dy: Int, wheel: Int = 0): Boolean {
+        if (!ready() || _state.value.ready?.pointer != true) return false
+        return enqueue(expires = true, register = { quiet.add(it) }) { id, at -> ControlProtocol.move(id, at, dx, dy, wheel) }
+    }
+
+    fun click(): Boolean {
+        if (!ready() || _state.value.ready?.pointer != true) return refuse()
+        return enqueue(expires = true) { id, at -> ControlProtocol.click(id, at) }
+    }
 
     /** Typed on purpose, so it does not expire like a key. */
     fun text(text: String): Boolean {
@@ -234,7 +248,7 @@ class ControlSession(
             val now = clock()
             // Stuck behind a slow write: a press that old would surprise more than it helps.
             if (order.expires && now - order.createdAt > LOCAL_EXPIRY_MS) {
-                _rejected.tryEmit(AckStatus.LATE)
+                if (!quiet.remove(order.id)) _rejected.tryEmit(AckStatus.LATE)
                 calls.remove(order.id)?.complete(CallOutcome.NotSent(CallFailure.LATE))
                 continue
             }
@@ -295,8 +309,9 @@ class ControlSession(
         recentTrips.addLast(trip)
         if (recentTrips.size > LATENCY_WINDOW) recentTrips.removeFirst()
         _state.update { it.copy(latencyMs = recentTrips.sorted()[recentTrips.size / 2]) }
+        val silent = quiet.remove(ack.id)
         if (ack.status == AckStatus.LATE || ack.status == AckStatus.REFUSED) {
-            _rejected.tryEmit(ack.status)
+            if (!silent) _rejected.tryEmit(ack.status)
             val failure = if (ack.status == AckStatus.LATE) CallFailure.LATE else CallFailure.REFUSED
             calls.remove(ack.id)?.complete(CallOutcome.NotSent(failure))
         }

@@ -42,7 +42,7 @@ import java.util.Map;
 public final class Aide {
 
     /** Bump on any format change: TV Slim refuses a helper with a different version. */
-    static final int VERSION = 3;
+    static final int VERSION = 4;
 
     private static final int DRAPEAUX = PackageManager.MATCH_DISABLED_COMPONENTS;
 

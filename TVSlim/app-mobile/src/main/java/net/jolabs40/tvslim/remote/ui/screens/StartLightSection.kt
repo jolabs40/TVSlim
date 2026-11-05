@@ -78,26 +78,11 @@ class StartLightActions(
     val onInFront: ((StartLightState) -> StartLightCommand?) -> Unit,
 )
 
-/**
- * Above the remote's keys: StartLight, what it is showing, and the way to its own buttons. The keys keep their
- * room; the buttons live on their own page.
- */
+/** In the remote's settings: StartLight, what it is showing, and the way to its own buttons. */
 @Composable
 internal fun StartLightBanner(ui: StartLightUi, onOpen: () -> Unit) {
-    // The answer to a shortcut pressed on the remote, which does not open the page: in place of the status for a
-    // while, so the banner keeps its height above the keys.
-    val notice = shownNotice(ui)
-    var noticeShown by remember(notice) { mutableStateOf(notice != null) }
-    LaunchedEffect(notice) {
-        if (notice != null) {
-            delay(BANNER_NOTICE_MS)
-            noticeShown = false
-        }
-    }
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Row(
@@ -110,8 +95,52 @@ internal fun StartLightBanner(ui: StartLightUi, onOpen: () -> Unit) {
             LogoLauncher(StartLightHome.LAUNCHER_ID, size = 36.dp)
             Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.startlight_name), style = MaterialTheme.typography.titleSmall)
-                if (notice != null && noticeShown) {
-                    NoticeText(notice, MaterialTheme.typography.bodySmall, maxLines = 2)
+                Text(
+                    text = stringResource(status(ui)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (ui.busy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+/**
+ * On the remote, the answer to a shortcut for a while, and the wait while HOME brings StartLight in front. In the
+ * room above the keys, so nothing moves under the thumb when it comes and goes. No status line there to repeat it:
+ * every answer is shown.
+ */
+@Composable
+internal fun StartLightNoticeCard(ui: StartLightUi) {
+    val notice = ui.notice
+    var noticeShown by remember(notice) { mutableStateOf(notice != null) }
+    LaunchedEffect(notice) {
+        if (notice != null) {
+            delay(NOTICE_MS)
+            noticeShown = false
+        }
+    }
+    val shown = notice?.takeIf { noticeShown }
+    if (shown == null && !ui.busy) return
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            LogoLauncher(StartLightHome.LAUNCHER_ID, size = 24.dp)
+            Box(modifier = Modifier.weight(1f)) {
+                if (shown != null) {
+                    NoticeText(shown, MaterialTheme.typography.bodySmall, maxLines = 2)
                 } else {
                     Text(
                         text = stringResource(status(ui)),
@@ -123,12 +152,6 @@ internal fun StartLightBanner(ui: StartLightUi, onOpen: () -> Unit) {
                 }
             }
             if (ui.busy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-            Text(
-                text = stringResource(R.string.startlight_open),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -159,7 +182,7 @@ internal fun StartLightPage(ui: StartLightUi, actions: StartLightActions, onClos
     ) {
         Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.startlight_back_to_remote))
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.remote_settings_return))
             }
             LogoLauncher(StartLightHome.LAUNCHER_ID, size = 32.dp)
             Spacer(Modifier.size(12.dp))
@@ -365,7 +388,7 @@ private fun Hint(text: String) {
 
 private const val COLUMNS = 3
 
-private const val BANNER_NOTICE_MS = 8_000L
+private const val NOTICE_MS = 8_000L
 
 private val INFORMATIVE = setOf(
     StartLightRefusal.PARENTAL_CODE,

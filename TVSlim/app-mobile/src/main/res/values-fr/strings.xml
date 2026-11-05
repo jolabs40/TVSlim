@@ -509,6 +509,14 @@
     <string name="remote_home">Accueil</string>
     <string name="remote_volume_up">Monter le volume</string>
     <string name="remote_volume_down">Baisser le volume</string>
+    <string name="remote_channel_up">Chaîne suivante</string>
+    <string name="remote_channel_down">Chaîne précédente</string>
+    <string name="remote_voice">Dicter</string>
+    <string name="remote_voice_prompt">Parlez : le texte part dans le champ sélectionné sur le téléviseur</string>
+    <string name="remote_voice_unavailable">Ce téléphone n\'a pas de saisie vocale.</string>
+    <string name="remote_pad">Flèches</string>
+    <string name="remote_touchpad">Pavé tactile</string>
+    <string name="remote_touchpad_hint">Glissez pour déplacer le pointeur, touchez pour cliquer, deux doigts pour défiler</string>
     <string name="remote_mute">Couper le son</string>
     <string name="remote_play_pause">Lecture ou pause</string>
     <string name="remote_previous">Précédent</string>
@@ -524,6 +532,9 @@
     <string name="remote_text_delete">Effacer</string>
     <string name="remote_text_enter">Entrée</string>
     <string name="remote_text_no_paste">Ce téléviseur refuse le collage : seuls les lettres sans accent, les chiffres et les symboles courants passeront.</string>
+    <string name="remote_digits">Pavé numérique</string>
+    <string name="remote_digits_hint">Tapez le numéro de la chaîne, puis OK pour y aller sans attendre</string>
+    <string name="remote_last_channel">Dernière chaîne</string>
     <string name="remote_startlight_home">Accueil de ce téléviseur</string>
     <string name="startlight_action_settings">Réglages</string>
     <string name="startlight_action_notifications">Notifications</string>
@@ -550,7 +561,6 @@
     <string name="startlight_bring_home">Revenir à l\'accueil</string>
     <string name="startlight_leave_rest">Quitter le repos</string>
     <string name="startlight_open">Ouvrir</string>
-    <string name="startlight_back_to_remote">Revenir à la télécommande</string>
     <string name="startlight_actions_title">Actions</string>
     <string name="startlight_screen_not_started">Pas lancé</string>
     <string name="startlight_screen_no_door">Ne se pilote pas depuis le téléphone</string>
@@ -574,14 +584,18 @@
     <string name="startlight_not_offered">StartLight ne propose plus ce bouton : rien n\'a été envoyé.</string>
     <string name="remote_shortcuts_title">Raccourcis</string>
     <string name="remote_shortcuts_hint">Touchez pour ajouter ou retirer. Sur la télécommande, un appui long déplace ou retire un raccourci.</string>
-    <string name="remote_shortcuts_add">Ajouter</string>
-    <string name="remote_shortcuts_add_first">Ajouter des raccourcis : applications du téléviseur, boutons de StartLight</string>
+    <string name="remote_shortcuts_choose">Ajouter ou retirer des raccourcis</string>
+    <string name="remote_shortcuts_choose_hint">Applications du téléviseur et boutons de StartLight, en icônes rondes au-dessus des flèches.</string>
     <string name="remote_shortcuts_apps">Applications</string>
-    <string name="remote_shortcuts_back">Revenir à la télécommande</string>
     <string name="remote_shortcuts_edit">Déplacer ou retirer</string>
     <string name="remote_shortcuts_move_left">Déplacer à gauche</string>
     <string name="remote_shortcuts_move_right">Déplacer à droite</string>
     <string name="remote_shortcuts_remove">Retirer</string>
+    <string name="remote_settings">Réglages de la télécommande</string>
+    <string name="remote_settings_back">Revenir à la télécommande</string>
+    <string name="remote_settings_return">Revenir aux réglages</string>
+    <string name="remote_settings_at_launch">Ouvrir TV Slim sur la télécommande</string>
+    <string name="remote_settings_at_launch_hint">Au lancement, dès qu\'un téléviseur est connecté.</string>
     <string name="shortcut_remote_short">Télécommande</string>
     <string name="shortcut_remote_long">Télécommande du téléviseur</string>
 </resources>

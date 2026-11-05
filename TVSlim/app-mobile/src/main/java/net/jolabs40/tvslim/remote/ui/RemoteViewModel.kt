@@ -8,9 +8,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -140,6 +143,22 @@ class RemoteViewModel @Inject constructor(
 
     /** The shortcuts of the remote's main screen, kept per TV. */
     val shortcuts = ShortcutsController(preferences, viewModelScope, client.connection.map { it.host })
+
+    /** The person's choice, from the remote's settings: the remote rather than the first tab at launch. */
+    val remoteAtLaunch: StateFlow<Boolean> = preferences.remoteAtLaunch.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun setRemoteAtLaunch(on: Boolean) {
+        viewModelScope.launch { preferences.setRemoteAtLaunch(on) }
+    }
+
+    /**
+     * At launch: true once the TV the app reconnects to by itself is connected, when the person chose the remote. A TV
+     * that is off is not waited for: connecting by hand later leaves the person where they are.
+     */
+    suspend fun remoteOpensAtLaunch(): Boolean {
+        if (!preferences.remoteAtLaunch.first()) return false
+        return withTimeoutOrNull(LAUNCH_CONNECTION_MS) { state.first { it.connected } } != null
+    }
 
     /** One log observer at a time, otherwise the previous TV's log would keep writing into the state. */
     private var journalTracking: Job? = null
@@ -662,5 +681,8 @@ class RemoteViewModel @Inject constructor(
         const val REBOOT_WAIT_MS = 20_000L
         const val COMEBACK_TIMEOUT_MS = 180_000L
         const val COMEBACK_STEP_MS = 5_000L
+
+        /** An authorized TV answers in about a second; five for TCP, then the check. */
+        const val LAUNCH_CONNECTION_MS = 10_000L
     }
 }

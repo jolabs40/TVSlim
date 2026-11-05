@@ -510,6 +510,16 @@
     <string name="remote_home">Home</string>
     <string name="remote_volume_up">Volume up</string>
     <string name="remote_volume_down">Volume down</string>
+    <string name="remote_volume_label" translatable="false">VOL</string>
+    <string name="remote_channel_up">Next channel</string>
+    <string name="remote_channel_down">Previous channel</string>
+    <string name="remote_channel_label" translatable="false">CH</string>
+    <string name="remote_voice">Dictate</string>
+    <string name="remote_voice_prompt">Speak: the text goes to the field selected on the TV</string>
+    <string name="remote_voice_unavailable">This phone has no voice typing.</string>
+    <string name="remote_pad">Arrows</string>
+    <string name="remote_touchpad">Touchpad</string>
+    <string name="remote_touchpad_hint">Slide to move the pointer, tap to click, two fingers to scroll</string>
     <string name="remote_mute">Mute</string>
     <string name="remote_play_pause">Play or pause</string>
     <string name="remote_previous">Previous</string>
@@ -525,6 +535,10 @@
     <string name="remote_text_delete">Delete</string>
     <string name="remote_text_enter">Enter</string>
     <string name="remote_text_no_paste">This television refuses pasting: only unaccented letters, digits and common symbols will go through.</string>
+    <string name="remote_digits">Number pad</string>
+    <string name="remote_digits_label" translatable="false">123</string>
+    <string name="remote_digits_hint">Type the channel number, then OK to go there at once</string>
+    <string name="remote_last_channel">Last channel</string>
     <string name="startlight_name" translatable="false">StartLight</string>
     <string name="remote_startlight_home">Home screen of this television</string>
     <string name="startlight_pro" translatable="false">Pro</string>
@@ -553,7 +567,6 @@
     <string name="startlight_bring_home">Back to the home screen</string>
     <string name="startlight_leave_rest">Leave the rest screen</string>
     <string name="startlight_open">Open</string>
-    <string name="startlight_back_to_remote">Back to the remote</string>
     <string name="startlight_actions_title">Actions</string>
     <string name="startlight_screen_not_started">Not running</string>
     <string name="startlight_screen_no_door">Cannot be driven from the phone</string>
@@ -577,14 +590,18 @@
     <string name="startlight_not_offered">StartLight no longer offers this button: nothing was sent.</string>
     <string name="remote_shortcuts_title">Shortcuts</string>
     <string name="remote_shortcuts_hint">Touch to add or remove. On the remote, a long press moves or removes a shortcut.</string>
-    <string name="remote_shortcuts_add">Add</string>
-    <string name="remote_shortcuts_add_first">Add shortcuts: TV apps, StartLight buttons</string>
+    <string name="remote_shortcuts_choose">Add or remove shortcuts</string>
+    <string name="remote_shortcuts_choose_hint">TV apps and StartLight buttons, as round icons above the arrows.</string>
     <string name="remote_shortcuts_apps">Apps</string>
-    <string name="remote_shortcuts_back">Back to the remote</string>
     <string name="remote_shortcuts_edit">Move or remove</string>
     <string name="remote_shortcuts_move_left">Move left</string>
     <string name="remote_shortcuts_move_right">Move right</string>
     <string name="remote_shortcuts_remove">Remove</string>
+    <string name="remote_settings">Remote settings</string>
+    <string name="remote_settings_back">Back to the remote</string>
+    <string name="remote_settings_return">Back to the settings</string>
+    <string name="remote_settings_at_launch">Open TV Slim on the remote</string>
+    <string name="remote_settings_at_launch_hint">At launch, as soon as a television is connected.</string>
     <string name="shortcut_remote_short">Remote</string>
     <string name="shortcut_remote_long">Television remote</string>
 </resources>

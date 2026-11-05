@@ -20,6 +20,8 @@ class ControlProtocolTest {
         assertEquals("T\t5\t540\t85", ControlProtocol.tap(5, 540, RemoteKey.PLAY_PAUSE.code))
         assertEquals("W\t6\t550", ControlProtocol.wake(6, 550))
         assertEquals("S\t7\t560", ControlProtocol.sleep(7, 560))
+        assertEquals("M\t8\t570\t-3\t12\t0", ControlProtocol.move(8, 570, -3, 12, 0))
+        assertEquals("O\t9\t580", ControlProtocol.click(9, 580))
         assertEquals("Q", ControlProtocol.QUIT)
     }
 
@@ -44,6 +46,10 @@ class ControlProtocolTest {
         assertEquals(
             HelperLine.Ready(HelperReady(28, "legacy", 500, 50, screenOn = null, clipboard = false)),
             ControlProtocol.parse("R\t28\tlegacy\t500\t50\t-1\t0\r"),
+        )
+        assertEquals(
+            HelperLine.Ready(HelperReady(36, "global", 400, 50, screenOn = true, clipboard = true, pointer = true)),
+            ControlProtocol.parse("R\t36\tglobal\t400\t50\t1\t1\t1"),
         )
         assertEquals(HelperLine.Ack(12, AckStatus.OK), ControlProtocol.parse("K\t12\tok"))
         assertEquals(HelperLine.Ack(13, AckStatus.LATE), ControlProtocol.parse("K\t13\tlate"))
@@ -89,7 +95,16 @@ class ControlProtocolTest {
     @Test
     fun `media keys are taps, navigation keys can be held`() {
         val taps = RemoteKey.entries.filterNot { it.holdable }
-        assertEquals(setOf(RemoteKey.MUTE, RemoteKey.PLAY_PAUSE, RemoteKey.PREVIOUS, RemoteKey.NEXT, RemoteKey.ENTER), taps.toSet())
+        val expected = setOf(RemoteKey.MUTE, RemoteKey.PLAY_PAUSE, RemoteKey.PREVIOUS, RemoteKey.NEXT, RemoteKey.ENTER, RemoteKey.LAST_CHANNEL)
+        assertEquals(expected + RemoteKey.digits, taps.toSet())
+    }
+
+    /** KEYCODE_0 to KEYCODE_9 follow each other from 7. */
+    @Test
+    fun `each digit key sends its own Android key code`() {
+        assertEquals((7..16).toList(), RemoteKey.digits.map { it.code })
+        assertEquals("T\t6\t550\t12", ControlProtocol.tap(6, 550, RemoteKey.digits[5].code))
+        assertEquals(229, RemoteKey.LAST_CHANNEL.code)
     }
 
     @Test

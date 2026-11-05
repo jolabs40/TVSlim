@@ -17,12 +17,35 @@ enum class RemoteKey(val code: Int, val holdable: Boolean) {
     HOME(3, true),
     VOLUME_UP(24, true),
     VOLUME_DOWN(25, true),
+    CHANNEL_UP(166, true),
+    CHANNEL_DOWN(167, true),
     MUTE(164, false),
     PLAY_PAUSE(85, false),
     PREVIOUS(88, false),
     NEXT(87, false),
     DELETE(67, true),
     ENTER(66, false),
+
+    // Taps, so a held digit types one digit rather than a run of them.
+    DIGIT_0(7, false),
+    DIGIT_1(8, false),
+    DIGIT_2(9, false),
+    DIGIT_3(10, false),
+    DIGIT_4(11, false),
+    DIGIT_5(12, false),
+    DIGIT_6(13, false),
+    DIGIT_7(14, false),
+    DIGIT_8(15, false),
+    DIGIT_9(16, false),
+    LAST_CHANNEL(229, false),
+    ;
+
+    companion object {
+        /** The digit keys, indexed by their digit. */
+        val digits: List<RemoteKey> = listOf(
+            DIGIT_0, DIGIT_1, DIGIT_2, DIGIT_3, DIGIT_4, DIGIT_5, DIGIT_6, DIGIT_7, DIGIT_8, DIGIT_9,
+        )
+    }
 }
 
 /** The helper's answer to an order. */
@@ -48,6 +71,8 @@ data class HelperReady(
     val screenOn: Boolean?,
     /** Whether text the key map cannot type can be pasted. */
     val clipboard: Boolean,
+    /** Whether the helper can add a mouse to the TV (`/dev/uhid`), whose pointer the TV then draws itself. */
+    val pointer: Boolean = false,
 )
 
 sealed interface HelperLine {
@@ -103,6 +128,12 @@ object ControlProtocol {
 
     fun sleep(id: Long, sentAt: Long) = line("S", id, sentAt)
 
+    /** Moves the TV's pointer by [dx], [dy] and scrolls by [wheel] notches, positive upwards. */
+    fun move(id: Long, sentAt: Long, dx: Int, dy: Int, wheel: Int) = line("M", id, sentAt, dx, dy, wheel)
+
+    /** A click of the pointer's main button where it stands. */
+    fun click(id: Long, sentAt: Long) = line("O", id, sentAt)
+
     /** Base64, so tabs and line breaks typed on the phone cannot split the order. */
     fun text(id: Long, sentAt: Long, text: String) = line("X", id, sentAt, base64(text))
 
@@ -133,6 +164,7 @@ object ControlProtocol {
                     repeatDelayMs = fields[4].toLongOrNull() ?: return null,
                     screenOn = screen(fields[5]),
                     clipboard = fields[6] == "1",
+                    pointer = fields.getOrNull(7) == "1",
                 ),
             )
 

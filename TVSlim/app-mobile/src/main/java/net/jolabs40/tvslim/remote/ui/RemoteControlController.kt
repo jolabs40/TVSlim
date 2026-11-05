@@ -55,6 +55,8 @@ data class RemoteControlUi(
     val wentToSleep: Boolean = false,
     /** Text the key map cannot type can be pasted. */
     val canPaste: Boolean = true,
+    /** The TV can show a mouse pointer, driven from the touchpad. */
+    val pointer: Boolean = false,
     /** StartLight is the TV's home: its own buttons can be offered. Read each time the remote opens. */
     val startLight: StartLightHome? = null,
 )
@@ -135,6 +137,11 @@ class RemoteControlController(
 
     fun text(text: String): Boolean = accepted(session?.text(text))
 
+    /** No vibration when it cannot go out: the finger is still sliding, the next move will tell. */
+    fun move(dx: Int, dy: Int, wheel: Int): Boolean = session?.move(dx, dy, wheel) == true
+
+    fun click(): Boolean = accepted(session?.click())
+
     /** A content provider call on the TV, made once: StartLight's commands are not idempotent. */
     suspend fun call(authority: String, method: String, arg: String? = null, extras: String? = null): CallOutcome =
         session?.call(authority, method, arg, extras) ?: CallOutcome.NotSent(CallFailure.NOT_READY)
@@ -213,6 +220,7 @@ class RemoteControlController(
                         screenOn = current.screenOn,
                         held = current.held,
                         canPaste = current.ready?.clipboard ?: it.canPaste,
+                        pointer = current.ready?.pointer ?: it.pointer,
                         wentToSleep = false,
                     )
                 }
