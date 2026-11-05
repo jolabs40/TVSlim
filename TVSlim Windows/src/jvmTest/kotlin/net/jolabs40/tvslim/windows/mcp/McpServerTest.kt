@@ -1,6 +1,8 @@
 package net.jolabs40.tvslim.windows.mcp
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
@@ -140,5 +142,28 @@ class McpServerTest {
         assertEquals(2, lines.size)
         val texts = lines.map { Json.parseToJsonElement(it).jsonObject }
         assertEquals(setOf("1", "2"), texts.map { it["id"]!!.jsonPrimitive.content }.toSet())
+    }
+
+    @Test
+    fun `closing input does not drop an answer still being worked out`() = runTest {
+        val slow = McpServer(
+            name = "tvslim",
+            version = "1.7.0",
+            instructions = "Read-only.",
+            tools = listOf(
+                // A real wait, as a TV read is: the input is already closed when it ends.
+                McpTool("slow", "Slow", "Answers late.", stringArguments()) {
+                    withContext(Dispatchers.IO) { Thread.sleep(300) }
+                    "late"
+                },
+            ),
+        )
+        val input = """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"slow","arguments":{}}}""" + "\n"
+        val output = ByteArrayOutputStream()
+
+        serveStdio(slow, ByteArrayInputStream(input.toByteArray()), output)
+
+        val answer = Json.parseToJsonElement(output.toString(Charsets.UTF_8).trim()).jsonObject
+        assertEquals("late", answer["result"]!!.jsonObject["content"]!!.jsonArray.first().jsonObject["text"]!!.jsonPrimitive.content)
     }
 }

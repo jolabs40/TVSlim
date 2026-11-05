@@ -4,10 +4,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonElement
 import java.io.InputStream
 import java.io.OutputStream
@@ -51,5 +54,12 @@ suspend fun serveStdio(server: McpServer, input: InputStream, output: OutputStre
             job.invokeOnCompletion { running.remove(id, job) }
         }
     }
+    // The client closes stdin, then waits for the server to exit: answers still being worked out must go out first.
+    // The wait runs on the IO dispatcher so its clock is real, even under a test dispatcher.
+    val pending = coroutineContext.job.children.toList()
+    withContext(Dispatchers.IO) { withTimeoutOrNull(CLOSING_GRACE_MS) { pending.joinAll() } }
     coroutineContext.cancelChildren()
 }
+
+/** Enough for a TV read under way; a client that will not wait that long kills the process anyway. */
+private const val CLOSING_GRACE_MS = 10_000L
