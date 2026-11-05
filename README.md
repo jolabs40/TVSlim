@@ -123,8 +123,9 @@ pick a profile and click **Apply**.
 
 - **Television** — model and maker, Android version, memory, enabled and disabled packages; the
   home screen and the launchers installed, recognised by their logo, the factory home screen
-  included even once disabled; the recommended replacement, Startlight Launcher (coming soon to the
-  Play Store); grant the privileged permissions some apps need (`WRITE_SECURE_SETTINGS`, `DUMP`…),
+  included even once disabled; the recommended replacement,
+  [Startlight Launcher](https://play.google.com/store/apps/details?id=net.jolabs40.startlight), whose
+  Play Store page opens on the TV; grant the privileged permissions some apps need (`WRITE_SECURE_SETTINGS`, `DUMP`…),
   picking the app from a list — name, then package — that shows the permissions it requests;
   install the optional TV Slim app for the television straight from its GitHub release (*Install from
   GitHub*): its signing certificate is checked before anything reaches the TV, then it gets its

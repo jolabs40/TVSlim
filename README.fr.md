@@ -127,7 +127,9 @@ cliquez sur **Appliquer**.
 
 - **Téléviseur** — modèle et fabricant, version d'Android, mémoire, paquets actifs et désactivés ;
   l'écran d'accueil et les launchers installés, reconnus à leur logo, l'accueil d'usine compris même
-  désactivé ; le remplaçant recommandé, Startlight Launcher (bientôt sur le Play Store) ; accorder
+  désactivé ; le remplaçant recommandé,
+  [Startlight Launcher](https://play.google.com/store/apps/details?id=net.jolabs40.startlight), dont la
+  page du Play Store s'ouvre sur le téléviseur ; accorder
   les permissions privilégiées dont certaines applications ont besoin (`WRITE_SECURE_SETTINGS`,
   `DUMP`…), en choisissant l'application dans une liste — nom, puis paquet — qui montre les
   permissions qu'elle demande ; installer l'application TV Slim du téléviseur, facultative,

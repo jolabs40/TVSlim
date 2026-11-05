@@ -283,7 +283,7 @@
         "Rescue mode: press BACK five times and the default look comes back",
         "Smooth on entry-level televisions, with Projectivy and Nova icon packs"
       ],
-      "disponible": false,
+      "disponible": true,
       "site": "https://startlightlauncher.com"
     }
   ],
